@@ -24,6 +24,7 @@ pub mod airplay;
 pub mod android;
 pub mod audio;
 pub mod bluetooth;
+pub mod fixture;
 pub mod ios;
 pub mod iphone;
 pub type Shared = Arc<Mutex<Hub>>;
@@ -182,6 +183,120 @@ pub trait Device: Send {
     fn input(&mut self, a: &Value) -> Result;
     fn capture(&mut self, path: &Path) -> Result;
     fn hierarchy(&mut self) -> Result;
+    /// The screen as inputs and frames see it now: `width` and `height` in
+    /// frame pixels, `orientation`, `rotation` (quarter turns or null) and
+    /// where the numbers come from. A transport that cannot tell answers
+    /// `available: false` with the reason, never a guess.
+    fn geometry(&mut self) -> Result {
+        Ok(json!({"available":false,"reason":"This transport does not report its screen geometry",
+            "coordinate_space":coordinate_space()}))
+    }
+    /// The foreground app, the keyboard and the input focus, each
+    /// `available: true` with what was observed or `available: false` with
+    /// the reason. Nothing here is inferred from a screenshot.
+    fn context(&mut self) -> Result {
+        Ok(json!({"app":unavailable("This transport does not report the foreground app"),
+            "keyboard":unavailable("This transport does not report the keyboard"),
+            "focus":unavailable("This transport does not report the input focus")}))
+    }
+    /// What input this transport can deliver, as `runtime.state` reports it
+    /// under `input_capabilities`: whether touch streams live or is sent as
+    /// one atomic trace on touch-up, how many contacts, pinch, fill, rotate.
+    fn capabilities(&self) -> Value;
+}
+/// A field a transport cannot observe.
+pub fn unavailable(reason: &str) -> Value {
+    json!({"available":false,"reason":reason})
+}
+/// How frames and inputs relate, the same for every transport.
+pub fn coordinate_space() -> Value {
+    json!({"frame":"pixels of the captured PNG, origin top-left",
+        "input":"runtime.input and runtime.actions take 0..1 of the frame's width and height",
+        "screen_operations":"screen.* take pixels of the last frame"})
+}
+/// `portrait` or `landscape` from a frame's size alone.
+pub fn derived_orientation(width: u32, height: u32) -> &'static str {
+    if width > height {
+        "landscape"
+    } else {
+        "portrait"
+    }
+}
+/// One fresh look at a session: a frame with its id and time, the geometry
+/// it was taken in, and what the transport can say about app, keyboard and
+/// focus. Every part names its source; what the transport cannot observe is
+/// `available: false`.
+fn observe(device: &mut dyn Device, a: &Value, state: &Value, default_path: &Path) -> Result {
+    let path = if s(a, "path").is_empty() {
+        default_path.to_path_buf()
+    } else {
+        output_path(s(a, "path"))?
+    };
+    let started = Instant::now();
+    let captured_at = now();
+    let frame = device.capture(&path)?;
+    let capture_ms = started.elapsed().as_millis() as u64;
+    let (width, height) = crate::screen::png_size(&path)?;
+    let mut geometry = device.geometry()?;
+    if geometry.get("width").is_none() {
+        geometry["frame_width"] = json!(width);
+        geometry["frame_height"] = json!(height);
+    }
+    let mismatch = geometry["width"].as_u64().is_some_and(|w| w != u64::from(width))
+        || geometry["height"].as_u64().is_some_and(|h| h != u64::from(height));
+    let context = if a["context"] == json!(false) {
+        let skipped = json!({"available":false,"reason":"not read: context was false"});
+        json!({"app":skipped,"keyboard":skipped,"focus":skipped})
+    } else {
+        device.context()?
+    };
+    let sha = s(&frame, "sha256").to_string();
+    let id = sha.chars().take(16).collect::<String>();
+    let orientation = geometry["orientation"]
+        .as_str()
+        .unwrap_or_else(|| derived_orientation(width, height))
+        .to_string();
+    let summary = {
+        let app = &context["app"];
+        let app_text = if app["available"] == true {
+            if app["home_screen"] == true {
+                "Home Screen".to_string()
+            } else {
+                format!(
+                    "{} ({})",
+                    s(app, "name"),
+                    s(app, "bundle_id")
+                )
+            }
+        } else {
+            "app unknown".to_string()
+        };
+        let keyboard = match context["keyboard"]["visible"].as_bool() {
+            Some(true) => "keyboard shown",
+            Some(false) => "keyboard hidden",
+            None => "keyboard unknown",
+        };
+        let focus = match context["focus"]["focused"].as_bool() {
+            Some(true) => "a field has focus",
+            Some(false) => "no field has focus",
+            None => "focus unknown",
+        };
+        format!("{app_text}; {orientation} {width}x{height}; {keyboard}; {focus}")
+    };
+    Ok(json!({
+        "session":state["session"],"platform":state["platform"],"transport":state["transport"],
+        "evidence":state.get("evidence").cloned().unwrap_or(json!("device")),
+        "frame":{"id":id,"sha256":sha,"path":frame["path"],"mime_type":"image/png","bytes":frame["bytes"],
+            "width":width,"height":height,"captured_at":captured_at,"capture_ms":capture_ms,"age_ms":0,
+            "source":"screenshot"},
+        "geometry":geometry,"geometry_matches_frame":!mismatch,
+        "orientation":orientation,
+        "app":context["app"],"keyboard":context["keyboard"],"focus":context["focus"],
+        "fixture":context.get("fixture").cloned().unwrap_or(Value::Null),
+        "input_capabilities":device.capabilities(),
+        "context":summary,
+        "note":"age_ms is 0 at capture; add the time since captured_at before acting on this frame. Fields with available false were not observed, not guessed."
+    }))
 }
 pub fn number(a: &Value, key: &str) -> f64 {
     a[key].as_f64().unwrap_or(0.0)
@@ -344,6 +459,14 @@ pub fn handle(op: &str, a: &Value) -> Result {
             request(id, "capture", &a)
         }
         "runtime.hierarchy" => request(id, "hierarchy", a),
+        "runtime.observe" => {
+            let mut a = a.clone();
+            if !s(&a, "path").is_empty() {
+                a["path"] = json!(output_path(s(&a, "path"))?);
+            }
+            request(id, "observe", &a)
+        }
+        "runtime.gesture" => request(id, "gesture", a),
         _ => Err(Error::new("operation_not_found", op)),
     }
 }
@@ -431,7 +554,9 @@ fn start(a: &Value) -> Result {
         value["reused"] = json!(true);
         return audio::attach(value, a);
     }
-    if s(a, "platform") == "android" {
+    if fixture::requested(a) {
+        fixture::validate(a)?;
+    } else if s(a, "platform") == "android" {
         android::server_path(a)?;
     } else if !s(a, "remote").is_empty() {
         crate::remote::workspace(s(a, "remote"))?;
@@ -497,6 +622,44 @@ fn wait_ready(id: &str) -> Result {
         "Native runtime is still starting; inspect runtime.state",
     )
     .details(metadata(id)?))
+}
+/// A `runtime.gesture` call as the `gesture` input action a transport takes:
+/// the contacts with their timestamped points, checked for order and bounds.
+pub fn gesture_input(a: &Value) -> Value {
+    let mut input = a.clone();
+    input["action"] = json!("gesture");
+    input
+}
+/// Checks a gesture's contacts: 1 to 5, each 2 to 240 points with
+/// non-decreasing `t_ms` within 0..=10000 and coordinates within 0..1.
+pub fn check_gesture(a: &Value) -> Result<Vec<Vec<(f64, f64, u64)>>> {
+    let contacts = a["contacts"]
+        .as_array()
+        .filter(|c| !c.is_empty() && c.len() <= 5)
+        .ok_or_else(|| Error::new("invalid_argument", "contacts lists 1 to 5 contacts"))?;
+    let mut out = Vec::new();
+    for contact in contacts {
+        let points = contact["points"]
+            .as_array()
+            .filter(|p| p.len() >= 2 && p.len() <= 240)
+            .ok_or_else(|| Error::new("invalid_argument", "Each contact has 2 to 240 points"))?;
+        let mut trace = Vec::new();
+        let mut last = 0;
+        for point in points {
+            let (x, y) = (number(point, "x"), number(point, "y"));
+            let t = n(point, "t_ms");
+            if !(0.0..=1.0).contains(&x) || !(0.0..=1.0).contains(&y) || t > 10_000 || t < last {
+                return Err(Error::new(
+                    "invalid_argument",
+                    "Points need x and y within 0..1 and t_ms in order within 10 seconds",
+                ));
+            }
+            last = t;
+            trace.push((x, y, t));
+        }
+        out.push(trace);
+    }
+    Ok(out)
 }
 fn wait_listener(listener: &UnixListener) {
     let mut descriptor = libc::pollfd {
@@ -642,7 +805,9 @@ pub fn worker(id: &str) -> Result<()> {
         }
     });
     let result = (|| -> Result<()> {
-        let mut device: Box<dyn Device> = if s(&spec, "platform") == "android" {
+        let mut device: Box<dyn Device> = if fixture::requested(&spec) {
+            Box::new(fixture::connect(&spec, shared.clone(), &dir)?)
+        } else if s(&spec, "platform") == "android" {
             Box::new(android::connect(&spec, shared.clone(), &dir)?)
         } else if !s(&spec, "remote").is_empty() {
             Box::new(ios::connect(&spec, shared.clone(), &dir)?)
@@ -654,7 +819,7 @@ pub fn worker(id: &str) -> Result<()> {
         shared
             .lock()
             .unwrap()
-            .update(json!({"status":"connected"}))?;
+            .update(json!({"status":"connected","input_capabilities":device.capabilities()}))?;
         // A recording of a UI test (testing.record) takes Android input.
         let mut recording = if s(&spec, "platform") == "android" {
             crate::recorder::Store::home()
@@ -685,6 +850,15 @@ pub fn worker(id: &str) -> Result<()> {
                     "capture" => api::arguments("runtime.capture", &command.args)
                         .and_then(|a| device.capture(&output_path(s(&a, "path"))?)),
                     "hierarchy" => device.hierarchy(),
+                    "geometry" => device.geometry(),
+                    "context" => device.context(),
+                    "observe" => api::arguments("runtime.observe", &command.args).and_then(|a| {
+                        let state = shared.lock().unwrap().state.clone();
+                        observe(device.as_mut(), &a, &state, &dir.join("observe.png"))
+                    }),
+                    "gesture" => api::arguments("runtime.gesture", &command.args)
+                        .and_then(|a| check_gesture(&a).map(|_| a))
+                        .and_then(|a| device.input(&gesture_input(&a))),
                     _ => Err(Error::new("operation_not_found", command.op)),
                 };
                 let _ = command.result.send(answer);

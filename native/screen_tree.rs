@@ -34,7 +34,15 @@ pub struct Node {
 
 impl Node {
     pub fn editable(&self) -> bool {
-        self.class.ends_with("EditText") || self.class.ends_with("AutoCompleteTextView")
+        self.class.ends_with("EditText")
+            || self.class.ends_with("AutoCompleteTextView")
+            || matches!(
+                self.class.as_str(),
+                "XCUIElementTypeTextField"
+                    | "XCUIElementTypeSecureTextField"
+                    | "XCUIElementTypeTextView"
+                    | "XCUIElementTypeSearchField"
+            )
     }
     /// Something a person can press, switch or type into.
     pub fn interactive(&self) -> bool {
@@ -105,6 +113,90 @@ pub fn parse(xml: &str) -> Result<Vec<Node>> {
     let mut nodes = Vec::new();
     walk(document.root(), None, 0, &mut nodes);
     Ok(nodes)
+}
+
+/// Whether a hierarchy is WebDriverAgent's XML of a physical iPhone rather
+/// than a UIAutomator dump.
+pub fn is_wda(xml: &str) -> bool {
+    let head: String = xml.chars().take(4000).collect();
+    head.contains("<AppiumAUT") || head.contains("<XCUIElementType")
+}
+
+fn xml_escape(text: &str) -> String {
+    text.replace('&', "&amp;")
+        .replace('<', "&lt;")
+        .replace('>', "&gt;")
+        .replace('"', "&quot;")
+}
+
+/// WebDriverAgent's page source as a UIAutomator-style dump, so every screen
+/// operation reads a physical iPhone the way it reads Android. Points become
+/// pixels of the screenshot through `scale`; `rotation` is the quarter turns
+/// the frame was taken in. Elements WebDriverAgent marks invisible keep no
+/// area, so they are never marked or tapped.
+pub fn wda_to_uiautomator(xml: &str, scale: f64, rotation: u64) -> Result<String> {
+    let document = roxmltree::Document::parse(xml)
+        .map_err(|e| Error::new("invalid_hierarchy", e.to_string()))?;
+    let scale = if scale.is_finite() && scale > 0.0 { scale } else { 1.0 };
+    let mut out = format!("<?xml version='1.0' encoding='UTF-8'?><hierarchy rotation=\"{rotation}\" source=\"wda\">");
+    fn walk(element: roxmltree::Node, scale: f64, out: &mut String) {
+        for child in element.children().filter(|c| c.is_element()) {
+            let kind = child.tag_name().name();
+            if !kind.starts_with("XCUIElementType") {
+                walk(child, scale, out);
+                continue;
+            }
+            let attribute = |name: &str| child.attribute(name).unwrap_or("");
+            let short = kind.trim_start_matches("XCUIElementType");
+            let visible = attribute("visible") != "false";
+            let px = |name: &str| (attribute(name).parse::<f64>().unwrap_or(0.0) * scale).round() as i64;
+            let (l, t, w, h) = (px("x"), px("y"), px("width"), px("height"));
+            let bounds = if visible && w > 0 && h > 0 {
+                format!("[{l},{t}][{},{}]", l + w, t + h)
+            } else {
+                "[0,0][0,0]".to_string()
+            };
+            let value = attribute("value");
+            let label = attribute("label");
+            let name = attribute("name");
+            let editable = matches!(short, "TextField" | "SecureTextField" | "TextView" | "SearchField");
+            let checkable = matches!(short, "Switch" | "Toggle");
+            let clickable = matches!(
+                short,
+                "Button" | "Cell" | "Link" | "Switch" | "Toggle" | "SegmentedControl" | "Tab" | "MenuItem" | "Key"
+                    | "PageIndicator" | "Stepper" | "Slider" | "Picker" | "PickerWheel" | "Image" | "Icon"
+                    | "CollectionView" | "TabBar" | "NavigationBar"
+            ) && !matches!(short, "CollectionView" | "TabBar" | "NavigationBar" | "Image" | "Icon")
+                || (matches!(short, "Image" | "Icon") && !name.is_empty() && attribute("accessible") == "true");
+            let scrollable = matches!(short, "ScrollView" | "Table" | "CollectionView" | "WebView");
+            // UIAutomator's text is what is shown; the description is the accessibility label.
+            let text = if checkable || (!editable && value.is_empty()) { label } else { value };
+            let description = if label != text { label } else if name != text { name } else { "" };
+            let checked = checkable && (value == "1" || value == "true" || value == "on");
+            out.push_str(&format!(
+                "<node class=\"{}\" text=\"{}\" content-desc=\"{}\" resource-id=\"{}\" package=\"\" bounds=\"{}\" clickable=\"{}\" long-clickable=\"false\" checkable=\"{}\" checked=\"{}\" enabled=\"{}\" focused=\"{}\" focusable=\"{}\" scrollable=\"{}\" selected=\"{}\" password=\"{}\">",
+                xml_escape(kind),
+                xml_escape(text),
+                xml_escape(description),
+                xml_escape(name),
+                bounds,
+                clickable,
+                checkable,
+                checked,
+                attribute("enabled") != "false",
+                attribute("focused") == "true",
+                editable || clickable,
+                scrollable,
+                attribute("selected") == "true",
+                short == "SecureTextField"
+            ));
+            walk(child, scale, out);
+            out.push_str("</node>");
+        }
+    }
+    walk(document.root(), scale, &mut out);
+    out.push_str("</hierarchy>");
+    Ok(out)
 }
 
 /// The screen's size: the biggest node's right and bottom edge, which is the
@@ -555,6 +647,46 @@ pub fn compare(before: &[Node], after: &[Node], limit: usize) -> Value {
         "added":added,"removed":removed,"changed":changed,
         "counts":{"added":added_total,"removed":removed_total,"changed":changed_total,"unchanged":pairs.len() - changed_total},
         "truncated":added_more || removed_more || changed_more})
+}
+
+#[cfg(test)]
+mod wda_tests {
+    use super::*;
+    const SOURCE: &str = r#"<?xml version="1.0" encoding="UTF-8"?>
+<AppiumAUT>
+  <XCUIElementTypeApplication type="XCUIElementTypeApplication" name="Settings" label="Settings" enabled="true" visible="true" x="0" y="0" width="390" height="844" index="0">
+    <XCUIElementTypeWindow type="XCUIElementTypeWindow" enabled="true" visible="true" x="0" y="0" width="390" height="844" index="0">
+      <XCUIElementTypeTextField type="XCUIElementTypeTextField" value="ana@example.com" name="email" label="Email" enabled="true" visible="true" focused="true" x="20" y="100" width="350" height="44" index="0"/>
+      <XCUIElementTypeButton type="XCUIElementTypeButton" name="Sign in" label="Sign in" enabled="true" visible="true" x="20" y="200" width="350" height="50" index="1"/>
+      <XCUIElementTypeButton type="XCUIElementTypeButton" name="Hidden" label="Hidden" enabled="true" visible="false" x="20" y="300" width="350" height="50" index="2"/>
+      <XCUIElementTypeSwitch type="XCUIElementTypeSwitch" value="1" name="Remember me" label="Remember me" enabled="true" visible="true" x="20" y="400" width="51" height="31" index="3"/>
+      <XCUIElementTypeStaticText type="XCUIElementTypeStaticText" value="Forgot &lt;password&gt;?" name="Forgot?" label="Forgot?" enabled="true" visible="true" x="20" y="500" width="200" height="20" index="4"/>
+    </XCUIElementTypeWindow>
+  </XCUIElementTypeApplication>
+</AppiumAUT>"#;
+    #[test]
+    fn webdriveragent_source_becomes_a_hierarchy_in_screenshot_pixels() {
+        assert!(is_wda(SOURCE));
+        assert!(!is_wda("<hierarchy rotation=\"0\"><node class=\"a\"/></hierarchy>"));
+        let converted = wda_to_uiautomator(SOURCE, 3.0, 0).unwrap();
+        let nodes = parse(&converted).unwrap();
+        assert_eq!(screen_size(&nodes), (1170, 2532));
+        let field = nodes.iter().find(|n| n.id == "email").unwrap();
+        assert!(field.editable() && field.focused);
+        assert_eq!((field.text.as_str(), field.description.as_str()), ("ana@example.com", "Email"));
+        assert_eq!(field.rect, (60, 300, 1110, 432));
+        let (marks, _) = marks(&nodes, 50);
+        let labels: Vec<&str> = marks.iter().map(|m| m["label"].as_str().unwrap()).collect();
+        assert_eq!(labels, ["ana@example.com", "Sign in", "Remember me"]);
+        assert_eq!(marks[2]["checked"], true);
+        assert_eq!(marks[1]["bounds"]["x"], 585);
+        // The invisible button has no area and the static text is not a mark, but it is in the tree.
+        let numbers = numbering(&nodes, 50);
+        let text = tree(&nodes, &numbers, 4000, false).text;
+        assert!(text.contains("StaticText \"Forgot <password>?\""), "{text}");
+        assert!(!text.contains("Hidden"));
+        assert!(has_element(&nodes, &marks[1]));
+    }
 }
 
 #[cfg(test)]

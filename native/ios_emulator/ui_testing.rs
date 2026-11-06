@@ -1112,6 +1112,9 @@ mod tests {
     /// Answers Tesseract's TSV from a list, the last one again when it runs out.
     struct Reads(Vec<String>);
     impl Recognizer for Reads {
+        fn cacheable(&self) -> bool {
+            false
+        }
         fn tsv(&mut self, _image: &Path, _language: &str) -> Result<String> {
             Ok(if self.0.len() > 1 {
                 self.0.remove(0)

@@ -471,6 +471,23 @@ impl Device for Ios {
             .into_inner();
         Ok(json!({"platform":"ios","tree":serde_json::from_str::<Value>(&value.json)?}))
     }
+    fn geometry(&mut self) -> Result {
+        let h = self.shared.lock().unwrap();
+        let (width, height) = (n(&h.state, "width") as u32, n(&h.state, "height") as u32);
+        let (points_w, points_h, density) = (h.state["points_width"].clone(), h.state["points_height"].clone(), h.state["density"].clone());
+        drop(h);
+        Ok(json!({"width":width,"height":height,"point_width":points_w,"point_height":points_h,"scale":density,
+            "orientation":super::derived_orientation(width, height),"rotation":Value::Null,
+            "source":"idb screen description at connect; pass width/height after a rotation",
+            "coordinate_space":super::coordinate_space()}))
+    }
+    fn capabilities(&self) -> Value {
+        json!({"transport":"ssh/idb","evidence":"device","capture":true,"hierarchy":"idb accessibility json (not converted for screen.*)",
+            "live_touch":true,"atomic_trace":false,"max_contacts":1,"pinch":"companion","fill":true,"text":"ascii keys",
+            "rotate":"explicit orientation","exact_scroll":"companion swipe",
+            "keys":["home","power","volume_up","volume_down","enter","escape","backspace","tab","delete","up","down","left","right"],
+            "note":"Touch events stream live over idb HID; a trace is replayed with host timing. Foreground app and keyboard are not reported by this transport."})
+    }
 }
 fn ascii_key(ch: char) -> Option<(u64, bool)> {
     if ch.is_ascii_alphabetic() {

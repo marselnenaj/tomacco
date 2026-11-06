@@ -381,6 +381,12 @@ pub fn supports(selector: &Value) -> bool {
 /// Something that reads a PNG and answers Tesseract's TSV. Tests replace it.
 pub trait Recognizer {
     fn tsv(&mut self, image: &Path, language: &str) -> Result<String>;
+    /// Whether a reading of a picture may be answered again from the cache
+    /// for the same picture: true for a real recogniser, false for a
+    /// scripted one whose answers change from call to call.
+    fn cacheable(&self) -> bool {
+        true
+    }
 }
 
 pub struct Tesseract;
@@ -451,6 +457,7 @@ pub fn inverted(image: &Image) -> Image {
     }
 }
 
+#[derive(Clone)]
 pub struct Reading {
     pub words: Vec<Word>,
     pub lines: Vec<Line>,
@@ -458,7 +465,21 @@ pub struct Reading {
     pub height: u32,
     /// How many readings were made: 1, or 2 with the colours inverted.
     pub passes: usize,
+    /// Whether this reading was answered from the cache of this process
+    /// (the same picture, language, inversion and region read before).
+    pub cached: bool,
 }
+
+/// Readings of this process by the picture's digest and the reading's
+/// settings. A wait that looks at an unchanged screen every half second
+/// otherwise runs Tesseract on the same pixels each time. The key is the
+/// PNG's content, so a changed frame is never answered from it.
+fn cache() -> &'static std::sync::Mutex<Vec<(String, Reading)>> {
+    static CACHE: std::sync::OnceLock<std::sync::Mutex<Vec<(String, Reading)>>> =
+        std::sync::OnceLock::new();
+    CACHE.get_or_init(|| std::sync::Mutex::new(Vec::new()))
+}
+const CACHE_ENTRIES: usize = 8;
 
 pub fn cropped(image: &Image, region: (u32, u32, u32, u32)) -> Image {
     let (x, y, w, h) = region;
@@ -491,6 +512,15 @@ pub fn read(
     region: Option<(u32, u32, u32, u32)>,
 ) -> Result<Reading> {
     let bytes = std::fs::read(image)?;
+    let key = format!("{}|{language}|{invert}|{min_confidence}|{region:?}", digest(&bytes));
+    let cacheable = recognizer.cacheable();
+    if cacheable {
+        if let Some((_, hit)) = cache().lock().unwrap().iter().find(|(k, _)| *k == key) {
+            let mut reading = hit.clone();
+            reading.cached = true;
+            return Ok(reading);
+        }
+    }
     let picture = visual::decode(&bytes)?;
     let (width, height) = (picture.width, picture.height);
     let directory = tempfile::tempdir()?;
@@ -532,13 +562,22 @@ pub fn read(
     words.retain(|w| w.confidence >= min_confidence);
     words.sort_by_key(|w| (w.top, w.left));
     let lines = lines(&words);
-    Ok(Reading {
+    let reading = Reading {
         words,
         lines,
         width,
         height,
         passes,
-    })
+        cached: false,
+    };
+    if cacheable {
+        let mut kept = cache().lock().unwrap();
+        if kept.len() >= CACHE_ENTRIES {
+            kept.remove(0);
+        }
+        kept.push((key, reading.clone()));
+    }
+    Ok(reading)
 }
 
 #[cfg(test)]
@@ -674,7 +713,49 @@ mod tests {
     }
 
     struct Fake(Vec<String>);
+    /// Counts its runs and answers one word; a stand-in for Tesseract that
+    /// may be cached.
+    struct Counting(usize);
+    impl Recognizer for Counting {
+        fn tsv(&mut self, _image: &Path, _language: &str) -> Result<String> {
+            self.0 += 1;
+            Ok(tsv(&[(10, 10, 80, 20, 91.0, "Hello")]))
+        }
+    }
+    #[test]
+    fn an_unchanged_picture_is_read_once_and_a_changed_one_again() {
+        let dir = tempfile::tempdir().unwrap();
+        let white = dir.path().join("white.png");
+        let grey = dir.path().join("grey.png");
+        let solid = |shade: u8| {
+            visual::encode(&Image {
+                width: 120,
+                height: 40,
+                pixels: [shade, shade, shade, 255].repeat(120 * 40),
+            })
+            .unwrap()
+        };
+        std::fs::write(&white, solid(255)).unwrap();
+        std::fs::write(&grey, solid(200)).unwrap();
+        let mut engine = Counting(0);
+        let first = read(&mut engine, &white, "eng", "never", 40.0, None).unwrap();
+        assert!(!first.cached && engine.0 == 1);
+        let again = read(&mut engine, &white, "eng", "never", 40.0, None).unwrap();
+        assert!(again.cached && engine.0 == 1);
+        assert_eq!(again.lines[0].text(), "Hello");
+        // Other pixels, another language or another region are read anew.
+        assert!(!read(&mut engine, &grey, "eng", "never", 40.0, None).unwrap().cached);
+        assert!(!read(&mut engine, &white, "deu", "never", 40.0, None).unwrap().cached);
+        assert!(!read(&mut engine, &white, "eng", "never", 40.0, Some((0, 0, 50, 40))).unwrap().cached);
+        assert_eq!(engine.0, 4);
+        // A scripted recogniser is never answered from the cache.
+        let mut scripted = Fake(vec![tsv(&[(10, 10, 80, 20, 91.0, "Hello")]); 2]);
+        assert!(!read(&mut scripted, &white, "eng", "never", 40.0, None).unwrap().cached);
+    }
     impl Recognizer for Fake {
+        fn cacheable(&self) -> bool {
+            false
+        }
         fn tsv(&mut self, _image: &Path, _language: &str) -> Result<String> {
             Ok(self.0.remove(0))
         }

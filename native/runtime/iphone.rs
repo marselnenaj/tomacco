@@ -224,15 +224,76 @@ impl Multipart {
     }
 }
 
+/// The size a JPEG's start-of-frame header declares, or None when the data
+/// is not a baseline or progressive JPEG with one.
+pub fn jpeg_size(data: &[u8]) -> Option<(u32, u32)> {
+    if data.len() < 4 || data[0] != 0xff || data[1] != 0xd8 {
+        return None;
+    }
+    let mut at = 2;
+    while at + 9 < data.len() {
+        if data[at] != 0xff {
+            return None;
+        }
+        let marker = data[at + 1];
+        if marker == 0xff {
+            at += 1;
+            continue;
+        }
+        if (0xd0..=0xd8).contains(&marker) || marker == 0x01 {
+            at += 2;
+            continue;
+        }
+        let length = usize::from(u16::from_be_bytes([data[at + 2], data[at + 3]]));
+        if matches!(marker, 0xc0 | 0xc1 | 0xc2 | 0xc3 | 0xc5 | 0xc6 | 0xc7 | 0xc9 | 0xca | 0xcb | 0xcd | 0xce | 0xcf)
+        {
+            if length < 7 {
+                return None;
+            }
+            let height = u32::from(u16::from_be_bytes([data[at + 5], data[at + 6]]));
+            let width = u32::from(u16::from_be_bytes([data[at + 7], data[at + 8]]));
+            return (width > 0 && height > 0).then_some((width, height));
+        }
+        if marker == 0xda || marker == 0xd9 {
+            return None;
+        }
+        at += 2 + length;
+    }
+    None
+}
+
+/// `portrait`/`landscape`, the finer device orientation and the quarter
+/// turns from WebDriverAgent's orientation names.
+fn orientation_facts(value: &str) -> (&'static str, &'static str, u64) {
+    match value {
+        "PORTRAIT" => ("portrait", "portrait", 0),
+        "UIA_DEVICE_ORIENTATION_PORTRAIT_UPSIDEDOWN" => ("portrait", "portrait_upside_down", 2),
+        "LANDSCAPE" => ("landscape", "landscape_left", 1),
+        "UIA_DEVICE_ORIENTATION_LANDSCAPERIGHT" => ("landscape", "landscape_right", 3),
+        _ => ("unknown", "unknown", 0),
+    }
+}
+
 pub struct Iphone {
     rt: tokio::runtime::Runtime,
     http: Http,
     session: String,
     width: f64,
     height: f64,
+    /// WebDriverAgent's name for the orientation the point size was read in.
+    orientation: String,
+    /// Bumped by the video task whenever the MJPEG frame size changes: the
+    /// phone turned (or its display changed) without us asking, so the
+    /// cached point size and orientation are stale.
+    epoch: Arc<std::sync::atomic::AtomicU64>,
+    seen_epoch: u64,
+    /// How often /window/size was requested, for tests and runtime.state.
+    size_requests: u64,
     gesture: Vec<Value>,
     last_touch: Option<Instant>,
     video: Option<tokio::task::JoinHandle<()>>,
+    /// The session's state, for the frame size the video task records.
+    shared_state: Option<Shared>,
     _processes: Vec<ManagedProcess>,
     _lock: Option<Lock>,
 }
@@ -262,14 +323,32 @@ impl Iphone {
             )
             .map(|v| v["value"].clone())
     }
-    fn dimensions(&mut self) -> Result<()> {
+    /// The point size and orientation, requested from the phone only when
+    /// unknown, forced, or after the video frames changed size: a roundtrip
+    /// per tap was most of a tap's cost, and a cache without that
+    /// invalidation would map taps wrongly after the person turned the phone.
+    fn refresh_geometry(&mut self, force: bool) -> Result<()> {
+        let epoch = self.epoch.load(Ordering::Relaxed);
+        if !force && self.width > 0.0 && self.height > 0.0 && epoch == self.seen_epoch {
+            return Ok(());
+        }
         let size = self.call("GET", "/window/size", None)?;
+        self.size_requests += 1;
         self.width = number(&size, "width");
         self.height = number(&size, "height");
         if self.width <= 0.0 || self.height <= 0.0 {
             return Err(err("iPhone returned an invalid screen size"));
         }
+        self.orientation = self
+            .call("GET", "/orientation", None)
+            .ok()
+            .and_then(|v| v.as_str().map(String::from))
+            .unwrap_or_default();
+        self.seen_epoch = epoch;
         Ok(())
+    }
+    fn dimensions(&mut self) -> Result<()> {
+        self.refresh_geometry(false)
     }
     fn point(&self, a: &Value, x: &str, y: &str) -> Value {
         json!({"x":(number(a,x)*(self.width-1.0)).round(),"y":(number(a,y)*(self.height-1.0)).round()})
@@ -292,7 +371,49 @@ impl Iphone {
         Ok(data)
     }
     fn actions(&self, actions: Value) -> Result {
-        self.call("POST", "/actions", Some(&json!({"actions":[{"type":"pointer","id":"tomacco-touch","parameters":{"pointerType":"touch"},"actions":actions}]})))
+        self.pointer_sources(vec![("tomacco-touch", actions)])
+    }
+    /// One W3C actions request with a touch pointer per source: WebDriverAgent
+    /// runs them together, so two sources are two fingers.
+    fn pointer_sources(&self, sources: Vec<(&str, Value)>) -> Result {
+        let actions: Vec<Value> = sources
+            .into_iter()
+            .map(|(id, actions)| json!({"type":"pointer","id":id,"parameters":{"pointerType":"touch"},"actions":actions}))
+            .collect();
+        self.call("POST", "/actions", Some(&json!({"actions":actions})))
+    }
+    /// A finger's W3C sequence from a trace of (x, y, t_ms) in 0..1.
+    fn finger(&self, trace: &[(f64, f64, u64)]) -> Vec<Value> {
+        let at = |x: f64, y: f64| {
+            json!({"x":(x * (self.width - 1.0)).round(),"y":(y * (self.height - 1.0)).round()})
+        };
+        let mut out = Vec::new();
+        let first = at(trace[0].0, trace[0].1);
+        out.push(json!({"type":"pointerMove","duration":0,"x":first["x"],"y":first["y"],"origin":"viewport"}));
+        out.push(json!({"type":"pointerDown","button":0}));
+        let mut last_t = trace[0].2;
+        for (x, y, t) in &trace[1..] {
+            let p = at(*x, *y);
+            out.push(json!({"type":"pointerMove","duration":t - last_t,"x":p["x"],"y":p["y"],"origin":"viewport"}));
+            last_t = *t;
+        }
+        out.push(json!({"type":"pointerUp","button":0}));
+        out
+    }
+    /// Whether a field has the keyboard focus: WebDriverAgent's active
+    /// element, which answers `no such element` when nothing has focus.
+    fn focused(&self) -> Value {
+        match self.call("GET", "/element/active", None) {
+            Ok(_) => json!({"available":true,"focused":true,"source":"wda /element/active"}),
+            Err(error) => {
+                let text = format!("{} {:?}", error.message, error.details).to_lowercase();
+                if text.contains("no such element") || text.contains("not found") {
+                    json!({"available":true,"focused":false,"source":"wda /element/active"})
+                } else {
+                    super::unavailable(&format!("wda /element/active failed: {}", error.message))
+                }
+            }
+        }
     }
 }
 
@@ -389,9 +510,14 @@ pub fn connect(a: &Value, shared: Shared, dir: &Path) -> Result<Iphone> {
         session,
         width: 0.0,
         height: 0.0,
+        orientation: String::new(),
+        epoch: Arc::new(std::sync::atomic::AtomicU64::new(0)),
+        seen_epoch: 0,
+        size_requests: 0,
         gesture: Vec::new(),
         last_touch: None,
         video: None,
+        shared_state: Some(shared.clone()),
         _processes: processes,
         _lock: Some(lock),
     };
@@ -421,9 +547,11 @@ pub fn connect(a: &Value, shared: Shared, dir: &Path) -> Result<Iphone> {
     if !stream.status().is_success() {
         return Err(err("The iPhone MJPEG stream is unavailable"));
     }
+    let epoch = device.epoch.clone();
     device.video = Some(device.rt.spawn(async move {
         let mut body = stream.into_body();
         let mut decoder = Multipart::default();
+        let mut frame_size: Option<(u32, u32)> = None;
         let result: Result<()> = async {
             while let Some(frame) = tokio::time::timeout(Duration::from_secs(20), body.frame())
                 .await
@@ -432,6 +560,18 @@ pub fn connect(a: &Value, shared: Shared, dir: &Path) -> Result<Iphone> {
                 let frame = frame.map_err(|e| err(e.to_string()))?;
                 if let Ok(data) = frame.into_data() {
                     for jpeg in decoder.push(&data)? {
+                        // The frames follow the screen: a changed size means
+                        // the phone turned, and the cached point size is stale.
+                        if let Some(size) = jpeg_size(&jpeg) {
+                            if frame_size.is_some_and(|known| known != size) {
+                                epoch.fetch_add(1, Ordering::Relaxed);
+                                let _ = shared
+                                    .lock()
+                                    .unwrap()
+                                    .update(json!({"width":size.0,"height":size.1,"geometry_epoch":epoch.load(Ordering::Relaxed)}));
+                            }
+                            frame_size = Some(size);
+                        }
                         shared.lock().unwrap().video(jpeg, false, true);
                     }
                 }
@@ -548,8 +688,43 @@ impl Device for Iphone {
                     "/orientation",
                     Some(&json!({"orientation":orientation})),
                 )?;
-                self.dimensions()?;
+                self.refresh_geometry(true)?;
                 Ok(result)
+            }
+            "pinch" => {
+                require(a, &["x", "y", "scale"])?;
+                self.dimensions()?;
+                // Two touch pointers either side of the centre, moved apart
+                // (scale > 1) or together, in one atomic W3C request.
+                let (cx, cy) = (number(a, "x"), number(a, "y"));
+                let scale = number(a, "scale").clamp(0.05, 20.0);
+                let ms = (a["duration"].as_f64().unwrap_or(0.3).clamp(0.05, 5.0) * 1000.0).round() as u64;
+                let (from, to) = if scale >= 1.0 {
+                    (0.08, (0.08 * scale).min(0.45))
+                } else {
+                    (0.3, (0.3 * scale).max(0.02))
+                };
+                let left = vec![((cx - from).clamp(0.0, 1.0), cy, 0), ((cx - to).clamp(0.0, 1.0), cy, ms)];
+                let right = vec![((cx + from).clamp(0.0, 1.0), cy, 0), ((cx + to).clamp(0.0, 1.0), cy, ms)];
+                let (a1, a2) = (self.finger(&left), self.finger(&right));
+                self.pointer_sources(vec![("finger-1", json!(a1)), ("finger-2", json!(a2))])?;
+                Ok(json!({"delivered":true,"mode":"atomic_trace","contacts":2}))
+            }
+            "gesture" => {
+                let contacts = super::check_gesture(a)?;
+                self.dimensions()?;
+                let names = ["finger-1", "finger-2", "finger-3", "finger-4", "finger-5"];
+                let sources: Vec<(&str, Value)> = contacts
+                    .iter()
+                    .enumerate()
+                    .map(|(i, trace)| (names[i], json!(self.finger(trace))))
+                    .collect();
+                let count = sources.len();
+                let started = Instant::now();
+                self.pointer_sources(sources)?;
+                Ok(json!({"delivered":true,"mode":"atomic_trace","contacts":count,
+                    "elapsed_ms":started.elapsed().as_millis() as u64,
+                    "note":"The whole trace was submitted as one WebDriverAgent actions request; timing between contacts follows its tick model."}))
             }
             _ => Err(err(
                 "This input action is not supported by the physical iPhone transport",
@@ -563,7 +738,57 @@ impl Device for Iphone {
     }
     fn hierarchy(&mut self) -> Result {
         let value = self.call("GET", "/source", None)?;
-        Ok(json!({"xml":value,"transport":"usb/wda"}))
+        Ok(json!({"xml":value,"transport":"usb/wda","format":"wda","point_width":self.width,"point_height":self.height}))
+    }
+    fn geometry(&mut self) -> Result {
+        self.refresh_geometry(false)?;
+        let h = self.shared_size();
+        let (orientation, device_orientation, rotation) = orientation_facts(&self.orientation);
+        let scale = if self.width > 0.0 { f64::from(h.0) / self.width } else { 0.0 };
+        Ok(json!({"width":h.0,"height":h.1,"point_width":self.width,"point_height":self.height,
+            "scale":(scale * 100.0).round() / 100.0,"orientation":orientation,"device_orientation":device_orientation,
+            "rotation":rotation,"geometry_epoch":self.seen_epoch,"size_requests":self.size_requests,
+            "source":"wda /window/size and /orientation, cached until the MJPEG frame size changes",
+            "coordinate_space":super::coordinate_space()}))
+    }
+    fn context(&mut self) -> Result {
+        let app = match self.call("GET", "/wda/activeAppInfo", None) {
+            Ok(info) => {
+                let bundle = s(&info, "bundleId").to_string();
+                json!({"available":!bundle.is_empty(),"bundle_id":bundle,"name":info["name"],"pid":info["pid"],
+                    "home_screen":bundle == "com.apple.springboard","source":"wda /wda/activeAppInfo"})
+            }
+            Err(error) => super::unavailable(&format!("wda /wda/activeAppInfo failed: {}", error.message)),
+        };
+        let keyboard = match self.call(
+            "POST",
+            "/elements",
+            Some(&json!({"using":"class chain","value":"**/XCUIElementTypeKeyboard"})),
+        ) {
+            Ok(found) => json!({"available":true,"visible":found.as_array().is_some_and(|f| !f.is_empty()),
+                "source":"wda class chain **/XCUIElementTypeKeyboard"}),
+            Err(error) => super::unavailable(&format!("wda /elements failed: {}", error.message)),
+        };
+        Ok(json!({"app":app,"keyboard":keyboard,"focus":self.focused()}))
+    }
+    fn capabilities(&self) -> Value {
+        json!({"transport":"usb/wda","evidence":"device","capture":true,"hierarchy":"wda xml (converted for screen.*)",
+            "live_touch":false,"atomic_trace":true,"max_contacts":5,"pinch":true,"fill":true,"text":"unicode",
+            "rotate":"explicit orientation","exact_scroll":true,
+            "keys":["home","enter","backspace","delete","tab"],
+            "note":"touch down/move events are buffered and sent as one atomic WebDriverAgent actions request on touch-up; runtime.gesture sends a timestamped trace the same way. There is no live incremental drag over WebDriverAgent. Pinch and multi-contact are not yet hardware-qualified here."})
+    }
+}
+impl Iphone {
+    /// The frame size runtime.state carries, as the video task keeps it.
+    fn shared_size(&self) -> (u32, u32) {
+        match &self.shared_state {
+            Some(shared) => {
+                let h = shared.lock().unwrap();
+                (n(&h.state, "width") as u32, n(&h.state, "height") as u32)
+            }
+            None => (0, 0),
+        }
     }
 }
 
@@ -621,7 +846,7 @@ mod tests {
                 seen.lock()
                     .unwrap()
                     .push(json!({"method":method,"route":route,"body":body}));
-                if route.ends_with("/orientation") {
+                if route.ends_with("/orientation") && method == "POST" {
                     landscape = body["orientation"] == "LANDSCAPE";
                 }
                 let value = if route.ends_with("/window/size") {
@@ -630,6 +855,12 @@ mod tests {
                     } else {
                         json!({"width":390,"height":844})
                     }
+                } else if route.ends_with("/orientation") && method == "GET" {
+                    json!(if landscape { "LANDSCAPE" } else { "PORTRAIT" })
+                } else if route.ends_with("/wda/activeAppInfo") {
+                    json!({"bundleId":"com.apple.Preferences","name":"Settings","pid":411})
+                } else if route.ends_with("/elements") {
+                    json!([])
                 } else if route.ends_with("/screenshot") {
                     json!(
                         "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+jD1sAAAAASUVORK5CYII="
@@ -652,15 +883,21 @@ mod tests {
                 write!(socket,"HTTP/1.1 {status} OK\r\nContent-Type: application/json\r\nContent-Length: {}\r\nConnection: close\r\n\r\n{response}",response.len()).unwrap();
             }
         });
+        let epoch = Arc::new(std::sync::atomic::AtomicU64::new(0));
         let mut device = Iphone {
             rt: tokio::runtime::Runtime::new().unwrap(),
             http: Http { port },
             session: "test".into(),
             width: 0.0,
             height: 0.0,
+            orientation: String::new(),
+            epoch: epoch.clone(),
+            seen_epoch: 0,
+            size_requests: 0,
             gesture: Vec::new(),
             last_touch: None,
             video: None,
+            shared_state: None,
             _processes: Vec::new(),
             _lock: None,
         };
@@ -699,6 +936,38 @@ mod tests {
             device.call("GET", "/failure", None).unwrap_err().message,
             "field refused"
         );
+        // The point size was requested once at first use and once after the
+        // rotation; every tap, touch and fill in between used the cache.
+        assert_eq!(device.size_requests, 2);
+        let geometry = device.geometry().unwrap();
+        assert_eq!(geometry["point_width"], 844.0);
+        assert_eq!(geometry["orientation"], "landscape");
+        assert_eq!(geometry["rotation"], 1);
+        // A changed MJPEG frame size (the person turned the phone) invalidates it.
+        epoch.fetch_add(1, Ordering::Relaxed);
+        device
+            .input(&json!({"action":"tap","x":0.5,"y":0.25}))
+            .unwrap();
+        assert_eq!(device.size_requests, 3);
+        let context = device.context().unwrap();
+        assert_eq!(context["app"]["bundle_id"], "com.apple.Preferences");
+        assert_eq!(context["app"]["home_screen"], false);
+        assert_eq!(context["keyboard"]["visible"], false);
+        assert_eq!(context["focus"]["focused"], true);
+        assert_eq!(device.capabilities()["live_touch"], false);
+        let pinch = device
+            .input(&json!({"action":"pinch","x":0.5,"y":0.5,"scale":2.0,"duration":0.2}))
+            .unwrap();
+        assert_eq!(pinch["contacts"], 2);
+        let trace = device
+            .input(&json!({"action":"gesture","contacts":[{"points":[{"x":0.5,"y":0.8,"t_ms":0},{"x":0.5,"y":0.6,"t_ms":120},{"x":0.5,"y":0.2,"t_ms":400}]}]}))
+            .unwrap();
+        assert_eq!(trace["mode"], "atomic_trace");
+        assert!(
+            device
+                .input(&json!({"action":"gesture","contacts":[{"points":[{"x":0.5,"y":0.8,"t_ms":50},{"x":0.5,"y":0.6,"t_ms":0}]}]}))
+                .is_err()
+        );
         drop(device);
         stopped.store(true, Ordering::Relaxed);
         server.join().unwrap();
@@ -718,7 +987,8 @@ mod tests {
             .iter()
             .filter(|v| pointer(v).iter().any(|a| a["type"] == "pause"))
             .collect::<Vec<_>>();
-        assert_eq!(taps.len(), 2);
+        // Two taps of the scenario and the one after the frame size changed.
+        assert_eq!(taps.len(), 3);
         let at = |v: &Value| json!({"x":pointer(v)[0]["x"],"y":pointer(v)[0]["y"]});
         assert_eq!(at(taps[0]), json!({"x":97.0,"y":422.0}));
         assert_eq!(at(taps[1]), json!({"x":422.0,"y":97.0}));
@@ -739,7 +1009,32 @@ mod tests {
             .find(|v| !pointer(v).iter().any(|a| a["type"] == "pause"))
             .unwrap();
         assert_eq!(pointer(gesture).len(), 4);
+        // The pinch is one request with two touch pointers that move apart.
+        let pinch = actions
+            .iter()
+            .find(|v| v["body"]["actions"].as_array().is_some_and(|a| a.len() == 2))
+            .unwrap();
+        let finger = |i: usize| pinch["body"]["actions"][i]["actions"].clone();
+        assert!(finger(0)[0]["x"].as_f64().unwrap() > finger(0)[2]["x"].as_f64().unwrap());
+        assert!(finger(1)[0]["x"].as_f64().unwrap() < finger(1)[2]["x"].as_f64().unwrap());
+        assert_eq!(finger(0)[2]["duration"], 200);
+        // The trace keeps its timestamps as move durations.
+        let trace = actions
+            .iter()
+            .find(|v| pointer(v).len() == 5 && pointer(v)[2]["duration"] == 120)
+            .unwrap();
+        assert_eq!(pointer(trace)[3]["duration"], 280);
         assert_eq!(calls.last().unwrap()["method"], "DELETE");
+    }
+    #[test]
+    fn jpeg_sizes_are_read_from_the_start_of_frame_header() {
+        let mut jpeg = vec![0xff, 0xd8, 0xff, 0xe0, 0x00, 0x04, 0x4a, 0x46];
+        jpeg.extend([0xff, 0xc0, 0x00, 0x11, 0x08, 0x03, 0x4c, 0x01, 0x86, 0x03]);
+        jpeg.extend([0; 12]);
+        assert_eq!(jpeg_size(&jpeg), Some((390, 844)));
+        assert_eq!(jpeg_size(b"\xff\xd8\xff\xd9"), None);
+        assert_eq!(jpeg_size(b"\x89PNG"), None);
+        assert_eq!(orientation_facts("UIA_DEVICE_ORIENTATION_LANDSCAPERIGHT"), ("landscape", "landscape_right", 3));
     }
     #[test]
     fn fragmented_mjpeg_is_bounded_and_rejects_corrupt_frames() {

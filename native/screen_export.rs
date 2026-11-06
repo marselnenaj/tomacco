@@ -1129,6 +1129,9 @@ mod tests {
 
     struct Lines(&'static str);
     impl Recognizer for Lines {
+        fn cacheable(&self) -> bool {
+            false
+        }
         fn tsv(&mut self, _: &Path, _: &str) -> Result<String> {
             Ok(self.0.to_string())
         }

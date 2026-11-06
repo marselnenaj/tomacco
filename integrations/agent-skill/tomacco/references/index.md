@@ -2,7 +2,7 @@
 
 # Tomacco references
 
-274 operations in all, in 32 files, one per area. Read the file of the area you need, not all of them. Each operation lists its arguments (required first) and one example call; `tomaccoctl help OPERATION` prints the same with the full argument descriptions. [Error codes](errors.md).
+276 operations in all, in 32 files, one per area. Read the file of the area you need, not all of them. Each operation lists its arguments (required first) and one example call; `tomaccoctl help OPERATION` prints the same with the full argument descriptions. [Error codes](errors.md).
 
 | File | Operations | Areas and names |
 | --- | --- | --- |
@@ -29,7 +29,7 @@
 | [release](release.md) | 7 | Signing, version, notes and release checklist. `release.keystore`, `release.sign`, `release.verify`, … |
 | [remote](remote.md) | 6 | Remote build hosts. `remote.list`, `remote.configure`, `remote.check`, … |
 | [result](result.md) | 1 | Read a large result a call stored. `result.read` |
-| [runtime](runtime.md) | 8 | Runtime sessions for emulated devices. `runtime.start`, `runtime.list`, `runtime.audio`, … |
+| [runtime](runtime.md) | 10 | Runtime sessions for emulated devices. `runtime.start`, `runtime.list`, `runtime.audio`, … |
 | [screen](screen.md) | 8 | Understand a screen: marks, text recognition, tree, diff, waiting. `screen.marks`, `screen.tap`, `screen.tree`, … |
 | [settings](settings.md) | 2 | Tomacco settings and agent policy. `settings.get`, `settings.configure` |
 | [storage](storage.md) | 1 | Free disk space by pruning Tomacco's caches. `storage.prune` |

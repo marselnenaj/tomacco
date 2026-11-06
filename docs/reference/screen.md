@@ -14,7 +14,7 @@ Annotations: writes, idempotent, open world.
 
 | Argument | Type | Required | Default | Details |
 | --- | --- | --- | --- | --- |
-| `device` | string | yes |  | non-empty; Android serial from device.list, or virtual-iphone for the running virtual iPhone |
+| `device` | string | yes |  | non-empty; Android serial from device.list, virtual-iphone for the running virtual iPhone, or a runtime session ID from runtime.start (any connected session, including a USB iPhone: its WebDriverAgent hierarchy is read in screenshot pixels) |
 | `path` | string | yes |  | non-empty; Absolute path of the marked PNG to write; an existing file is replaced |
 | `source` | string |  | `"auto"` | one of `auto`, `hierarchy`, `ocr`; hierarchy reads the UI hierarchy (Android); ocr reads text off the screenshot with Tesseract (any screen, and the only way on the virtual iPhone); auto takes the hierarchy where there is one |
 | `max_marks` | integer |  | `60` | 1 to 200; Most marks; the first ones in reading order are kept and truncated says so |
@@ -41,7 +41,7 @@ Annotations: writes, not idempotent, open world.
 
 | Argument | Type | Required | Default | Details |
 | --- | --- | --- | --- | --- |
-| `device` | string | yes |  | non-empty; Android serial from device.list, or virtual-iphone for the running virtual iPhone |
+| `device` | string | yes |  | non-empty; Android serial from device.list, virtual-iphone for the running virtual iPhone, or a runtime session ID from runtime.start (any connected session, including a USB iPhone: its WebDriverAgent hierarchy is read in screenshot pixels) |
 | `mark` | integer | yes |  | 1 to 200; The mark's number in the last screen.marks result for this device |
 | `duration` | integer |  |  | 100 to 5000; Hold for this many milliseconds (a long press) instead of tapping |
 | `verify` | boolean |  | `true` | Check the screen still matches the mark before tapping; false taps where the mark was whatever is there now |
@@ -60,7 +60,7 @@ Annotations: writes, idempotent, open world.
 
 | Argument | Type | Required | Default | Details |
 | --- | --- | --- | --- | --- |
-| `device` | string | yes |  | non-empty; Android serial from device.list, or virtual-iphone for the running virtual iPhone |
+| `device` | string | yes |  | non-empty; Android serial from device.list, virtual-iphone for the running virtual iPhone, or a runtime session ID from runtime.start (any connected session, including a USB iPhone: its WebDriverAgent hierarchy is read in screenshot pixels) |
 | `max_chars` | integer |  | `6000` | 500 to 100000; Longest text, in characters |
 | `only_interactive` | boolean |  | `false` | Leave out text that cannot be pressed |
 | `xml_path` | string |  |  | non-empty; Also keep the UI hierarchy as UIAutomator XML at this absolute path, for screen.diff |
@@ -79,7 +79,7 @@ Annotations: read-only, idempotent, open world.
 
 | Argument | Type | Required | Default | Details |
 | --- | --- | --- | --- | --- |
-| `device` | string |  |  | non-empty; Android serial from device.list, or virtual-iphone for the running virtual iPhone |
+| `device` | string |  |  | non-empty; Android serial from device.list, virtual-iphone for the running virtual iPhone, or a runtime session ID from runtime.start (any connected session, including a USB iPhone: its WebDriverAgent hierarchy is read in screenshot pixels) |
 | `image` | string |  |  | non-empty; Absolute path of a PNG to read, instead of a device |
 | `text` | string |  |  | non-empty; Find these words, in this order, as whole words in one line |
 | `text_contains` | string |  |  | non-empty; Find this text inside a line, also as part of a word |
@@ -111,7 +111,7 @@ Annotations: read-only, idempotent, open world.
 | --- | --- | --- | --- | --- |
 | `before` | string | yes |  | non-empty; Absolute path of a .xml hierarchy, a .png screenshot, or a screen.export bundle (its directory or screen.json) |
 | `after` | string |  |  | non-empty; Absolute path of the second one, the same kind |
-| `device` | string |  |  | non-empty; Android serial from device.list, or virtual-iphone for the running virtual iPhone |
+| `device` | string |  |  | non-empty; Android serial from device.list, virtual-iphone for the running virtual iPhone, or a runtime session ID from runtime.start (any connected session, including a USB iPhone: its WebDriverAgent hierarchy is read in screenshot pixels) |
 | `tolerance` | integer |  | `24` | 0 to 255; A pixel counts as changed when a colour channel differs by more than this (screenshots) |
 | `ignore` | array of object |  |  | up to 100 items; Regions in screen pixels that are not compared, such as the status bar clock |
 | `ignore[].x` | integer | yes |  | at least 0 |
@@ -137,7 +137,7 @@ Annotations: read-only, idempotent, open world.
 
 | Argument | Type | Required | Default | Details |
 | --- | --- | --- | --- | --- |
-| `device` | string | yes |  | non-empty; Android serial from device.list, or virtual-iphone for the running virtual iPhone |
+| `device` | string | yes |  | non-empty; Android serial from device.list, virtual-iphone for the running virtual iPhone, or a runtime session ID from runtime.start (any connected session, including a USB iPhone: its WebDriverAgent hierarchy is read in screenshot pixels) |
 | `until` | string | yes |  | one of `text`, `text_gone`, `stable`; text: wait for it to appear; text_gone: wait for it to go; stable: wait for the screen to stop changing |
 | `text` | string |  |  | non-empty; The text, for text and text_gone |
 | `source` | string |  | `"auto"` | one of `auto`, `hierarchy`, `ocr`; hierarchy reads the UI hierarchy (Android); ocr reads text off the screenshot with Tesseract (any screen, and the only way on the virtual iPhone); auto takes the hierarchy where there is one |

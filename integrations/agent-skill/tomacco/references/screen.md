@@ -10,7 +10,7 @@ Mark tappable elements. writes, idempotent.
 
 Take a screenshot with numbered boxes over what can be tapped, and a list that says what each number is (label, text, description, resource id, class, bounds, centre), so a vision-capable agent can answer "tap 7" and call screen.tap. On Android the marks are the enabled clickable, long-clickable, checkable and editable elements of the UI hierarchy, in document order; content an app draws itself (a canvas, a game, much of a WebView) is not in it. On the virtual iPhone, which has no UI hierarchy, they are the lines of text Tesseract reads off the screenshot, each with its confidence (source ocr, which Android can use too): an icon without a label gets no mark, and text it misreads or misses is wrong or absent. The numbers belong to this look at the device; screen.tap checks the screen still matches before it taps. The result's path is the marked PNG, which MCP returns inline. Needs tesseract only for source ocr.
 
-- `device` string, required (non-empty): Android serial from device.list, or virtual-iphone for the running virtual iPhone
+- `device` string, required (non-empty): Android serial from device.list, virtual-iphone for the running virtual iPhone, or a runtime session ID from runtime.start (any connected session, including a…
 - `path` string, required (non-empty): Absolute path of the marked PNG to write; an existing file is replaced
 - `source` string (one of auto, hierarchy, ocr; default "auto"): hierarchy reads the UI hierarchy (Android); ocr reads text off the screenshot with Tesseract (any screen, and the only way on the virtual iPhone); auto takes…
 - `max_marks` integer (1 to 200; default 60): Most marks; the first ones in reading order are kept and truncated says so
@@ -29,7 +29,7 @@ Tap a mark. writes.
 
 Tap the centre of a numbered mark from the last screen.marks (or screen.tree) of this device. First it checks the screen still has what the mark was made from: on Android the same element (class, resource id, text and bounds) in the UI hierarchy; for a mark read by OCR, the pixels where it was, unchanged. If not it answers mark_stale and taps nothing, so a number never lands on another element after the screen moved on. Pass duration for a long press.
 
-- `device` string, required (non-empty): Android serial from device.list, or virtual-iphone for the running virtual iPhone
+- `device` string, required (non-empty): Android serial from device.list, virtual-iphone for the running virtual iPhone, or a runtime session ID from runtime.start (any connected session, including a…
 - `mark` integer, required (1 to 200): The mark's number in the last screen.marks result for this device
 - `duration` integer (100 to 5000): Hold for this many milliseconds (a long press) instead of tapping
 - `verify` boolean (default true): Check the screen still matches the mark before tapping; false taps where the mark was whatever is there now
@@ -44,7 +44,7 @@ Read UI tree as text. writes, idempotent.
 
 Read the Android UI hierarchy as a short indented text for a model's context: only the elements that carry text or a description, can be pressed or scroll, each with its class, text, id, bounds and state (checked, disabled, focused, editable), and #N on those screen.tap can tap. The first line says the screen size and the app's package. The text stops at max_chars with a last line that says how many nodes are missing. Android only: the virtual iPhone has no UI hierarchy (ui_hierarchy_unavailable); use screen.marks with source ocr there.
 
-- `device` string, required (non-empty): Android serial from device.list, or virtual-iphone for the running virtual iPhone
+- `device` string, required (non-empty): Android serial from device.list, virtual-iphone for the running virtual iPhone, or a runtime session ID from runtime.start (any connected session, including a…
 - `max_chars` integer (500 to 100000; default 6000): Longest text, in characters
 - `only_interactive` boolean (default false): Leave out text that cannot be pressed
 - `xml_path` string (non-empty): Also keep the UI hierarchy as UIAutomator XML at this absolute path, for screen.diff
@@ -59,7 +59,7 @@ Read text on screen. read-only, idempotent.
 
 Read the text on a device's screen or in a PNG with Tesseract, for screens that have no UI hierarchy: the virtual iPhone, games, WebViews. Answers every word and line with its box and Tesseract's confidence (0 to 100), and with text (whole words, any letter case) or text_contains (part of a word or line), the matches with their centre, ready to tap. The recognition is of pixels, not of controls: small, low-contrast or decorative text can be misread or missed, a space can be lost ("Signin"), and a picture with light and dark areas may need region. A dark theme is handled by also reading the inverted picture. Needs tesseract (capabilities.ocr says whether it is installed).
 
-- `device` string (non-empty): Android serial from device.list, or virtual-iphone for the running virtual iPhone
+- `device` string (non-empty): Android serial from device.list, virtual-iphone for the running virtual iPhone, or a runtime session ID from runtime.start (any connected session, including a…
 - `image` string (non-empty): Absolute path of a PNG to read, instead of a device
 - `text` string (non-empty): Find these words, in this order, as whole words in one line
 - `text_contains` string (non-empty): Find this text inside a line, also as part of a word
@@ -83,7 +83,7 @@ Describe what changed between two screens in structured form. before and after a
 
 - `before` string, required (non-empty): Absolute path of a .xml hierarchy, a .png screenshot, or a screen.export bundle (its directory or screen.json)
 - `after` string (non-empty): Absolute path of the second one, the same kind
-- `device` string (non-empty): Android serial from device.list, or virtual-iphone for the running virtual iPhone
+- `device` string (non-empty): Android serial from device.list, virtual-iphone for the running virtual iPhone, or a runtime session ID from runtime.start (any connected session, including a…
 - `tolerance` integer (0 to 255; default 24): A pixel counts as changed when a colour channel differs by more than this (screenshots)
 - `ignore` array of object {x, y, width, height} (up to 100 items): Regions in screen pixels that are not compared, such as the status bar clock
 - `max_regions` integer (1 to 100; default 12): Most regions, or elements per list, to describe
@@ -101,7 +101,7 @@ Wait for text or a steady screen. read-only, idempotent.
 
 Wait until text is on the screen, is gone, or the screen has stopped changing, polling every interval_ms. text and text_gone look in the UI hierarchy's text and descriptions where there is one (Android, case-insensitive, part of a text) and otherwise read the screenshot with Tesseract; source forces one. stable takes screenshots until stable_ms pass with at most threshold of the pixels (outside ignore) changed from one to the next, and answers screen_unstable with the last changed fraction when a video, animation or spinner keeps going. A timeout answers text_timeout or screen_unstable with what was seen. The same waits are the wait_text and wait_stable steps of testing.run scenarios.
 
-- `device` string, required (non-empty): Android serial from device.list, or virtual-iphone for the running virtual iPhone
+- `device` string, required (non-empty): Android serial from device.list, virtual-iphone for the running virtual iPhone, or a runtime session ID from runtime.start (any connected session, including a…
 - `until` string, required (one of text, text_gone, stable): text: wait for it to appear; text_gone: wait for it to go; stable: wait for the screen to stop changing
 - `text` string (non-empty): The text, for text and text_gone
 - `source` string (one of auto, hierarchy, ocr; default "auto"): hierarchy reads the UI hierarchy (Android); ocr reads text off the screenshot with Tesseract (any screen, and the only way on the virtual iPhone); auto takes…

@@ -762,6 +762,32 @@ accessible field at x/y with any Unicode. Apple rotation needs an explicit orien
 **Evidence.** `runtime.capture` and `runtime.hierarchy` give real app and OS evidence. `device.capture` waits for a screenshot, and
 `device.screenshot` is the asynchronous form.
 
+**One fresh look.** `runtime.observe` is the call to make before acting: it answers the frame as a PNG with its `id` (the first 16 hex
+digits of its SHA-256), `captured_at`, `capture_ms` and `age_ms` (0 at capture; add the time since `captured_at` before you act on it), the
+geometry the frame was taken in (`width`, `height`, `orientation`, `rotation`, and for an iPhone the point size and `scale`) with the
+coordinate spaces, the foreground `app` with `home_screen`, the `keyboard`, the input `focus`, the transport's `input_capabilities` and a
+one-line `context`. Each part names its source, and what the transport cannot observe is `{"available":false,"reason":...}`, never a
+guess: Android reads `dumpsys window` and `dumpsys input_method`; a USB iPhone asks WebDriverAgent for the active app, a keyboard
+element and the active element; the Simulator reports neither app nor keyboard; AirPlay captures no frame at all. Over MCP the PNG is
+embedded like `runtime.capture`.
+
+**Input capabilities.** `runtime.state` carries `input_capabilities`: whether touch streams live (`live_touch`, Android, the Simulator,
+AirPlay) or is buffered and sent as one atomic request on touch-up (`atomic_trace`, the USB iPhone, where there is no live drag over
+WebDriverAgent), `max_contacts`, `pinch`, `fill`, `rotate`, `capture` and `hierarchy`. `runtime.gesture` sends timestamped traces (one to
+five contacts, each 2 to 240 points with `t_ms`); its answer says `mode: atomic_trace` or `live`. `pinch` (`x`, `y`, `scale`, `duration`)
+works on the USB iPhone as two WebDriverAgent touch pointers and on Android as two scrcpy pointers; neither has been run on hardware here
+yet. A USB iPhone's point size is read once and again only after a rotation or when the MJPEG frames change size, so a tap costs one
+request, and a phone the person turned is never mapped with the old size.
+
+**Screens on a session.** Every `screen.*` operation takes a runtime session ID as its `device`, so a USB iPhone gets `screen.marks`,
+`screen.tap`, `screen.tree`, `screen.ocr`, `screen.wait`, `screen.diff` and `screen.export` too: its WebDriverAgent hierarchy is converted
+to the same node format with bounds in screenshot pixels. Marks carry the `frame_id` and size they were made on; a tap after the screen
+turned answers `mark_stale` naming the rotation and taps nothing.
+
+**An offline stand-in.** With `TOMACCO_FIXTURE_RUNTIME` naming a directory of scenarios, `runtime.start` with `device:"fixture:NAME"`
+connects a scripted device (`transport: "fixture"`, `evidence: "fixture"` everywhere) for tests and `tools/benchmark_agent_loop.py`.
+Nothing measured on it is a device's performance.
+
 **Sockets.** Most agents should use the operations; the desktop uses these to avoid a process per pointer move.
 
 - `video_socket` emits repeated **u32 big-endian length + payload**. `codec` selects `h264` (Annex-B) or `mjpeg` (one JPEG per payload). It can have
@@ -1010,7 +1036,8 @@ that one screen fixed the baseline. Kover and the `jacoco` plugin are unit-teste
 ### Seeing the screen
 
 Eight operations help an agent understand what is on a screen instead of guessing coordinates. They work on an Android
-serial and on `virtual-iphone`; a USB iPhone is not covered. On Android they read the UI hierarchy. The virtual iPhone has
+serial, on `virtual-iphone` and on a runtime session ID from `runtime.start`, which covers a USB iPhone through its
+WebDriverAgent hierarchy. On Android they read the UI hierarchy. The virtual iPhone has
 none, only pixels, so there they read the screenshot with Tesseract OCR. Install `tesseract` and its English data for
 that (`capabilities` returns `ocr` with `ready` and `missing`; `TOMACCO_TESSERACT` names another executable). Every
 result that came from OCR says `source:"ocr"` and carries Tesseract's confidence. OCR reads pixels, not controls: small,

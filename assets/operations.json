@@ -2098,7 +2098,7 @@
         "device": {
           "type": "string",
           "minLength": 1,
-          "description": "Android serial from device.list, or virtual-iphone for the running virtual iPhone"
+          "description": "Android serial from device.list, virtual-iphone for the running virtual iPhone, or a runtime session ID from runtime.start (any connected session, including a USB iPhone: its WebDriverAgent hierarchy is read in screenshot pixels)"
         },
         "path": {
           "type": "string",
@@ -2193,7 +2193,7 @@
         "device": {
           "type": "string",
           "minLength": 1,
-          "description": "Android serial from device.list, or virtual-iphone for the running virtual iPhone"
+          "description": "Android serial from device.list, virtual-iphone for the running virtual iPhone, or a runtime session ID from runtime.start (any connected session, including a USB iPhone: its WebDriverAgent hierarchy is read in screenshot pixels)"
         },
         "mark": {
           "type": "integer",
@@ -2236,7 +2236,7 @@
         "device": {
           "type": "string",
           "minLength": 1,
-          "description": "Android serial from device.list, or virtual-iphone for the running virtual iPhone"
+          "description": "Android serial from device.list, virtual-iphone for the running virtual iPhone, or a runtime session ID from runtime.start (any connected session, including a USB iPhone: its WebDriverAgent hierarchy is read in screenshot pixels)"
         },
         "max_chars": {
           "type": "integer",
@@ -2278,7 +2278,7 @@
         "device": {
           "type": "string",
           "minLength": 1,
-          "description": "Android serial from device.list, or virtual-iphone for the running virtual iPhone"
+          "description": "Android serial from device.list, virtual-iphone for the running virtual iPhone, or a runtime session ID from runtime.start (any connected session, including a USB iPhone: its WebDriverAgent hierarchy is read in screenshot pixels)"
         },
         "image": {
           "type": "string",
@@ -2396,7 +2396,7 @@
         "device": {
           "type": "string",
           "minLength": 1,
-          "description": "Android serial from device.list, or virtual-iphone for the running virtual iPhone"
+          "description": "Android serial from device.list, virtual-iphone for the running virtual iPhone, or a runtime session ID from runtime.start (any connected session, including a USB iPhone: its WebDriverAgent hierarchy is read in screenshot pixels)"
         },
         "tolerance": {
           "type": "integer",
@@ -2486,7 +2486,7 @@
         "device": {
           "type": "string",
           "minLength": 1,
-          "description": "Android serial from device.list, or virtual-iphone for the running virtual iPhone"
+          "description": "Android serial from device.list, virtual-iphone for the running virtual iPhone, or a runtime session ID from runtime.start (any connected session, including a USB iPhone: its WebDriverAgent hierarchy is read in screenshot pixels)"
         },
         "until": {
           "type": "string",
@@ -9606,7 +9606,7 @@
   {
     "name": "runtime.start",
     "title": "Connect native runtime",
-    "description": "Start or reuse the single native display session for this device. Repeated calls return its existing session ID. Supports Android, physical iPhone from Linux, and Apple Simulator on an optional SSH Mac.",
+    "description": "Start or reuse the single native display session for this device. Repeated calls return its existing session ID. Supports Android, physical iPhone from Linux, and Apple Simulator on an optional SSH Mac. With TOMACCO_FIXTURE_RUNTIME set, device fixture:NAME connects the offline scripted fixture of that name (transport fixture, evidence fixture), for tests and the benchmark runner only.",
     "inputSchema": {
       "type": "object",
       "properties": {
@@ -9728,7 +9728,7 @@
   {
     "name": "runtime.state",
     "title": "Runtime status",
-    "description": "Read actual runtime dimensions, video counters and transport errors.",
+    "description": "Read actual runtime dimensions, video counters, transport errors and input_capabilities: whether touch streams live or is sent as an atomic trace, how many contacts, pinch, fill, rotate, capture and hierarchy.",
     "inputSchema": {
       "type": "object",
       "properties": {
@@ -9778,7 +9778,7 @@
   {
     "name": "runtime.input",
     "title": "Native input",
-    "description": "Deliver native input using normalized 0..1 coordinates. Android supports touch/tap/swipe/key/text/rotate; text pastes UTF-8. Physical iPhone uses WDA for Unicode text/fill, tap/swipe/rotate and gestures committed on touch-up; pinch/shake/hinge are unsupported there. Apple Simulator supports ASCII HID text and Unicode accessible fill; extra gestures depend on the companion. Pass decoded width/height after Simulator rotation. An AirPlay session (device airplay) drives the iPhone as a Bluetooth pointer and US-layout keyboard once it is paired with Tomacco and AssistiveTouch is on: touch moves the pointer relatively, hover moves it without a button, cancel without a button forgets the last position; tap, swipe, text and the keys home, volume_up, volume_down, enter, escape, backspace, delete, tab and the arrows work.",
+    "description": "Deliver native input using normalized 0..1 coordinates. Android supports touch/tap/swipe/key/text/rotate; text pastes UTF-8. Physical iPhone uses WDA for Unicode text/fill, tap/swipe/rotate, a two-finger pinch (x, y, scale, duration) and gestures committed as one atomic request on touch-up; shake/hinge are unsupported there. Android also takes pinch, as two scrcpy pointers. Apple Simulator supports ASCII HID text and Unicode accessible fill; extra gestures depend on the companion. Pass decoded width/height after Simulator rotation. An AirPlay session (device airplay) drives the iPhone as a Bluetooth pointer and US-layout keyboard once it is paired with Tomacco and AssistiveTouch is on: touch moves the pointer relatively, hover moves it without a button, cancel without a button forgets the last position; tap, swipe, text and the keys home, volume_up, volume_down, enter, escape, backspace, delete, tab and the arrows work. runtime.state answers input_capabilities per transport; runtime.gesture sends timestamped traces.",
     "inputSchema": {
       "type": "object",
       "properties": {
@@ -9957,6 +9957,114 @@
       "readOnlyHint": true,
       "destructiveHint": false,
       "idempotentHint": true,
+      "openWorldHint": true
+    }
+  },
+  {
+    "name": "runtime.observe",
+    "title": "Observe a session",
+    "description": "One fresh look at a connected session, for an agent about to act: a full-resolution PNG frame with its id (the first 16 hex digits of its SHA-256), captured_at, capture_ms and age_ms (0 at capture; add the time since captured_at before acting), the geometry the frame was taken in (width, height, orientation, rotation, and for an iPhone the point size and scale) with the coordinate spaces inputs and screen.* use, the foreground app with home_screen, the keyboard, the input focus, the transport's input_capabilities and a one-line context. Every part names its source. What the transport cannot observe is {available:false, reason}, never a guess: Android reads dumpsys window and dumpsys input_method, a USB iPhone asks WebDriverAgent for the active app, a keyboard element and the active element, the Simulator and AirPlay report no app or keyboard, and AirPlay captures no frame. Over MCP the PNG is embedded. A fixture session answers evidence fixture.",
+    "inputSchema": {
+      "type": "object",
+      "properties": {
+        "session": {
+          "type": "string",
+          "pattern": "^[a-f0-9]{32}$",
+          "description": "ID returned by runtime.start; separate from desktop preview sessions."
+        },
+        "path": {
+          "type": "string",
+          "minLength": 1,
+          "description": "Absolute PNG path for the frame; by default observe.png in the session's directory, replaced each time"
+        },
+        "context": {
+          "type": "boolean",
+          "default": true,
+          "description": "Also read the foreground app, keyboard and focus (one or two transport calls); false answers the frame and geometry only"
+        }
+      },
+      "required": [
+        "session"
+      ],
+      "additionalProperties": false
+    },
+    "annotations": {
+      "readOnlyHint": false,
+      "destructiveHint": false,
+      "idempotentHint": false,
+      "openWorldHint": true
+    }
+  },
+  {
+    "name": "runtime.gesture",
+    "title": "Timestamped gesture trace",
+    "description": "Deliver one or more contacts as timestamped traces in 0..1 of the frame: each contact's points with t_ms from its touch-down. The answer's mode says what the transport did: atomic_trace (a USB iPhone submits the whole trace as one WebDriverAgent actions request, deterministic but not live) or live (Android, the Simulator and the fixture replay the events with host timing, one contact after another by time). Multi-contact traces need a transport whose input_capabilities (runtime.state) allow it; AirPlay answers an error. Use runtime.input touch for an interactive drag that follows a pointer.",
+    "inputSchema": {
+      "type": "object",
+      "properties": {
+        "session": {
+          "type": "string",
+          "pattern": "^[a-f0-9]{32}$",
+          "description": "ID returned by runtime.start; separate from desktop preview sessions."
+        },
+        "contacts": {
+          "type": "array",
+          "minItems": 1,
+          "maxItems": 5,
+          "description": "The fingers, each a trace of 2 to 240 points",
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "points"
+            ],
+            "properties": {
+              "points": {
+                "type": "array",
+                "minItems": 2,
+                "maxItems": 240,
+                "items": {
+                  "type": "object",
+                  "additionalProperties": false,
+                  "required": [
+                    "x",
+                    "y",
+                    "t_ms"
+                  ],
+                  "properties": {
+                    "x": {
+                      "type": "number",
+                      "minimum": 0,
+                      "maximum": 1
+                    },
+                    "y": {
+                      "type": "number",
+                      "minimum": 0,
+                      "maximum": 1
+                    },
+                    "t_ms": {
+                      "type": "integer",
+                      "minimum": 0,
+                      "maximum": 10000,
+                      "description": "Milliseconds since this contact touched down; non-decreasing"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "required": [
+        "session",
+        "contacts"
+      ],
+      "additionalProperties": false
+    },
+    "annotations": {
+      "readOnlyHint": false,
+      "destructiveHint": false,
+      "idempotentHint": false,
       "openWorldHint": true
     }
   },

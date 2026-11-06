@@ -2,13 +2,13 @@
 
 # `runtime` operations
 
-8 operations. Generated from `assets/operations.json`; [all references](index.md).
+10 operations. Generated from `assets/operations.json`; [all references](index.md).
 
 ### runtime.start
 
 Connect native runtime. writes, idempotent.
 
-Start or reuse the single native display session for this device. Repeated calls return its existing session ID. Supports Android, physical iPhone from Linux, and Apple Simulator on an optional SSH Mac.
+Start or reuse the single native display session for this device. Repeated calls return its existing session ID. Supports Android, physical iPhone from Linux, and Apple Simulator on an optional SSH Mac. With TOMACCO_FIXTURE_RUNTIME set, device fixture:NAME connects the offline scripted fixture of that name (transport fixture, evidence fixture), for tests and the benchmark runner only.
 
 - `platform` string, required (one of android, ios)
 - `device` string, required (non-empty, up to 200 characters)
@@ -53,7 +53,7 @@ tomaccoctl call runtime.audio '{"session":"<session>"}'
 
 Runtime status. read-only, idempotent.
 
-Read actual runtime dimensions, video counters and transport errors.
+Read actual runtime dimensions, video counters, transport errors and input_capabilities: whether touch streams live or is sent as an atomic trace, how many contacts, pinch, fill, rotate, capture and hierarchy.
 
 - `session` string, required (matching `^[a-f0-9]{32}$`): ID returned by runtime.start; separate from desktop preview sessions.
 
@@ -77,7 +77,7 @@ tomaccoctl call runtime.stop '{"session":"<session>"}'
 
 Native input. writes.
 
-Deliver native input using normalized 0..1 coordinates. Android supports touch/tap/swipe/key/text/rotate; text pastes UTF-8. Physical iPhone uses WDA for Unicode text/fill, tap/swipe/rotate and gestures committed on touch-up; pinch/shake/hinge are unsupported there. Apple Simulator supports ASCII HID text and Unicode accessible fill; extra gestures depend on the companion. Pass decoded width/height after Simulator rotation. An AirPlay session (device airplay) drives the iPhone as a Bluetooth pointer and US-layout keyboard once it is paired with Tomacco and AssistiveTouch is on: touch moves the pointer relatively, hover moves it without a button, cancel without a button forgets the last position; tap, swipe, text and the keys home, volume_up, volume_down, enter, escape, backspace, delete, tab and the arrows work.
+Deliver native input using normalized 0..1 coordinates. Android supports touch/tap/swipe/key/text/rotate; text pastes UTF-8. Physical iPhone uses WDA for Unicode text/fill, tap/swipe/rotate, a two-finger pinch (x, y, scale, duration) and gestures committed as one atomic request on touch-up; shake/hinge are unsupported there. Android also takes pinch, as two scrcpy pointers. Apple Simulator supports ASCII HID text and Unicode accessible fill; extra gestures depend on the companion. Pass decoded width/height after Simulator rotation. An AirPlay session (device airplay) drives the iPhone as a Bluetooth pointer and US-layout keyboard once it is paired with Tomacco and AssistiveTouch is on: touch moves the pointer relatively, hover moves it without a button, cancel without a button forgets the last position; tap, swipe, text and the keys home, volume_up, volume_down, enter, escape, backspace, delete, tab and the arrows work. runtime.state answers input_capabilities per transport; runtime.gesture sends timestamped traces.
 
 - `session` string, required (matching `^[a-f0-9]{32}$`): ID returned by runtime.start; separate from desktop preview sessions.
 - `action` string, required (one of touch, tap, swipe, key, text, fill, rotate, shake, pinch, hinge)
@@ -122,4 +122,31 @@ Read Android UI XML, the physical iPhone WDA XML hierarchy or the iOS Simulator 
 
 ```sh
 tomaccoctl call runtime.hierarchy '{"session":"<session>"}'
+```
+
+### runtime.observe
+
+Observe a session. writes.
+
+One fresh look at a connected session, for an agent about to act: a full-resolution PNG frame with its id (the first 16 hex digits of its SHA-256), captured_at, capture_ms and age_ms (0 at capture; add the time since captured_at before acting), the geometry the frame was taken in (width, height, orientation, rotation, and for an iPhone the point size and scale) with the coordinate spaces inputs and screen.* use, the foreground app with home_screen, the keyboard, the input focus, the transport's input_capabilities and a one-line context. Every part names its source. What the transport cannot observe is {available:false, reason}, never a guess: Android reads dumpsys window and dumpsys input_method, a USB iPhone asks WebDriverAgent for the active app, a keyboard element and the active element, the Simulator and AirPlay report no app or keyboard, and AirPlay captures no frame. Over MCP the PNG is embedded. A fixture session answers evidence fixture.
+
+- `session` string, required (matching `^[a-f0-9]{32}$`): ID returned by runtime.start; separate from desktop preview sessions.
+- `path` string (non-empty): Absolute PNG path for the frame; by default observe.png in the session's directory, replaced each time
+- `context` boolean (default true): Also read the foreground app, keyboard and focus (one or two transport calls); false answers the frame and geometry only
+
+```sh
+tomaccoctl call runtime.observe '{"session":"<session>"}'
+```
+
+### runtime.gesture
+
+Timestamped gesture trace. writes.
+
+Deliver one or more contacts as timestamped traces in 0..1 of the frame: each contact's points with t_ms from its touch-down. The answer's mode says what the transport did: atomic_trace (a USB iPhone submits the whole trace as one WebDriverAgent actions request, deterministic but not live) or live (Android, the Simulator and the fixture replay the events with host timing, one contact after another by time). Multi-contact traces need a transport whose input_capabilities (runtime.state) allow it; AirPlay answers an error. Use runtime.input touch for an interactive drag that follows a pointer.
+
+- `session` string, required (matching `^[a-f0-9]{32}$`): ID returned by runtime.start; separate from desktop preview sessions.
+- `contacts` array of object {points}, required (1 to 5 items): The fingers, each a trace of 2 to 240 points
+
+```sh
+tomaccoctl call runtime.gesture '{"session":"<session>","contacts":[{"points":[{"x":0,"y":0,"t_ms":0},{"x":0,"y":0,"t_ms":0}]}]}'
 ```

@@ -467,6 +467,10 @@
     "cause": "PMP bundle changed after submission.",
     "remedy": "Read the message; ios.virtual.status and the job's log show the device's state, and docs/virtual-ios/troubleshooting.md lists known causes."
   },
+  "fixture_runtime": {
+    "cause": "The offline fixture runtime was asked for but is off, or its scenario is missing or broken.",
+    "remedy": "Set TOMACCO_FIXTURE_RUNTIME to the directory that holds NAME/scenario.json, or connect a real device instead; the fixture is for tests and benchmarks only."
+  },
   "flutter_ios_missing": {
     "cause": "This is not a Flutter project with an ios directory.",
     "remedy": "Run flutter create --platforms ios . in the project."

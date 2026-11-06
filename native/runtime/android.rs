@@ -77,6 +77,8 @@ pub struct Android {
     video: TcpStream,
     shared: Shared,
     device: String,
+    /// The launcher's package, read once, to tell the Home Screen from an app.
+    launcher: Option<Option<String>>,
     _server: ManagedProcess,
     _forward: Forward,
 }
@@ -238,6 +240,7 @@ pub fn connect(a: &Value, shared: Shared, dir: &Path) -> Result<Android> {
         video,
         shared,
         device: device.into(),
+        launcher: None,
         _server: server,
         _forward: guard,
     })
@@ -413,16 +416,56 @@ fn dimensions(header: &[u8; 12]) -> Result<(u32, u32)> {
     }
     Ok((width, height))
 }
+/// What `dumpsys input_method` says about the keyboard and the edited field:
+/// whether the soft keyboard is shown, and whether an editor (a field with a
+/// non-zero inputType) is attached to the input method, which also holds
+/// with a hardware keyboard that keeps the soft one hidden.
+pub fn keyboard_state(dump: &str) -> (Option<bool>, Option<bool>) {
+    let shown = dump
+        .lines()
+        .find_map(|line| line.trim().strip_prefix("mInputShown="))
+        .map(|v| v.trim().starts_with("true"));
+    let input_type = regex::Regex::new(r"inputType=(?:0x)?([0-9a-fA-F]+)").unwrap();
+    let editor = dump
+        .lines()
+        .filter(|line| line.contains("mCurAttribute") || line.contains("mCurEditorInfo") || line.contains("mEditorInfo"))
+        .find_map(|line| {
+            input_type
+                .captures(line)
+                .and_then(|c| u64::from_str_radix(&c[1], 16).ok().or_else(|| c[1].parse().ok()))
+        })
+        .map(|v| v != 0);
+    (shown, editor)
+}
+/// The launcher's package from `cmd package resolve-activity --brief`.
+pub fn launcher_package(output: &str) -> Option<String> {
+    output
+        .lines()
+        .map(str::trim)
+        .filter(|line| line.contains('/'))
+        .last()
+        .and_then(|line| line.split('/').next())
+        .filter(|p| !p.is_empty() && p.chars().all(|c| c.is_ascii_alphanumeric() || c == '.' || c == '_'))
+        .map(String::from)
+}
 impl Android {
+    fn shell(&self, args: &[&str], timeout: u64) -> Result<String> {
+        crate::perf::shell_out(&self.device, args, timeout)
+    }
     fn touch(&mut self, a: &Value, phase: u8) -> Result<()> {
+        self.touch_pointer(0, number(a, "x"), number(a, "y"), phase)
+    }
+    /// One touch event of pointer `id`, at 0..1 of the display. scrcpy turns
+    /// a down or up of a second pointer into ACTION_POINTER_DOWN/UP itself.
+    fn touch_pointer(&mut self, id: u64, nx: f64, ny: f64, phase: u8) -> Result<()> {
         let h = self.shared.lock().unwrap();
         let width = n(&h.state, "width") as u16;
         let height = n(&h.state, "height") as u16;
-        let x = (number(a, "x") * f64::from(width - 1)).round() as u32;
-        let y = (number(a, "y") * f64::from(height - 1)).round() as u32;
+        let x = (nx.clamp(0.0, 1.0) * f64::from(width.max(1) - 1)).round() as u32;
+        let y = (ny.clamp(0.0, 1.0) * f64::from(height.max(1) - 1)).round() as u32;
         drop(h);
         let mut packet = vec![2, phase];
-        packet.extend(0u64.to_be_bytes());
+        packet.extend(id.to_be_bytes());
         packet.extend(x.to_be_bytes());
         packet.extend(y.to_be_bytes());
         packet.extend(width.to_be_bytes());
@@ -510,6 +553,56 @@ impl Device for Android {
                 self.control.write_all(&clipboard_packet(0, s(a, "text")))?;
             }
             "rotate" => self.control.write_all(&[11])?,
+            "pinch" => {
+                require(a, &["x", "y", "scale"])?;
+                // Two fingers either side of the centre, moved apart (scale > 1)
+                // or together, as separate scrcpy pointers 1 and 2.
+                let (cx, cy) = (number(a, "x"), number(a, "y"));
+                let scale = number(a, "scale").clamp(0.05, 20.0);
+                let duration = a["duration"].as_f64().unwrap_or(0.3).clamp(0.05, 5.0);
+                let (from, to) = if scale >= 1.0 {
+                    (0.08, (0.08 * scale).min(0.45))
+                } else {
+                    (0.3, (0.3 * scale).max(0.02))
+                };
+                let steps = (duration * 60.0).ceil().max(2.0) as u32;
+                self.touch_pointer(1, cx - from, cy, 0)?;
+                self.touch_pointer(2, cx + from, cy, 0)?;
+                for i in 1..=steps {
+                    let t = f64::from(i) / f64::from(steps);
+                    let d = from + (to - from) * t;
+                    thread::sleep(Duration::from_secs_f64(duration / f64::from(steps)));
+                    self.touch_pointer(1, cx - d, cy, 2)?;
+                    self.touch_pointer(2, cx + d, cy, 2)?;
+                }
+                self.touch_pointer(1, cx - to, cy, 1)?;
+                self.touch_pointer(2, cx + to, cy, 1)?;
+            }
+            "gesture" => {
+                // A timestamped trace replayed live, contact by contact in
+                // time order: scrcpy has no atomic multi-event submission.
+                let contacts = super::check_gesture(a)?;
+                let mut events: Vec<(u64, u64, f64, f64, u8)> = Vec::new();
+                for (id, trace) in contacts.iter().enumerate() {
+                    let last = trace.len() - 1;
+                    for (i, (x, y, t)) in trace.iter().enumerate() {
+                        let phase = if i == 0 { 0 } else if i == last { 1 } else { 2 };
+                        events.push((*t, id as u64 + 1, *x, *y, phase));
+                    }
+                }
+                events.sort_by_key(|e| e.0);
+                let started = Instant::now();
+                for (t, id, x, y, phase) in events {
+                    let due = started + Duration::from_millis(t);
+                    let now = Instant::now();
+                    if due > now {
+                        thread::sleep(due - now);
+                    }
+                    self.touch_pointer(id, x, y, phase)?;
+                }
+                return Ok(json!({"delivered":true,"mode":"live","contacts":contacts.len(),
+                    "elapsed_ms":started.elapsed().as_millis() as u64}));
+            }
             _ => {
                 return Err(Error::new(
                     "unsupported_input",
@@ -526,6 +619,65 @@ impl Device for Android {
     }
     fn hierarchy(&mut self) -> Result {
         devices::handle("android.hierarchy", &json!({"device":self.device}))
+    }
+    fn geometry(&mut self) -> Result {
+        // scrcpy sends a new display header whenever the display turns, and
+        // the video thread records it: no adb call is needed.
+        let h = self.shared.lock().unwrap();
+        let (width, height) = (n(&h.state, "width") as u32, n(&h.state, "height") as u32);
+        drop(h);
+        Ok(json!({"width":width,"height":height,"orientation":super::derived_orientation(width, height),
+            "rotation":Value::Null,"source":"scrcpy display header","coordinate_space":super::coordinate_space()}))
+    }
+    fn context(&mut self) -> Result {
+        let app = match self.shell(&["dumpsys", "window"], 15) {
+            Ok(dump) => {
+                let window = crate::screen_export::parse_window(&dump);
+                match window.package {
+                    Some(package) => {
+                        if self.launcher.is_none() {
+                            self.launcher = Some(
+                                self.shell(&["cmd", "package", "resolve-activity", "--brief", "-a", "android.intent.action.MAIN", "-c", "android.intent.category.HOME"], 15)
+                                    .ok()
+                                    .and_then(|o| launcher_package(&o)),
+                            );
+                        }
+                        let home = self.launcher.as_ref().and_then(|l| l.as_ref().map(|l| *l == package));
+                        json!({"available":true,"bundle_id":package,"name":Value::Null,"activity":window.activity,
+                            "home_screen":home,"rotation":window.rotation,"source":"dumpsys window"})
+                    }
+                    None => super::unavailable("dumpsys window named no focused app"),
+                }
+            }
+            Err(error) => super::unavailable(&format!("dumpsys window failed: {}", error.message)),
+        };
+        let (keyboard, focus) = match self.shell(&["dumpsys", "input_method"], 15) {
+            Ok(dump) => {
+                let (shown, editor) = keyboard_state(&dump);
+                let keyboard = match shown {
+                    Some(visible) => json!({"available":true,"visible":visible,"source":"dumpsys input_method (mInputShown)"}),
+                    None => super::unavailable("dumpsys input_method reported no mInputShown"),
+                };
+                let focus = match (editor, shown) {
+                    (Some(attached), _) => json!({"available":true,"focused":attached,"source":"dumpsys input_method (editor inputType)"}),
+                    (None, Some(true)) => json!({"available":true,"focused":true,"source":"dumpsys input_method (keyboard shown)"}),
+                    _ => super::unavailable("dumpsys input_method reported no attached editor"),
+                };
+                (keyboard, focus)
+            }
+            Err(error) => {
+                let reason = format!("dumpsys input_method failed: {}", error.message);
+                (super::unavailable(&reason), super::unavailable(&reason))
+            }
+        };
+        Ok(json!({"app":app,"keyboard":keyboard,"focus":focus}))
+    }
+    fn capabilities(&self) -> Value {
+        json!({"transport":"adb/scrcpy-4.1","evidence":"device","capture":true,"hierarchy":true,
+            "live_touch":true,"atomic_trace":false,"max_contacts":10,"pinch":true,"fill":false,
+            "text":"clipboard paste (UTF-8)","rotate":"toggle","exact_scroll":true,
+            "keys":["home","back","escape","enter","backspace","delete","tab","up","down","left","right","power","volume_up","volume_down","apps"],
+            "note":"Touch streams live over scrcpy; a gesture trace is replayed with host timing, not submitted atomically. Pinch and multi-contact use scrcpy pointer ids and are not yet hardware-qualified here."})
     }
 }
 
@@ -578,6 +730,20 @@ mod tests {
         let length = u32::from_be_bytes(packet[10..14].try_into().unwrap()) as usize;
         assert_eq!(length, "Grüße 👋".len());
         assert_eq!(std::str::from_utf8(&packet[14..]).unwrap(), "Grüße 👋");
+    }
+
+    #[test]
+    fn the_keyboard_and_editor_are_read_from_dumpsys_input_method() {
+        let dump = "  mCurFocusedWindow=Window{1 u0 com.example/com.example.Main}\n  mCurAttribute=android.view.inputmethod.EditorInfo@1 inputType=0x20001 imeOptions=0x6\n  mInputShown=true\n";
+        assert_eq!(keyboard_state(dump), (Some(true), Some(true)));
+        let hidden = "  mCurAttribute=EditorInfo inputType=0x0\n  mInputShown=false\n";
+        assert_eq!(keyboard_state(hidden), (Some(false), Some(false)));
+        assert_eq!(keyboard_state("nothing here"), (None, None));
+        assert_eq!(
+            launcher_package("priority=-1000 preferredOrder=0 match=0x108000\ncom.google.android.apps.nexuslauncher/.NexusLauncherActivity\n"),
+            Some("com.google.android.apps.nexuslauncher".into())
+        );
+        assert_eq!(launcher_package("No activity found"), None);
     }
 
     #[test]

@@ -517,6 +517,13 @@ impl Device for Airplay {
     fn hierarchy(&mut self) -> Result {
         Err(err("AirPlay mirroring has no accessibility tree"))
     }
+    fn capabilities(&self) -> Value {
+        json!({"transport":"wifi/airplay","evidence":"device","capture":false,"hierarchy":false,
+            "live_touch":true,"atomic_trace":false,"max_contacts":1,"pinch":false,"fill":"types into the focused field",
+            "text":"US-layout keys","rotate":false,"exact_scroll":"pointer drag",
+            "keys":["home","volume_up","volume_down","enter","escape","backspace","tab","delete","right","left","down","up"],
+            "note":"A Bluetooth pointer with AssistiveTouch: one contact, live. Screenshots come from the desktop window, not this session; runtime.observe and screen.* on this session answer an error."})
+    }
 }
 
 #[cfg(test)]

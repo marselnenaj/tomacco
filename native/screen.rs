@@ -73,8 +73,141 @@ impl Screen for Android {
     }
 }
 
-/// Runs `action` with the screen a `device` names: an Android serial, or
-/// `virtual-iphone`.
+/// Whether a device name is a runtime session ID from `runtime.start`.
+pub fn is_session(device: &str) -> bool {
+    device.len() == 32
+        && device
+            .bytes()
+            .all(|c| c.is_ascii_digit() || (b'a'..=b'f').contains(&c))
+}
+
+/// A runtime session as the screen the screen operations look at and tap:
+/// whatever its transport captures, including a physical iPhone over USB,
+/// whose WebDriverAgent source is converted to a hierarchy in screenshot
+/// pixels. Taps go through `runtime.input` in 0..1 of the frame.
+pub struct Session {
+    id: String,
+    state: Value,
+    geometry: Option<Value>,
+    /// The size of the last frame captured here, which the marks were made on.
+    captured: Option<(u32, u32)>,
+}
+
+impl Session {
+    pub fn open(id: &str) -> Result<Self> {
+        let state = crate::runtime::handle("runtime.state", &json!({"session":id}))?;
+        if s(&state, "status") != "connected" {
+            return Err(Error::new(
+                "runtime_unavailable",
+                format!("Session {id} is {}", s(&state, "status")),
+            )
+            .remedy("Start the device again with runtime.start and use the session ID it answers")
+            .details(json!({"session":id,"status":state["status"],"error":state["error"]})));
+        }
+        Ok(Session {
+            id: id.to_string(),
+            state,
+            geometry: None,
+            captured: None,
+        })
+    }
+    fn request(&self, operation: &str, arguments: Value) -> Result {
+        crate::runtime::request(&self.id, operation, &arguments)
+    }
+    /// The geometry the session reports now; asked once per operation.
+    fn geometry(&mut self) -> Result<Value> {
+        if let Some(geometry) = &self.geometry {
+            return Ok(geometry.clone());
+        }
+        let geometry = self.request("geometry", json!({}))?;
+        self.geometry = Some(geometry.clone());
+        Ok(geometry)
+    }
+    /// The frame size taps are mapped against: the last capture here, else
+    /// what the session reports.
+    fn frame_size(&mut self) -> Result<(u32, u32)> {
+        if let Some(size) = self.captured {
+            return Ok(size);
+        }
+        let geometry = self.geometry()?;
+        let (width, height) = (n(&geometry, "width") as u32, n(&geometry, "height") as u32);
+        if width == 0 || height == 0 {
+            return Err(Error::new(
+                "runtime_unavailable",
+                "This session reports no screen size to map a tap onto",
+            )
+            .details(geometry));
+        }
+        Ok((width, height))
+    }
+}
+
+impl Screen for Session {
+    fn capture(&mut self, path: &Path) -> Result<(u32, u32)> {
+        self.request("capture", json!({"session":self.id,"path":path}))?;
+        let size = png_size(path)?;
+        self.captured = Some(size);
+        self.geometry = None;
+        Ok(size)
+    }
+    fn hierarchy(&mut self) -> Result<Option<String>> {
+        let reply = self.request("hierarchy", json!({}))?;
+        let xml = s(&reply, "xml");
+        if xml.trim().is_empty() {
+            return Ok(None);
+        }
+        if tree::is_wda(xml) {
+            let geometry = self.geometry()?;
+            let scale = geometry["scale"]
+                .as_f64()
+                .filter(|scale| *scale > 0.0)
+                .unwrap_or(1.0);
+            return Ok(Some(tree::wda_to_uiautomator(
+                xml,
+                scale,
+                n(&geometry, "rotation"),
+            )?));
+        }
+        Ok(Some(xml.to_string()))
+    }
+    fn facts(&mut self, _size: (u32, u32)) -> crate::screen_export::Facts {
+        let geometry = self.geometry().unwrap_or_else(|_| json!({}));
+        let mut facts = crate::screen_export::Facts::default();
+        let transport = s(&self.state, "transport").to_string();
+        facts.device = json!({"platform":self.state["platform"],"id":self.id,"serial":self.state["device"],
+            "udid":if self.state["platform"] == "ios" { self.state["device"].clone() } else { Value::Null },
+            "virtual":transport == "fixture" || self.state["simulator"] == true,
+            "model":self.state["name"],"manufacturer":Value::Null,
+            "os_name":if self.state["platform"] == "ios" { "iOS" } else { "Android" },
+            "os_version":self.state["os_version"],"sdk":Value::Null,"form_factor":"phone","transport":transport});
+        facts.scale = geometry["scale"].as_f64().filter(|s| *s > 0.0);
+        facts.rotation = geometry["rotation"].as_u64();
+        facts
+            .warnings
+            .push("Read through a runtime session: theme, locale and insets are not read".into());
+        facts
+    }
+    fn tap(&mut self, x: i64, y: i64, hold_ms: Option<u64>) -> Result {
+        let (width, height) = self.frame_size()?;
+        if x < 0 || y < 0 || x >= i64::from(width) || y >= i64::from(height) {
+            return Err(Error::new(
+                "off_screen",
+                format!("({x}, {y}) lies outside the {width}x{height} screen"),
+            ));
+        }
+        let nx = (x as f64 + 0.5) / f64::from(width);
+        let ny = (y as f64 + 0.5) / f64::from(height);
+        let input = match hold_ms {
+            Some(ms) => json!({"session":self.id,"action":"swipe","x":nx,"y":ny,"x2":nx,"y2":ny,
+                "duration":(ms as f64 / 1000.0).clamp(0.01, 5.0)}),
+            None => json!({"session":self.id,"action":"tap","x":nx,"y":ny}),
+        };
+        self.request("input", input)
+    }
+}
+
+/// Runs `action` with the screen a `device` names: an Android serial,
+/// `virtual-iphone`, or a runtime session ID.
 pub fn with_screen<T>(
     device: &str,
     action: impl FnOnce(&mut dyn Screen) -> Result<T>,
@@ -83,8 +216,32 @@ pub fn with_screen<T>(
         let mut phone = ui_testing::LivePhone::default();
         return action(&mut ui_testing::PhoneScreen(&mut phone));
     }
+    if is_session(device) {
+        return action(&mut Session::open(device)?);
+    }
     identifier(device, "device", None)?;
     action(&mut Android(device.to_string()))
+}
+
+/// Why marks made on a screen of one size cannot be used on one of another:
+/// it turned, or its display changed.
+fn size_changed(recorded: (u64, u64), current: (u64, u64)) -> Option<String> {
+    if recorded.0 == 0 || recorded.1 == 0 || recorded == current {
+        return None;
+    }
+    let turned = recorded.0 == current.1 && recorded.1 == current.0;
+    Some(format!(
+        "the screen is {}x{} now and the marks were made on {}x{}: {}",
+        current.0,
+        current.1,
+        recorded.0,
+        recorded.1,
+        if turned {
+            "it rotated"
+        } else {
+            "its display changed"
+        }
+    ))
 }
 
 pub fn no_hierarchy(operation: &str, device: &str) -> Error {
@@ -437,13 +594,16 @@ pub fn marks(
     draw_marks(&mut picture, &found, scale);
     let bytes = visual::encode(&picture)?;
     atomic_write(&target, &bytes)?;
+    let frame_id: String = digest(&raw_bytes).chars().take(16).collect();
+    let taken = now();
     store.save(
         device,
-        &json!({"device":device,"taken":now(),"source":from,"width":width,"height":height,"marks":found}),
+        &json!({"device":device,"taken":taken,"frame_id":frame_id,"source":from,"width":width,"height":height,"marks":found}),
         Some(&raw_bytes),
     )?;
     Ok(
         json!({"path":target,"mime_type":"image/png","bytes":bytes.len(),"sha256":digest(&bytes),
+        "frame_id":frame_id,"captured_at":taken,
         "width":width,"height":height,"source":from,"count":found.len(),"truncated":truncated,
         "marks":found,"note":note,"tap_with":"screen.tap"}),
     )
@@ -509,11 +669,17 @@ pub fn tap(a: &Value, screen: &mut dyn Screen, store: &Store) -> Result {
             .remedy("The screen changed since screen.marks; call it again and tap the new number")
             .details(json!({"mark":mark}))
         };
+        let recorded = (n(&record, "width"), n(&record, "height"));
         if s(mark, "source") == "hierarchy" {
             let xml = screen
                 .hierarchy()?
                 .ok_or_else(|| no_hierarchy("screen.tap", device))?;
-            if !tree::has_element(&tree::parse(&xml)?, mark) {
+            let nodes = tree::parse(&xml)?;
+            let (width, height) = tree::screen_size(&nodes);
+            if let Some(why) = size_changed(recorded, (width.max(0) as u64, height.max(0) as u64)) {
+                return Err(stale(&why));
+            }
+            if !tree::has_element(&nodes, mark) {
                 return Err(stale(
                     "its element is not in the UI hierarchy any more, or changed",
                 ));
@@ -522,7 +688,10 @@ pub fn tap(a: &Value, screen: &mut dyn Screen, store: &Store) -> Result {
             let before = picture.ok_or_else(|| stale("the picture it was made from is gone"))?;
             let work = scratch()?;
             let now_png = work.path().join("now.png");
-            screen.capture(&now_png)?;
+            let (width, height) = screen.capture(&now_png)?;
+            if let Some(why) = size_changed(recorded, (u64::from(width), u64::from(height))) {
+                return Err(stale(&why));
+            }
             let current = visual::decode(&fs::read(&now_png)?)?;
             let b = &mark["bounds"];
             let rect = (
@@ -555,7 +724,7 @@ pub fn tap(a: &Value, screen: &mut dyn Screen, store: &Store) -> Result {
     screen.tap(x, y, hold)?;
     Ok(
         json!({"device":device,"mark":number,"tapped":{"x":x,"y":y},"long_press":hold.is_some(),
-        "verified":verified,"element":mark}),
+        "verified":verified,"frame_id":record["frame_id"],"marks_taken":record["taken"],"element":mark}),
     )
 }
 
@@ -654,7 +823,7 @@ pub fn read_text(
         })
         .collect();
     let mut result = json!({"source":"ocr","engine":"tesseract","language":language(a)?,"width":reading.width,"height":reading.height,
-        "passes":reading.passes,"min_confidence":min,"word_count":reading.words.len(),"words":words,"lines":lines,
+        "passes":reading.passes,"cached":reading.cached,"min_confidence":min,"word_count":reading.words.len(),"words":words,"lines":lines,
         "truncated":reading.words.len() > limit,"seconds":(started.elapsed().as_secs_f64() * 100.0).round() / 100.0,
         "note":"Text recognised from pixels. Words can be misread or missed, especially small, low-contrast or decorative text and a screen with both light and dark areas (read part of it with region); judge by confidence."});
     if let Some(found) = matches {
@@ -1359,6 +1528,9 @@ mod tests {
     /// Answers the TSV for the nth call, whatever the picture is.
     struct Script(VecDeque<String>);
     impl Recognizer for Script {
+        fn cacheable(&self) -> bool {
+            false
+        }
         fn tsv(&mut self, _: &Path, _: &str) -> Result<String> {
             Ok(if self.0.len() > 1 {
                 self.0.pop_front().unwrap()
@@ -1385,6 +1557,46 @@ mod tests {
         let dir = tempfile::tempdir().unwrap();
         let store = Store::at(dir.path().join("marks"));
         (dir, store)
+    }
+
+    #[test]
+    fn a_tap_after_a_rotation_refuses_the_old_marks_and_taps_nothing() {
+        let (dir, store) = store();
+        // Marks on a portrait hierarchy; the screen then reports a landscape one.
+        let wide = "<hierarchy rotation=\"1\"><node class=\"android.widget.FrameLayout\" bounds=\"[0,0][2400,1080]\"><node class=\"android.widget.Button\" text=\"Sign in\" resource-id=\"dev.example.app:id/sign_in\" bounds=\"[900,500][1500,600]\" clickable=\"true\" enabled=\"true\"/></node></hierarchy>";
+        let mut fake = Fake::new(
+            vec![solid(1080, 2400, 255)],
+            vec![Some(LOGIN), Some(wide)],
+        );
+        let out = dir.path().join("marked.png");
+        let made = marks(
+            &json!({"device":"emulator-5554","path":out}),
+            &mut fake,
+            &mut NoOcr,
+            &store,
+        )
+        .unwrap();
+        assert_eq!(made["frame_id"].as_str().unwrap().len(), 16);
+        let error = tap(&json!({"device":"emulator-5554","mark":5}), &mut fake, &store).unwrap_err();
+        assert_eq!(error.code, "mark_stale");
+        assert!(error.message.contains("it rotated"), "{}", error.message);
+        assert!(fake.taps.is_empty());
+        // An OCR mark on a picture of another size is refused the same way.
+        let mut fake = Fake::new(vec![solid(360, 640, 255), solid(640, 360, 255)], vec![None]);
+        marks(
+            &json!({"device":"emulator-5554","path":out,"source":"ocr"}),
+            &mut fake,
+            &mut Script(vec![tsv(&[(10, 10, 100, 20, 90.0, "Hello")])].into()),
+            &store,
+        )
+        .unwrap();
+        let error = tap(&json!({"device":"emulator-5554","mark":1}), &mut fake, &store).unwrap_err();
+        assert_eq!(error.code, "mark_stale");
+        assert!(error.message.contains("640x360"), "{}", error.message);
+        assert!(fake.taps.is_empty());
+        assert!(is_session("0123456789abcdef0123456789abcdef"));
+        assert!(!is_session("emulator-5554"));
+        assert!(!is_session("0123456789ABCDEF0123456789ABCDEF"));
     }
 
     #[test]

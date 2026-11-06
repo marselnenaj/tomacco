@@ -2,7 +2,7 @@
 
 # Error codes
 
-Every error code `tomaccoctl` returns, 505 codes, generated from `assets/errors.json`. A failure is `{"ok":false,"error":{"code":...,"message":...,"remedy":...}}`, and over MCP the same object under `structuredContent.error`. Branch on `code`. The message says what happened this time; when the place that failed has no remedy of its own, `remedy` is the general one below. In the middle column, … stands for a value the message fills in. [All operations](README.md).
+Every error code `tomaccoctl` returns, 506 codes, generated from `assets/errors.json`. A failure is `{"ok":false,"error":{"code":...,"message":...,"remedy":...}}`, and over MCP the same object under `structuredContent.error`. Branch on `code`. The message says what happened this time; when the place that failed has no remedy of its own, `remedy` is the general one below. In the middle column, … stands for a value the message fills in. [All operations](README.md).
 
 | Code | What it means | What to do |
 | --- | --- | --- |
@@ -123,6 +123,7 @@ Every error code `tomaccoctl` returns, 505 codes, generated from `assets/errors.
 | `file_too_large` | Text editing is limited to files up to 1 MiB. | Edit the file with another tool; files.read and files.write handle text up to 1 MiB. |
 | `firmware_incomplete` | The virtual iOS device or its research engine refused the request or stopped answering. | Extract the required boot components first. |
 | `firmware_modified` | PMP bundle changed after submission. | Read the message; ios.virtual.status and the job's log show the device's state, and docs/virtual-ios/troubleshooting.md lists known causes. |
+| `fixture_runtime` | The offline fixture runtime was asked for but is off, or its scenario is missing or broken. | Set TOMACCO_FIXTURE_RUNTIME to the directory that holds NAME/scenario.json, or connect a real device instead; the fixture is for tests and benchmarks only. |
 | `flutter_ios_missing` | This is not a Flutter project with an ios directory. | Run flutter create --platforms ios . in the project. |
 | `flutter_setup_required` | This Flutter install still has Apple's macOS gen_snapshot. | Call ios.flutter_setup once per Flutter version. |
 | `form_factor_unsupported` | The system image is for TV, Wear, Automotive, XR or Desktop, which Tomacco does not create AVDs for. | Create it with avdmanager and the SDK device definition the error names, or use a phone or tablet image. |

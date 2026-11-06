@@ -7,6 +7,24 @@ operations and their JSON results.
 ## Unreleased
 
 ### Added
+- **One fresh look for agents.** `runtime.observe` answers a frame with its id, time and age, the
+  geometry it was taken in, the foreground app, keyboard and focus where the transport reports them
+  (`available: false` with the reason where it does not), the transport's `input_capabilities` and
+  a one-line context. `runtime.state` reports `input_capabilities`; `runtime.gesture` sends
+  timestamped traces and says whether they went live or as one atomic request. Pinch works on the
+  USB iPhone (two WebDriverAgent pointers) and Android (two scrcpy pointers), not yet hardware-qualified.
+- **Screens on a session.** Every `screen.*` operation takes a runtime session ID, so a USB iPhone
+  gets marks, taps, tree, OCR, waits, diffs and exports: its WebDriverAgent hierarchy is read in
+  screenshot pixels. Marks carry the frame id and size they were made on, and a tap after a rotation
+  answers `mark_stale` naming it and taps nothing.
+- **Offline fixture runtime.** With `TOMACCO_FIXTURE_RUNTIME` set, `runtime.start` on
+  `fixture:NAME` connects a scripted device for tests and the benchmark runner, labelled
+  `evidence: fixture` everywhere.
+
+### Changed
+- A USB iPhone's point size is cached and refreshed only after a rotation or when its MJPEG frames
+  change size, instead of one `/window/size` request before every tap. An unchanged frame is not
+  read by Tesseract again within one process (`cached: true` in `screen.ocr`).
 - **Named QA environments.** Save theme, font size, animations, airplane mode, app language,
   emulator GPS and TalkBack as a versioned preset, plan it for one named Android device, apply
   exactly that plan and restore the previous values from a restore point. Unsupported, unverified
