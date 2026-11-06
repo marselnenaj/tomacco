@@ -444,9 +444,23 @@ pub fn handle(op: &str, a: &Value) -> Result {
             let audio = audio::stop(id).unwrap_or_else(audio::failure);
             let value = state(id)?;
             let mut result = if !["starting", "connected"].contains(&s(&value, "status")) {
-                json!({"stopping":false,"status":value["status"]})
+                json!({"stopping":false,"stopped":true,"status":value["status"]})
             } else {
-                request(id, "stop", a)?
+                let mut result = request(id, "stop", a)?;
+                // The worker ends within its poll interval; a start right after
+                // this call must not find the old session still "connected".
+                let end = Instant::now() + Duration::from_secs(5);
+                let mut status = String::new();
+                while Instant::now() < end {
+                    status = s(&metadata(id)?, "status").to_string();
+                    if !["starting", "connected"].contains(&status.as_str()) {
+                        break;
+                    }
+                    thread::sleep(Duration::from_millis(50));
+                }
+                result["stopped"] = json!(!["starting", "connected"].contains(&status.as_str()));
+                result["status"] = json!(status);
+                result
             };
             if s(&value, "platform") == "android" {
                 result["audio"] = audio;
@@ -616,6 +630,14 @@ fn wait_ready(id: &str) -> Result {
         }
         if s(&state, "status") == "failed" {
             return Err(Error::new("runtime_start_failed", s(&state, "error")).details(state));
+        }
+        if s(&state, "status") == "disconnected" {
+            return Err(Error::new(
+                "runtime_start_failed",
+                "The session ended before it was ready",
+            )
+            .remedy("Start it again with runtime.start; a session stopped at the same moment is not reused")
+            .details(state));
         }
         thread::sleep(Duration::from_millis(100));
     }

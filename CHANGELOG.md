@@ -26,6 +26,16 @@ operations and their JSON results.
   `fixture:NAME` connects a scripted device for tests and the benchmark runner, labelled
   `evidence: fixture` everywhere.
 
+- **Agent-loop benchmark.** `tools/benchmark_agent_loop.py` measures observe, marks, OCR, action
+  acknowledgement, visible postcondition and the whole loop through one MCP server with p50/p95
+  over 100 trials per case, keeps failed trials and labels fixture evidence apart from a pending
+  hardware matrix; it is not a comparison with another product.
+
+### Fixed
+- **Starting again after a stop.** `runtime.stop` waits until the session's worker has ended
+  (`stopped: true`), so a `runtime.start` right after it no longer waits 30 seconds on the old
+  session; a session that ends while starting answers `runtime_start_failed` at once.
+
 ### Changed
 - A USB iPhone's point size is cached and refreshed only after a rotation or when its MJPEG frames
   change size, instead of one `/window/size` request before every tap. An unchanged frame is not

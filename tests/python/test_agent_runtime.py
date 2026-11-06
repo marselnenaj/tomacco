@@ -114,6 +114,24 @@ class FixtureSessionTests(unittest.TestCase):
             {"points": [{"x": 0.5, "y": 0.8, "t_ms": 50}, {"x": 0.5, "y": 0.5, "t_ms": 10}]}]})
         self.assertEqual(error["code"], "invalid_argument")
 
+    def test_a_stop_waits_for_the_worker_and_a_new_start_gets_a_new_session(self):
+        box = Isolated()
+        try:
+            write_login_scenario(box.fixtures)
+            first = box.result("runtime.start", {"platform": "android", "device": "fixture:login"})
+            again = box.result("runtime.start", {"platform": "android", "device": "fixture:login"})
+            self.assertEqual((again["session"], again["reused"]), (first["session"], True))
+            stopped = box.result("runtime.stop", {"session": first["session"]})
+            self.assertEqual((stopped["stopping"], stopped["stopped"], stopped["status"]), (True, True, "disconnected"))
+            started = time.monotonic()
+            fresh = box.result("runtime.start", {"platform": "android", "device": "fixture:login"})
+            self.assertLess(time.monotonic() - started, 10, "a start right after a stop must not wait on the old session")
+            self.assertNotEqual(fresh["session"], first["session"])
+            self.assertEqual(fresh["status"], "connected")
+            self.assertEqual(box.result("runtime.stop", {"session": first["session"]})["stopping"], False)
+        finally:
+            box.close()
+
     def test_screen_wait_on_a_session_sees_the_welcome_screen(self):
         marked = self.box.result("screen.marks", {"device": self.session, "path": str(self.box.home / "marks.png")})
         self.box.result("screen.tap", {"device": self.session, "mark": 2})

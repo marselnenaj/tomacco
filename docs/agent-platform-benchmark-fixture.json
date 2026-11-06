@@ -1,0 +1,422 @@
+{
+  "tool": "tools/benchmark_agent_loop.py",
+  "evidence": "fixture",
+  "warning": "Fixture numbers are the control plane over a scripted device, not a device's performance. No head-to-head with another product was run.",
+  "boundaries": {
+    "read_request_to_result": "MCP tools/call runtime.observe, request written to reply read, persistent server",
+    "frame_age": "now at reply minus frame.captured_at",
+    "hierarchy_time": "tools/call screen.marks on the session (capture + hierarchy + drawing)",
+    "ocr_time": "tools/call screen.ocr with text, every 10th trial, only with tesseract installed",
+    "action_request_to_ack": "tools/call runtime.input key, request to reply",
+    "action_request_to_visible_postcondition": "runtime.actions tap by mark with expect text: step verified_ms (hierarchy polled every 50 ms)",
+    "full_observe_act_verify_loop": "observe + marks + verified tap, wall time of the trial",
+    "cost": "reply characters and UTF-8 bytes of runtime.observe; token_estimate is chars/4, an estimate, not a tokenizer; frame_image_bytes is the PNG, reported apart"
+  },
+  "environment": {
+    "platform": "Linux-7.2.11-arch1-1-x86_64-with-glibc2.44",
+    "python": "3.14.8",
+    "cpus": 32,
+    "load_average_at_start": [
+      5.125,
+      4.279296875,
+      4.12255859375
+    ],
+    "tomaccoctl": "/home/maslos/Work/tomacco-agent-platform/target/debug/tomaccoctl",
+    "device": "fixture:login",
+    "transport_latency_ms": 0,
+    "trials_requested": 100,
+    "started": "2026-11-06T10:48:01Z"
+  },
+  "hardware_matrix": {
+    "ios_simulator": "pending: needs a Mac with idb reachable over SSH and a built app",
+    "linux_virtual_iphone": "pending: needs the virtual iPhone running (ios.virtual.start) and the device argument virtual-iphone",
+    "usb_iphone": "pending: needs a trusted iPhone with WebDriverAgent, blocked while hardware access is off",
+    "airplay_hid": "pending: AirPlay captures no frame; only action acknowledgement can be timed",
+    "android": "pending: needs an emulator or device with the scrcpy 4.1 server, blocked while hardware access is off",
+    "desktop_runtime": "pending: the desktop's own frame timing is not read by this script"
+  },
+  "reference_targets": {
+    "note": "170 ms read and 70 ms tap are figures from a third-party screenshot of unknown boundaries, not Tomacco results and not a comparison"
+  },
+  "cases": {
+    "labeled_control": {
+      "evidence": "fixture",
+      "trials": 100,
+      "failed_trials": 0,
+      "success_rate": 1.0,
+      "wall_seconds": 8.66,
+      "metrics": {
+        "read_request_to_result": {
+          "n": 100,
+          "p50_ms": 2.55,
+          "p95_ms": 2.82,
+          "min_ms": 2.13,
+          "max_ms": 3.51,
+          "mean_ms": 2.57
+        },
+        "frame_age": {
+          "n": 100,
+          "p50_ms": 1.35,
+          "p95_ms": 1.47,
+          "min_ms": 0.86,
+          "max_ms": 2.22,
+          "mean_ms": 1.35
+        },
+        "hierarchy_time": {
+          "n": 100,
+          "p50_ms": 41.87,
+          "p95_ms": 46.43,
+          "min_ms": 39.23,
+          "max_ms": 53.15,
+          "mean_ms": 42.35
+        },
+        "ocr_time": {
+          "n": 10,
+          "p50_ms": 3.47,
+          "p95_ms": 239.59,
+          "min_ms": 3.02,
+          "max_ms": 239.59,
+          "mean_ms": 27.07
+        },
+        "action_request_to_ack": {
+          "n": 100,
+          "p50_ms": 1.94,
+          "p95_ms": 2.45,
+          "min_ms": 1.34,
+          "max_ms": 2.96,
+          "mean_ms": 1.95
+        },
+        "action_request_to_visible_postcondition": {
+          "n": 100,
+          "p50_ms": 26.0,
+          "p95_ms": 33,
+          "min_ms": 23,
+          "max_ms": 35,
+          "mean_ms": 26.47
+        },
+        "full_observe_act_verify_loop": {
+          "n": 100,
+          "p50_ms": 77.42,
+          "p95_ms": 85.64,
+          "min_ms": 72.22,
+          "max_ms": 322.5,
+          "mean_ms": 80.51
+        },
+        "observe_reply_chars": {
+          "n": 100,
+          "p50_ms": 1795.0,
+          "p95_ms": 1796,
+          "min_ms": 1792,
+          "max_ms": 1796,
+          "mean_ms": 1794.91
+        },
+        "observe_reply_utf8_bytes": {
+          "n": 100,
+          "p50_ms": 1919.0,
+          "p95_ms": 1920,
+          "min_ms": 1916,
+          "max_ms": 1920,
+          "mean_ms": 1918.91
+        },
+        "frame_image_bytes": {
+          "n": 100,
+          "p50_ms": 2569.0,
+          "p95_ms": 2569,
+          "min_ms": 2569,
+          "max_ms": 2569,
+          "mean_ms": 2569
+        },
+        "token_estimate_chars_div_4": {
+          "n": 100,
+          "p50_ms": 448.75,
+          "p95_ms": 449.0,
+          "min_ms": 448.0,
+          "max_ms": 449.0,
+          "mean_ms": 448.73
+        }
+      },
+      "mcp_server_usage": {
+        "before": {
+          "rss_kib": 23624,
+          "cpu_seconds": 0.01
+        },
+        "after": {
+          "rss_kib": 30108,
+          "cpu_seconds": 7.95
+        }
+      },
+      "failures": []
+    },
+    "rotation_target": {
+      "evidence": "fixture",
+      "trials": 100,
+      "failed_trials": 0,
+      "success_rate": 1.0,
+      "wall_seconds": 14.3,
+      "metrics": {
+        "stale_rejection": {
+          "n": 100,
+          "p50_ms": 22.55,
+          "p95_ms": 31.8,
+          "min_ms": 19.93,
+          "max_ms": 34.23,
+          "mean_ms": 23.48
+        },
+        "re_mark_after_rotation": {
+          "n": 100,
+          "p50_ms": 41.8,
+          "p95_ms": 48.68,
+          "min_ms": 39.31,
+          "max_ms": 62.25,
+          "mean_ms": 42.71
+        },
+        "tap_after_re_mark": {
+          "n": 100,
+          "p50_ms": 24.39,
+          "p95_ms": 30.5,
+          "min_ms": 21.78,
+          "max_ms": 34.88,
+          "mean_ms": 24.8
+        }
+      },
+      "_stale_taps_rejected": 100,
+      "mcp_server_usage": {
+        "before": {
+          "rss_kib": 30108,
+          "cpu_seconds": 7.95
+        },
+        "after": {
+          "rss_kib": 30212,
+          "cpu_seconds": 21.64
+        }
+      },
+      "failures": []
+    },
+    "deterministic_drag": {
+      "evidence": "fixture",
+      "trials": 100,
+      "failed_trials": 0,
+      "success_rate": 1.0,
+      "wall_seconds": 20.36,
+      "metrics": {
+        "trace_request_to_ack": {
+          "n": 100,
+          "p50_ms": 203.27,
+          "p95_ms": 205.58,
+          "min_ms": 202.14,
+          "max_ms": 209.52,
+          "mean_ms": 203.53
+        },
+        "trace_timing_error_vs_requested": {
+          "n": 100,
+          "p50_ms": 0.0,
+          "p95_ms": 0,
+          "min_ms": 0,
+          "max_ms": 0,
+          "mean_ms": 0
+        }
+      },
+      "mcp_server_usage": {
+        "before": {
+          "rss_kib": 23864,
+          "cpu_seconds": 0.02
+        },
+        "after": {
+          "rss_kib": 26948,
+          "cpu_seconds": 0.25
+        }
+      },
+      "failures": []
+    },
+    "pinch": {
+      "evidence": "fixture",
+      "trials": 100,
+      "failed_trials": 0,
+      "success_rate": 1.0,
+      "wall_seconds": 0.19,
+      "metrics": {
+        "pinch_request_to_ack": {
+          "n": 100,
+          "p50_ms": 1.89,
+          "p95_ms": 2.09,
+          "min_ms": 1.37,
+          "max_ms": 2.19,
+          "mean_ms": 1.85
+        }
+      },
+      "mcp_server_usage": {
+        "before": {
+          "rss_kib": 26948,
+          "cpu_seconds": 0.25
+        },
+        "after": {
+          "rss_kib": 27008,
+          "cpu_seconds": 0.39
+        }
+      },
+      "failures": []
+    },
+    "stale_frame_rejection": {
+      "evidence": "fixture",
+      "trials": 100,
+      "failed_trials": 0,
+      "success_rate": 1.0,
+      "wall_seconds": 0.37,
+      "metrics": {
+        "refused_batch": {
+          "n": 100,
+          "p50_ms": 3.65,
+          "p95_ms": 4.23,
+          "min_ms": 2.79,
+          "max_ms": 5.27,
+          "mean_ms": 3.64
+        }
+      },
+      "_batches_refused_without_input": 100,
+      "mcp_server_usage": {
+        "before": {
+          "rss_kib": 27008,
+          "cpu_seconds": 0.39
+        },
+        "after": {
+          "rss_kib": 27848,
+          "cpu_seconds": 0.72
+        }
+      },
+      "failures": []
+    },
+    "reconnect": {
+      "evidence": "fixture",
+      "trials": 10,
+      "failed_trials": 0,
+      "success_rate": 1.0,
+      "wall_seconds": 2.27,
+      "metrics": {
+        "stop_to_connected_again": {
+          "n": 10,
+          "p50_ms": 215.56,
+          "p95_ms": 222.42,
+          "min_ms": 211.91,
+          "max_ms": 222.42,
+          "mean_ms": 216.71
+        },
+        "reuse_existing_session": {
+          "n": 10,
+          "p50_ms": 10.21,
+          "p95_ms": 14.37,
+          "min_ms": 6.04,
+          "max_ms": 14.37,
+          "mean_ms": 9.97
+        }
+      },
+      "mcp_server_usage": {
+        "before": {
+          "rss_kib": 27848,
+          "cpu_seconds": 0.72
+        },
+        "after": {
+          "rss_kib": 28284,
+          "cpu_seconds": 0.98
+        }
+      },
+      "failures": []
+    },
+    "map_metal_sync": {
+      "evidence": "fixture",
+      "trials": 50,
+      "failed_trials": 0,
+      "success_rate": 1.0,
+      "wall_seconds": 14.14,
+      "metrics": {
+        "pinch_to_changed_frame": {
+          "n": 50,
+          "p50_ms": 4.33,
+          "p95_ms": 4.78,
+          "min_ms": 3.53,
+          "max_ms": 5.02,
+          "mean_ms": 4.34
+        },
+        "settle_after_pinch": {
+          "n": 50,
+          "p50_ms": 268.99,
+          "p95_ms": 285.56,
+          "min_ms": 258.29,
+          "max_ms": 285.92,
+          "mean_ms": 269.77
+        }
+      },
+      "mcp_server_usage": {
+        "before": {
+          "rss_kib": 28284,
+          "cpu_seconds": 0.98
+        },
+        "after": {
+          "rss_kib": 28868,
+          "cpu_seconds": 7.26
+        }
+      },
+      "failures": []
+    },
+    "animated_list": {
+      "evidence": "fixture",
+      "trials": 25,
+      "failed_trials": 0,
+      "success_rate": 1.0,
+      "wall_seconds": 34.44,
+      "metrics": {
+        "unstable_wait_bound": {
+          "n": 25,
+          "p50_ms": 1020.68,
+          "p95_ms": 1029.96,
+          "min_ms": 1002.51,
+          "max_ms": 1031.8,
+          "mean_ms": 1018.28
+        },
+        "stable_after_settle": {
+          "n": 25,
+          "p50_ms": 347.09,
+          "p95_ms": 356.67,
+          "min_ms": 337.16,
+          "max_ms": 362.46,
+          "mean_ms": 347.81
+        }
+      },
+      "mcp_server_usage": {
+        "before": {
+          "rss_kib": 23448,
+          "cpu_seconds": 0.01
+        },
+        "after": {
+          "rss_kib": 27764,
+          "cpu_seconds": 12.74
+        }
+      },
+      "failures": []
+    }
+  },
+  "session": {
+    "start_ms": 118.45,
+    "transport": "fixture",
+    "input_capabilities": {
+      "transport": "fixture",
+      "evidence": "fixture",
+      "capture": true,
+      "hierarchy": true,
+      "live_touch": true,
+      "atomic_trace": true,
+      "max_contacts": 2,
+      "pinch": true,
+      "fill": true,
+      "rotate": true,
+      "exact_scroll": true,
+      "keys": [
+        "home",
+        "back",
+        "enter",
+        "backspace"
+      ],
+      "note": "A scripted stand-in. Nothing it measures is a device's performance."
+    }
+  },
+  "trapped_helpers": ""
+}

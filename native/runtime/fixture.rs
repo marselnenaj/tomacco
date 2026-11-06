@@ -269,7 +269,18 @@ impl Device for Fixture {
                 self.follow("pinch_to")?;
             }
             "gesture" => {
+                // Replayed with the trace's own timing, as a live transport would.
+                let contacts = super::check_gesture(a)?;
+                let longest = contacts
+                    .iter()
+                    .filter_map(|trace| trace.last().map(|p| p.2))
+                    .max()
+                    .unwrap_or(0);
+                let started = Instant::now();
+                thread::sleep(Duration::from_millis(longest));
                 self.follow("swipe_to")?;
+                return Ok(json!({"delivered":true,"mode":"live","contacts":contacts.len(),
+                    "elapsed_ms":started.elapsed().as_millis() as u64,"fixture":self.evidence()}));
             }
             _ => {
                 return Err(Error::new(

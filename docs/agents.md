@@ -802,6 +802,20 @@ turned answers `mark_stale` naming the rotation and taps nothing.
 connects a scripted device (`transport: "fixture"`, `evidence: "fixture"` everywhere) for tests and `tools/benchmark_agent_loop.py`.
 Nothing measured on it is a device's performance.
 
+**Measuring the loop.** `tools/benchmark_agent_loop.py` times the observe/act/verify loop through one persistent MCP server, one
+`tools/call` per step: read request to result, frame age, hierarchy and OCR time, action acknowledgement, action to visible
+postcondition, the whole loop, success rate, reply characters, bytes and an estimated token count apart from the PNG's bytes, and the
+server's resident memory and CPU, as p50 and p95 over at least 100 trials with every failed trial kept. Its cases are a labelled control,
+an animated list, a target after a rotation, a deterministic drag trace, a pinch, a map/Metal camera contract, a reconnect and a
+stale-frame rejection. Until it can run on hardware every result it writes says `evidence: "fixture"` and lists the Simulator, the
+virtual iPhone, the USB iPhone, AirPlay, Android and the desktop as `pending` in `hardware_matrix`; the committed
+[fixture run](agent-platform-benchmark-fixture.json) is the control plane's own cost over a scripted device. It is not a comparison with
+any other product: that needs the same device, app, build and settings on one host, measured alike, which has not been done.
+
+**Stopping and starting again.** `runtime.stop` now waits (up to five seconds) until the session's worker has ended and answers
+`stopped: true`, so a `runtime.start` right after it connects a new session instead of waiting on the old one; a session that ends while
+starting answers `runtime_start_failed` at once.
+
 **Sockets.** Most agents should use the operations; the desktop uses these to avoid a process per pointer move.
 
 - `video_socket` emits repeated **u32 big-endian length + payload**. `codec` selects `h264` (Annex-B) or `mjpeg` (one JPEG per payload). It can have
