@@ -40,7 +40,7 @@
         <translation>1  Copia la configurazione.</translation>
     </message>
     <message>
-        <source>2  Paste it into your agent's MCP settings.</source>
+        <source>2  Paste it into your agent&apos;s MCP settings.</source>
         <translation>2  Incollala nelle impostazioni MCP del tuo agente.</translation>
     </message>
     <message>
@@ -49,7 +49,7 @@
     </message>
     <message>
         <source>Nothing running. Builds and agent jobs show up here as they start.</source>
-        <translation>Nulla in esecuzione. Build e job degli agenti compaiono qui all'avvio.</translation>
+        <translation>Nulla in esecuzione. Build e job degli agenti compaiono qui all&apos;avvio.</translation>
     </message>
     <message>
         <source>%1 ms</source>
@@ -61,7 +61,7 @@
     </message>
     <message>
         <source>Agent activity</source>
-        <translation>Attività dell'agente</translation>
+        <translation>Attività dell&apos;agente</translation>
     </message>
     <message>
         <source>All</source>
@@ -73,7 +73,7 @@
     </message>
     <message>
         <source>Find an operation</source>
-        <translation>Cerca un'operazione</translation>
+        <translation>Cerca un&apos;operazione</translation>
     </message>
     <message>
         <source>No call failed.</source>
@@ -96,7 +96,7 @@
         <translation>completata</translation>
     </message>
     <message>
-        <source>An agent's call failed: %1</source>
+        <source>An agent&apos;s call failed: %1</source>
         <translation>Una chiamata di un agente non è riuscita: %1</translation>
     </message>
     <message>
@@ -134,7 +134,7 @@ The model determines the display and frame. Android comes from the chosen system
         <translation>%1 pixel
 %2 dpi
 
-Il modello determina display e cornice. Android proviene dall'immagine di sistema scelta; le interfacce dei produttori come One UI non sono incluse.</translation>
+Il modello determina display e cornice. Android proviene dall&apos;immagine di sistema scelta; le interfacce dei produttori come One UI non sono incluse.</translation>
     </message>
     <message>
         <source>Add Android device</source>
@@ -198,7 +198,7 @@ Il modello determina display e cornice. Android proviene dall'immagine di sistem
     </message>
     <message>
         <source>Emulator performance</source>
-        <translation>Prestazioni dell'emulatore</translation>
+        <translation>Prestazioni dell&apos;emulatore</translation>
     </message>
     <message>
         <source>Emulator ready</source>
@@ -206,7 +206,7 @@ Il modello determina display e cornice. Android proviene dall'immagine di sistem
     </message>
     <message>
         <source>Emulator starting…</source>
-        <translation>Avvio dell'emulatore…</translation>
+        <translation>Avvio dell&apos;emulatore…</translation>
     </message>
     <message>
         <source>Enabled</source>
@@ -302,7 +302,7 @@ Il modello determina display e cornice. Android proviene dall'immagine di sistem
     </message>
     <message>
         <source>The computer GPU can speed up animations considerably. If graphics glitch, choose a software renderer. Changes require the emulator to be off; app data is kept.</source>
-        <translation>La GPU del computer può velocizzare molto le animazioni. In caso di difetti grafici, scegli un renderer software. Le modifiche richiedono l'emulatore spento; i dati delle app vengono mantenuti.</translation>
+        <translation>La GPU del computer può velocizzare molto le animazioni. In caso di difetti grafici, scegli un renderer software. Le modifiche richiedono l&apos;emulatore spento; i dati delle app vengono mantenuti.</translation>
     </message>
     <message>
         <source>Turn off emulator</source>
@@ -370,7 +370,7 @@ Il modello determina display e cornice. Android proviene dall'immagine di sistem
     </message>
     <message>
         <source>Paired. Enter the IP address and port shown under Wireless debugging to connect.</source>
-        <translation>Accoppiato. Per connetterti, inserisci l'indirizzo IP e la porta mostrati in Debug wireless.</translation>
+        <translation>Accoppiato. Per connetterti, inserisci l&apos;indirizzo IP e la porta mostrati in Debug wireless.</translation>
     </message>
     <message>
         <source>adb could not pair</source>
@@ -398,7 +398,7 @@ Il modello determina display e cornice. Android proviene dall'immagine di sistem
     </message>
     <message>
         <source>On the phone, open Developer options › Wireless debugging › Pair device with pairing code, then enter the address and code it shows.</source>
-        <translation>Sul telefono, apri Opzioni sviluppatore › Debug wireless › Accoppia dispositivo con codice di accoppiamento, poi inserisci l'indirizzo e il codice mostrati.</translation>
+        <translation>Sul telefono, apri Opzioni sviluppatore › Debug wireless › Accoppia dispositivo con codice di accoppiamento, poi inserisci l&apos;indirizzo e il codice mostrati.</translation>
     </message>
     <message>
         <source>QR code for wireless debugging</source>
@@ -442,14 +442,14 @@ Il modello determina display e cornice. Android proviene dall'immagine di sistem
     </message>
     <message>
         <source>Show the device list</source>
-        <translation>Mostra l'elenco dei dispositivi</translation>
+        <translation>Mostra l&apos;elenco dei dispositivi</translation>
     </message>
     <message>
-        <source>Show every running device's screen side by side</source>
+        <source>Show every running device&apos;s screen side by side</source>
         <translation>Mostra affiancati gli schermi di tutti i dispositivi in funzione</translation>
     </message>
     <message>
-        <source>Accept Google's Android SDK licence for this download</source>
+        <source>Accept Google&apos;s Android SDK licence for this download</source>
         <translation>Accetta la licenza dell’SDK Android di Google per questo download</translation>
     </message>
     <message>
@@ -481,7 +481,7 @@ Il modello determina display e cornice. Android proviene dall'immagine di sistem
         <translation>Disco: circa %1 per l’emulatore · %2 liberi</translation>
     </message>
     <message>
-        <source>Download about %1 (estimate) · needs Google's SDK licence: %2</source>
+        <source>Download about %1 (estimate) · needs Google&apos;s SDK licence: %2</source>
         <translation>Download di circa %1 (stima) · richiede la licenza SDK di Google: %2</translation>
     </message>
     <message>
@@ -529,7 +529,7 @@ Il modello determina display e cornice. Android proviene dall'immagine di sistem
         <translation>Lettura dello spazio su disco…</translation>
     </message>
     <message>
-        <source>Rename and wipe need the emulator's name typed here</source>
+        <source>Rename and wipe need the emulator&apos;s name typed here</source>
         <translation>Rinomina e azzera richiedono di digitare qui il nome dell’emulatore</translation>
     </message>
     <message>
@@ -565,7 +565,7 @@ Il modello determina display e cornice. Android proviene dall'immagine di sistem
         <translation>Cancella dati delle app</translation>
     </message>
     <message>
-        <source>Wipe removes the apps, their data and the snapshots; the next start boots like a new device. The emulator's model and settings stay.</source>
+        <source>Wipe removes the apps, their data and the snapshots; the next start boots like a new device. The emulator&apos;s model and settings stay.</source>
         <translation>L’azzeramento rimuove le app, i loro dati e gli snapshot; il prossimo avvio parte come un dispositivo nuovo. Modello e impostazioni dell’emulatore restano.</translation>
     </message>
     <message>
@@ -637,7 +637,7 @@ Il modello determina display e cornice. Android proviene dall'immagine di sistem
     </message>
     <message>
         <source>No index.html found. Choose a built web folder or open the dev server address.</source>
-        <translation>Nessun index.html trovato. Scegli una cartella web compilata o apri l'indirizzo del server di sviluppo.</translation>
+        <translation>Nessun index.html trovato. Scegli una cartella web compilata o apri l&apos;indirizzo del server di sviluppo.</translation>
     </message>
     <message>
         <source>Not installed</source>
@@ -692,8 +692,8 @@ Il modello determina display e cornice. Android proviene dall'immagine di sistem
         <translation>Il log di sessione deve essere un percorso assoluto.</translation>
     </message>
     <message>
-        <source>No session log at %1 yet. It appears with the agent's first call.</source>
-        <translation>Ancora nessun log di sessione in %1. Compare alla prima chiamata dell'agente.</translation>
+        <source>No session log at %1 yet. It appears with the agent&apos;s first call.</source>
+        <translation>Ancora nessun log di sessione in %1. Compare alla prima chiamata dell&apos;agente.</translation>
     </message>
 </context>
 <context>
@@ -878,18 +878,18 @@ Il modello determina display e cornice. Android proviene dall'immagine di sistem
     </message>
     <message>
         <source>Tomacco is already open in another window; agents keep controlling that one. To control this window too, start it with --preview-session and another name.</source>
-        <translation>Tomacco è già aperto in un'altra finestra; gli agenti continuano a controllare quella. Per controllare anche questa finestra, avviala con --preview-session e un altro nome.</translation>
+        <translation>Tomacco è già aperto in un&apos;altra finestra; gli agenti continuano a controllare quella. Per controllare anche questa finestra, avviala con --preview-session e un altro nome.</translation>
     </message>
     <message>
-        <source>Tomacco's control program (tomaccoctl) could not be started. Reinstall Tomacco or run install.py again.</source>
+        <source>Tomacco&apos;s control program (tomaccoctl) could not be started. Reinstall Tomacco or run install.py again.</source>
         <translation>Impossibile avviare il programma di controllo di Tomacco (tomaccoctl). Reinstalla Tomacco o esegui di nuovo install.py.</translation>
     </message>
     <message>
-        <source>Tomacco's control program (tomaccoctl) is not working: %1</source>
+        <source>Tomacco&apos;s control program (tomaccoctl) is not working: %1</source>
         <translation>Il programma di controllo di Tomacco (tomaccoctl) non funziona: %1</translation>
     </message>
     <message>
-        <source>Tomacco's control program (tomaccoctl) was not found. Reinstall Tomacco or run install.py again.</source>
+        <source>Tomacco&apos;s control program (tomaccoctl) was not found. Reinstall Tomacco or run install.py again.</source>
         <translation>Programma di controllo di Tomacco (tomaccoctl) non trovato. Reinstalla Tomacco o esegui di nuovo install.py.</translation>
     </message>
     <message>
@@ -1025,7 +1025,7 @@ Il modello determina display e cornice. Android proviene dall'immagine di sistem
     </message>
     <message>
         <source>Evaluate the expression in the selected frame</source>
-        <translation>Valuta l'espressione nel frame selezionato</translation>
+        <translation>Valuta l&apos;espressione nel frame selezionato</translation>
     </message>
     <message>
         <source>Executable with debug symbols</source>
@@ -1041,7 +1041,7 @@ Il modello determina display e cornice. Android proviene dall'immagine di sistem
     </message>
     <message>
         <source>Launches the app if it is not running yet.</source>
-        <translation>Avvia l'app se non è ancora in esecuzione.</translation>
+        <translation>Avvia l&apos;app se non è ancora in esecuzione.</translation>
     </message>
     <message>
         <source>Library with debug symbols (.so)</source>
@@ -1089,7 +1089,7 @@ Il modello determina display e cornice. Android proviene dall'immagine di sistem
     </message>
     <message>
         <source>Restarts the app and waits for the Java debugger.</source>
-        <translation>Riavvia l'app e attende il debugger Java.</translation>
+        <translation>Riavvia l&apos;app e attende il debugger Java.</translation>
     </message>
     <message>
         <source>Run the next source line</source>
@@ -1137,7 +1137,7 @@ Il modello determina display e cornice. Android proviene dall'immagine di sistem
     </message>
     <message>
         <source>Needs a debug build and the NDK. The library must match your app and its processor.</source>
-        <translation>Richiede una build di debug e l'NDK. La libreria deve corrispondere alla tua app e al suo processore.</translation>
+        <translation>Richiede una build di debug e l&apos;NDK. La libreria deve corrispondere alla tua app e al suo processore.</translation>
     </message>
     <message>
         <source>Needs a debug build on a connected phone or emulator.</source>
@@ -1148,12 +1148,12 @@ Il modello determina display e cornice. Android proviene dall'immagine di sistem
         <translation>Un programma su questo computer, analizzato con LLDB.</translation>
     </message>
     <message>
-        <source>Take over your agent's session</source>
+        <source>Take over your agent&apos;s session</source>
         <translation>Prendi il controllo della sessione del tuo agente</translation>
     </message>
     <message>
         <source>Pause your app or set a breakpoint to see the stack and variables.</source>
-        <translation>Metti in pausa l'app o imposta un punto di interruzione per vedere stack e variabili.</translation>
+        <translation>Metti in pausa l&apos;app o imposta un punto di interruzione per vedere stack e variabili.</translation>
     </message>
     <message>
         <source>Attach here, or take over a session your agent started.</source>
@@ -1207,7 +1207,7 @@ Il modello determina display e cornice. Android proviene dall'immagine di sistem
     </message>
     <message>
         <source>Bring back into the workspace</source>
-        <translation>Riporta nell'area di lavoro</translation>
+        <translation>Riporta nell&apos;area di lavoro</translation>
     </message>
     <message>
         <source>Close device window · the device keeps running</source>
@@ -1219,7 +1219,7 @@ Il modello determina display e cornice. Android proviene dall'immagine di sistem
     </message>
     <message>
         <source>Open in the workspace</source>
-        <translation>Apri nell'area di lavoro</translation>
+        <translation>Apri nell&apos;area di lavoro</translation>
     </message>
     <message>
         <source>Tomacco – Device</source>
@@ -1262,7 +1262,7 @@ Il modello determina display e cornice. Android proviene dall'immagine di sistem
     <name>FileWorkspace</name>
     <message>
         <source>Choose a file in the project tree</source>
-        <translation>Scegli un file nell'albero del progetto</translation>
+        <translation>Scegli un file nell&apos;albero del progetto</translation>
     </message>
     <message>
         <source>Close file</source>
@@ -1411,7 +1411,7 @@ Il modello determina display e cornice. Android proviene dall'immagine di sistem
         <translation>Aggancia</translation>
     </message>
     <message>
-        <source>Edge swipes start on the frame or at the screen's edge</source>
+        <source>Edge swipes start on the frame or at the screen&apos;s edge</source>
         <translation>Gli scorrimenti dai bordi iniziano sulla cornice o al bordo dello schermo</translation>
     </message>
     <message>
@@ -1420,7 +1420,7 @@ Il modello determina display e cornice. Android proviene dall'immagine di sistem
     </message>
     <message>
         <source>Home button and swipe up from the bottom edge</source>
-        <translation>Tasto Home e scorrimento verso l'alto dal bordo inferiore</translation>
+        <translation>Tasto Home e scorrimento verso l&apos;alto dal bordo inferiore</translation>
     </message>
     <message>
         <source>Input failed</source>
@@ -1476,7 +1476,7 @@ Il modello determina display e cornice. Android proviene dall'immagine di sistem
     </message>
     <message>
         <source>Swipe up from the bottom edge and pause</source>
-        <translation>Scorri verso l'alto dal bordo inferiore e fermati</translation>
+        <translation>Scorri verso l&apos;alto dal bordo inferiore e fermati</translation>
     </message>
     <message>
         <source>The iOS device is running in its own window</source>
@@ -1488,7 +1488,7 @@ Il modello determina display e cornice. Android proviene dall'immagine di sistem
     </message>
     <message>
         <source>Waiting for the display output of iOS…</source>
-        <translation>In attesa dell'uscita video di iOS…</translation>
+        <translation>In attesa dell&apos;uscita video di iOS…</translation>
     </message>
     <message>
         <source>Wake or lock the display</source>
@@ -1530,7 +1530,7 @@ Il modello determina display e cornice. Android proviene dall'immagine di sistem
         <translation>Incolla</translation>
     </message>
     <message>
-        <source>Type the clipboard's text into the field that has the focus</source>
+        <source>Type the clipboard&apos;s text into the field that has the focus</source>
         <translation>Digita il testo degli appunti nel campo che ha il focus</translation>
     </message>
     <message>
@@ -1555,7 +1555,7 @@ Il modello determina display e cornice. Android proviene dall'immagine di sistem
     </message>
     <message>
         <source>Show frames per second and the time from an input to the picture</source>
-        <translation>Mostra i fotogrammi al secondo e il tempo da un input all'immagine</translation>
+        <translation>Mostra i fotogrammi al secondo e il tempo da un input all&apos;immagine</translation>
     </message>
     <message>
         <source>Screenshot with frame</source>
@@ -1571,11 +1571,11 @@ Il modello determina display e cornice. Android proviene dall'immagine di sistem
     </message>
     <message>
         <source>Input to picture: %1 ms</source>
-        <translation>Dall'input all'immagine: %1 ms</translation>
+        <translation>Dall&apos;input all&apos;immagine: %1 ms</translation>
     </message>
     <message>
         <source>Input to picture: not measured yet</source>
-        <translation>Dall'input all'immagine: non ancora misurato</translation>
+        <translation>Dall&apos;input all&apos;immagine: non ancora misurato</translation>
     </message>
     <message>
         <source>The screenshot failed</source>
@@ -1590,7 +1590,7 @@ Il modello determina display e cornice. Android proviene dall'immagine di sistem
     <name>IosResearch</name>
     <message>
         <source>Another app change is still running.</source>
-        <translation>Un'altra modifica alle app è ancora in corso.</translation>
+        <translation>Un&apos;altra modifica alle app è ancora in corso.</translation>
     </message>
     <message>
         <source>Checking %1…</source>
@@ -1609,7 +1609,7 @@ Il modello determina display e cornice. Android proviene dall'immagine di sistem
         <translation>Il dispositivo iOS virtuale accetta un bundle .app compilato per iOS arm64.</translation>
     </message>
     <message>
-        <source>Set up the virtual iOS device's profile before adding apps.</source>
+        <source>Set up the virtual iOS device&apos;s profile before adding apps.</source>
         <translation>Configura il profilo del dispositivo iOS virtuale prima di aggiungere app.</translation>
     </message>
     <message>
@@ -1656,14 +1656,14 @@ Il modello determina display e cornice. Android proviene dall'immagine di sistem
     </message>
     <message>
         <source>App to open at start</source>
-        <translation>App da aprire all'avvio</translation>
+        <translation>App da aprire all&apos;avvio</translation>
     </message>
     <message>
         <source>Applies from the next start.</source>
         <translation>Si applica dal prossimo avvio.</translation>
     </message>
     <message>
-        <source>Your own arm64 .app bundles. Each start installs them together with the device's helper tools. Changes apply from the next start.</source>
+        <source>Your own arm64 .app bundles. Each start installs them together with the device&apos;s helper tools. Changes apply from the next start.</source>
         <translation>I tuoi bundle .app arm64. Ogni avvio li installa insieme agli strumenti di supporto del dispositivo. Le modifiche si applicano dal prossimo avvio.</translation>
     </message>
     <message>
@@ -1696,7 +1696,7 @@ Il modello determina display e cornice. Android proviene dall'immagine di sistem
     </message>
     <message>
         <source>Cancel the start and stop the device without saving</source>
-        <translation>Annulla l'avvio e ferma il dispositivo senza salvare</translation>
+        <translation>Annulla l&apos;avvio e ferma il dispositivo senza salvare</translation>
     </message>
     <message>
         <source>Check the bundle and add it to the profile · the next start installs it</source>
@@ -1704,7 +1704,7 @@ Il modello determina display e cornice. Android proviene dall'immagine di sistem
     </message>
     <message>
         <source>Checking image…</source>
-        <translation>Verifica dell'immagine…</translation>
+        <translation>Verifica dell&apos;immagine…</translation>
     </message>
     <message>
         <source>Checking…</source>
@@ -1716,7 +1716,7 @@ Il modello determina display e cornice. Android proviene dall'immagine di sistem
     </message>
     <message>
         <source>Choose app bundle (.app directory)</source>
-        <translation>Scegli bundle dell'app (cartella .app)</translation>
+        <translation>Scegli bundle dell&apos;app (cartella .app)</translation>
     </message>
     <message>
         <source>Choose iOS emulator</source>
@@ -1747,7 +1747,7 @@ Il modello determina display e cornice. Android proviene dall'immagine di sistem
         <translation>Lettura dello stato del controller non riuscita: %1</translation>
     </message>
     <message>
-        <source>For controller development: Apple's original firmware runs alone on a simulated ARM processor. The simulated controller still rests on unconfirmed hardware guesses; the firmware's services and its connection to iOS are not verified.</source>
+        <source>For controller development: Apple&apos;s original firmware runs alone on a simulated ARM processor. The simulated controller still rests on unconfirmed hardware guesses; the firmware&apos;s services and its connection to iOS are not verified.</source>
         <translation>Per lo sviluppo del controller: il firmware originale di Apple viene eseguito da solo su un processore ARM simulato. Il controller simulato si basa ancora su ipotesi hardware non confermate; i servizi del firmware e il suo collegamento con iOS non sono verificati.</translation>
     </message>
     <message>
@@ -1756,7 +1756,7 @@ Il modello determina display e cornice. Android proviene dall'immagine di sistem
     </message>
     <message>
         <source>Work in progress: an agent starts the virtual iOS device, then it appears here. Starting takes many minutes. Apart from the built-in test app, apps with a user interface have not been shown to work yet.</source>
-        <translation>Lavori in corso: un agente avvia il dispositivo iOS virtuale, che poi compare qui. L'avvio richiede molti minuti. A parte l'app di test integrata, non è ancora dimostrato che le app con interfaccia utente funzionino.</translation>
+        <translation>Lavori in corso: un agente avvia il dispositivo iOS virtuale, che poi compare qui. L&apos;avvio richiede molti minuti. A parte l&apos;app di test integrata, non è ancora dimostrato che le app con interfaccia utente funzionino.</translation>
     </message>
     <message>
         <source>Diagnostics complete</source>
@@ -1800,7 +1800,7 @@ Il modello determina display e cornice. Android proviene dall'immagine di sistem
     </message>
     <message>
         <source>Address of a firmware instruction, e.g. 0x10280d4 · optional</source>
-        <translation>Indirizzo di un'istruzione del firmware, es. 0x10280d4 · facoltativo</translation>
+        <translation>Indirizzo di un&apos;istruzione del firmware, es. 0x10280d4 · facoltativo</translation>
     </message>
     <message>
         <source>Job &amp; logs</source>
@@ -1808,11 +1808,11 @@ Il modello determina display e cornice. Android proviene dall'immagine di sistem
     </message>
     <message>
         <source>The processor identity the firmware sees when it starts. Other values make it take other start-up paths; they add no hardware features.</source>
-        <translation>L'identità del processore che il firmware vede all'avvio. Altri valori gli fanno seguire altri percorsi di avvio; non aggiungono funzioni hardware.</translation>
+        <translation>L&apos;identità del processore che il firmware vede all&apos;avvio. Altri valori gli fanno seguire altri percorsi di avvio; non aggiungono funzioni hardware.</translation>
     </message>
     <message>
         <source>From the last snapshot · raw 64-bit values</source>
-        <translation>Dall'ultima istantanea · valori grezzi a 64 bit</translation>
+        <translation>Dall&apos;ultima istantanea · valori grezzi a 64 bit</translation>
     </message>
     <message>
         <source>Loading…</source>
@@ -1840,7 +1840,7 @@ Il modello determina display e cornice. Android proviene dall'immagine di sistem
     </message>
     <message>
         <source>No apps of your own yet · the start opens the built-in test app.</source>
-        <translation>Ancora nessuna app tua · l'avvio apre l'app di test integrata.</translation>
+        <translation>Ancora nessuna app tua · l&apos;avvio apre l&apos;app di test integrata.</translation>
     </message>
     <message>
         <source>Number of bytes</source>
@@ -1848,7 +1848,7 @@ Il modello determina display e cornice. Android proviene dall'immagine di sistem
     </message>
     <message>
         <source>Open at start</source>
-        <translation>Apri all'avvio</translation>
+        <translation>Apri all&apos;avvio</translation>
     </message>
     <message>
         <source>Open test system</source>
@@ -1887,7 +1887,7 @@ Il modello determina display e cornice. Android proviene dall'immagine di sistem
         <translation>Percorso di una cartella .app (arm64)</translation>
     </message>
     <message>
-        <source>Addresses 0x1000000 to 0x11fffff of the firmware's memory. Reading checks the saved copy; the firmware is not run again for it.</source>
+        <source>Addresses 0x1000000 to 0x11fffff of the firmware&apos;s memory. Reading checks the saved copy; the firmware is not run again for it.</source>
         <translation>Indirizzi da 0x1000000 a 0x11fffff della memoria del firmware. La lettura verifica la copia salvata; il firmware non viene rieseguito per questo.</translation>
     </message>
     <message>
@@ -1900,7 +1900,7 @@ Il modello determina display e cornice. Android proviene dall'immagine di sistem
     </message>
     <message>
         <source>Prepare, boot, unlock and open the test app</source>
-        <translation>Prepara, avvia, sblocca e apri l'app di test</translation>
+        <translation>Prepara, avvia, sblocca e apri l&apos;app di test</translation>
     </message>
     <message>
         <source>Prepared firmware package</source>
@@ -1920,7 +1920,7 @@ Il modello determina display e cornice. Android proviene dall'immagine di sistem
     </message>
     <message>
         <source>Memory copy: 2 MiB from address %1 · saved in the report folder</source>
-        <translation>Copia della memoria: 2 MiB dall'indirizzo %1 · salvata nella cartella dei report</translation>
+        <translation>Copia della memoria: 2 MiB dall&apos;indirizzo %1 · salvata nella cartella dei report</translation>
     </message>
     <message>
         <source>Read</source>
@@ -1928,10 +1928,10 @@ Il modello determina display e cornice. Android proviene dall'immagine di sistem
     </message>
     <message>
         <source>Ready for a test run</source>
-        <translation>Pronto per un'esecuzione di test</translation>
+        <translation>Pronto per un&apos;esecuzione di test</translation>
     </message>
     <message>
-        <source>Actual image from the start-up screen · not yet the device's main display</source>
+        <source>Actual image from the start-up screen · not yet the device&apos;s main display</source>
         <translation>Immagine reale della schermata di avvio · non ancora il display principale del dispositivo</translation>
     </message>
     <message>
@@ -1948,7 +1948,7 @@ Il modello determina display e cornice. Android proviene dall'immagine di sistem
     </message>
     <message>
         <source>Remove from the profile · an app already installed stays on the device</source>
-        <translation>Rimuovi dal profilo · un'app già installata resta sul dispositivo</translation>
+        <translation>Rimuovi dal profilo · un&apos;app già installata resta sul dispositivo</translation>
     </message>
     <message>
         <source>Report folder</source>
@@ -1959,20 +1959,20 @@ Il modello determina display e cornice. Android proviene dall'immagine di sistem
         <translation>Esecuzione %1 · %2</translation>
     </message>
     <message>
-        <source>Run iOS, or the iPhone's power-management firmware on its own, directly on Linux. Each run writes its own report; runs started from the command line or by an agent appear here too.</source>
-        <translation>Esegui iOS, o da solo il firmware di gestione energetica dell'iPhone, direttamente su Linux. Ogni esecuzione scrive il proprio report; anche le esecuzioni avviate dalla riga di comando o da un agente compaiono qui.</translation>
+        <source>Run iOS, or the iPhone&apos;s power-management firmware on its own, directly on Linux. Each run writes its own report; runs started from the command line or by an agent appear here too.</source>
+        <translation>Esegui iOS, o da solo il firmware di gestione energetica dell&apos;iPhone, direttamente su Linux. Ogni esecuzione scrive il proprio report; anche le esecuzioni avviate dalla riga di comando o da un agente compaiono qui.</translation>
     </message>
     <message>
         <source>Run ended</source>
         <translation>Esecuzione terminata</translation>
     </message>
     <message>
-        <source>Save a copy of the firmware's memory with the report (2 MiB)</source>
+        <source>Save a copy of the firmware&apos;s memory with the report (2 MiB)</source>
         <translation>Salva una copia della memoria del firmware con il report (2 MiB)</translation>
     </message>
     <message>
         <source>Save storage and shut down cleanly</source>
-        <translation>Salva l'archiviazione e spegni in modo pulito</translation>
+        <translation>Salva l&apos;archiviazione e spegni in modo pulito</translation>
     </message>
     <message>
         <source>System services not found in the snapshots: %1</source>
@@ -2016,11 +2016,11 @@ Il modello determina display e cornice. Android proviene dall'immagine di sistem
     </message>
     <message>
         <source>Stop without saving · ends the run at once, whatever the device has not saved yet is lost</source>
-        <translation>Ferma senza salvare · termina subito l'esecuzione, ciò che il dispositivo non ha ancora salvato va perso</translation>
+        <translation>Ferma senza salvare · termina subito l&apos;esecuzione, ciò che il dispositivo non ha ancora salvato va perso</translation>
     </message>
     <message>
         <source>Stopped before the instruction at %1 · this does not show that the firmware started completely</source>
-        <translation>Fermato prima dell'istruzione in %1 · ciò non dimostra che il firmware si sia avviato completamente</translation>
+        <translation>Fermato prima dell&apos;istruzione in %1 · ciò non dimostra che il firmware si sia avviato completamente</translation>
     </message>
     <message>
         <source>Stopping…</source>
@@ -2036,19 +2036,19 @@ Il modello determina display e cornice. Android proviene dall'immagine di sistem
     </message>
     <message>
         <source>The existing run is reused.</source>
-        <translation>Viene riutilizzata l'esecuzione esistente.</translation>
+        <translation>Viene riutilizzata l&apos;esecuzione esistente.</translation>
     </message>
     <message>
         <source>The device could not save before stopping (%1). “Stop without saving” ends the run at once; the next start uses the last saved state.</source>
-        <translation>Il dispositivo non è riuscito a salvare prima dell'arresto (%1). “Ferma senza salvare” termina subito l'esecuzione; il prossimo avvio usa l'ultimo stato salvato.</translation>
+        <translation>Il dispositivo non è riuscito a salvare prima dell&apos;arresto (%1). “Ferma senza salvare” termina subito l&apos;esecuzione; il prossimo avvio usa l&apos;ultimo stato salvato.</translation>
     </message>
     <message>
         <source>The device is still starting, there is nothing to save. Ending the run…</source>
-        <translation>Il dispositivo si sta ancora avviando, non c'è nulla da salvare. Chiusura dell'esecuzione…</translation>
+        <translation>Il dispositivo si sta ancora avviando, non c&apos;è nulla da salvare. Chiusura dell&apos;esecuzione…</translation>
     </message>
     <message>
         <source>The run stops at that address and reports the processor state. The firmware itself is not modified.</source>
-        <translation>L'esecuzione si ferma a quell'indirizzo e riporta lo stato del processore. Il firmware stesso non viene modificato.</translation>
+        <translation>L&apos;esecuzione si ferma a quell&apos;indirizzo e riporta lo stato del processore. Il firmware stesso non viene modificato.</translation>
     </message>
     <message>
         <source>Time limit reached</source>
@@ -2145,7 +2145,7 @@ Il modello determina display e cornice. Android proviene dall'immagine di sistem
     </message>
     <message>
         <source>installed in the current run</source>
-        <translation>installata nell'esecuzione attuale</translation>
+        <translation>installata nell&apos;esecuzione attuale</translation>
     </message>
     <message>
         <source>interrupts enabled</source>
@@ -2169,7 +2169,7 @@ Il modello determina display e cornice. Android proviene dall'immagine di sistem
     </message>
     <message>
         <source>not installed in the current run</source>
-        <translation>non installata nell'esecuzione attuale</translation>
+        <translation>non installata nell&apos;esecuzione attuale</translation>
     </message>
     <message>
         <source>not recorded</source>
@@ -2189,7 +2189,7 @@ Il modello determina display e cornice. Android proviene dall'immagine di sistem
     </message>
     <message>
         <source>off · session ended without saving, the next start uses the last saved state</source>
-        <translation>spento · sessione terminata senza salvare, il prossimo avvio usa l'ultimo stato salvato</translation>
+        <translation>spento · sessione terminata senza salvare, il prossimo avvio usa l&apos;ultimo stato salvato</translation>
     </message>
     <message>
         <source>off · stopped and saved because the graphics card ran out of memory</source>
@@ -2197,7 +2197,7 @@ Il modello determina display e cornice. Android proviene dall'immagine di sistem
     </message>
     <message>
         <source>off · stopped because the graphics card ran out of memory, the next start uses the last saved state</source>
-        <translation>spento · fermato perché la memoria della scheda grafica era esaurita, il prossimo avvio usa l'ultimo stato salvato</translation>
+        <translation>spento · fermato perché la memoria della scheda grafica era esaurita, il prossimo avvio usa l&apos;ultimo stato salvato</translation>
     </message>
     <message>
         <source>off · session was saved and ended at its time limit</source>
@@ -2205,7 +2205,7 @@ Il modello determina display e cornice. Android proviene dall'immagine di sistem
     </message>
     <message>
         <source>opened at start</source>
-        <translation>aperta all'avvio</translation>
+        <translation>aperta all&apos;avvio</translation>
     </message>
     <message>
         <source>preparing…</source>
@@ -2249,11 +2249,11 @@ Il modello determina display e cornice. Android proviene dall'immagine di sistem
         <translation>arresto…</translation>
     </message>
     <message>
-        <source>the device's helper tools are too old for this (before build 368)</source>
+        <source>the device&apos;s helper tools are too old for this (before build 368)</source>
         <translation>gli strumenti di supporto del dispositivo sono troppo vecchi per questo (prima della build 368)</translation>
     </message>
     <message>
-        <source>this computer's time zone has no standard name such as Europe/Vienna</source>
+        <source>this computer&apos;s time zone has no standard name such as Europe/Vienna</source>
         <translation>il fuso orario di questo computer non ha un nome standard come Europe/Vienna</translation>
     </message>
     <message>
@@ -2295,7 +2295,7 @@ Il modello determina display e cornice. Android proviene dall'immagine di sistem
     </message>
     <message>
         <source>Keep the last stopped run under a name and start from it again later. Saving copies nothing.</source>
-        <translation>Conserva l'ultima esecuzione arrestata con un nome e riavvia da essa in seguito. Il salvataggio non copia nulla.</translation>
+        <translation>Conserva l&apos;ultima esecuzione arrestata con un nome e riavvia da essa in seguito. Il salvataggio non copia nulla.</translation>
     </message>
     <message>
         <source>No saved states yet.</source>
@@ -2323,11 +2323,11 @@ Il modello determina display e cornice. Android proviene dall'immagine di sistem
     </message>
     <message>
         <source>Remove the name, and its disk copy when nothing else keeps it</source>
-        <translation>Rimuovi il nome, e la sua copia del disco se nient'altro la conserva</translation>
+        <translation>Rimuovi il nome, e la sua copia del disco se nient&apos;altro la conserva</translation>
     </message>
     <message>
         <source>Name for the last stopped run</source>
-        <translation>Nome per l'ultima esecuzione arrestata</translation>
+        <translation>Nome per l&apos;ultima esecuzione arrestata</translation>
     </message>
     <message>
         <source>Save state</source>
@@ -2335,7 +2335,7 @@ Il modello determina display e cornice. Android proviene dall'immagine di sistem
     </message>
     <message>
         <source>Keep the last stopped run under this name</source>
-        <translation>Conserva l'ultima esecuzione arrestata con questo nome</translation>
+        <translation>Conserva l&apos;ultima esecuzione arrestata con questo nome</translation>
     </message>
     <message>
         <source>run %1</source>
@@ -2614,7 +2614,7 @@ F12                        Ispettore web</translation>
     </message>
     <message>
         <source>Send layout hints to the app; the background always stays edge-to-edge</source>
-        <translation>Invia suggerimenti di layout all'app; lo sfondo resta sempre a tutto schermo</translation>
+        <translation>Invia suggerimenti di layout all&apos;app; lo sfondo resta sempre a tutto schermo</translation>
     </message>
     <message>
         <source>Show safe area</source>
@@ -2625,16 +2625,16 @@ F12                        Ispettore web</translation>
         <translation>STRUMENTI</translation>
     </message>
     <message>
-        <source>The layout preview uses Chromium. Build and run native Android and iOS apps from the workspace on an emulator or a connected device. The profiles contain the manufacturers' resolutions and approximated bodies, cutouts and safe areas. CSS env(safe-area-inset-*) and Safari are not emulated here.</source>
-        <translation>L'anteprima del layout usa Chromium. Compila ed esegui app native Android e iOS dall'area di lavoro su un emulatore o un dispositivo connesso. I profili contengono le risoluzioni dei produttori e scocche, ritagli e aree sicure approssimati. CSS env(safe-area-inset-*) e Safari non vengono emulati qui.</translation>
+        <source>The layout preview uses Chromium. Build and run native Android and iOS apps from the workspace on an emulator or a connected device. The profiles contain the manufacturers&apos; resolutions and approximated bodies, cutouts and safe areas. CSS env(safe-area-inset-*) and Safari are not emulated here.</source>
+        <translation>L&apos;anteprima del layout usa Chromium. Compila ed esegui app native Android e iOS dall&apos;area di lavoro su un emulatore o un dispositivo connesso. I profili contengono le risoluzioni dei produttori e scocche, ritagli e aree sicure approssimati. CSS env(safe-area-inset-*) e Safari non vengono emulati qui.</translation>
     </message>
     <message>
         <source>The web preview works independently of this. Credentials are entered only in the interactive xtool setup.</source>
-        <translation>L'anteprima web funziona indipendentemente da questo. Le credenziali si inseriscono solo nella configurazione interattiva di xtool.</translation>
+        <translation>L&apos;anteprima web funziona indipendentemente da questo. Le credenziali si inseriscono solo nella configurazione interattiva di xtool.</translation>
     </message>
     <message>
         <source>The workspace has unsaved changes.</source>
-        <translation>L'area di lavoro ha modifiche non salvate.</translation>
+        <translation>L&apos;area di lavoro ha modifiche non salvate.</translation>
     </message>
     <message>
         <source>Unfold</source>
@@ -2685,8 +2685,8 @@ F12                        Ispettore web</translation>
         <translation>SDK iOS non ancora configurato</translation>
     </message>
     <message>
-        <source>xtool builds and signs SwiftPM apps for iOS. This needs Apple's SDK from Xcode and a separate sign-in for signing.</source>
-        <translation>xtool compila e firma app SwiftPM per iOS. Servono l'SDK di Apple da Xcode e un accesso separato per la firma.</translation>
+        <source>xtool builds and signs SwiftPM apps for iOS. This needs Apple&apos;s SDK from Xcode and a separate sign-in for signing.</source>
+        <translation>xtool compila e firma app SwiftPM per iOS. Servono l&apos;SDK di Apple da Xcode e un accesso separato per la firma.</translation>
     </message>
     <message>
         <source>xtool sdk install /path/to/Xcode.xip
@@ -2696,7 +2696,7 @@ xtool setup</translation>
     </message>
     <message>
         <source>Safe area metadata</source>
-        <translation>Metadati dell'area sicura</translation>
+        <translation>Metadati dell&apos;area sicura</translation>
     </message>
     <message>
         <source>System bars</source>
@@ -2799,7 +2799,7 @@ xtool setup</translation>
     <name>NativeView</name>
     <message>
         <source>Click the text field in the app first</source>
-        <translation>Fai prima clic sul campo di testo nell'app</translation>
+        <translation>Fai prima clic sul campo di testo nell&apos;app</translation>
     </message>
     <message>
         <source>Connection to the runtime ended</source>
@@ -2827,7 +2827,7 @@ xtool setup</translation>
     </message>
     <message>
         <source>The input was not confirmed</source>
-        <translation>L'input non è stato confermato</translation>
+        <translation>L&apos;input non è stato confermato</translation>
     </message>
     <message>
         <source>The runtime response is too large</source>
@@ -2902,7 +2902,7 @@ xtool setup</translation>
     </message>
     <message>
         <source>Choose a device first, then drop the app on it.</source>
-        <translation>Scegli prima un dispositivo, poi trascinaci sopra l'app.</translation>
+        <translation>Scegli prima un dispositivo, poi trascinaci sopra l&apos;app.</translation>
     </message>
     <message>
         <source>Android devices install .apk files.</source>
@@ -2913,7 +2913,7 @@ xtool setup</translation>
         <translation>Un iPhone installa un solo file .ipa firmato.</translation>
     </message>
     <message>
-        <source>Apps for the Mac's simulator are installed with Apple's tools.</source>
+        <source>Apps for the Mac&apos;s simulator are installed with Apple&apos;s tools.</source>
         <translation>Le app per il simulatore del Mac si installano con gli strumenti di Apple.</translation>
     </message>
     <message>
@@ -2965,7 +2965,7 @@ xtool setup</translation>
     </message>
     <message>
         <source>App launch: %1. Details under Builds &amp; jobs.</source>
-        <translation>Avvio dell'app: %1. Dettagli in Build e job.</translation>
+        <translation>Avvio dell&apos;app: %1. Dettagli in Build e job.</translation>
     </message>
     <message>
         <source>App launched</source>
@@ -2993,7 +2993,7 @@ xtool setup</translation>
     </message>
     <message>
         <source>Applying changes to the running app…</source>
-        <translation>Applicazione delle modifiche all'app in esecuzione…</translation>
+        <translation>Applicazione delle modifiche all&apos;app in esecuzione…</translation>
     </message>
     <message>
         <source>Back</source>
@@ -3033,7 +3033,7 @@ xtool setup</translation>
     </message>
     <message>
         <source>Choose ‘Sign in to Apple’ and finish signing in in the local terminal.</source>
-        <translation>Scegli ‘Accedi ad Apple’ e completa l'accesso nel terminale locale.</translation>
+        <translation>Scegli ‘Accedi ad Apple’ e completa l&apos;accesso nel terminale locale.</translation>
     </message>
     <message>
         <source>Color</source>
@@ -3057,7 +3057,7 @@ xtool setup</translation>
     </message>
     <message>
         <source>Connect the unlocked iPhone. The usbmuxd service must be available.</source>
-        <translation>Collega l'iPhone sbloccato. Il servizio usbmuxd deve essere disponibile.</translation>
+        <translation>Collega l&apos;iPhone sbloccato. Il servizio usbmuxd deve essere disponibile.</translation>
     </message>
     <message>
         <source>Connected</source>
@@ -3069,7 +3069,7 @@ xtool setup</translation>
     </message>
     <message>
         <source>Connecting the picture…</source>
-        <translation>Connessione dell'immagine…</translation>
+        <translation>Connessione dell&apos;immagine…</translation>
     </message>
     <message>
         <source>Not mirroring</source>
@@ -3077,7 +3077,7 @@ xtool setup</translation>
     </message>
     <message>
         <source>On the iPhone, open Control Center, tap Screen Mirroring and choose %1.</source>
-        <translation>Sull'iPhone, apri Centro di Controllo, tocca ‘Duplica schermo’ e scegli %1.</translation>
+        <translation>Sull&apos;iPhone, apri Centro di Controllo, tocca ‘Duplica schermo’ e scegli %1.</translation>
     </message>
     <message>
         <source>Connecting…</source>
@@ -3133,7 +3133,7 @@ xtool setup</translation>
     </message>
     <message>
         <source>Download SDK from Apple</source>
-        <translation>Scarica l'SDK da Apple</translation>
+        <translation>Scarica l&apos;SDK da Apple</translation>
     </message>
     <message>
         <source>Download control package</source>
@@ -3141,7 +3141,7 @@ xtool setup</translation>
     </message>
     <message>
         <source>Download the Xcode archive from Apple, then choose ‘Import SDK’. Processing runs on Linux.</source>
-        <translation>Scarica l'archivio di Xcode da Apple, poi scegli ‘Importa SDK’. L'elaborazione avviene su Linux.</translation>
+        <translation>Scarica l&apos;archivio di Xcode da Apple, poi scegli ‘Importa SDK’. L&apos;elaborazione avviene su Linux.</translation>
     </message>
     <message>
         <source>Ending the session…</source>
@@ -3156,12 +3156,12 @@ xtool setup</translation>
         <translation>File</translation>
     </message>
     <message>
-        <source>First click into the app's text field. This text is pasted through the device clipboard.</source>
-        <translation>Fai prima clic nel campo di testo dell'app. Questo testo viene incollato tramite gli appunti del dispositivo.</translation>
+        <source>First click into the app&apos;s text field. This text is pasted through the device clipboard.</source>
+        <translation>Fai prima clic nel campo di testo dell&apos;app. Questo testo viene incollato tramite gli appunti del dispositivo.</translation>
     </message>
     <message>
         <source>First click the text field you want in the app. Its entire accessible value is replaced, umlauts and emoji included.</source>
-        <translation>Fai prima clic sul campo di testo desiderato nell'app. L'intero valore accessibile viene sostituito, accenti ed emoji inclusi.</translation>
+        <translation>Fai prima clic sul campo di testo desiderato nell&apos;app. L&apos;intero valore accessibile viene sostituito, accenti ed emoji inclusi.</translation>
     </message>
     <message>
         <source>Frame</source>
@@ -3173,7 +3173,7 @@ xtool setup</translation>
     </message>
     <message>
         <source>Import the Apple SDK from Xcode</source>
-        <translation>Importa l'SDK Apple da Xcode</translation>
+        <translation>Importa l&apos;SDK Apple da Xcode</translation>
     </message>
     <message>
         <source>Insert text</source>
@@ -3181,7 +3181,7 @@ xtool setup</translation>
     </message>
     <message>
         <source>Install libimobiledevice for device pairing.</source>
-        <translation>Installa libimobiledevice per l'abbinamento dei dispositivi.</translation>
+        <translation>Installa libimobiledevice per l&apos;abbinamento dei dispositivi.</translation>
     </message>
     <message>
         <source>Install libusbmuxd for the USB connection.</source>
@@ -3201,7 +3201,7 @@ xtool setup</translation>
     </message>
     <message>
         <source>Interface language; System follows the desktop language</source>
-        <translation>Lingua dell'interfaccia; Sistema segue la lingua del desktop</translation>
+        <translation>Lingua dell&apos;interfaccia; Sistema segue la lingua del desktop</translation>
     </message>
     <message>
         <source>Language</source>
@@ -3221,7 +3221,7 @@ xtool setup</translation>
     </message>
     <message>
         <source>Linux builds your SwiftPM/xtool app. The connected iPhone runs it. Set up the Apple SDK and signing here once.</source>
-        <translation>Linux compila la tua app SwiftPM/xtool. L'iPhone collegato la esegue. Configura qui una volta l'SDK Apple e la firma.</translation>
+        <translation>Linux compila la tua app SwiftPM/xtool. L&apos;iPhone collegato la esegue. Configura qui una volta l&apos;SDK Apple e la firma.</translation>
     </message>
     <message>
         <source>Live device</source>
@@ -3235,7 +3235,7 @@ xtool setup</translation>
         <source>Mac terminal: brew install facebook/fb/idb
 SSH uses your existing keys and the known host identity.</source>
         <translation>Terminale del Mac: brew install facebook/fb/idb
-SSH usa le tue chiavi esistenti e l'identità host nota.</translation>
+SSH usa le tue chiavi esistenti e l&apos;identità host nota.</translation>
     </message>
     <message>
         <source>No iOS simulator runtime is installed on this Mac yet. Install one in Xcode → Settings → Components.</source>
@@ -3278,8 +3278,8 @@ SSH usa le tue chiavi esistenti e l'identità host nota.</translation>
         <translation>Abbina dispositivo</translation>
     </message>
     <message>
-        <source>Play the app's sound on this computer</source>
-        <translation>Riproduci l'audio dell'app su questo computer</translation>
+        <source>Play the app&apos;s sound on this computer</source>
+        <translation>Riproduci l&apos;audio dell&apos;app su questo computer</translation>
     </message>
     <message>
         <source>Tomacco is free software under the GNU General Public License. Source: GPL-2.0-or-later. Distributed binaries: GPL-3.0-or-later, because they include Apache-2.0 components. It comes with ABSOLUTELY NO WARRANTY.</source>
@@ -3359,7 +3359,7 @@ SSH usa le tue chiavi esistenti e l'identità host nota.</translation>
     </message>
     <message>
         <source>Set up go-ios for the iPhone developer services.</source>
-        <translation>Configura go-ios per i servizi sviluppatore dell'iPhone.</translation>
+        <translation>Configura go-ios per i servizi sviluppatore dell&apos;iPhone.</translation>
     </message>
     <message>
         <source>Set up iPhone</source>
@@ -3387,7 +3387,7 @@ SSH usa le tue chiavi esistenti e l'identità host nota.</translation>
     </message>
     <message>
         <source>Signing can change the bundle ID. Then enter the ID of the installed WebDriverAgent runner. A modern local iOS emulator is not included at present.</source>
-        <translation>La firma può cambiare il bundle ID. In tal caso inserisci l'ID del runner WebDriverAgent installato. Al momento non è incluso un emulatore iOS locale moderno.</translation>
+        <translation>La firma può cambiare il bundle ID. In tal caso inserisci l&apos;ID del runner WebDriverAgent installato. Al momento non è incluso un emulatore iOS locale moderno.</translation>
     </message>
     <message>
         <source>Simulator on a Mac</source>
@@ -3419,7 +3419,7 @@ SSH usa le tue chiavi esistenti e l'identità host nota.</translation>
     </message>
     <message>
         <source>Stop forwarding sound; restore output on the device</source>
-        <translation>Interrompi l'inoltro dell'audio; ripristina l'uscita sul dispositivo</translation>
+        <translation>Interrompi l&apos;inoltro dell&apos;audio; ripristina l&apos;uscita sul dispositivo</translation>
     </message>
     <message>
         <source>Switch workspace</source>
@@ -3467,7 +3467,7 @@ SSH usa le tue chiavi esistenti e l'identità host nota.</translation>
     </message>
     <message>
         <source>Turn on Developer Mode on the iPhone and confirm the pairing. The Apple sign-in opens a local terminal; passwords are not entered in Tomacco or MCP.</source>
-        <translation>Attiva la modalità sviluppatore sull'iPhone e conferma l'abbinamento. L'accesso Apple apre un terminale locale; le password non vengono inserite in Tomacco o MCP.</translation>
+        <translation>Attiva la modalità sviluppatore sull&apos;iPhone e conferma l&apos;abbinamento. L&apos;accesso Apple apre un terminale locale; le password non vengono inserite in Tomacco o MCP.</translation>
     </message>
     <message>
         <source>UI tests</source>
@@ -3487,7 +3487,7 @@ SSH usa le tue chiavi esistenti e l'identità host nota.</translation>
     </message>
     <message>
         <source>View the sound forwarding error</source>
-        <translation>Vedi l'errore di inoltro audio</translation>
+        <translation>Vedi l&apos;errore di inoltro audio</translation>
     </message>
     <message>
         <source>WORKSPACE</source>
@@ -3527,11 +3527,11 @@ SSH usa le tue chiavi esistenti e l'identità host nota.</translation>
     </message>
     <message>
         <source>Switch to light appearance</source>
-        <translation>Passa all'aspetto chiaro</translation>
+        <translation>Passa all&apos;aspetto chiaro</translation>
     </message>
     <message>
         <source>Switch to dark appearance</source>
-        <translation>Passa all'aspetto scuro</translation>
+        <translation>Passa all&apos;aspetto scuro</translation>
     </message>
     <message>
         <source>Settings</source>
@@ -3609,7 +3609,7 @@ SSH usa le tue chiavi esistenti e l'identità host nota.</translation>
         <translation>Salva il file corrente</translation>
     </message>
     <message>
-        <source>Search the project's source code</source>
+        <source>Search the project&apos;s source code</source>
         <translation>Cerca nel codice sorgente del progetto</translation>
     </message>
     <message>
@@ -3733,7 +3733,7 @@ SSH usa le tue chiavi esistenti e l'identità host nota.</translation>
         <translation>Un altro computer</translation>
     </message>
     <message>
-        <source>Appearance, language, notifications, updates and the device view's choices, as a JSON file. Paths, window sizes and history stay on this computer.</source>
+        <source>Appearance, language, notifications, updates and the device view&apos;s choices, as a JSON file. Paths, window sizes and history stay on this computer.</source>
         <translation>Aspetto, lingua, notifiche, aggiornamenti e scelte della vista dispositivo, come file JSON. Percorsi, dimensioni delle finestre e cronologia restano su questo computer.</translation>
     </message>
     <message>
@@ -3779,7 +3779,7 @@ SSH usa le tue chiavi esistenti e l'identità host nota.</translation>
         <translation>Tomacco %1 è disponibile</translation>
     </message>
     <message>
-        <source>Open Tomacco to see what's new and install it.</source>
+        <source>Open Tomacco to see what&apos;s new and install it.</source>
         <translation>Apri Tomacco per vedere le novità e installarla.</translation>
     </message>
     <message>
@@ -3787,7 +3787,7 @@ SSH usa le tue chiavi esistenti e l'identità host nota.</translation>
         <translation>Non è stato possibile riavviare Tomacco. Chiudilo e aprilo dal menu delle applicazioni.</translation>
     </message>
     <message>
-        <source>What's new in %1</source>
+        <source>What&apos;s new in %1</source>
         <translation>Novità della versione %1</translation>
     </message>
     <message>
@@ -3843,19 +3843,19 @@ SSH usa le tue chiavi esistenti e l'identità host nota.</translation>
         <translation>Log accanto al dispositivo</translation>
     </message>
     <message>
-        <source>Show the device's or a job's log beside the device</source>
+        <source>Show the device&apos;s or a job&apos;s log beside the device</source>
         <translation>Mostra il log del dispositivo o di un job accanto al dispositivo</translation>
     </message>
     <message>
         <source>Agent activity</source>
-        <translation>Attività dell'agente</translation>
+        <translation>Attività dell&apos;agente</translation>
     </message>
     <message>
         <source>Session log, e.g. %1</source>
         <translation>Log di sessione, ad es. %1</translation>
     </message>
     <message>
-        <source>Set TOMACCO_SESSION_LOG to this file in your agent's MCP settings, and the activity panel lists every operation it calls, with its duration and result.</source>
+        <source>Set TOMACCO_SESSION_LOG to this file in your agent&apos;s MCP settings, and the activity panel lists every operation it calls, with its duration and result.</source>
         <translation>Imposta TOMACCO_SESSION_LOG su questo file nelle impostazioni MCP del tuo agente e il pannello attività elenca ogni operazione che chiama, con durata e risultato.</translation>
     </message>
     <message>
@@ -3915,8 +3915,8 @@ SSH usa le tue chiavi esistenti e l'identità host nota.</translation>
         <translation>Nessuna impostazione corrisponde a «%1».</translation>
     </message>
     <message>
-        <source>Use the Omarchy theme's accent</source>
-        <translation>Usa il colore d'accento del tema Omarchy</translation>
+        <source>Use the Omarchy theme&apos;s accent</source>
+        <translation>Usa il colore d&apos;accento del tema Omarchy</translation>
     </message>
     <message>
         <source>Theme</source>
@@ -3924,14 +3924,14 @@ SSH usa le tue chiavi esistenti e l'identità host nota.</translation>
     </message>
     <message>
         <source>The accent of %1 does not read clearly on this background, so Tomacco keeps its own.</source>
-        <translation>Il colore d'accento di %1 non si legge bene su questo sfondo, quindi Tomacco mantiene il proprio.</translation>
+        <translation>Il colore d&apos;accento di %1 non si legge bene su questo sfondo, quindi Tomacco mantiene il proprio.</translation>
     </message>
     <message>
         <source>Accent from the Omarchy theme %1.</source>
-        <translation>Colore d'accento dal tema Omarchy %1.</translation>
+        <translation>Colore d&apos;accento dal tema Omarchy %1.</translation>
     </message>
     <message>
-        <source>A layout keeps the open view, the activity panel, the log beside the device and its width, the device windows and the window's size.</source>
+        <source>A layout keeps the open view, the activity panel, the log beside the device and its width, the device windows and the window&apos;s size.</source>
         <translation>Una disposizione ricorda la vista aperta, il pannello attività, il log accanto al dispositivo con la sua larghezza, le finestre dei dispositivi e la dimensione della finestra.</translation>
     </message>
     <message>
@@ -3951,7 +3951,7 @@ SSH usa le tue chiavi esistenti e l'identità host nota.</translation>
         <translation>Nome, ad es. test o debug</translation>
     </message>
     <message>
-        <source>Restarting AirPlay. Then choose Tomacco again in the iPhone's Screen Mirroring.</source>
+        <source>Restarting AirPlay. Then choose Tomacco again in the iPhone&apos;s Screen Mirroring.</source>
         <translation>Riavvio di AirPlay. Poi seleziona di nuovo Tomacco in Duplica schermo sull’iPhone.</translation>
     </message>
     <message>
@@ -3986,6 +3986,30 @@ SSH usa le tue chiavi esistenti e l'identità host nota.</translation>
         <source>Start AirPlay</source>
         <translation>Avvia AirPlay</translation>
     </message>
+    <message>
+        <source>An agent is waiting for you: %1</source>
+        <translation>Un agente ti sta aspettando: %1</translation>
+    </message>
+    <message>
+        <source>In use elsewhere</source>
+        <translation>In uso altrove</translation>
+    </message>
+    <message>
+        <source>Reconnecting</source>
+        <translation>Riconnessione</translation>
+    </message>
+    <message>
+        <source>Screenshot saved</source>
+        <translation>Screenshot salvato</translation>
+    </message>
+    <message>
+        <source>Show file</source>
+        <translation>Mostra file</translation>
+    </message>
+    <message>
+        <source>Your turn</source>
+        <translation>Tocca a te</translation>
+    </message>
 </context>
 <context>
     <name>Operations</name>
@@ -3999,7 +4023,7 @@ SSH usa le tue chiavi esistenti e l'identità host nota.</translation>
     </message>
     <message>
         <source>Update status</source>
-        <translation>Stato dell'aggiornamento</translation>
+        <translation>Stato dell&apos;aggiornamento</translation>
     </message>
     <message>
         <source>Roll back update</source>
@@ -4019,11 +4043,11 @@ SSH usa le tue chiavi esistenti e l'identità host nota.</translation>
     </message>
     <message>
         <source>App data files</source>
-        <translation>File dati dell'app</translation>
+        <translation>File dati dell&apos;app</translation>
     </message>
     <message>
         <source>App permission</source>
-        <translation>Permesso dell'app</translation>
+        <translation>Permesso dell&apos;app</translation>
     </message>
     <message>
         <source>Apple devices on the Mac</source>
@@ -4039,7 +4063,7 @@ SSH usa le tue chiavi esistenti e l'identità host nota.</translation>
     </message>
     <message>
         <source>Watch and rerun app</source>
-        <translation>Osserva e riavvia l'app</translation>
+        <translation>Osserva e riavvia l&apos;app</translation>
     </message>
     <message>
         <source>Build iOS graphics compiler plugin</source>
@@ -4115,7 +4139,7 @@ SSH usa le tue chiavi esistenti e l'identità host nota.</translation>
     </message>
     <message>
         <source>Compare startup with and without Baseline Profile</source>
-        <translation>Confronta l'avvio con e senza Baseline Profile</translation>
+        <translation>Confronta l&apos;avvio con e senza Baseline Profile</translation>
     </message>
     <message>
         <source>Compare performance reports</source>
@@ -4123,7 +4147,7 @@ SSH usa le tue chiavi esistenti e l'identità host nota.</translation>
     </message>
     <message>
         <source>Measure app startup</source>
-        <translation>Misura l'avvio dell'app</translation>
+        <translation>Misura l&apos;avvio dell&apos;app</translation>
     </message>
     <message>
         <source>Measure frame rendering</source>
@@ -4131,11 +4155,11 @@ SSH usa le tue chiavi esistenti e l'identità host nota.</translation>
     </message>
     <message>
         <source>Measure app memory</source>
-        <translation>Misura la memoria dell'app</translation>
+        <translation>Misura la memoria dell&apos;app</translation>
     </message>
     <message>
         <source>Measure CPU and battery use</source>
-        <translation>Misura l'uso di CPU e batteria</translation>
+        <translation>Misura l&apos;uso di CPU e batteria</translation>
     </message>
     <message>
         <source>Check toolchain</source>
@@ -4143,7 +4167,7 @@ SSH usa le tue chiavi esistenti e l'identità host nota.</translation>
     </message>
     <message>
         <source>Click element</source>
-        <translation>Fai clic sull'elemento</translation>
+        <translation>Fai clic sull&apos;elemento</translation>
     </message>
     <message>
         <source>Commit Google Play change</source>
@@ -4167,7 +4191,7 @@ SSH usa le tue chiavi esistenti e l'identità host nota.</translation>
     </message>
     <message>
         <source>Connect Swift to the Android NDK</source>
-        <translation>Collega Swift all'NDK Android</translation>
+        <translation>Collega Swift all&apos;NDK Android</translation>
     </message>
     <message>
         <source>Connect dev server</source>
@@ -4323,11 +4347,11 @@ SSH usa le tue chiavi esistenti e l'identità host nota.</translation>
     </message>
     <message>
         <source>Emulator sensors</source>
-        <translation>Sensori dell'emulatore</translation>
+        <translation>Sensori dell&apos;emulatore</translation>
     </message>
     <message>
         <source>App Links</source>
-        <translation>Link dell'app</translation>
+        <translation>Link dell&apos;app</translation>
     </message>
     <message>
         <source>Network capture</source>
@@ -4351,19 +4375,19 @@ SSH usa le tue chiavi esistenti e l'identità host nota.</translation>
     </message>
     <message>
         <source>iPhone crash reports</source>
-        <translation>Rapporti sugli arresti anomali dell'iPhone</translation>
+        <translation>Rapporti sugli arresti anomali dell&apos;iPhone</translation>
     </message>
     <message>
         <source>Record iPhone screen</source>
-        <translation>Registra lo schermo dell'iPhone</translation>
+        <translation>Registra lo schermo dell&apos;iPhone</translation>
     </message>
     <message>
         <source>iPhone app files</source>
-        <translation>File di un'app iPhone</translation>
+        <translation>File di un&apos;app iPhone</translation>
     </message>
     <message>
         <source>iPhone readiness</source>
-        <translation>Stato di preparazione dell'iPhone</translation>
+        <translation>Stato di preparazione dell&apos;iPhone</translation>
     </message>
     <message>
         <source>iPhone signing overview</source>
@@ -4371,7 +4395,7 @@ SSH usa le tue chiavi esistenti e l'identità host nota.</translation>
     </message>
     <message>
         <source>Read crash report</source>
-        <translation>Leggi rapporto sull'arresto anomalo</translation>
+        <translation>Leggi rapporto sull&apos;arresto anomalo</translation>
     </message>
     <message>
         <source>Inspect iOS app</source>
@@ -4379,7 +4403,7 @@ SSH usa le tue chiavi esistenti e l'identità host nota.</translation>
     </message>
     <message>
         <source>Prepare for App Store</source>
-        <translation>Prepara per l'App Store</translation>
+        <translation>Prepara per l&apos;App Store</translation>
     </message>
     <message>
         <source>Import Xcode project</source>
@@ -4443,7 +4467,7 @@ SSH usa le tue chiavi esistenti e l'identità host nota.</translation>
     </message>
     <message>
         <source>Load agent context</source>
-        <translation>Carica contesto dell'agente</translation>
+        <translation>Carica contesto dell&apos;agente</translation>
     </message>
     <message>
         <source>Mac workspaces</source>
@@ -4527,7 +4551,7 @@ SSH usa le tue chiavi esistenti e l'identità host nota.</translation>
     </message>
     <message>
         <source>Preview status</source>
-        <translation>Stato dell'anteprima</translation>
+        <translation>Stato dell&apos;anteprima</translation>
     </message>
     <message>
         <source>Read PMP memory</source>
@@ -4611,7 +4635,7 @@ SSH usa le tue chiavi esistenti e l'identità host nota.</translation>
     </message>
     <message>
         <source>Record UI test</source>
-        <translation>Registra un test dell'interfaccia</translation>
+        <translation>Registra un test dell&apos;interfaccia</translation>
     </message>
     <message>
         <source>Mark tappable elements</source>
@@ -4623,7 +4647,7 @@ SSH usa le tue chiavi esistenti e l'identità host nota.</translation>
     </message>
     <message>
         <source>Read UI tree as text</source>
-        <translation>Leggi l'albero dell'interfaccia come testo</translation>
+        <translation>Leggi l&apos;albero dell&apos;interfaccia come testo</translation>
     </message>
     <message>
         <source>Read text on screen</source>
@@ -4647,15 +4671,15 @@ SSH usa le tue chiavi esistenti e l'identità host nota.</translation>
     </message>
     <message>
         <source>Check UI test scenario</source>
-        <translation>Controlla scenario di test dell'interfaccia</translation>
+        <translation>Controlla scenario di test dell&apos;interfaccia</translation>
     </message>
     <message>
         <source>Set up Android text input</source>
-        <translation>Configura l'inserimento di testo Android</translation>
+        <translation>Configura l&apos;inserimento di testo Android</translation>
     </message>
     <message>
         <source>Check Android text input</source>
-        <translation>Verifica l'inserimento di testo Android</translation>
+        <translation>Verifica l&apos;inserimento di testo Android</translation>
     </message>
     <message>
         <source>Clean up old jobs and reports</source>
@@ -4755,7 +4779,7 @@ SSH usa le tue chiavi esistenti e l'identità host nota.</translation>
     </message>
     <message>
         <source>Set app version</source>
-        <translation>Imposta versione dell'app</translation>
+        <translation>Imposta versione dell&apos;app</translation>
     </message>
     <message>
         <source>Check Android release readiness</source>
@@ -4771,11 +4795,11 @@ SSH usa le tue chiavi esistenti e l'identità host nota.</translation>
     </message>
     <message>
         <source>Set emulator display</source>
-        <translation>Imposta display dell'emulatore</translation>
+        <translation>Imposta display dell&apos;emulatore</translation>
     </message>
     <message>
         <source>Set emulator performance</source>
-        <translation>Imposta prestazioni dell'emulatore</translation>
+        <translation>Imposta prestazioni dell&apos;emulatore</translation>
     </message>
     <message>
         <source>Set up iPhone connection</source>
@@ -4799,7 +4823,7 @@ SSH usa le tue chiavi esistenti e l'identità host nota.</translation>
     </message>
     <message>
         <source>Show iPhone apps</source>
-        <translation>Mostra app dell'iPhone</translation>
+        <translation>Mostra app dell&apos;iPhone</translation>
     </message>
     <message>
         <source>Show project files</source>
@@ -5085,6 +5109,62 @@ SSH usa le tue chiavi esistenti e l'identità host nota.</translation>
         <source>Set up emulator</source>
         <translation>Configura emulatore</translation>
     </message>
+    <message>
+        <source>Ask the person to act</source>
+        <translation>Chiedi alla persona di agire</translation>
+    </message>
+    <message>
+        <source>Draft a bug report</source>
+        <translation>Prepara una segnalazione di bug</translation>
+    </message>
+    <message>
+        <source>List handoffs</source>
+        <translation>Elenca i passaggi di consegne</translation>
+    </message>
+    <message>
+        <source>Observe a session</source>
+        <translation>Osserva una sessione</translation>
+    </message>
+    <message>
+        <source>Ordered input batch</source>
+        <translation>Lotto ordinato di input</translation>
+    </message>
+    <message>
+        <source>Read a handoff</source>
+        <translation>Leggi un passaggio di consegne</translation>
+    </message>
+    <message>
+        <source>The person is done</source>
+        <translation>La persona ha finito</translation>
+    </message>
+    <message>
+        <source>Timestamped gesture trace</source>
+        <translation>Traccia dei gesti con marca temporale</translation>
+    </message>
+    <message>
+        <source>Wait for the person</source>
+        <translation>Attendi la persona</translation>
+    </message>
+    <message>
+        <source>Withdraw a handoff</source>
+        <translation>Ritira un passaggio di consegne</translation>
+    </message>
+    <message>
+        <source>Find a device by name</source>
+        <translation>Trova un dispositivo per nome</translation>
+    </message>
+    <message>
+        <source>Play a GPX route</source>
+        <translation>Riproduci un percorso GPX</translation>
+    </message>
+    <message>
+        <source>Read a GPX route</source>
+        <translation>Leggi un percorso GPX</translation>
+    </message>
+    <message>
+        <source>Route playback status</source>
+        <translation>Stato della riproduzione del percorso</translation>
+    </message>
 </context>
 <context>
     <name>ProfileWorkspace</name>
@@ -5272,7 +5352,7 @@ SSH usa le tue chiavi esistenti e l'identità host nota.</translation>
     </message>
     <message>
         <source>App launch</source>
-        <translation>Avvio dell'app</translation>
+        <translation>Avvio dell&apos;app</translation>
     </message>
 </context>
 <context>
@@ -5382,7 +5462,7 @@ SSH usa le tue chiavi esistenti e l'identità host nota.</translation>
     </message>
     <message>
         <source>Set up text input on the device</source>
-        <translation>Configura l'inserimento di testo sul dispositivo</translation>
+        <translation>Configura l&apos;inserimento di testo sul dispositivo</translation>
     </message>
     <message>
         <source>Run on several devices</source>
@@ -5390,7 +5470,7 @@ SSH usa le tue chiavi esistenti e l'identità host nota.</translation>
     </message>
     <message>
         <source>JUnit results and the failure screenshot stay, even when a step fails.</source>
-        <translation>I risultati JUnit e lo screenshot dell'errore restano, anche se un passaggio non riesce.</translation>
+        <translation>I risultati JUnit e lo screenshot dell&apos;errore restano, anche se un passaggio non riesce.</translation>
     </message>
 </context>
 <context>
@@ -5413,7 +5493,7 @@ SSH usa le tue chiavi esistenti e l'identità host nota.</translation>
     </message>
     <message>
         <source>App session running</source>
-        <translation>Sessione dell'app in esecuzione</translation>
+        <translation>Sessione dell&apos;app in esecuzione</translation>
     </message>
     <message>
         <source>Application ID, e.g. com.example.app</source>
@@ -5673,7 +5753,7 @@ SSH usa le tue chiavi esistenti e l'identità host nota.</translation>
     </message>
     <message>
         <source>Workspace name</source>
-        <translation>Nome dell'area di lavoro</translation>
+        <translation>Nome dell&apos;area di lavoro</translation>
     </message>
     <message>
         <source>Yes</source>
@@ -5704,7 +5784,7 @@ SSH usa le tue chiavi esistenti e l'identità host nota.</translation>
         <translation>Tutto ciò che il tuo agente può fare, come modulo da compilare.</translation>
     </message>
     <message>
-        <source>Pause your app and see what it's doing.</source>
+        <source>Pause your app and see what it&apos;s doing.</source>
         <translation>Metti in pausa la tua app e guarda cosa sta facendo.</translation>
     </message>
     <message>
@@ -5716,7 +5796,7 @@ SSH usa le tue chiavi esistenti e l'identità host nota.</translation>
         <translation>Scopri dove va il tempo e individua le regressioni.</translation>
     </message>
     <message>
-        <source>Search, edit and save your project's files.</source>
+        <source>Search, edit and save your project&apos;s files.</source>
         <translation>Cerca, modifica e salva i file del tuo progetto.</translation>
     </message>
     <message>
@@ -5756,7 +5836,7 @@ SSH usa le tue chiavi esistenti e l'identità host nota.</translation>
         <translation>Collega un telefono con il debug USB attivo o avvia un emulatore.</translation>
     </message>
     <message>
-        <source>Build or test from the project. Your agent's jobs show up here too, with logs and results.</source>
+        <source>Build or test from the project. Your agent&apos;s jobs show up here too, with logs and results.</source>
         <translation>Compila o testa dal progetto. Anche i job del tuo agente compaiono qui, con log e risultati.</translation>
     </message>
     <message>
@@ -5932,6 +6012,10 @@ SSH usa le tue chiavi esistenti e l'identità host nota.</translation>
         <source>Turn a screen recording into a video with a 3D device.</source>
         <translation>Trasforma una registrazione dello schermo in un video con un dispositivo 3D.</translation>
     </message>
+    <message>
+        <source>All jobs</source>
+        <translation>Tutte le attività</translation>
+    </message>
 </context>
 <context>
     <name>main</name>
@@ -5951,7 +6035,7 @@ SSH usa le tue chiavi esistenti e l'identità host nota.</translation>
     </message>
     <message>
         <source>Name of the agent preview session</source>
-        <translation>Nome della sessione di anteprima dell'agente</translation>
+        <translation>Nome della sessione di anteprima dell&apos;agente</translation>
     </message>
     <message>
         <source>No web build with index.html found.
@@ -5965,15 +6049,15 @@ SSH usa le tue chiavi esistenti e l'identità host nota.</translation>
     </message>
     <message>
         <source>Open a project in the native workspace</source>
-        <translation>Apri un progetto nell'area di lavoro nativa</translation>
+        <translation>Apri un progetto nell&apos;area di lavoro nativa</translation>
     </message>
     <message>
         <source>Open a web address at startup</source>
-        <translation>Apri un indirizzo web all'avvio</translation>
+        <translation>Apri un indirizzo web all&apos;avvio</translation>
     </message>
     <message>
         <source>Open a workspace: runtime, project, devices, ios-research, jobs, tools, debug, testing, profiling, files, release or preview</source>
-        <translation type="vanished">Apri un'area di lavoro: runtime, project, devices, ios-research, jobs, tools, debug, testing, profiling, files, release o preview</translation>
+        <translation type="vanished">Apri un&apos;area di lavoro: runtime, project, devices, ios-research, jobs, tools, debug, testing, profiling, files, release o preview</translation>
     </message>
     <message>
         <source>Orientation: portrait or landscape</source>
@@ -5986,8 +6070,8 @@ Licensed under the GNU General Public License, version 2 or later.</source>
 Distribuito sotto la GNU General Public License, versione 2 o successiva.</translation>
     </message>
     <message>
-        <source>Run the preview's interactive checks</source>
-        <translation>Esegui le verifiche interattive dell'anteprima</translation>
+        <source>Run the preview&apos;s interactive checks</source>
+        <translation>Esegui le verifiche interattive dell&apos;anteprima</translation>
     </message>
     <message>
         <source>Save the window as a PNG for visual review and quit</source>
@@ -6032,7 +6116,7 @@ Distribuito sotto la GNU General Public License, versione 2 o successiva.</trans
     </message>
     <message>
         <source>Installing update</source>
-        <translation>Installazione dell'aggiornamento</translation>
+        <translation>Installazione dell&apos;aggiornamento</translation>
     </message>
     <message>
         <source>Update %1</source>
@@ -6068,7 +6152,7 @@ Distribuito sotto la GNU General Public License, versione 2 o successiva.</trans
     </message>
     <message>
         <source>Updates are turned off for this build or by the environment.</source>
-        <translation>Gli aggiornamenti sono disattivati per questa build o dall'ambiente.</translation>
+        <translation>Gli aggiornamenti sono disattivati per questa build o dall&apos;ambiente.</translation>
     </message>
     <message>
         <source>This copy runs from a source checkout. Update it with Git and a new build.</source>
@@ -6080,7 +6164,7 @@ Distribuito sotto la GNU General Public License, versione 2 o successiva.</trans
     </message>
     <message>
         <source>The installation cannot be written, so it cannot be updated here.</source>
-        <translation>L'installazione non è scrivibile, quindi non può essere aggiornata da qui.</translation>
+        <translation>L&apos;installazione non è scrivibile, quindi non può essere aggiornata da qui.</translation>
     </message>
     <message>
         <source>This copy was not installed by its installer, so it is left alone.</source>
@@ -6096,7 +6180,7 @@ Distribuito sotto la GNU General Public License, versione 2 o successiva.</trans
     </message>
     <message>
         <source>Downloading, verifying and installing the update.</source>
-        <translation>Download, verifica e installazione dell'aggiornamento.</translation>
+        <translation>Download, verifica e installazione dell&apos;aggiornamento.</translation>
     </message>
     <message>
         <source>An update was interrupted. It is undone before the next installation.</source>
@@ -6104,11 +6188,11 @@ Distribuito sotto la GNU General Public License, versione 2 o successiva.</trans
     </message>
     <message>
         <source>The last installation failed: %1</source>
-        <translation>L'ultima installazione non è riuscita: %1</translation>
+        <translation>L&apos;ultima installazione non è riuscita: %1</translation>
     </message>
     <message>
         <source>Installing has to wait until jobs, device sessions and the virtual iOS device have ended.</source>
-        <translation>L'installazione deve attendere che job, sessioni dei dispositivi e dispositivo iOS virtuale siano terminati.</translation>
+        <translation>L&apos;installazione deve attendere che job, sessioni dei dispositivi e dispositivo iOS virtuale siano terminati.</translation>
     </message>
 </context>
 <context>
@@ -6141,7 +6225,7 @@ Distribuito sotto la GNU General Public License, versione 2 o successiva.</trans
         <translation>Verifica ora</translation>
     </message>
     <message>
-        <source>What's new ↗</source>
+        <source>What&apos;s new ↗</source>
         <translation>Novità ↗</translation>
     </message>
     <message>
@@ -6186,7 +6270,7 @@ Distribuito sotto la GNU General Public License, versione 2 o successiva.</trans
     </message>
     <message>
         <source>Automatic: also installs it by itself when nothing is running, then offers a restart.</source>
-        <translation>Automatici: gli aggiornamenti si installano anche da soli quando non c'è nulla in esecuzione, poi viene proposto un riavvio.</translation>
+        <translation>Automatici: gli aggiornamenti si installano anche da soli quando non c&apos;è nulla in esecuzione, poi viene proposto un riavvio.</translation>
     </message>
 </context>
 <context>
@@ -6218,7 +6302,7 @@ Distribuito sotto la GNU General Public License, versione 2 o successiva.</trans
         <translation>Tomacco %1 è disponibile</translation>
     </message>
     <message>
-        <source>What's new ↗</source>
+        <source>What&apos;s new ↗</source>
         <translation>Novità ↗</translation>
     </message>
     <message>
@@ -6250,7 +6334,7 @@ Distribuito sotto la GNU General Public License, versione 2 o successiva.</trans
     </message>
     <message>
         <source>Install the Android SDK and an emulator. This downloads about 5 GB.</source>
-        <translation>Installa l'SDK Android e un emulatore. Vengono scaricati circa 5 GB.</translation>
+        <translation>Installa l&apos;SDK Android e un emulatore. Vengono scaricati circa 5 GB.</translation>
     </message>
     <message>
         <source>Set up iOS builds. This needs an Apple account.</source>
@@ -6258,7 +6342,7 @@ Distribuito sotto la GNU General Public License, versione 2 o successiva.</trans
     </message>
     <message>
         <source>Optional: the virtual iPhone. It needs your own iPhone restore image, about 100 GiB of disk space and a graphics card with 16 GiB.</source>
-        <translation>Facoltativo: l'iPhone virtuale. Servono la tua immagine di ripristino dell'iPhone, circa 100 GiB di spazio su disco e una scheda grafica da 16 GiB.</translation>
+        <translation>Facoltativo: l&apos;iPhone virtuale. Servono la tua immagine di ripristino dell&apos;iPhone, circa 100 GiB di spazio su disco e una scheda grafica da 16 GiB.</translation>
     </message>
     <message>
         <source>Tomacco lets your coding agent build, run and test Android and iOS apps on this computer.</source>
@@ -6293,7 +6377,7 @@ Distribuito sotto la GNU General Public License, versione 2 o successiva.</trans
         <translation>Salta</translation>
     </message>
     <message>
-        <source>The MCP configuration is on the clipboard. Paste it into your agent's MCP settings.</source>
+        <source>The MCP configuration is on the clipboard. Paste it into your agent&apos;s MCP settings.</source>
         <translation>La configurazione MCP è negli appunti. Incollala nelle impostazioni MCP del tuo agente.</translation>
     </message>
 </context>
@@ -6339,7 +6423,7 @@ Distribuito sotto la GNU General Public License, versione 2 o successiva.</trans
     <name>DeviceLogPane</name>
     <message>
         <source>App ID, all apps when empty</source>
-        <translation>ID dell'app, tutte le app se vuoto</translation>
+        <translation>ID dell&apos;app, tutte le app se vuoto</translation>
     </message>
     <message>
         <source>All</source>
@@ -6398,7 +6482,7 @@ Distribuito sotto la GNU General Public License, versione 2 o successiva.</trans
     <name>ApprovalDialog</name>
     <message>
         <source>Allow this agent action?</source>
-        <translation>Consentire questa azione dell'agente?</translation>
+        <translation>Consentire questa azione dell&apos;agente?</translation>
     </message>
     <message>
         <source>An agent</source>
@@ -6958,7 +7042,7 @@ Distribuito sotto la GNU General Public License, versione 2 o successiva.</trans
         <translation>Piano per %1 (%2) · revisione preset %3</translation>
     </message>
     <message>
-        <source>TalkBack here switches the screen reader on the device and keeps your other accessibility services. It does not show that your app works with a screen reader; the accessibility audit only checks the screen's structure.</source>
+        <source>TalkBack here switches the screen reader on the device and keeps your other accessibility services. It does not show that your app works with a screen reader; the accessibility audit only checks the screen&apos;s structure.</source>
         <translation>Qui TalkBack attiva o disattiva lo screen reader del dispositivo e mantiene gli altri servizi di accessibilità. Non dimostra che la tua app funzioni con uno screen reader; la verifica di accessibilità controlla solo la struttura dello schermo.</translation>
     </message>
     <message>
@@ -6976,6 +7060,176 @@ Distribuito sotto la GNU General Public License, versione 2 o successiva.</trans
     <message>
         <source>Keep preset</source>
         <translation>Mantieni preset</translation>
+    </message>
+    <message>
+        <source>%1 points, %2 km, %3 min recorded</source>
+        <translation>%1 punti, %2 km, %3 min registrati</translation>
+    </message>
+    <message>
+        <source>%1 points, %2 km, no times: one point per second</source>
+        <translation>%1 punti, %2 km, senza orari: un punto al secondo</translation>
+    </message>
+    <message>
+        <source>Change route…</source>
+        <translation>Cambia percorso…</translation>
+    </message>
+    <message>
+        <source>Choose a GPX file…</source>
+        <translation>Scegli un file GPX…</translation>
+    </message>
+    <message>
+        <source>Finished. The last position stays on the emulator.</source>
+        <translation>Finito. L’ultima posizione resta sull’emulatore.</translation>
+    </message>
+    <message>
+        <source>GPX route (*.gpx)</source>
+        <translation>Percorso GPX (*.gpx)</translation>
+    </message>
+    <message>
+        <source>No route chosen</source>
+        <translation>Nessun percorso scelto</translation>
+    </message>
+    <message>
+        <source>Pause</source>
+        <translation>Pausa</translation>
+    </message>
+    <message>
+        <source>Paused at %1</source>
+        <translation>In pausa a %1</translation>
+    </message>
+    <message>
+        <source>Play a GPX route on the chosen emulator&apos;s location. Timed points keep their timing; untimed points play one per second.</source>
+        <translation>Riproduce un percorso GPX sulla posizione dell’emulatore scelto. I punti con orario mantengono i loro tempi; quelli senza orario avanzano uno al secondo.</translation>
+    </message>
+    <message>
+        <source>Play route</source>
+        <translation>Riproduci percorso</translation>
+    </message>
+    <message>
+        <source>Playback ended: %1</source>
+        <translation>Riproduzione terminata: %1</translation>
+    </message>
+    <message>
+        <source>Playing %1</source>
+        <translation>Riproduzione di %1</translation>
+    </message>
+    <message>
+        <source>Playing the route on %1. The previous position is not known and will not be restored.</source>
+        <translation>Riproduzione del percorso su %1. La posizione precedente non è nota e non verrà ripristinata.</translation>
+    </message>
+    <message>
+        <source>Playing…</source>
+        <translation>Riproduzione…</translation>
+    </message>
+    <message>
+        <source>Reading the route…</source>
+        <translation>Lettura del percorso…</translation>
+    </message>
+    <message>
+        <source>Repeat the route</source>
+        <translation>Ripeti il percorso</translation>
+    </message>
+    <message>
+        <source>Resume</source>
+        <translation>Riprendi</translation>
+    </message>
+    <message>
+        <source>Route playback</source>
+        <translation>Riproduzione del percorso</translation>
+    </message>
+    <message>
+        <source>Route playback reaches emulators only. A phone takes no mock location from here.</source>
+        <translation>La riproduzione del percorso raggiunge solo gli emulatori. Un telefono non riceve da qui posizioni simulate.</translation>
+    </message>
+    <message>
+        <source>Speed · 1 is real time</source>
+        <translation>Velocità · 1 è il tempo reale</translation>
+    </message>
+    <message>
+        <source>Starting playback…</source>
+        <translation>Avvio della riproduzione…</translation>
+    </message>
+    <message>
+        <source>Stop</source>
+        <translation>Ferma</translation>
+    </message>
+    <message>
+        <source>Stopped. The last position stays on the emulator.</source>
+        <translation>Fermato. L’ultima posizione resta sull’emulatore.</translation>
+    </message>
+    <message>
+        <source>The emulator does not report its position, so the position before playback is unknown and is not restored. Set one in the preset&apos;s GPS field afterwards if you need it.</source>
+        <translation>L’emulatore non comunica la sua posizione, quindi quella precedente alla riproduzione è sconosciuta e non viene ripristinata. Se ti serve, impostala dopo nel campo GPS del preset.</translation>
+    </message>
+    <message>
+        <source>point %1 of %2</source>
+        <translation>punto %1 di %2</translation>
+    </message>
+</context>
+<context>
+    <name>HandoffBanner</name>
+    <message>
+        <source>%1 · an agent is waiting for you</source>
+        <translation>%1 · un agente ti sta aspettando</translation>
+    </message>
+    <message>
+        <source>%1 · an agent is waiting for you (%2 more)</source>
+        <translation>%1 · un agente ti sta aspettando (altri %2)</translation>
+    </message>
+    <message>
+        <source>Cancel</source>
+        <translation>Annulla</translation>
+    </message>
+    <message>
+        <source>Do it on the device itself. Tomacco never asks for your passcode or password.</source>
+        <translation>Fallo sul dispositivo stesso. Tomacco non chiede mai il tuo codice o la tua password.</translation>
+    </message>
+    <message>
+        <source>Done</source>
+        <translation>Fatto</translation>
+    </message>
+    <message>
+        <source>Done: I did it on the device</source>
+        <translation>Fatto: l’ho fatto sul dispositivo</translation>
+    </message>
+</context>
+<context>
+    <name>HandoffModel</name>
+    <message>
+        <source>Face ID or Touch ID</source>
+        <translation>Face ID o Touch ID</translation>
+    </message>
+    <message>
+        <source>Passcode</source>
+        <translation>Codice di accesso</translation>
+    </message>
+    <message>
+        <source>Permission</source>
+        <translation>Autorizzazione</translation>
+    </message>
+    <message>
+        <source>Purchase</source>
+        <translation>Acquisto</translation>
+    </message>
+    <message>
+        <source>Sign-in</source>
+        <translation>Accesso</translation>
+    </message>
+    <message>
+        <source>Your turn on the device</source>
+        <translation>Tocca a te sul dispositivo</translation>
+    </message>
+</context>
+<context>
+    <name>MobileNav</name>
+    <message>
+        <source>Ctrl</source>
+        <translation>Ctrl</translation>
+    </message>
+    <message>
+        <source>More</source>
+        <comment>navigation</comment>
+        <translation>Altro</translation>
     </message>
 </context>
 </TS>

@@ -5,123 +5,123 @@
     <name>ActivityPanel</name>
     <message>
         <source>%1 ago</source>
-        <translation type="unfinished"></translation>
+        <translation>%1 temu</translation>
     </message>
     <message>
         <source>Running</source>
-        <translation type="unfinished"></translation>
+        <translation>Działa</translation>
     </message>
     <message>
         <source>Stop this job</source>
-        <translation type="unfinished"></translation>
+        <translation>Zatrzymaj to zadanie</translation>
     </message>
     <message>
         <source>Recent</source>
-        <translation type="unfinished"></translation>
+        <translation>Ostatnie</translation>
     </message>
     <message>
         <source>Copy MCP configuration</source>
-        <translation type="unfinished"></translation>
+        <translation>Kopiuj konfigurację MCP</translation>
     </message>
     <message>
         <source>Connect your agent.</source>
-        <translation type="unfinished"></translation>
+        <translation>Podłącz swojego agenta.</translation>
     </message>
     <message>
         <source>Claude Code, Codex or any MCP client. It can then do everything this window can.</source>
-        <translation type="unfinished"></translation>
+        <translation>Claude Code, Codex lub dowolny klient MCP. Potem może robić wszystko, co potrafi to okno.</translation>
     </message>
     <message>
         <source>Copied</source>
-        <translation type="unfinished"></translation>
+        <translation>Skopiowano</translation>
     </message>
     <message>
         <source>1  Copy the configuration.</source>
-        <translation type="unfinished"></translation>
+        <translation>1  Skopiuj konfigurację.</translation>
     </message>
     <message>
         <source>2  Paste it into your agent&apos;s MCP settings.</source>
-        <translation type="unfinished"></translation>
+        <translation>2  Wklej ją do ustawień MCP swojego agenta.</translation>
     </message>
     <message>
         <source>3  Ask it to run your app.</source>
-        <translation type="unfinished"></translation>
+        <translation>3  Poproś go o uruchomienie aplikacji.</translation>
     </message>
     <message>
         <source>Nothing running. Builds and agent jobs show up here as they start.</source>
-        <translation type="unfinished"></translation>
+        <translation>Nic nie działa. Kompilacje i zadania agenta pojawią się tutaj po uruchomieniu.</translation>
     </message>
     <message>
         <source>%1 ms</source>
-        <translation type="unfinished"></translation>
+        <translation>%1 ms</translation>
     </message>
     <message>
         <source>%1 s</source>
-        <translation type="unfinished"></translation>
+        <translation>%1 s</translation>
     </message>
     <message>
         <source>Agent activity</source>
-        <translation type="unfinished"></translation>
+        <translation>Aktywność agenta</translation>
     </message>
     <message>
         <source>All</source>
-        <translation type="unfinished"></translation>
+        <translation>Wszystkie</translation>
     </message>
     <message>
         <source>Failed</source>
-        <translation type="unfinished"></translation>
+        <translation>Nieudane</translation>
     </message>
     <message>
         <source>Find an operation</source>
-        <translation type="unfinished"></translation>
+        <translation>Znajdź operację</translation>
     </message>
     <message>
         <source>No call failed.</source>
-        <translation type="unfinished"></translation>
+        <translation>Żadne wywołanie nie zakończyło się niepowodzeniem.</translation>
     </message>
     <message>
         <source>No call matches.</source>
-        <translation type="unfinished"></translation>
+        <translation>Żadne wywołanie nie pasuje.</translation>
     </message>
     <message>
         <source>failed</source>
-        <translation type="unfinished"></translation>
+        <translation>niepowodzenie</translation>
     </message>
     <message>
         <source>running</source>
-        <translation type="unfinished"></translation>
+        <translation>działa</translation>
     </message>
     <message>
         <source>done</source>
-        <translation type="unfinished"></translation>
+        <translation>gotowe</translation>
     </message>
     <message>
         <source>An agent&apos;s call failed: %1</source>
-        <translation type="unfinished"></translation>
+        <translation>Wywołanie agenta nie powiodło się: %1</translation>
     </message>
     <message>
         <source>An agent started a job: %1</source>
-        <translation type="unfinished"></translation>
+        <translation>Agent uruchomił zadanie: %1</translation>
     </message>
     <message>
         <source>Notifications</source>
-        <translation type="unfinished"></translation>
+        <translation>Powiadomienia</translation>
     </message>
     <message>
         <source>Fewer</source>
-        <translation type="unfinished"></translation>
+        <translation>Mniej</translation>
     </message>
     <message>
         <source>All %1</source>
-        <translation type="unfinished"></translation>
+        <translation>Wszystkie %1</translation>
     </message>
     <message>
         <source>Clear</source>
-        <translation type="unfinished"></translation>
+        <translation>Wyczyść</translation>
     </message>
     <message>
         <source>Clear the notifications</source>
-        <translation type="unfinished"></translation>
+        <translation>Wyczyść powiadomienia</translation>
     </message>
 </context>
 <context>
@@ -131,326 +131,485 @@
 %2 dpi
 
 The model determines the display and frame. Android comes from the chosen system image; vendor interfaces such as One UI are not included.</source>
-        <translation type="unfinished"></translation>
+        <translation>%1 pikseli
+%2 dpi
+
+Model określa wyświetlacz i obudowę. Android pochodzi z wybranego obrazu systemu; nakładki producentów, takie jak One UI, nie są uwzględnione.</translation>
     </message>
     <message>
         <source>Add Android device</source>
-        <translation type="unfinished"></translation>
+        <translation>Dodaj urządzenie z Androidem</translation>
     </message>
     <message>
         <source>Add device</source>
-        <translation type="unfinished"></translation>
+        <translation>Dodaj urządzenie</translation>
     </message>
     <message>
         <source>Automatic</source>
-        <translation type="unfinished"></translation>
+        <translation>Automatycznie</translation>
     </message>
     <message>
         <source>CPU cores</source>
-        <translation type="unfinished"></translation>
+        <translation>Rdzenie CPU</translation>
     </message>
     <message>
         <source>Cancel</source>
-        <translation type="unfinished"></translation>
+        <translation>Anuluj</translation>
     </message>
     <message>
         <source>Close</source>
-        <translation type="unfinished"></translation>
+        <translation>Zamknij</translation>
     </message>
     <message>
         <source>Computer GPU</source>
-        <translation type="unfinished"></translation>
+        <translation>GPU komputera</translation>
     </message>
     <message>
         <source>Connected</source>
-        <translation type="unfinished"></translation>
+        <translation>Połączono</translation>
     </message>
     <message>
         <source>Create</source>
-        <translation type="unfinished"></translation>
+        <translation>Utwórz</translation>
     </message>
     <message>
         <source>Creating…</source>
-        <translation type="unfinished"></translation>
+        <translation>Tworzenie…</translation>
     </message>
     <message>
         <source>Device created · open it with Start</source>
-        <translation type="unfinished"></translation>
+        <translation>Urządzenie utworzone · otwórz je przyciskiem Uruchom</translation>
     </message>
     <message>
         <source>Device name</source>
-        <translation type="unfinished"></translation>
+        <translation>Nazwa urządzenia</translation>
     </message>
     <message>
         <source>Device profile (*.json)</source>
-        <translation type="unfinished"></translation>
+        <translation>Profil urządzenia (*.json)</translation>
     </message>
     <message>
         <source>Disabled · OpenGL ES only</source>
-        <translation type="unfinished"></translation>
+        <translation>Wyłączone · tylko OpenGL ES</translation>
     </message>
     <message>
         <source>Emulator ended · %1</source>
-        <translation type="unfinished"></translation>
+        <translation>Emulator zakończył działanie · %1</translation>
     </message>
     <message>
         <source>Emulator performance</source>
-        <translation type="unfinished"></translation>
+        <translation>Wydajność emulatora</translation>
     </message>
     <message>
         <source>Emulator ready</source>
-        <translation type="unfinished"></translation>
+        <translation>Emulator gotowy</translation>
     </message>
     <message>
         <source>Emulator starting…</source>
-        <translation type="unfinished"></translation>
+        <translation>Emulator się uruchamia…</translation>
     </message>
     <message>
         <source>Enabled</source>
-        <translation type="unfinished"></translation>
+        <translation>Włączone</translation>
     </message>
     <message>
         <source>External profile</source>
-        <translation type="unfinished"></translation>
+        <translation>Profil zewnętrzny</translation>
     </message>
     <message>
         <source>Graphics</source>
-        <translation type="unfinished"></translation>
+        <translation>Grafika</translation>
     </message>
     <message>
         <source>Graphics: %1</source>
-        <translation type="unfinished"></translation>
+        <translation>Grafika: %1</translation>
     </message>
     <message>
         <source>Import Android model</source>
-        <translation type="unfinished"></translation>
+        <translation>Importuj model Androida</translation>
     </message>
     <message>
         <source>Import custom model</source>
-        <translation type="unfinished"></translation>
+        <translation>Importuj własny model</translation>
     </message>
     <message>
         <source>Imported · contains no Android model</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Install Android system</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Installed Android system</source>
-        <translation type="unfinished"></translation>
+        <translation>Zaimportowano · nie zawiera modelu Androida</translation>
     </message>
     <message>
         <source>Memory (MB)</source>
-        <translation type="unfinished"></translation>
+        <translation>Pamięć (MB)</translation>
     </message>
     <message>
         <source>Model</source>
-        <translation type="unfinished"></translation>
+        <translation>Model</translation>
     </message>
     <message>
         <source>Model imported</source>
-        <translation type="unfinished"></translation>
+        <translation>Model zaimportowany</translation>
     </message>
     <message>
         <source>No system image installed yet</source>
-        <translation type="unfinished"></translation>
+        <translation>Nie zainstalowano jeszcze obrazu systemu</translation>
     </message>
     <message>
         <source>Off</source>
-        <translation type="unfinished"></translation>
+        <translation>Wył.</translation>
     </message>
     <message>
         <source>Open</source>
-        <translation type="unfinished"></translation>
+        <translation>Otwórz</translation>
     </message>
     <message>
         <source>Open job</source>
-        <translation type="unfinished"></translation>
+        <translation>Otwórz zadanie</translation>
     </message>
     <message>
         <source>Performance settings saved · used on the next start</source>
-        <translation type="unfinished"></translation>
+        <translation>Ustawienia wydajności zapisane · zostaną użyte przy następnym uruchomieniu</translation>
     </message>
     <message>
         <source>Save</source>
-        <translation type="unfinished"></translation>
+        <translation>Zapisz</translation>
     </message>
     <message>
         <source>Saving…</source>
-        <translation type="unfinished"></translation>
+        <translation>Zapisywanie…</translation>
     </message>
     <message>
         <source>Set graphics, memory and CPU</source>
-        <translation type="unfinished"></translation>
+        <translation>Ustaw grafikę, pamięć i CPU</translation>
     </message>
     <message>
         <source>Setting up device…</source>
-        <translation type="unfinished"></translation>
+        <translation>Konfigurowanie urządzenia…</translation>
     </message>
     <message>
         <source>Setup failed · details in the job</source>
-        <translation type="unfinished"></translation>
+        <translation>Konfiguracja nie powiodła się · szczegóły w zadaniu</translation>
     </message>
     <message>
         <source>Software · compatible renderer</source>
-        <translation type="unfinished"></translation>
+        <translation>Programowy · zgodny renderer</translation>
     </message>
     <message>
         <source>Start</source>
-        <translation type="unfinished"></translation>
+        <translation>Uruchom</translation>
     </message>
     <message>
         <source>Starting…</source>
-        <translation type="unfinished"></translation>
+        <translation>Uruchamianie…</translation>
     </message>
     <message>
         <source>The computer GPU can speed up animations considerably. If graphics glitch, choose a software renderer. Changes require the emulator to be off; app data is kept.</source>
-        <translation type="unfinished"></translation>
+        <translation>GPU komputera może znacznie przyspieszyć animacje. Jeśli grafika się psuje, wybierz renderer programowy. Zmiany wymagają wyłączonego emulatora; dane aplikacji pozostają.</translation>
     </message>
     <message>
         <source>Turn off emulator</source>
-        <translation type="unfinished"></translation>
+        <translation>Wyłącz emulator</translation>
     </message>
     <message>
         <source>Vulkan compatibility</source>
-        <translation type="unfinished"></translation>
+        <translation>Zgodność z Vulkan</translation>
     </message>
     <message>
         <source>Each emulator keeps its own model and app data.</source>
-        <translation type="unfinished"></translation>
+        <translation>Każdy emulator ma własny model i własne dane aplikacji.</translation>
     </message>
     <message>
         <source>No phone yet.</source>
-        <translation type="unfinished"></translation>
+        <translation>Nie ma jeszcze telefonu.</translation>
     </message>
     <message>
         <source>Add an emulator, or plug in a phone with USB debugging on.</source>
-        <translation type="unfinished"></translation>
+        <translation>Dodaj emulator lub podłącz telefon z włączonym debugowaniem USB.</translation>
     </message>
     <message>
         <source>Unpin</source>
-        <translation type="unfinished"></translation>
+        <translation>Odepnij</translation>
     </message>
     <message>
         <source>Pin</source>
-        <translation type="unfinished"></translation>
+        <translation>Przypnij</translation>
     </message>
     <message>
         <source>Unpin this device</source>
-        <translation type="unfinished"></translation>
+        <translation>Odepnij to urządzenie</translation>
     </message>
     <message>
         <source>Pin this device to the top</source>
-        <translation type="unfinished"></translation>
+        <translation>Przypnij to urządzenie na górze</translation>
     </message>
     <message>
         <source>Rename</source>
-        <translation type="unfinished"></translation>
+        <translation>Zmień nazwę</translation>
     </message>
     <message>
         <source>Give this device a nickname</source>
-        <translation type="unfinished"></translation>
+        <translation>Nadaj temu urządzeniu pseudonim</translation>
     </message>
     <message>
         <source>Device nickname</source>
-        <translation type="unfinished"></translation>
+        <translation>Pseudonim urządzenia</translation>
     </message>
     <message>
         <source>Shown instead of %1 here, in device lists and in the Omarchy panel.</source>
-        <translation type="unfinished"></translation>
+        <translation>Wyświetlany zamiast %1 tutaj, na listach urządzeń i w panelu Omarchy.</translation>
     </message>
     <message>
         <source>Nickname</source>
-        <translation type="unfinished"></translation>
+        <translation>Pseudonim</translation>
     </message>
     <message>
         <source>Remove nickname</source>
-        <translation type="unfinished"></translation>
+        <translation>Usuń pseudonim</translation>
     </message>
     <message>
         <source>Paired and connected · %1</source>
-        <translation type="unfinished"></translation>
+        <translation>Sparowano i połączono · %1</translation>
     </message>
     <message>
         <source>Paired. Enter the IP address and port shown under Wireless debugging to connect.</source>
-        <translation type="unfinished"></translation>
+        <translation>Sparowano. Aby się połączyć, wpisz adres IP i port widoczne w sekcji Debugowanie bezprzewodowe.</translation>
     </message>
     <message>
         <source>adb could not pair</source>
-        <translation type="unfinished"></translation>
+        <translation>adb nie mógł sparować</translation>
     </message>
     <message>
         <source>adb could not connect</source>
-        <translation type="unfinished"></translation>
+        <translation>adb nie mógł się połączyć</translation>
     </message>
     <message>
         <source>Pair over Wi-Fi</source>
-        <translation type="unfinished"></translation>
+        <translation>Paruj przez Wi-Fi</translation>
     </message>
     <message>
         <source>QR code</source>
-        <translation type="unfinished"></translation>
+        <translation>Kod QR</translation>
     </message>
     <message>
         <source>Pairing code</source>
-        <translation type="unfinished"></translation>
+        <translation>Kod parowania</translation>
     </message>
     <message>
         <source>On the phone, open Developer options › Wireless debugging › Pair device with QR code and scan this code. The phone and this computer must be on the same network; Android 11 or newer.</source>
-        <translation type="unfinished"></translation>
+        <translation>Na telefonie otwórz Opcje programistyczne › Debugowanie bezprzewodowe › Sparuj urządzenie za pomocą kodu QR i zeskanuj ten kod. Telefon i ten komputer muszą być w tej samej sieci; Android 11 lub nowszy.</translation>
     </message>
     <message>
         <source>On the phone, open Developer options › Wireless debugging › Pair device with pairing code, then enter the address and code it shows.</source>
-        <translation type="unfinished"></translation>
+        <translation>Na telefonie otwórz Opcje programistyczne › Debugowanie bezprzewodowe › Sparuj urządzenie za pomocą kodu parowania, a następnie wpisz wyświetlony adres i kod.</translation>
     </message>
     <message>
         <source>QR code for wireless debugging</source>
-        <translation type="unfinished"></translation>
+        <translation>Kod QR do debugowania bezprzewodowego</translation>
     </message>
     <message>
         <source>Creating a code…</source>
-        <translation type="unfinished"></translation>
+        <translation>Tworzenie kodu…</translation>
     </message>
     <message>
         <source>Pairing address</source>
-        <translation type="unfinished"></translation>
+        <translation>Adres parowania</translation>
     </message>
     <message>
         <source>Waiting for the phone…</source>
-        <translation type="unfinished"></translation>
+        <translation>Oczekiwanie na telefon…</translation>
     </message>
     <message>
         <source>Pairing…</source>
-        <translation type="unfinished"></translation>
+        <translation>Parowanie…</translation>
     </message>
     <message>
         <source>Connecting…</source>
-        <translation type="unfinished"></translation>
+        <translation>Łączenie…</translation>
     </message>
     <message>
         <source>New code</source>
-        <translation type="unfinished"></translation>
+        <translation>Nowy kod</translation>
     </message>
     <message>
         <source>Pair</source>
-        <translation type="unfinished"></translation>
+        <translation>Paruj</translation>
     </message>
     <message>
         <source>List</source>
-        <translation type="unfinished"></translation>
+        <translation>Lista</translation>
     </message>
     <message>
         <source>All screens</source>
-        <translation type="unfinished"></translation>
+        <translation>Wszystkie ekrany</translation>
     </message>
     <message>
         <source>Show the device list</source>
-        <translation type="unfinished"></translation>
+        <translation>Pokaż listę urządzeń</translation>
     </message>
     <message>
         <source>Show every running device&apos;s screen side by side</source>
+        <translation>Pokaż obok siebie ekrany wszystkich działających urządzeń</translation>
+    </message>
+    <message>
+        <source>Accept Google&apos;s Android SDK licence for this download</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Android system image</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>App data removed · %1 freed · the next start boots like a new device</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Cannot start: %1</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Checking…</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Copying device…</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Copying…</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Disk: about %1 for the emulator · %2 free</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Download about %1 (estimate) · needs Google&apos;s SDK licence: %2</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Download and create</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Duplicate</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Duplicate copies the emulator with its apps and data under the new name, as a job you can cancel. Rename is a real rename of the emulator through the Android SDK; the nickname moves along. A nickname alone is set with the pencil button.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Duplicate, rename or wipe this emulator</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Letters, digits, - and _</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Manage</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Manage emulator</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>New name</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>On disk: %1 · a wipe frees %2</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Pick an installed image, or type another package: it is downloaded as the first step. Tomacco creates phone, foldable and tablet emulators.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Reading disk usage…</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Rename and wipe need the emulator&apos;s name typed here</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Renamed to %1</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Renaming…</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Start the emulator when it is ready</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Steps: %1</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>System image installed · no download</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>TV, Wear, Automotive and XR images are not supported yet</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>The emulator is on or its lock files exist. Turn it off first; nothing here changes a running emulator.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Wipe app data</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Wipe removes the apps, their data and the snapshots; the next start boots like a new device. The emulator&apos;s model and settings stay.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Wiping…</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>already accepted</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>apply model</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>create</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>install image</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>is missing</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>not enough free space</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>not yet accepted</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>start</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>the Android SDK</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>the name is taken</source>
         <translation type="unfinished"></translation>
     </message>
 </context>
@@ -458,1757 +617,1757 @@ The model determines the display and frame. Android comes from the chosen system
     <name>Backend</name>
     <message>
         <source>%1 is not part of this installation.</source>
-        <translation type="unfinished"></translation>
+        <translation>%1 nie jest częścią tej instalacji.</translation>
     </message>
     <message>
         <source>Check failed</source>
-        <translation type="unfinished"></translation>
+        <translation>Sprawdzanie nie powiodło się</translation>
     </message>
     <message>
         <source>Checking…</source>
-        <translation type="unfinished"></translation>
+        <translation>Sprawdzanie…</translation>
     </message>
     <message>
         <source>Copied</source>
-        <translation type="unfinished"></translation>
+        <translation>Skopiowano</translation>
     </message>
     <message>
         <source>Enter a valid http:// or https:// address.</source>
-        <translation type="unfinished"></translation>
+        <translation>Wpisz prawidłowy adres http:// lub https://.</translation>
     </message>
     <message>
         <source>No index.html found. Choose a built web folder or open the dev server address.</source>
-        <translation type="unfinished"></translation>
+        <translation>Nie znaleziono index.html. Wybierz folder ze zbudowaną aplikacją webową lub otwórz adres serwera deweloperskiego.</translation>
     </message>
     <message>
         <source>Not installed</source>
-        <translation type="unfinished"></translation>
+        <translation>Nie zainstalowano</translation>
     </message>
     <message>
         <source>The local preview server could not start.</source>
-        <translation type="unfinished"></translation>
+        <translation>Nie udało się uruchomić lokalnego serwera podglądu.</translation>
     </message>
     <message>
         <source>The screenshot folder could not be created.</source>
-        <translation type="unfinished"></translation>
+        <translation>Nie udało się utworzyć folderu zrzutów ekranu.</translation>
     </message>
     <message>
         <source>Unknown</source>
-        <translation type="unfinished"></translation>
+        <translation>Nieznany</translation>
     </message>
     <message>
         <source>This job has no log file yet.</source>
-        <translation type="unfinished"></translation>
+        <translation>To zadanie nie ma jeszcze pliku dziennika.</translation>
     </message>
     <message>
         <source>Open</source>
-        <translation type="unfinished"></translation>
+        <translation>Otwórz</translation>
     </message>
     <message>
         <source>%1 cannot be written.</source>
-        <translation type="unfinished"></translation>
+        <translation>Nie można zapisać %1.</translation>
     </message>
     <message>
         <source>%1 cannot be read.</source>
-        <translation type="unfinished"></translation>
+        <translation>Nie można odczytać %1.</translation>
     </message>
     <message>
         <source>%1 is too large for a settings file.</source>
-        <translation type="unfinished"></translation>
+        <translation>%1 jest za duży jak na plik ustawień.</translation>
     </message>
     <message>
         <source>%1 is not a Tomacco settings file.</source>
-        <translation type="unfinished"></translation>
+        <translation>%1 nie jest plikiem ustawień Tomacco.</translation>
     </message>
     <message>
         <source>%1 comes from a newer Tomacco; update this one first.</source>
-        <translation type="unfinished"></translation>
+        <translation>%1 pochodzi z nowszej wersji Tomacco; najpierw zaktualizuj tę.</translation>
     </message>
     <message>
         <source>The recordings folder could not be created.</source>
-        <translation type="unfinished"></translation>
+        <translation>Nie udało się utworzyć folderu nagrań.</translation>
     </message>
     <message>
         <source>The session log must be an absolute path.</source>
-        <translation type="unfinished"></translation>
+        <translation>Dziennik sesji musi być ścieżką bezwzględną.</translation>
     </message>
     <message>
         <source>No session log at %1 yet. It appears with the agent&apos;s first call.</source>
-        <translation type="unfinished"></translation>
+        <translation>W %1 nie ma jeszcze dziennika sesji. Pojawi się przy pierwszym wywołaniu agenta.</translation>
     </message>
 </context>
 <context>
     <name>Colors</name>
     <message>
         <source>Cream</source>
-        <translation type="unfinished"></translation>
+        <translation>Kremowy</translation>
     </message>
     <message>
         <source>Graphite</source>
-        <translation type="unfinished"></translation>
+        <translation>Grafit</translation>
     </message>
     <message>
         <source>Gray</source>
-        <translation type="unfinished"></translation>
+        <translation>Szary</translation>
     </message>
     <message>
         <source>Green Shadow</source>
-        <translation type="unfinished"></translation>
+        <translation>Zielony cień</translation>
     </message>
     <message>
         <source>Mint</source>
-        <translation type="unfinished"></translation>
+        <translation>Miętowy</translation>
     </message>
     <message>
         <source>Violet Shadow</source>
-        <translation type="unfinished"></translation>
+        <translation>Fioletowy cień</translation>
     </message>
     <message>
         <source>Black</source>
-        <translation type="unfinished"></translation>
+        <translation>Czarny</translation>
     </message>
     <message>
         <source>Burgundy</source>
-        <translation type="unfinished"></translation>
+        <translation>Bordowy</translation>
     </message>
     <message>
         <source>Canyon</source>
-        <translation type="unfinished"></translation>
+        <translation>Kanion</translation>
     </message>
     <message>
         <source>Cloud White</source>
-        <translation type="unfinished"></translation>
+        <translation>Chmurna biel</translation>
     </message>
     <message>
         <source>Cobalt Violet</source>
-        <translation type="unfinished"></translation>
+        <translation>Kobaltowy fiolet</translation>
     </message>
     <message>
         <source>Device</source>
-        <translation type="unfinished"></translation>
+        <translation>Urządzenie</translation>
     </message>
     <message>
         <source>Fog</source>
-        <translation type="unfinished"></translation>
+        <translation>Mgła</translation>
     </message>
     <message>
         <source>Frost</source>
-        <translation type="unfinished"></translation>
+        <translation>Szron</translation>
     </message>
     <message>
         <source>Glacier</source>
-        <translation type="unfinished"></translation>
+        <translation>Lodowiec</translation>
     </message>
     <message>
         <source>Hibiscus</source>
-        <translation type="unfinished"></translation>
+        <translation>Hibiskus</translation>
     </message>
     <message>
         <source>Lavender</source>
-        <translation type="unfinished"></translation>
+        <translation>Lawenda</translation>
     </message>
     <message>
         <source>Light Gold</source>
-        <translation type="unfinished"></translation>
+        <translation>Jasne złoto</translation>
     </message>
     <message>
         <source>Mist Blue</source>
-        <translation type="unfinished"></translation>
+        <translation>Mglisty błękit</translation>
     </message>
     <message>
         <source>Night Sky</source>
-        <translation type="unfinished"></translation>
+        <translation>Nocne niebo</translation>
     </message>
     <message>
         <source>Obsidian</source>
-        <translation type="unfinished"></translation>
+        <translation>Obsydian</translation>
     </message>
     <message>
         <source>Olive</source>
-        <translation type="unfinished"></translation>
+        <translation>Oliwkowy</translation>
     </message>
     <message>
         <source>Pink</source>
-        <translation type="unfinished"></translation>
+        <translation>Różowy</translation>
     </message>
     <message>
         <source>Pistachio</source>
-        <translation type="unfinished"></translation>
+        <translation>Pistacjowy</translation>
     </message>
     <message>
         <source>Sage</source>
-        <translation type="unfinished"></translation>
+        <translation>Szałwia</translation>
     </message>
     <message>
         <source>Silver</source>
-        <translation type="unfinished"></translation>
+        <translation>Srebrny</translation>
     </message>
     <message>
         <source>Sky Blue</source>
-        <translation type="unfinished"></translation>
+        <translation>Błękit nieba</translation>
     </message>
     <message>
         <source>Soft Pink</source>
-        <translation type="unfinished"></translation>
+        <translation>Delikatny róż</translation>
     </message>
     <message>
         <source>Space Black</source>
-        <translation type="unfinished"></translation>
+        <translation>Kosmiczna czerń</translation>
     </message>
     <message>
         <source>Star White</source>
-        <translation type="unfinished"></translation>
+        <translation>Gwiezdna biel</translation>
     </message>
     <message>
         <source>Teal</source>
-        <translation type="unfinished"></translation>
+        <translation>Morski</translation>
     </message>
     <message>
         <source>Ultramarine</source>
-        <translation type="unfinished"></translation>
+        <translation>Ultramaryna</translation>
     </message>
     <message>
         <source>White</source>
-        <translation type="unfinished"></translation>
+        <translation>Biały</translation>
     </message>
 </context>
 <context>
     <name>CommandPalette</name>
     <message>
         <source>No matching views or tools</source>
-        <translation type="unfinished"></translation>
+        <translation>Brak pasujących widoków ani narzędzi</translation>
     </message>
     <message>
         <source>View</source>
-        <translation type="unfinished"></translation>
+        <translation>Widok</translation>
     </message>
     <message>
         <source>Search views, commands or tools…</source>
-        <translation type="unfinished"></translation>
+        <translation>Szukaj widoków, poleceń lub narzędzi…</translation>
     </message>
     <message>
         <source>Ctrl</source>
-        <translation type="unfinished"></translation>
+        <translation>Ctrl</translation>
     </message>
     <message>
         <source>Recent</source>
-        <translation type="unfinished"></translation>
+        <translation>Ostatnie</translation>
     </message>
     <message>
         <source>↑ ↓  Select     PgUp PgDn  Page     ↵  Open     Esc  Close</source>
-        <translation type="unfinished"></translation>
+        <translation>↑ ↓  Wybór     PgUp PgDn  Strona     ↵  Otwórz     Esc  Zamknij</translation>
     </message>
 </context>
 <context>
     <name>Control</name>
     <message>
         <source>Invalid frame response</source>
-        <translation type="unfinished"></translation>
+        <translation>Nieprawidłowa odpowiedź klatki</translation>
     </message>
     <message>
         <source>Invalid response from the control plane</source>
-        <translation type="unfinished"></translation>
+        <translation>Nieprawidłowa odpowiedź z płaszczyzny sterowania</translation>
     </message>
     <message>
         <source>Invalid response from the frame control</source>
-        <translation type="unfinished"></translation>
+        <translation>Nieprawidłowa odpowiedź ze sterowania klatkami</translation>
     </message>
     <message>
         <source>Invalid session name</source>
-        <translation type="unfinished"></translation>
+        <translation>Nieprawidłowa nazwa sesji</translation>
     </message>
     <message>
         <source>Tomacco is already open in another window; agents keep controlling that one. To control this window too, start it with --preview-session and another name.</source>
-        <translation type="unfinished"></translation>
+        <translation>Tomacco jest już otwarte w innym oknie; agenci nadal sterują tamtym oknem. Aby sterować także tym oknem, uruchom je z --preview-session i inną nazwą.</translation>
     </message>
     <message>
         <source>Tomacco&apos;s control program (tomaccoctl) could not be started. Reinstall Tomacco or run install.py again.</source>
-        <translation type="unfinished"></translation>
+        <translation>Nie udało się uruchomić programu sterującego Tomacco (tomaccoctl). Zainstaluj Tomacco ponownie lub jeszcze raz uruchom install.py.</translation>
     </message>
     <message>
         <source>Tomacco&apos;s control program (tomaccoctl) is not working: %1</source>
-        <translation type="unfinished"></translation>
+        <translation>Program sterujący Tomacco (tomaccoctl) nie działa: %1</translation>
     </message>
     <message>
         <source>Tomacco&apos;s control program (tomaccoctl) was not found. Reinstall Tomacco or run install.py again.</source>
-        <translation type="unfinished"></translation>
+        <translation>Nie znaleziono programu sterującego Tomacco (tomaccoctl). Zainstaluj Tomacco ponownie lub jeszcze raz uruchom install.py.</translation>
     </message>
     <message>
         <source>The agent socket directory belongs to another user</source>
-        <translation type="unfinished"></translation>
+        <translation>Katalog gniazda agenta należy do innego użytkownika</translation>
     </message>
     <message>
         <source>The agent socket directory could not be created</source>
-        <translation type="unfinished"></translation>
+        <translation>Nie udało się utworzyć katalogu gniazda agenta</translation>
     </message>
     <message>
         <source>The control program ended unexpectedly</source>
-        <translation type="unfinished"></translation>
+        <translation>Program sterujący niespodziewanie zakończył działanie</translation>
     </message>
     <message>
         <source>The control program failed: %1</source>
-        <translation type="unfinished"></translation>
+        <translation>Program sterujący zgłosił błąd: %1</translation>
     </message>
     <message>
         <source>The frame control could not be initialized</source>
-        <translation type="unfinished"></translation>
+        <translation>Nie udało się zainicjować sterowania klatkami</translation>
     </message>
     <message>
         <source>The frame control did not respond in time</source>
-        <translation type="unfinished"></translation>
+        <translation>Sterowanie klatkami nie odpowiedziało na czas</translation>
     </message>
     <message>
         <source>The frame control ended</source>
-        <translation type="unfinished"></translation>
+        <translation>Sterowanie klatkami zakończyło działanie</translation>
     </message>
     <message>
         <source>The frame control is not reachable</source>
-        <translation type="unfinished"></translation>
+        <translation>Sterowanie klatkami jest nieosiągalne</translation>
     </message>
     <message>
         <source>The frame request could not be sent</source>
-        <translation type="unfinished"></translation>
+        <translation>Nie udało się wysłać żądania klatki</translation>
     </message>
     <message>
         <source>The frame response is too large</source>
-        <translation type="unfinished"></translation>
+        <translation>Odpowiedź klatki jest za duża</translation>
     </message>
     <message>
         <source>The frame response matches no request</source>
-        <translation type="unfinished"></translation>
+        <translation>Odpowiedź klatki nie pasuje do żadnego żądania</translation>
     </message>
     <message>
         <source>Too many concurrent requests</source>
-        <translation type="unfinished"></translation>
+        <translation>Zbyt wiele jednoczesnych żądań</translation>
     </message>
     <message>
         <source>tomaccoctl could not be started (%1). Reinstall Tomacco or run install.py again.</source>
-        <translation type="unfinished"></translation>
+        <translation>Nie udało się uruchomić tomaccoctl (%1). Zainstaluj Tomacco ponownie lub jeszcze raz uruchom install.py.</translation>
     </message>
 </context>
 <context>
     <name>DebugWorkspace</name>
     <message>
         <source>All files (*)</source>
-        <translation type="unfinished"></translation>
+        <translation>Wszystkie pliki (*)</translation>
     </message>
     <message>
         <source>Android libraries (*.so)</source>
-        <translation type="unfinished"></translation>
+        <translation>Biblioteki Androida (*.so)</translation>
     </message>
     <message>
         <source>Application ID · e.g. dev.example.app</source>
-        <translation type="unfinished"></translation>
+        <translation>Identyfikator aplikacji · np. dev.example.app</translation>
     </message>
     <message>
         <source>Breakpoints</source>
-        <translation type="unfinished"></translation>
+        <translation>Punkty przerwania</translation>
     </message>
     <message>
         <source>CALL STACK</source>
-        <translation type="unfinished"></translation>
+        <translation>STOS WYWOŁAŃ</translation>
     </message>
     <message>
         <source>Choose Android device</source>
-        <translation type="unfinished"></translation>
+        <translation>Wybierz urządzenie z Androidem</translation>
     </message>
     <message>
         <source>Choose debug program</source>
-        <translation type="unfinished"></translation>
+        <translation>Wybierz program do debugowania</translation>
     </message>
     <message>
         <source>Choose file</source>
-        <translation type="unfinished"></translation>
+        <translation>Wybierz plik</translation>
     </message>
     <message>
         <source>Choose library with debug symbols</source>
-        <translation type="unfinished"></translation>
+        <translation>Wybierz bibliotekę z symbolami debugowania</translation>
     </message>
     <message>
         <source>Connect</source>
-        <translation type="unfinished"></translation>
+        <translation>Połącz</translation>
     </message>
     <message>
         <source>Connecting…</source>
-        <translation type="unfinished"></translation>
+        <translation>Łączenie…</translation>
     </message>
     <message>
         <source>Continue</source>
-        <translation type="unfinished"></translation>
+        <translation>Kontynuuj</translation>
     </message>
     <message>
         <source>Debugger exited</source>
-        <translation type="unfinished"></translation>
+        <translation>Debuger zakończył działanie</translation>
     </message>
     <message>
         <source>Debugger request failed</source>
-        <translation type="unfinished"></translation>
+        <translation>Żądanie do debugera nie powiodło się</translation>
     </message>
     <message>
         <source>Disconnect</source>
-        <translation type="unfinished"></translation>
+        <translation>Rozłącz</translation>
     </message>
     <message>
         <source>Disconnected</source>
-        <translation type="unfinished"></translation>
+        <translation>Rozłączono</translation>
     </message>
     <message>
         <source>Ended</source>
-        <translation type="unfinished"></translation>
+        <translation>Zakończono</translation>
     </message>
     <message>
         <source>Enter valid line numbers</source>
-        <translation type="unfinished"></translation>
+        <translation>Wpisz prawidłowe numery wierszy</translation>
     </message>
     <message>
         <source>Evaluate expression</source>
-        <translation type="unfinished"></translation>
+        <translation>Oblicz wyrażenie</translation>
     </message>
     <message>
         <source>Evaluate the expression in the selected frame</source>
-        <translation type="unfinished"></translation>
+        <translation>Oblicz wyrażenie w wybranej ramce</translation>
     </message>
     <message>
         <source>Executable with debug symbols</source>
-        <translation type="unfinished"></translation>
+        <translation>Plik wykonywalny z symbolami debugowania</translation>
     </message>
     <message>
         <source>Hide events</source>
-        <translation type="unfinished"></translation>
+        <translation>Ukryj zdarzenia</translation>
     </message>
     <message>
         <source>Launch app</source>
-        <translation type="unfinished"></translation>
+        <translation>Uruchom aplikację</translation>
     </message>
     <message>
         <source>Launches the app if it is not running yet.</source>
-        <translation type="unfinished"></translation>
+        <translation>Uruchamia aplikację, jeśli jeszcze nie działa.</translation>
     </message>
     <message>
         <source>Library with debug symbols (.so)</source>
-        <translation type="unfinished"></translation>
+        <translation>Biblioteka z symbolami debugowania (.so)</translation>
     </message>
     <message>
         <source>Line %1</source>
-        <translation type="unfinished"></translation>
+        <translation>Wiersz %1</translation>
     </message>
     <message>
         <source>Lines: 12, 24</source>
-        <translation type="unfinished"></translation>
+        <translation>Wiersze: 12, 24</translation>
     </message>
     <message>
         <source>Locals</source>
-        <translation type="unfinished"></translation>
+        <translation>Zmienne lokalne</translation>
     </message>
     <message>
         <source>No debugger events yet.</source>
-        <translation type="unfinished"></translation>
+        <translation>Nie ma jeszcze zdarzeń debugera.</translation>
     </message>
     <message>
         <source>No paused thread yet</source>
-        <translation type="unfinished"></translation>
+        <translation>Nie ma jeszcze wstrzymanego wątku</translation>
     </message>
     <message>
         <source>No session</source>
-        <translation type="unfinished"></translation>
+        <translation>Brak sesji</translation>
     </message>
     <message>
         <source>Open existing session</source>
-        <translation type="unfinished"></translation>
+        <translation>Otwórz istniejącą sesję</translation>
     </message>
     <message>
         <source>Open source</source>
-        <translation type="unfinished"></translation>
+        <translation>Otwórz źródło</translation>
     </message>
     <message>
         <source>Paused</source>
-        <translation type="unfinished"></translation>
+        <translation>Wstrzymano</translation>
     </message>
     <message>
         <source>Refresh</source>
-        <translation type="unfinished"></translation>
+        <translation>Odśwież</translation>
     </message>
     <message>
         <source>Restarts the app and waits for the Java debugger.</source>
-        <translation type="unfinished"></translation>
+        <translation>Uruchamia aplikację ponownie i czeka na debuger Javy.</translation>
     </message>
     <message>
         <source>Run the next source line</source>
-        <translation type="unfinished"></translation>
+        <translation>Wykonaj następny wiersz źródła</translation>
     </message>
     <message>
         <source>Running</source>
-        <translation type="unfinished"></translation>
+        <translation>Działa</translation>
     </message>
     <message>
         <source>Session active</source>
-        <translation type="unfinished"></translation>
+        <translation>Sesja aktywna</translation>
     </message>
     <message>
         <source>Show events</source>
-        <translation type="unfinished"></translation>
+        <translation>Pokaż zdarzenia</translation>
     </message>
     <message>
         <source>Source file or Java class</source>
-        <translation type="unfinished"></translation>
+        <translation>Plik źródłowy lub klasa Javy</translation>
     </message>
     <message>
         <source>Step in</source>
-        <translation type="unfinished"></translation>
+        <translation>Wejdź do</translation>
     </message>
     <message>
         <source>Step out</source>
-        <translation type="unfinished"></translation>
+        <translation>Wyjdź z</translation>
     </message>
     <message>
         <source>Step over</source>
-        <translation type="unfinished"></translation>
+        <translation>Przeskocz</translation>
     </message>
     <message>
         <source>VARIABLES</source>
-        <translation type="unfinished"></translation>
+        <translation>ZMIENNE</translation>
     </message>
     <message>
         <source>ended</source>
-        <translation type="unfinished"></translation>
+        <translation>zakończono</translation>
     </message>
     <message>
         <source>Attach to your app</source>
-        <translation type="unfinished"></translation>
+        <translation>Dołącz do swojej aplikacji</translation>
     </message>
     <message>
         <source>Needs a debug build and the NDK. The library must match your app and its processor.</source>
-        <translation type="unfinished"></translation>
+        <translation>Wymaga kompilacji debugowej i NDK. Biblioteka musi pasować do aplikacji i jej procesora.</translation>
     </message>
     <message>
         <source>Needs a debug build on a connected phone or emulator.</source>
-        <translation type="unfinished"></translation>
+        <translation>Wymaga kompilacji debugowej na podłączonym telefonie lub emulatorze.</translation>
     </message>
     <message>
         <source>A program on this computer, inspected with LLDB.</source>
-        <translation type="unfinished"></translation>
+        <translation>Program na tym komputerze, badany za pomocą LLDB.</translation>
     </message>
     <message>
         <source>Take over your agent&apos;s session</source>
-        <translation type="unfinished"></translation>
+        <translation>Przejmij sesję swojego agenta</translation>
     </message>
     <message>
         <source>Pause your app or set a breakpoint to see the stack and variables.</source>
-        <translation type="unfinished"></translation>
+        <translation>Wstrzymaj aplikację lub ustaw punkt przerwania, aby zobaczyć stos i zmienne.</translation>
     </message>
     <message>
         <source>Attach here, or take over a session your agent started.</source>
-        <translation type="unfinished"></translation>
+        <translation>Dołącz tutaj lub przejmij sesję uruchomioną przez agenta.</translation>
     </message>
 </context>
 <context>
     <name>Device</name>
     <message>
         <source>Device permissions are disabled in this layout preview.</source>
-        <translation type="unfinished"></translation>
+        <translation>Uprawnienia urządzenia są wyłączone w tym podglądzie układu.</translation>
     </message>
     <message>
         <source>No connection</source>
-        <translation type="unfinished"></translation>
+        <translation>Brak połączenia</translation>
     </message>
     <message>
         <source>Page not reachable. Is your dev server running?</source>
-        <translation type="unfinished"></translation>
+        <translation>Strona nieosiągalna. Czy serwer deweloperski działa?</translation>
     </message>
     <message>
         <source>Please open downloads in your browser. Device images can be saved with “Screenshot”.</source>
-        <translation type="unfinished"></translation>
+        <translation>Pobrane pliki otwieraj w przeglądarce. Obrazy urządzenia można zapisać przyciskiem „Zrzut ekranu”.</translation>
     </message>
     <message>
         <source>Reload</source>
-        <translation type="unfinished"></translation>
+        <translation>Załaduj ponownie</translation>
     </message>
     <message>
         <source>SAFE AREA · PREVIEW</source>
-        <translation type="unfinished"></translation>
+        <translation>BEZPIECZNY OBSZAR · PODGLĄD</translation>
     </message>
     <message>
         <source>The web view was terminated. Please reload.</source>
-        <translation type="unfinished"></translation>
+        <translation>Widok webowy został zakończony. Załaduj ponownie.</translation>
     </message>
     <message>
         <source>This preview opens web addresses. Use “Open folder” for local builds.</source>
-        <translation type="unfinished"></translation>
+        <translation>Ten podgląd otwiera adresy internetowe. Dla lokalnych kompilacji użyj „Otwórz folder”.</translation>
     </message>
 </context>
 <context>
     <name>DeviceWindow</name>
     <message>
         <source>Save and copy a screenshot · Ctrl+Shift+S</source>
-        <translation type="unfinished"></translation>
+        <translation>Zapisz i skopiuj zrzut ekranu · Ctrl+Shift+S</translation>
     </message>
     <message>
         <source>Back</source>
-        <translation type="unfinished"></translation>
+        <translation>Wstecz</translation>
     </message>
     <message>
         <source>Bring back into the workspace</source>
-        <translation type="unfinished"></translation>
+        <translation>Przywróć do obszaru roboczego</translation>
     </message>
     <message>
         <source>Close device window · the device keeps running</source>
-        <translation type="unfinished"></translation>
+        <translation>Zamknij okno urządzenia · urządzenie nadal działa</translation>
     </message>
     <message>
         <source>Larger · Ctrl+mouse wheel</source>
-        <translation type="unfinished"></translation>
+        <translation>Większy · Ctrl+kółko myszy</translation>
     </message>
     <message>
         <source>Open in the workspace</source>
-        <translation type="unfinished"></translation>
+        <translation>Otwórz w obszarze roboczym</translation>
     </message>
     <message>
         <source>Tomacco – Device</source>
-        <translation type="unfinished"></translation>
+        <translation>Tomacco – Urządzenie</translation>
     </message>
     <message>
         <source>Rotate</source>
-        <translation type="unfinished"></translation>
+        <translation>Obróć</translation>
     </message>
     <message>
         <source>Show the back</source>
-        <translation type="unfinished"></translation>
+        <translation>Pokaż tył</translation>
     </message>
     <message>
         <source>Show the front</source>
-        <translation type="unfinished"></translation>
+        <translation>Pokaż przód</translation>
     </message>
     <message>
         <source>Side button</source>
-        <translation type="unfinished"></translation>
+        <translation>Przycisk boczny</translation>
     </message>
     <message>
         <source>Side button · wake or lock the display</source>
-        <translation type="unfinished"></translation>
+        <translation>Przycisk boczny · wybudź lub zablokuj ekran</translation>
     </message>
     <message>
         <source>Smaller · Ctrl+mouse wheel</source>
-        <translation type="unfinished"></translation>
+        <translation>Mniejszy · Ctrl+kółko myszy</translation>
     </message>
     <message>
         <source>Stop keeping this window above the others</source>
-        <translation type="unfinished"></translation>
+        <translation>Przestań trzymać to okno nad innymi</translation>
     </message>
     <message>
         <source>Keep this window above the others</source>
-        <translation type="unfinished"></translation>
+        <translation>Trzymaj to okno nad innymi</translation>
     </message>
 </context>
 <context>
     <name>FileWorkspace</name>
     <message>
         <source>Choose a file in the project tree</source>
-        <translation type="unfinished"></translation>
+        <translation>Wybierz plik w drzewie projektu</translation>
     </message>
     <message>
         <source>Close file</source>
-        <translation type="unfinished"></translation>
+        <translation>Zamknij plik</translation>
     </message>
     <message>
         <source>Discard unsaved changes?</source>
-        <translation type="unfinished"></translation>
+        <translation>Odrzucić niezapisane zmiany?</translation>
     </message>
     <message>
         <source>Folder</source>
-        <translation type="unfinished"></translation>
+        <translation>Folder</translation>
     </message>
     <message>
         <source>Hidden</source>
-        <translation type="unfinished"></translation>
+        <translation>Ukryte</translation>
     </message>
     <message>
         <source>Line %1 · UTF-8 · changes are checked on save</source>
-        <translation type="unfinished"></translation>
+        <translation>Wiersz %1 · UTF-8 · zmiany są sprawdzane przy zapisie</translation>
     </message>
     <message>
         <source>More matches available; narrow the search term.</source>
-        <translation type="unfinished"></translation>
+        <translation>Dostępnych jest więcej wyników; zawęź wyszukiwane hasło.</translation>
     </message>
     <message>
         <source>New file</source>
-        <translation type="unfinished"></translation>
+        <translation>Nowy plik</translation>
     </message>
     <message>
         <source>New folder</source>
-        <translation type="unfinished"></translation>
+        <translation>Nowy folder</translation>
     </message>
     <message>
         <source>Open a project first</source>
-        <translation type="unfinished"></translation>
+        <translation>Najpierw otwórz projekt</translation>
     </message>
     <message>
         <source>Path relative to the project, e.g. lib/example.dart</source>
-        <translation type="unfinished"></translation>
+        <translation>Ścieżka względem projektu, np. lib/example.dart</translation>
     </message>
     <message>
         <source>Reload</source>
-        <translation type="unfinished"></translation>
+        <translation>Załaduj ponownie</translation>
     </message>
     <message>
         <source>Reload files</source>
-        <translation type="unfinished"></translation>
+        <translation>Załaduj pliki ponownie</translation>
     </message>
     <message>
         <source>Save the file first or discard it with Reload.</source>
-        <translation type="unfinished"></translation>
+        <translation>Najpierw zapisz plik lub odrzuć go przyciskiem Załaduj ponownie.</translation>
     </message>
     <message>
         <source>Save · Ctrl+S</source>
-        <translation type="unfinished"></translation>
+        <translation>Zapisz · Ctrl+S</translation>
     </message>
     <message>
         <source>Saved · %1</source>
-        <translation type="unfinished"></translation>
+        <translation>Zapisano · %1</translation>
     </message>
     <message>
         <source>Search source code…</source>
-        <translation type="unfinished"></translation>
+        <translation>Szukaj w kodzie źródłowym…</translation>
     </message>
     <message>
         <source>The file is read again from disk.</source>
-        <translation type="unfinished"></translation>
+        <translation>Plik zostanie ponownie odczytany z dysku.</translation>
     </message>
     <message>
         <source>The link leads outside this project.</source>
-        <translation type="unfinished"></translation>
+        <translation>Link prowadzi poza ten projekt.</translation>
     </message>
     <message>
         <source>This folder contains more than 2,000 entries. Use search for targeted results.</source>
-        <translation type="unfinished"></translation>
+        <translation>Ten folder zawiera ponad 2000 elementów. Użyj wyszukiwania, aby zawęzić wyniki.</translation>
     </message>
     <message>
         <source>Source of %1</source>
-        <translation type="unfinished"></translation>
+        <translation>Źródło %1</translation>
     </message>
     <message>
         <source>Source editor</source>
-        <translation type="unfinished"></translation>
+        <translation>Edytor źródeł</translation>
     </message>
     <message>
         <source>Search results</source>
-        <translation type="unfinished"></translation>
+        <translation>Wyniki wyszukiwania</translation>
     </message>
     <message>
         <source>Project files</source>
-        <translation type="unfinished"></translation>
+        <translation>Pliki projektu</translation>
     </message>
     <message>
         <source>Choose folder</source>
-        <translation type="unfinished"></translation>
+        <translation>Wybierz folder</translation>
     </message>
 </context>
 <context>
     <name>IosGuestView</name>
     <message>
         <source>Screenshot saved and copied: %1</source>
-        <translation type="unfinished"></translation>
+        <translation>Zrzut ekranu zapisany i skopiowany: %1</translation>
     </message>
     <message>
         <source>%1 · outcome unclear, not retried automatically</source>
-        <translation type="unfinished"></translation>
+        <translation>%1 · wynik niejasny, bez automatycznego ponawiania</translation>
     </message>
     <message numerus="yes">
         <source>%n new frame(s)/s</source>
-        <translation type="unfinished">
-            <numerusform></numerusform>
-            <numerusform></numerusform>
-            <numerusform></numerusform>
+        <translation>
+            <numerusform>%n nowa klatka/s</numerusform>
+            <numerusform>%n nowe klatki/s</numerusform>
+            <numerusform>%n nowych klatek/s</numerusform>
         </translation>
     </message>
     <message>
         <source>App switcher</source>
-        <translation type="unfinished"></translation>
+        <translation>Przełącznik aplikacji</translation>
     </message>
     <message>
         <source>Back</source>
-        <translation type="unfinished"></translation>
+        <translation>Wstecz</translation>
     </message>
     <message>
         <source>Capture saved: %1</source>
-        <translation type="unfinished"></translation>
+        <translation>Zrzut zapisany: %1</translation>
     </message>
     <message>
         <source>Control Center</source>
-        <translation type="unfinished"></translation>
+        <translation>Centrum sterowania</translation>
     </message>
     <message>
         <source>Control still busy · input not delivered</source>
-        <translation type="unfinished"></translation>
+        <translation>Sterowanie nadal zajęte · dane wejściowe nie zostały dostarczone</translation>
     </message>
     <message>
         <source>Detach the virtual iOS device into its own window</source>
-        <translation type="unfinished"></translation>
+        <translation>Odłącz wirtualne urządzenie iOS do osobnego okna</translation>
     </message>
     <message>
         <source>Display output unreachable</source>
-        <translation type="unfinished"></translation>
+        <translation>Wyjście wyświetlacza nieosiągalne</translation>
     </message>
     <message>
         <source>Dock</source>
-        <translation type="unfinished"></translation>
+        <translation>Dock</translation>
     </message>
     <message>
         <source>Edge swipes start on the frame or at the screen&apos;s edge</source>
-        <translation type="unfinished"></translation>
+        <translation>Przeciągnięcia od krawędzi zaczynają się na obudowie lub przy krawędzi ekranu</translation>
     </message>
     <message>
         <source>Home button</source>
-        <translation type="unfinished"></translation>
+        <translation>Przycisk Początek</translation>
     </message>
     <message>
         <source>Home button and swipe up from the bottom edge</source>
-        <translation type="unfinished"></translation>
+        <translation>Przycisk Początek i przeciągnięcie w górę od dolnej krawędzi</translation>
     </message>
     <message>
         <source>Input failed</source>
-        <translation type="unfinished"></translation>
+        <translation>Wprowadzanie nie powiodło się</translation>
     </message>
     <message>
         <source>Input queue full · this input was not sent</source>
-        <translation type="unfinished"></translation>
+        <translation>Kolejka wejściowa pełna · to wejście nie zostało wysłane</translation>
     </message>
     <message>
         <source>Last frame</source>
-        <translation type="unfinished"></translation>
+        <translation>Ostatnia klatka</translation>
     </message>
     <message>
         <source>Live frame · %1</source>
-        <translation type="unfinished"></translation>
+        <translation>Klatka na żywo · %1</translation>
     </message>
     <message>
         <source>No running interactive iOS session</source>
-        <translation type="unfinished"></translation>
+        <translation>Brak działającej interaktywnej sesji iOS</translation>
     </message>
     <message>
         <source>Notification Center</source>
-        <translation type="unfinished"></translation>
+        <translation>Centrum powiadomień</translation>
     </message>
     <message>
         <source>Own window</source>
-        <translation type="unfinished"></translation>
+        <translation>Osobne okno</translation>
     </message>
     <message>
         <source>Real output of the virtual display</source>
-        <translation type="unfinished"></translation>
+        <translation>Rzeczywiste wyjście wirtualnego wyświetlacza</translation>
     </message>
     <message>
         <source>Side button</source>
-        <translation type="unfinished"></translation>
+        <translation>Przycisk boczny</translation>
     </message>
     <message>
         <source>Still frame</source>
-        <translation type="unfinished"></translation>
+        <translation>Klatka nieruchoma</translation>
     </message>
     <message>
         <source>Swipe down from the top-left edge</source>
-        <translation type="unfinished"></translation>
+        <translation>Przeciągnij w dół od lewej górnej krawędzi</translation>
     </message>
     <message>
         <source>Swipe down from the top-right edge</source>
-        <translation type="unfinished"></translation>
+        <translation>Przeciągnij w dół od prawej górnej krawędzi</translation>
     </message>
     <message>
         <source>Swipe right from the left edge</source>
-        <translation type="unfinished"></translation>
+        <translation>Przeciągnij w prawo od lewej krawędzi</translation>
     </message>
     <message>
         <source>Swipe up from the bottom edge and pause</source>
-        <translation type="unfinished"></translation>
+        <translation>Przeciągnij w górę od dolnej krawędzi i przytrzymaj</translation>
     </message>
     <message>
         <source>The iOS device is running in its own window</source>
-        <translation type="unfinished"></translation>
+        <translation>Urządzenie iOS działa w osobnym oknie</translation>
     </message>
     <message>
         <source>Virtual iOS device</source>
-        <translation type="unfinished"></translation>
+        <translation>Wirtualne urządzenie iOS</translation>
     </message>
     <message>
         <source>Waiting for the display output of iOS…</source>
-        <translation type="unfinished"></translation>
+        <translation>Oczekiwanie na wyjście wyświetlacza iOS…</translation>
     </message>
     <message>
         <source>Wake or lock the display</source>
-        <translation type="unfinished"></translation>
+        <translation>Wybudź lub zablokuj ekran</translation>
     </message>
     <message>
         <source>Stop recording · %1 s</source>
-        <translation type="unfinished"></translation>
+        <translation>Zatrzymaj nagrywanie · %1 s</translation>
     </message>
     <message>
         <source>Record</source>
-        <translation type="unfinished"></translation>
+        <translation>Nagrywaj</translation>
     </message>
     <message>
         <source>Stop and save the recording</source>
-        <translation type="unfinished"></translation>
+        <translation>Zatrzymaj i zapisz nagranie</translation>
     </message>
     <message>
         <source>Record the screen to a video, at most 10 minutes</source>
-        <translation type="unfinished"></translation>
+        <translation>Nagraj ekran jako wideo, maksymalnie 10 minut</translation>
     </message>
     <message numerus="yes">
         <source>Typing %n character(s) from the clipboard</source>
-        <translation type="unfinished">
-            <numerusform></numerusform>
-            <numerusform></numerusform>
-            <numerusform></numerusform>
+        <translation>
+            <numerusform>Wpisywanie %n znaku ze schowka</numerusform>
+            <numerusform>Wpisywanie %n znaków ze schowka</numerusform>
+            <numerusform>Wpisywanie %n znaków ze schowka</numerusform>
         </translation>
     </message>
     <message>
         <source>The clipboard holds no text</source>
-        <translation type="unfinished"></translation>
+        <translation>Schowek nie zawiera tekstu</translation>
     </message>
     <message>
         <source>The clipboard holds %1 characters; at most %2 are typed into the phone</source>
-        <translation type="unfinished"></translation>
+        <translation>Schowek zawiera %1 znaków; do telefonu zostanie wpisanych najwyżej %2</translation>
     </message>
     <message>
         <source>Paste</source>
-        <translation type="unfinished"></translation>
+        <translation>Wklej</translation>
     </message>
     <message>
         <source>Type the clipboard&apos;s text into the field that has the focus</source>
-        <translation type="unfinished"></translation>
+        <translation>Wpisz tekst ze schowka w polu, które ma fokus</translation>
     </message>
     <message>
         <source>Keyboard to phone</source>
-        <translation type="unfinished"></translation>
+        <translation>Klawiatura do telefonu</translation>
     </message>
     <message>
         <source>Keyboard to desktop</source>
-        <translation type="unfinished"></translation>
+        <translation>Klawiatura do komputera</translation>
     </message>
     <message>
         <source>Typing goes to the phone · Ctrl+Shift+K gives the keyboard back to the desktop</source>
-        <translation type="unfinished"></translation>
+        <translation>Pisanie trafia do telefonu · Ctrl+Shift+K oddaje klawiaturę komputerowi</translation>
     </message>
     <message>
         <source>Click the screen or press Ctrl+Shift+K to type on the phone</source>
-        <translation type="unfinished"></translation>
+        <translation>Kliknij ekran lub naciśnij Ctrl+Shift+K, aby pisać na telefonie</translation>
     </message>
     <message>
         <source>Speed</source>
-        <translation type="unfinished"></translation>
+        <translation>Szybkość</translation>
     </message>
     <message>
         <source>Show frames per second and the time from an input to the picture</source>
-        <translation type="unfinished"></translation>
+        <translation>Pokazuj klatki na sekundę i czas od wejścia do obrazu</translation>
     </message>
     <message>
         <source>Screenshot with frame</source>
-        <translation type="unfinished"></translation>
+        <translation>Zrzut ekranu z obudową</translation>
     </message>
     <message>
         <source>Save and copy a screenshot with a plain device frame and rounded corners</source>
-        <translation type="unfinished"></translation>
+        <translation>Zapisz i skopiuj zrzut ekranu z prostą obudową urządzenia i zaokrąglonymi rogami</translation>
     </message>
     <message>
         <source>%1 new · %2 fetched frames/s</source>
-        <translation type="unfinished"></translation>
+        <translation>%1 nowych · %2 pobranych klatek/s</translation>
     </message>
     <message>
         <source>Input to picture: %1 ms</source>
-        <translation type="unfinished"></translation>
+        <translation>Od wejścia do obrazu: %1 ms</translation>
     </message>
     <message>
         <source>Input to picture: not measured yet</source>
-        <translation type="unfinished"></translation>
+        <translation>Od wejścia do obrazu: jeszcze nie zmierzono</translation>
     </message>
     <message>
         <source>The screenshot failed</source>
-        <translation type="unfinished"></translation>
+        <translation>Zrzut ekranu nie powiódł się</translation>
     </message>
     <message>
         <source>Keyboard to phone · Ctrl+Shift+K switches it to the desktop and back</source>
-        <translation type="unfinished"></translation>
+        <translation>Klawiatura do telefonu · Ctrl+Shift+K przełącza ją na komputer i z powrotem</translation>
     </message>
 </context>
 <context>
     <name>IosResearch</name>
     <message>
         <source>Another app change is still running.</source>
-        <translation type="unfinished"></translation>
+        <translation>Inna zmiana aplikacji wciąż trwa.</translation>
     </message>
     <message>
         <source>Checking %1…</source>
-        <translation type="unfinished"></translation>
+        <translation>Sprawdzanie %1…</translation>
     </message>
     <message>
         <source>%1 added · installing on the running device</source>
-        <translation type="unfinished"></translation>
+        <translation>Dodano %1 · instalowanie na działającym urządzeniu</translation>
     </message>
     <message>
         <source>%1 added · the next start installs it</source>
-        <translation type="unfinished"></translation>
+        <translation>Dodano %1 · zostanie zainstalowane przy następnym uruchomieniu</translation>
     </message>
     <message>
         <source>The virtual iOS device takes one .app bundle built for arm64 iOS.</source>
-        <translation type="unfinished"></translation>
+        <translation>Wirtualne urządzenie iOS przyjmuje jeden pakiet .app zbudowany dla arm64 iOS.</translation>
     </message>
     <message>
         <source>Set up the virtual iOS device&apos;s profile before adding apps.</source>
-        <translation type="unfinished"></translation>
+        <translation>Skonfiguruj profil wirtualnego urządzenia iOS przed dodaniem aplikacji.</translation>
     </message>
     <message>
         <source>%1 reads · %2 writes · %3 rejected</source>
-        <translation type="unfinished"></translation>
+        <translation>%1 odczytów · %2 zapisów · %3 odrzuconych</translation>
     </message>
     <message>
         <source>%1 · Apple variant</source>
-        <translation type="unfinished"></translation>
+        <translation>%1 · wariant Apple</translation>
     </message>
     <message>
         <source>%1 · derived</source>
-        <translation type="unfinished"></translation>
+        <translation>%1 · pochodny</translation>
     </message>
     <message>
         <source>%1: %2 · state %3</source>
-        <translation type="unfinished"></translation>
+        <translation>%1: %2 · stan %3</translation>
     </message>
     <message numerus="yes">
         <source>%1: %n message(s)</source>
-        <translation type="unfinished">
-            <numerusform></numerusform>
-            <numerusform></numerusform>
-            <numerusform></numerusform>
+        <translation>
+            <numerusform>%1: %n wiadomość</numerusform>
+            <numerusform>%1: %n wiadomości</numerusform>
+            <numerusform>%1: %n wiadomości</numerusform>
         </translation>
     </message>
     <message numerus="yes">
         <source>%n byte(s) from %1 · checksum verified</source>
-        <translation type="unfinished">
-            <numerusform></numerusform>
-            <numerusform></numerusform>
-            <numerusform></numerusform>
+        <translation>
+            <numerusform>%n bajt z %1 · suma kontrolna zweryfikowana</numerusform>
+            <numerusform>%n bajty z %1 · suma kontrolna zweryfikowana</numerusform>
+            <numerusform>%n bajtów z %1 · suma kontrolna zweryfikowana</numerusform>
         </translation>
     </message>
     <message>
         <source>Simulated controller with timers · experimental</source>
-        <translation type="unfinished"></translation>
+        <translation>Symulowany kontroler z timerami · eksperymentalne</translation>
     </message>
     <message>
         <source>Add app…</source>
-        <translation type="unfinished"></translation>
+        <translation>Dodaj aplikację…</translation>
     </message>
     <message>
         <source>Core ID</source>
-        <translation type="unfinished"></translation>
+        <translation>Identyfikator rdzenia</translation>
     </message>
     <message>
         <source>App to open at start</source>
-        <translation type="unfinished"></translation>
+        <translation>Aplikacja otwierana przy starcie</translation>
     </message>
     <message>
         <source>Applies from the next start.</source>
-        <translation type="unfinished"></translation>
+        <translation>Obowiązuje od następnego uruchomienia.</translation>
     </message>
     <message>
         <source>Your own arm64 .app bundles. Each start installs them together with the device&apos;s helper tools. Changes apply from the next start.</source>
-        <translation type="unfinished"></translation>
+        <translation>Twoje własne pakiety .app dla arm64. Każde uruchomienie instaluje je razem z narzędziami pomocniczymi urządzenia. Zmiany obowiązują od następnego uruchomienia.</translation>
     </message>
     <message>
         <source>Boot image</source>
-        <translation type="unfinished"></translation>
+        <translation>Obraz rozruchowy</translation>
     </message>
     <message>
         <source>Breakpoint reached</source>
-        <translation type="unfinished"></translation>
+        <translation>Osiągnięto punkt przerwania</translation>
     </message>
     <message>
         <source>Processor core ID (MPIDR affinity)</source>
-        <translation type="unfinished"></translation>
+        <translation>Identyfikator rdzenia procesora (MPIDR affinity)</translation>
     </message>
     <message>
         <source>Processor settings</source>
-        <translation type="unfinished"></translation>
+        <translation>Ustawienia procesora</translation>
     </message>
     <message>
         <source>Processor register not supported yet: %1 · %2 by code at %3</source>
-        <translation type="unfinished"></translation>
+        <translation>Rejestr procesora jeszcze nieobsługiwany: %1 · %2 przez kod pod %3</translation>
     </message>
     <message>
         <source>Processor: MIDR %1 · core ID %2 · %3</source>
-        <translation type="unfinished"></translation>
+        <translation>Procesor: MIDR %1 · identyfikator rdzenia %2 · %3</translation>
     </message>
     <message>
         <source>Cancel</source>
-        <translation type="unfinished"></translation>
+        <translation>Anuluj</translation>
     </message>
     <message>
         <source>Cancel the start and stop the device without saving</source>
-        <translation type="unfinished"></translation>
+        <translation>Anuluj uruchomienie i zatrzymaj urządzenie bez zapisywania</translation>
     </message>
     <message>
         <source>Check the bundle and add it to the profile · the next start installs it</source>
-        <translation type="unfinished"></translation>
+        <translation>Sprawdź pakiet i dodaj go do profilu · zostanie zainstalowany przy następnym uruchomieniu</translation>
     </message>
     <message>
         <source>Checking image…</source>
-        <translation type="unfinished"></translation>
+        <translation>Sprawdzanie obrazu…</translation>
     </message>
     <message>
         <source>Checking…</source>
-        <translation type="unfinished"></translation>
+        <translation>Sprawdzanie…</translation>
     </message>
     <message>
         <source>Choose</source>
-        <translation type="unfinished"></translation>
+        <translation>Wybierz</translation>
     </message>
     <message>
         <source>Choose app bundle (.app directory)</source>
-        <translation type="unfinished"></translation>
+        <translation>Wybierz pakiet aplikacji (katalog .app)</translation>
     </message>
     <message>
         <source>Choose iOS emulator</source>
-        <translation type="unfinished"></translation>
+        <translation>Wybierz emulator iOS</translation>
     </message>
     <message>
         <source>Choose prepared firmware package</source>
-        <translation type="unfinished"></translation>
+        <translation>Wybierz przygotowany pakiet firmware</translation>
     </message>
     <message>
         <source>Choose prepared iOS package</source>
-        <translation type="unfinished"></translation>
+        <translation>Wybierz przygotowany pakiet iOS</translation>
     </message>
     <message>
         <source>Classic (Home button)</source>
-        <translation type="unfinished"></translation>
+        <translation>Klasyczny (przycisk Początek)</translation>
     </message>
     <message>
         <source>Closing the session…</source>
-        <translation type="unfinished"></translation>
+        <translation>Zamykanie sesji…</translation>
     </message>
     <message>
         <source>Snapshots of the running system: %1 · %2</source>
-        <translation type="unfinished"></translation>
+        <translation>Migawki działającego systemu: %1 · %2</translation>
     </message>
     <message>
         <source>Reading the controller state failed: %1</source>
-        <translation type="unfinished"></translation>
+        <translation>Odczyt stanu kontrolera nie powiódł się: %1</translation>
     </message>
     <message>
         <source>For controller development: Apple&apos;s original firmware runs alone on a simulated ARM processor. The simulated controller still rests on unconfirmed hardware guesses; the firmware&apos;s services and its connection to iOS are not verified.</source>
-        <translation type="unfinished"></translation>
+        <translation>Do rozwoju kontrolera: oryginalny firmware Apple działa samodzielnie na symulowanym procesorze ARM. Symulowany kontroler nadal opiera się na niepotwierdzonych założeniach sprzętowych; usługi firmware i jego połączenie z iOS nie są zweryfikowane.</translation>
     </message>
     <message>
         <source>Controller state</source>
-        <translation type="unfinished"></translation>
+        <translation>Stan kontrolera</translation>
     </message>
     <message>
         <source>Work in progress: an agent starts the virtual iOS device, then it appears here. Starting takes many minutes. Apart from the built-in test app, apps with a user interface have not been shown to work yet.</source>
-        <translation type="unfinished"></translation>
+        <translation>W trakcie prac: agent uruchamia wirtualne urządzenie iOS, a potem pojawia się ono tutaj. Uruchamianie trwa wiele minut. Poza wbudowaną aplikacją testową nie wykazano jeszcze działania aplikacji z interfejsem użytkownika.</translation>
     </message>
     <message>
         <source>Diagnostics complete</source>
-        <translation type="unfinished"></translation>
+        <translation>Diagnostyka zakończona</translation>
     </message>
     <message>
         <source>Diagnostics ended with a finding</source>
-        <translation type="unfinished"></translation>
+        <translation>Diagnostyka zakończona ze spostrzeżeniem</translation>
     </message>
     <message>
         <source>Folder with pmp-research.json</source>
-        <translation type="unfinished"></translation>
+        <translation>Folder z pmp-research.json</translation>
     </message>
     <message>
         <source>Folder with tomacco-ios.json</source>
-        <translation type="unfinished"></translation>
+        <translation>Folder z tomacco-ios.json</translation>
     </message>
     <message>
         <source>Experimental: iOS shows its first system screens. Setup, graphics and native apps do not fully work yet.</source>
-        <translation type="unfinished"></translation>
+        <translation>Eksperymentalne: iOS pokazuje pierwsze ekrany systemu. Konfiguracja, grafika i aplikacje natywne jeszcze nie działają w pełni.</translation>
     </message>
     <message>
         <source>First invalid memory access: code at %1 · address %2 · %3</source>
-        <translation type="unfinished"></translation>
+        <translation>Pierwszy nieprawidłowy dostęp do pamięci: kod pod %1 · adres %2 · %3</translation>
     </message>
     <message>
         <source>Memory contents in hexadecimal</source>
-        <translation type="unfinished"></translation>
+        <translation>Zawartość pamięci szesnastkowo</translation>
     </message>
     <message>
         <source>Hide processor settings</source>
-        <translation type="unfinished"></translation>
+        <translation>Ukryj ustawienia procesora</translation>
     </message>
     <message>
         <source>Hide processor registers</source>
-        <translation type="unfinished"></translation>
+        <translation>Ukryj rejestry procesora</translation>
     </message>
     <message>
         <source>Hide boot image</source>
-        <translation type="unfinished"></translation>
+        <translation>Ukryj obraz rozruchowy</translation>
     </message>
     <message>
         <source>Address of a firmware instruction, e.g. 0x10280d4 · optional</source>
-        <translation type="unfinished"></translation>
+        <translation>Adres instrukcji firmware, np. 0x10280d4 · opcjonalnie</translation>
     </message>
     <message>
         <source>Job &amp; logs</source>
-        <translation type="unfinished"></translation>
+        <translation>Zadanie i dzienniki</translation>
     </message>
     <message>
         <source>The processor identity the firmware sees when it starts. Other values make it take other start-up paths; they add no hardware features.</source>
-        <translation type="unfinished"></translation>
+        <translation>Tożsamość procesora, którą firmware widzi przy starcie. Inne wartości kierują go na inne ścieżki startowe; nie dodają funkcji sprzętowych.</translation>
     </message>
     <message>
         <source>From the last snapshot · raw 64-bit values</source>
-        <translation type="unfinished"></translation>
+        <translation>Z ostatniej migawki · surowe wartości 64-bitowe</translation>
     </message>
     <message>
         <source>Loading…</source>
-        <translation type="unfinished"></translation>
+        <translation>Ładowanie…</translation>
     </message>
     <message>
         <source>Maximum run time</source>
-        <translation type="unfinished"></translation>
+        <translation>Maksymalny czas działania</translation>
     </message>
     <message>
         <source>Maximum run time in seconds</source>
-        <translation type="unfinished"></translation>
+        <translation>Maksymalny czas działania w sekundach</translation>
     </message>
     <message>
         <source>Saved memory</source>
-        <translation type="unfinished"></translation>
+        <translation>Zapisana pamięć</translation>
     </message>
     <message>
         <source>Model</source>
-        <translation type="unfinished"></translation>
+        <translation>Model</translation>
     </message>
     <message>
         <source>No controller · baseline for comparison</source>
-        <translation type="unfinished"></translation>
+        <translation>Bez kontrolera · punkt odniesienia do porównania</translation>
     </message>
     <message>
         <source>No apps of your own yet · the start opens the built-in test app.</source>
-        <translation type="unfinished"></translation>
+        <translation>Nie ma jeszcze własnych aplikacji · uruchomienie otwiera wbudowaną aplikację testową.</translation>
     </message>
     <message>
         <source>Number of bytes</source>
-        <translation type="unfinished"></translation>
+        <translation>Liczba bajtów</translation>
     </message>
     <message>
         <source>Open at start</source>
-        <translation type="unfinished"></translation>
+        <translation>Otwórz przy starcie</translation>
     </message>
     <message>
         <source>Open test system</source>
-        <translation type="unfinished"></translation>
+        <translation>Otwórz system testowy</translation>
     </message>
     <message>
         <source>Your apps</source>
-        <translation type="unfinished"></translation>
+        <translation>Twoje aplikacje</translation>
     </message>
     <message>
         <source>Built-in test app (diagnostics)</source>
-        <translation type="unfinished"></translation>
+        <translation>Wbudowana aplikacja testowa (diagnostyka)</translation>
     </message>
     <message>
         <source>Own window</source>
-        <translation type="unfinished"></translation>
+        <translation>Osobne okno</translation>
     </message>
     <message>
         <source>Firmware breakpoint</source>
-        <translation type="unfinished"></translation>
+        <translation>Punkt przerwania firmware</translation>
     </message>
     <message>
         <source>Simulated firmware controller</source>
-        <translation type="unfinished"></translation>
+        <translation>Symulowany kontroler firmware</translation>
     </message>
     <message>
         <source>Power-management firmware (PMP)</source>
-        <translation type="unfinished"></translation>
+        <translation>Firmware zarządzania energią (PMP)</translation>
     </message>
     <message>
         <source>Firmware running</source>
-        <translation type="unfinished"></translation>
+        <translation>Firmware działa</translation>
     </message>
     <message>
         <source>Path to an .app directory (arm64)</source>
-        <translation type="unfinished"></translation>
+        <translation>Ścieżka do katalogu .app (arm64)</translation>
     </message>
     <message>
         <source>Addresses 0x1000000 to 0x11fffff of the firmware&apos;s memory. Reading checks the saved copy; the firmware is not run again for it.</source>
-        <translation type="unfinished"></translation>
+        <translation>Adresy od 0x1000000 do 0x11fffff pamięci firmware. Odczyt sprawdza zapisaną kopię; firmware nie jest w tym celu uruchamiany ponownie.</translation>
     </message>
     <message>
         <source>Memory address</source>
-        <translation type="unfinished"></translation>
+        <translation>Adres pamięci</translation>
     </message>
     <message>
         <source>Prepare package</source>
-        <translation type="unfinished"></translation>
+        <translation>Przygotuj pakiet</translation>
     </message>
     <message>
         <source>Prepare, boot, unlock and open the test app</source>
-        <translation type="unfinished"></translation>
+        <translation>Przygotuj, uruchom, odblokuj i otwórz aplikację testową</translation>
     </message>
     <message>
         <source>Prepared firmware package</source>
-        <translation type="unfinished"></translation>
+        <translation>Przygotowany pakiet firmware</translation>
     </message>
     <message>
         <source>Prepared iOS package</source>
-        <translation type="unfinished"></translation>
+        <translation>Przygotowany pakiet iOS</translation>
     </message>
     <message>
         <source>Preparing working copy</source>
-        <translation type="unfinished"></translation>
+        <translation>Przygotowywanie kopii roboczej</translation>
     </message>
     <message>
         <source>Memory copy failed: %1</source>
-        <translation type="unfinished"></translation>
+        <translation>Kopiowanie pamięci nie powiodło się: %1</translation>
     </message>
     <message>
         <source>Memory copy: 2 MiB from address %1 · saved in the report folder</source>
-        <translation type="unfinished"></translation>
+        <translation>Kopia pamięci: 2 MiB od adresu %1 · zapisana w folderze raportu</translation>
     </message>
     <message>
         <source>Read</source>
-        <translation type="unfinished"></translation>
+        <translation>Odczytaj</translation>
     </message>
     <message>
         <source>Ready for a test run</source>
-        <translation type="unfinished"></translation>
+        <translation>Gotowe do uruchomienia testowego</translation>
     </message>
     <message>
         <source>Actual image from the start-up screen · not yet the device&apos;s main display</source>
-        <translation type="unfinished"></translation>
+        <translation>Rzeczywisty obraz z ekranu startowego · jeszcze nie główny wyświetlacz urządzenia</translation>
     </message>
     <message>
         <source>Real iOS directly on Linux. The virtual iOS device shows the lock and Home screens and starts its own test app; general app development is not enabled yet.</source>
-        <translation type="unfinished"></translation>
+        <translation>Prawdziwy iOS bezpośrednio na Linuksie. Wirtualne urządzenie iOS pokazuje ekran blokady i ekran początkowy oraz uruchamia własną aplikację testową; ogólne tworzenie aplikacji nie jest jeszcze włączone.</translation>
     </message>
     <message>
         <source>Refresh</source>
-        <translation type="unfinished"></translation>
+        <translation>Odśwież</translation>
     </message>
     <message>
         <source>Remove</source>
-        <translation type="unfinished"></translation>
+        <translation>Usuń</translation>
     </message>
     <message>
         <source>Remove from the profile · an app already installed stays on the device</source>
-        <translation type="unfinished"></translation>
+        <translation>Usuń z profilu · już zainstalowana aplikacja pozostaje na urządzeniu</translation>
     </message>
     <message>
         <source>Report folder</source>
-        <translation type="unfinished"></translation>
+        <translation>Folder raportu</translation>
     </message>
     <message>
         <source>Run %1 · %2</source>
-        <translation type="unfinished"></translation>
+        <translation>Uruchomienie %1 · %2</translation>
     </message>
     <message>
         <source>Run iOS, or the iPhone&apos;s power-management firmware on its own, directly on Linux. Each run writes its own report; runs started from the command line or by an agent appear here too.</source>
-        <translation type="unfinished"></translation>
+        <translation>Uruchamiaj iOS lub sam firmware zarządzania energią iPhone&apos;a bezpośrednio na Linuksie. Każde uruchomienie zapisuje własny raport; uruchomienia z wiersza poleceń lub przez agenta również pojawiają się tutaj.</translation>
     </message>
     <message>
         <source>Run ended</source>
-        <translation type="unfinished"></translation>
+        <translation>Uruchomienie zakończone</translation>
     </message>
     <message>
         <source>Save a copy of the firmware&apos;s memory with the report (2 MiB)</source>
-        <translation type="unfinished"></translation>
+        <translation>Zapisz kopię pamięci firmware razem z raportem (2 MiB)</translation>
     </message>
     <message>
         <source>Save storage and shut down cleanly</source>
-        <translation type="unfinished"></translation>
+        <translation>Zapisz pamięć masową i zamknij poprawnie</translation>
     </message>
     <message>
         <source>System services not found in the snapshots: %1</source>
-        <translation type="unfinished"></translation>
+        <translation>Nie znaleziono usług systemowych w migawkach: %1</translation>
     </message>
     <message>
         <source>Show</source>
-        <translation type="unfinished"></translation>
+        <translation>Pokaż</translation>
     </message>
     <message>
         <source>Show processor registers</source>
-        <translation type="unfinished"></translation>
+        <translation>Pokaż rejestry procesora</translation>
     </message>
     <message>
         <source>Start</source>
-        <translation type="unfinished"></translation>
+        <translation>Uruchom</translation>
     </message>
     <message>
         <source>Start failed</source>
-        <translation type="unfinished"></translation>
+        <translation>Uruchomienie nie powiodło się</translation>
     </message>
     <message>
         <source>Start test run</source>
-        <translation type="unfinished"></translation>
+        <translation>Rozpocznij uruchomienie testowe</translation>
     </message>
     <message>
         <source>Status currently unknown</source>
-        <translation type="unfinished"></translation>
+        <translation>Stan obecnie nieznany</translation>
     </message>
     <message>
         <source>Stop</source>
-        <translation type="unfinished"></translation>
+        <translation>Zatrzymaj</translation>
     </message>
     <message>
         <source>Stop at a code address</source>
-        <translation type="unfinished"></translation>
+        <translation>Zatrzymaj pod adresem kodu</translation>
     </message>
     <message>
         <source>Stop without saving</source>
-        <translation type="unfinished"></translation>
+        <translation>Zatrzymaj bez zapisywania</translation>
     </message>
     <message>
         <source>Stop without saving · ends the run at once, whatever the device has not saved yet is lost</source>
-        <translation type="unfinished"></translation>
+        <translation>Zatrzymaj bez zapisywania · natychmiast kończy uruchomienie, wszystko, czego urządzenie jeszcze nie zapisało, przepada</translation>
     </message>
     <message>
         <source>Stopped before the instruction at %1 · this does not show that the firmware started completely</source>
-        <translation type="unfinished"></translation>
+        <translation>Zatrzymano przed instrukcją pod %1 · nie oznacza to, że firmware uruchomił się w całości</translation>
     </message>
     <message>
         <source>Stopping…</source>
-        <translation type="unfinished"></translation>
+        <translation>Zatrzymywanie…</translation>
     </message>
     <message>
         <source>What to run</source>
-        <translation type="unfinished"></translation>
+        <translation>Co uruchomić</translation>
     </message>
     <message>
         <source>Reading this state changes nothing: no message is taken from a queue and no interrupt is answered.</source>
-        <translation type="unfinished"></translation>
+        <translation>Odczyt tego stanu niczego nie zmienia: żadna wiadomość nie jest pobierana z kolejki ani żadne przerwanie nie jest obsługiwane.</translation>
     </message>
     <message>
         <source>The existing run is reused.</source>
-        <translation type="unfinished"></translation>
+        <translation>Istniejące uruchomienie jest używane ponownie.</translation>
     </message>
     <message>
         <source>The device could not save before stopping (%1). “Stop without saving” ends the run at once; the next start uses the last saved state.</source>
-        <translation type="unfinished"></translation>
+        <translation>Urządzenie nie mogło zapisać przed zatrzymaniem (%1). „Zatrzymaj bez zapisywania” natychmiast kończy uruchomienie; następne uruchomienie użyje ostatniego zapisanego stanu.</translation>
     </message>
     <message>
         <source>The device is still starting, there is nothing to save. Ending the run…</source>
-        <translation type="unfinished"></translation>
+        <translation>Urządzenie wciąż się uruchamia, nie ma nic do zapisania. Kończenie uruchomienia…</translation>
     </message>
     <message>
         <source>The run stops at that address and reports the processor state. The firmware itself is not modified.</source>
-        <translation type="unfinished"></translation>
+        <translation>Uruchomienie zatrzymuje się pod tym adresem i raportuje stan procesora. Sam firmware nie jest modyfikowany.</translation>
     </message>
     <message>
         <source>Time limit reached</source>
-        <translation type="unfinished"></translation>
+        <translation>Osiągnięto limit czasu</translation>
     </message>
     <message>
         <source>Time zone %1 applied</source>
-        <translation type="unfinished"></translation>
+        <translation>Zastosowano strefę czasową %1</translation>
     </message>
     <message>
         <source>Time zone %1 not applied · %2</source>
-        <translation type="unfinished"></translation>
+        <translation>Nie zastosowano strefy czasowej %1 · %2</translation>
     </message>
     <message>
         <source>Time zone %1 was already set</source>
-        <translation type="unfinished"></translation>
+        <translation>Strefa czasowa %1 była już ustawiona</translation>
     </message>
     <message>
         <source>Time zone not set · %1</source>
-        <translation type="unfinished"></translation>
+        <translation>Strefa czasowa nieustawiona · %1</translation>
     </message>
     <message>
         <source>View run</source>
-        <translation type="unfinished"></translation>
+        <translation>Zobacz uruchomienie</translation>
     </message>
     <message>
         <source>Virtual iOS device · started by an agent</source>
-        <translation type="unfinished"></translation>
+        <translation>Wirtualne urządzenie iOS · uruchomione przez agenta</translation>
     </message>
     <message>
         <source>Virtual iOS device started by your agent · its real screen appears here and you can use it.</source>
-        <translation type="unfinished"></translation>
+        <translation>Wirtualne urządzenie iOS uruchomione przez agenta · jego prawdziwy ekran pojawi się tutaj i możesz z niego korzystać.</translation>
     </message>
     <message>
         <source>Virtual iOS device</source>
-        <translation type="unfinished"></translation>
+        <translation>Wirtualne urządzenie iOS</translation>
     </message>
     <message>
         <source>Virtual iOS device · experimental</source>
-        <translation type="unfinished"></translation>
+        <translation>Wirtualne urządzenie iOS · eksperymentalne</translation>
     </message>
     <message>
         <source>Virtual iOS device · run %1</source>
-        <translation type="unfinished"></translation>
+        <translation>Wirtualne urządzenie iOS · uruchomienie %1</translation>
     </message>
     <message>
         <source>Waiting to start</source>
-        <translation type="unfinished"></translation>
+        <translation>Oczekiwanie na uruchomienie</translation>
     </message>
     <message>
         <source>configuration verified</source>
-        <translation type="unfinished"></translation>
+        <translation>konfiguracja zweryfikowana</translation>
     </message>
     <message>
         <source>execute</source>
         <comment>access</comment>
-        <translation type="unfinished"></translation>
+        <translation>wykonanie</translation>
     </message>
     <message>
         <source>data from iOS verified</source>
-        <translation type="unfinished"></translation>
+        <translation>dane z iOS zweryfikowane</translation>
     </message>
     <message>
         <source>iOS diagnostics running</source>
-        <translation type="unfinished"></translation>
+        <translation>diagnostyka iOS w toku</translation>
     </message>
     <message>
         <source>iOS draws itself for this device; the data stays the same.</source>
-        <translation type="unfinished"></translation>
+        <translation>iOS rysuje się sam dla tego urządzenia; dane pozostają takie same.</translation>
     </message>
     <message>
         <source>iOS is starting… this takes many minutes</source>
-        <translation type="unfinished"></translation>
+        <translation>iOS się uruchamia… to trwa wiele minut</translation>
     </message>
     <message>
         <source>iOS on Linux</source>
-        <translation type="unfinished"></translation>
+        <translation>iOS na Linuksie</translation>
     </message>
     <message>
         <source>iOS</source>
-        <translation type="unfinished"></translation>
+        <translation>iOS</translation>
     </message>
     <message>
         <source>iOS test system</source>
-        <translation type="unfinished"></translation>
+        <translation>System testowy iOS</translation>
     </message>
     <message>
         <source>Device status unreachable</source>
-        <translation type="unfinished"></translation>
+        <translation>Stan urządzenia nieosiągalny</translation>
     </message>
     <message>
         <source>incomplete run</source>
-        <translation type="unfinished"></translation>
+        <translation>niekompletne uruchomienie</translation>
     </message>
     <message>
         <source>installed in the current run</source>
-        <translation type="unfinished"></translation>
+        <translation>zainstalowane w bieżącym uruchomieniu</translation>
     </message>
     <message>
         <source>interrupts enabled</source>
-        <translation type="unfinished"></translation>
+        <translation>przerwania włączone</translation>
     </message>
     <message>
         <source>interrupts blocked</source>
-        <translation type="unfinished"></translation>
+        <translation>przerwania zablokowane</translation>
     </message>
     <message>
         <source>locked · unlock on the device</source>
-        <translation type="unfinished"></translation>
+        <translation>zablokowane · odblokuj na urządzeniu</translation>
     </message>
     <message>
         <source>no answer</source>
-        <translation type="unfinished"></translation>
+        <translation>brak odpowiedzi</translation>
     </message>
     <message>
         <source>no signal</source>
-        <translation type="unfinished"></translation>
+        <translation>brak sygnału</translation>
     </message>
     <message>
         <source>not installed in the current run</source>
-        <translation type="unfinished"></translation>
+        <translation>niezainstalowane w bieżącym uruchomieniu</translation>
     </message>
     <message>
         <source>not recorded</source>
-        <translation type="unfinished"></translation>
+        <translation>nie zarejestrowano</translation>
     </message>
     <message>
         <source>not verified</source>
-        <translation type="unfinished"></translation>
+        <translation>niezweryfikowane</translation>
     </message>
     <message>
         <source>off</source>
-        <translation type="unfinished"></translation>
+        <translation>wył.</translation>
     </message>
     <message>
         <source>off · last run not verified</source>
-        <translation type="unfinished"></translation>
+        <translation>wył. · ostatnie uruchomienie niezweryfikowane</translation>
     </message>
     <message>
         <source>off · session ended without saving, the next start uses the last saved state</source>
-        <translation type="unfinished"></translation>
+        <translation>wył. · sesja zakończona bez zapisywania, następne uruchomienie użyje ostatniego zapisanego stanu</translation>
     </message>
     <message>
         <source>off · stopped and saved because the graphics card ran out of memory</source>
-        <translation type="unfinished"></translation>
+        <translation>wył. · zatrzymano i zapisano, bo karcie graficznej zabrakło pamięci</translation>
     </message>
     <message>
         <source>off · stopped because the graphics card ran out of memory, the next start uses the last saved state</source>
-        <translation type="unfinished"></translation>
+        <translation>wył. · zatrzymano, bo karcie graficznej zabrakło pamięci, następne uruchomienie użyje ostatniego zapisanego stanu</translation>
     </message>
     <message>
         <source>off · session was saved and ended at its time limit</source>
-        <translation type="unfinished"></translation>
+        <translation>wył. · sesja zapisana i zakończona po osiągnięciu limitu czasu</translation>
     </message>
     <message>
         <source>opened at start</source>
-        <translation type="unfinished"></translation>
+        <translation>otwarto przy starcie</translation>
     </message>
     <message>
         <source>preparing…</source>
-        <translation type="unfinished"></translation>
+        <translation>przygotowywanie…</translation>
     </message>
     <message>
         <source>read</source>
         <comment>access</comment>
-        <translation type="unfinished"></translation>
+        <translation>odczyt</translation>
     </message>
     <message>
         <source>running</source>
-        <translation type="unfinished"></translation>
+        <translation>działa</translation>
     </message>
     <message>
         <source>running · app launch accepted</source>
-        <translation type="unfinished"></translation>
+        <translation>działa · uruchomienie aplikacji przyjęte</translation>
     </message>
     <message>
         <source>running · app launch unclear</source>
-        <translation type="unfinished"></translation>
+        <translation>działa · uruchomienie aplikacji niejasne</translation>
     </message>
     <message>
         <source>running · app visible</source>
-        <translation type="unfinished"></translation>
+        <translation>działa · aplikacja widoczna</translation>
     </message>
     <message>
         <source>seconds</source>
-        <translation type="unfinished"></translation>
+        <translation>sekund</translation>
     </message>
     <message>
         <source>signal active</source>
-        <translation type="unfinished"></translation>
+        <translation>sygnał aktywny</translation>
     </message>
     <message>
         <source>skipped</source>
-        <translation type="unfinished"></translation>
+        <translation>pominięto</translation>
     </message>
     <message>
         <source>stopping…</source>
-        <translation type="unfinished"></translation>
+        <translation>zatrzymywanie…</translation>
     </message>
     <message>
         <source>the device&apos;s helper tools are too old for this (before build 368)</source>
-        <translation type="unfinished"></translation>
+        <translation>narzędzia pomocnicze urządzenia są na to za stare (przed kompilacją 368)</translation>
     </message>
     <message>
         <source>this computer&apos;s time zone has no standard name such as Europe/Vienna</source>
-        <translation type="unfinished"></translation>
+        <translation>strefa czasowa tego komputera nie ma standardowej nazwy, takiej jak Europe/Vienna</translation>
     </message>
     <message>
         <source>transfer waiting</source>
-        <translation type="unfinished"></translation>
+        <translation>transfer oczekuje</translation>
     </message>
     <message>
         <source>trying to unlock…</source>
-        <translation type="unfinished"></translation>
+        <translation>próba odblokowania…</translation>
     </message>
     <message>
         <source>unverified · only the path is listed, the next start checks the bundle</source>
-        <translation type="unfinished"></translation>
+        <translation>niezweryfikowane · wymieniona jest tylko ścieżka, następne uruchomienie sprawdzi pakiet</translation>
     </message>
     <message>
         <source>verified</source>
-        <translation type="unfinished"></translation>
+        <translation>zweryfikowane</translation>
     </message>
     <message>
         <source>write</source>
         <comment>access</comment>
-        <translation type="unfinished"></translation>
+        <translation>zapis</translation>
     </message>
     <message>
         <source>System</source>
-        <translation type="unfinished"></translation>
+        <translation>System</translation>
     </message>
     <message>
         <source>Controller</source>
-        <translation type="unfinished"></translation>
+        <translation>Kontroler</translation>
     </message>
     <message>
         <source>Emulator</source>
-        <translation type="unfinished"></translation>
+        <translation>Emulator</translation>
     </message>
     <message>
         <source>Saved states</source>
-        <translation type="unfinished"></translation>
+        <translation>Zapisane stany</translation>
     </message>
     <message>
         <source>Keep the last stopped run under a name and start from it again later. Saving copies nothing.</source>
-        <translation type="unfinished"></translation>
+        <translation>Zachowaj ostatnie zatrzymane uruchomienie pod nazwą i uruchom je później ponownie. Zapisywanie niczego nie kopiuje.</translation>
     </message>
     <message>
         <source>No saved states yet.</source>
-        <translation type="unfinished"></translation>
+        <translation>Nie ma jeszcze zapisanych stanów.</translation>
     </message>
     <message>
         <source>Saved state</source>
-        <translation type="unfinished"></translation>
+        <translation>Zapisany stan</translation>
     </message>
     <message>
         <source>Start from it</source>
-        <translation type="unfinished"></translation>
+        <translation>Uruchom z niego</translation>
     </message>
     <message>
         <source>The next start begins from this state · the phone must be off</source>
-        <translation type="unfinished"></translation>
+        <translation>Następne uruchomienie zacznie się od tego stanu · telefon musi być wyłączony</translation>
     </message>
     <message>
         <source>Delete for good</source>
-        <translation type="unfinished"></translation>
+        <translation>Usuń na stałe</translation>
     </message>
     <message>
         <source>Delete</source>
-        <translation type="unfinished"></translation>
+        <translation>Usuń</translation>
     </message>
     <message>
         <source>Remove the name, and its disk copy when nothing else keeps it</source>
-        <translation type="unfinished"></translation>
+        <translation>Usuń nazwę, a także jej kopię na dysku, gdy nic innego jej nie przechowuje</translation>
     </message>
     <message>
         <source>Name for the last stopped run</source>
-        <translation type="unfinished"></translation>
+        <translation>Nazwa dla ostatniego zatrzymanego uruchomienia</translation>
     </message>
     <message>
         <source>Save state</source>
-        <translation type="unfinished"></translation>
+        <translation>Zapisz stan</translation>
     </message>
     <message>
         <source>Keep the last stopped run under this name</source>
-        <translation type="unfinished"></translation>
+        <translation>Zachowaj ostatnie zatrzymane uruchomienie pod tą nazwą</translation>
     </message>
     <message>
         <source>run %1</source>
-        <translation type="unfinished"></translation>
+        <translation>uruchomienie %1</translation>
     </message>
     <message>
         <source>next start</source>
-        <translation type="unfinished"></translation>
+        <translation>następne uruchomienie</translation>
     </message>
     <message>
         <source>disks gone</source>
-        <translation type="unfinished"></translation>
+        <translation>dyski zniknęły</translation>
     </message>
     <message>
         <source>Saved as %1</source>
-        <translation type="unfinished"></translation>
+        <translation>Zapisano jako %1</translation>
     </message>
     <message>
         <source>The next start begins from %1</source>
-        <translation type="unfinished"></translation>
+        <translation>Następne uruchomienie zacznie się od %1</translation>
     </message>
     <message>
         <source>%1 deleted with its disk copy</source>
-        <translation type="unfinished"></translation>
+        <translation>Usunięto %1 wraz z kopią na dysku</translation>
     </message>
     <message>
         <source>%1 deleted · its disk copy stays (%2)</source>
-        <translation type="unfinished"></translation>
+        <translation>Usunięto %1 · kopia na dysku pozostaje (%2)</translation>
     </message>
 </context>
 <context>
@@ -3825,6 +3984,30 @@ SSH uses your existing keys and the known host identity.</source>
         <source>Start AirPlay</source>
         <translation type="unfinished"></translation>
     </message>
+    <message>
+        <source>An agent is waiting for you: %1</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>In use elsewhere</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Reconnecting</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Screenshot saved</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Show file</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Your turn</source>
+        <translation type="unfinished"></translation>
+    </message>
 </context>
 <context>
     <name>Operations</name>
@@ -4924,6 +5107,62 @@ SSH uses your existing keys and the known host identity.</source>
         <source>Set up emulator</source>
         <translation type="unfinished"></translation>
     </message>
+    <message>
+        <source>Ask the person to act</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Draft a bug report</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>List handoffs</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Observe a session</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Ordered input batch</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Read a handoff</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>The person is done</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Timestamped gesture trace</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Wait for the person</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Withdraw a handoff</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Find a device by name</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Play a GPX route</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Read a GPX route</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Route playback status</source>
+        <translation type="unfinished"></translation>
+    </message>
 </context>
 <context>
     <name>ProfileWorkspace</name>
@@ -5770,6 +6009,10 @@ SSH uses your existing keys and the known host identity.</source>
     </message>
     <message>
         <source>Turn a screen recording into a video with a 3D device.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>All jobs</source>
         <translation type="unfinished"></translation>
     </message>
 </context>
@@ -6806,6 +7049,176 @@ Licensed under the GNU General Public License, version 2 or later.</source>
     </message>
     <message>
         <source>Keep preset</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>%1 points, %2 km, %3 min recorded</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>%1 points, %2 km, no times: one point per second</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Change route…</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Choose a GPX file…</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Finished. The last position stays on the emulator.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>GPX route (*.gpx)</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>No route chosen</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Pause</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Paused at %1</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Play a GPX route on the chosen emulator&apos;s location. Timed points keep their timing; untimed points play one per second.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Play route</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Playback ended: %1</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Playing %1</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Playing the route on %1. The previous position is not known and will not be restored.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Playing…</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Reading the route…</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Repeat the route</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Resume</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Route playback</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Route playback reaches emulators only. A phone takes no mock location from here.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Speed · 1 is real time</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Starting playback…</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Stop</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Stopped. The last position stays on the emulator.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>The emulator does not report its position, so the position before playback is unknown and is not restored. Set one in the preset&apos;s GPS field afterwards if you need it.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>point %1 of %2</source>
+        <translation type="unfinished"></translation>
+    </message>
+</context>
+<context>
+    <name>HandoffBanner</name>
+    <message>
+        <source>%1 · an agent is waiting for you</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>%1 · an agent is waiting for you (%2 more)</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Cancel</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Do it on the device itself. Tomacco never asks for your passcode or password.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Done</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Done: I did it on the device</source>
+        <translation type="unfinished"></translation>
+    </message>
+</context>
+<context>
+    <name>HandoffModel</name>
+    <message>
+        <source>Face ID or Touch ID</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Passcode</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Permission</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Purchase</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Sign-in</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Your turn on the device</source>
+        <translation type="unfinished"></translation>
+    </message>
+</context>
+<context>
+    <name>MobileNav</name>
+    <message>
+        <source>Ctrl</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>More</source>
+        <comment>navigation</comment>
         <translation type="unfinished"></translation>
     </message>
 </context>

@@ -1,0 +1,637 @@
+{
+  "updated_at": "2026-11-06T16:32:44+00:00",
+  "model": "claude-opus-5-5",
+  "branch": "finish/omarchy-languages",
+  "base_head": "0f465cb8caf0871ef49513dbd0bb4fa10a9748b8",
+  "current_head": "0f465cb8caf0871ef49513dbd0bb4fa10a9748b8",
+  "current_ui_head": "0f465cb (companion integration/finish-tomacco has no newer commit yet; uncommitted changes there are not imported)",
+  "source_digest": "8698f5478352",
+  "source_count": 1758,
+  "catalogs": 51,
+  "complete": [
+    "ar",
+    "de",
+    "es",
+    "es-MX",
+    "fr",
+    "it",
+    "ja",
+    "nl",
+    "pt",
+    "pt-BR",
+    "ru",
+    "zh-CN",
+    "zh-TW"
+  ],
+  "incomplete": [
+    "bg",
+    "bn",
+    "ca",
+    "cs",
+    "da",
+    "el",
+    "et",
+    "fa",
+    "fi",
+    "fil",
+    "ga",
+    "he",
+    "hi",
+    "hr",
+    "hu",
+    "id",
+    "is",
+    "ko",
+    "lt",
+    "lv",
+    "ms",
+    "no",
+    "pl",
+    "ro",
+    "si",
+    "sk",
+    "sl",
+    "sr",
+    "sv",
+    "sw",
+    "ta",
+    "th",
+    "tr",
+    "uk",
+    "ur",
+    "uz",
+    "vi"
+  ],
+  "languages": {
+    "ar": {
+      "finished": 1758,
+      "unfinished": 0,
+      "stale": 0,
+      "problems": [],
+      "suspicious": [
+        "AndroidDevices: 'the Android SDK'"
+      ],
+      "menu_entry": "6/6",
+      "status": "complete",
+      "registry_complete": true
+    },
+    "bg": {
+      "finished": 0,
+      "unfinished": 1758,
+      "stale": 0,
+      "problems": [],
+      "suspicious": [],
+      "menu_entry": "0/6",
+      "status": "untranslated",
+      "registry_complete": false
+    },
+    "bn": {
+      "finished": 0,
+      "unfinished": 1758,
+      "stale": 0,
+      "problems": [],
+      "suspicious": [],
+      "menu_entry": "0/6",
+      "status": "untranslated",
+      "registry_complete": false
+    },
+    "ca": {
+      "finished": 0,
+      "unfinished": 1758,
+      "stale": 0,
+      "problems": [],
+      "suspicious": [],
+      "menu_entry": "0/6",
+      "status": "untranslated",
+      "registry_complete": false
+    },
+    "cs": {
+      "finished": 0,
+      "unfinished": 1758,
+      "stale": 0,
+      "problems": [],
+      "suspicious": [],
+      "menu_entry": "0/6",
+      "status": "untranslated",
+      "registry_complete": false
+    },
+    "da": {
+      "finished": 0,
+      "unfinished": 1758,
+      "stale": 0,
+      "problems": [],
+      "suspicious": [],
+      "menu_entry": "0/6",
+      "status": "untranslated",
+      "registry_complete": false
+    },
+    "de": {
+      "finished": 1758,
+      "unfinished": 0,
+      "stale": 0,
+      "problems": [],
+      "suspicious": [
+        "DemoWorkspace: 'Videos (*.mp4 *.mov *.mkv *.webm)'"
+      ],
+      "menu_entry": "6/6",
+      "status": "complete",
+      "registry_complete": true
+    },
+    "el": {
+      "finished": 0,
+      "unfinished": 1758,
+      "stale": 0,
+      "problems": [],
+      "suspicious": [],
+      "menu_entry": "0/6",
+      "status": "untranslated",
+      "registry_complete": false
+    },
+    "es": {
+      "finished": 1758,
+      "unfinished": 0,
+      "stale": 0,
+      "problems": [],
+      "suspicious": [],
+      "menu_entry": "6/6",
+      "status": "complete",
+      "registry_complete": true
+    },
+    "es-MX": {
+      "finished": 1758,
+      "unfinished": 0,
+      "stale": 0,
+      "problems": [],
+      "suspicious": [
+        "DemoWorkspace: 'Videos (*.mp4 *.mov *.mkv *.webm)'"
+      ],
+      "menu_entry": "6/6",
+      "status": "complete",
+      "registry_complete": true
+    },
+    "et": {
+      "finished": 0,
+      "unfinished": 1758,
+      "stale": 0,
+      "problems": [],
+      "suspicious": [],
+      "menu_entry": "0/6",
+      "status": "untranslated",
+      "registry_complete": false
+    },
+    "fa": {
+      "finished": 0,
+      "unfinished": 1758,
+      "stale": 0,
+      "problems": [],
+      "suspicious": [],
+      "menu_entry": "0/6",
+      "status": "untranslated",
+      "registry_complete": false
+    },
+    "fi": {
+      "finished": 0,
+      "unfinished": 1758,
+      "stale": 0,
+      "problems": [],
+      "suspicious": [],
+      "menu_entry": "0/6",
+      "status": "untranslated",
+      "registry_complete": false
+    },
+    "fil": {
+      "finished": 0,
+      "unfinished": 1758,
+      "stale": 0,
+      "problems": [],
+      "suspicious": [],
+      "menu_entry": "0/6",
+      "status": "untranslated",
+      "registry_complete": false
+    },
+    "fr": {
+      "finished": 1758,
+      "unfinished": 0,
+      "stale": 0,
+      "problems": [],
+      "suspicious": [],
+      "menu_entry": "6/6",
+      "status": "complete",
+      "registry_complete": true
+    },
+    "ga": {
+      "finished": 0,
+      "unfinished": 1758,
+      "stale": 0,
+      "problems": [],
+      "suspicious": [],
+      "menu_entry": "0/6",
+      "status": "untranslated",
+      "registry_complete": false
+    },
+    "he": {
+      "finished": 0,
+      "unfinished": 1758,
+      "stale": 0,
+      "problems": [],
+      "suspicious": [],
+      "menu_entry": "0/6",
+      "status": "untranslated",
+      "registry_complete": false
+    },
+    "hi": {
+      "finished": 0,
+      "unfinished": 1758,
+      "stale": 0,
+      "problems": [],
+      "suspicious": [],
+      "menu_entry": "0/6",
+      "status": "untranslated",
+      "registry_complete": false
+    },
+    "hr": {
+      "finished": 0,
+      "unfinished": 1758,
+      "stale": 0,
+      "problems": [],
+      "suspicious": [],
+      "menu_entry": "0/6",
+      "status": "untranslated",
+      "registry_complete": false
+    },
+    "hu": {
+      "finished": 0,
+      "unfinished": 1758,
+      "stale": 0,
+      "problems": [],
+      "suspicious": [],
+      "menu_entry": "0/6",
+      "status": "untranslated",
+      "registry_complete": false
+    },
+    "id": {
+      "finished": 0,
+      "unfinished": 1758,
+      "stale": 0,
+      "problems": [],
+      "suspicious": [],
+      "menu_entry": "0/6",
+      "status": "untranslated",
+      "registry_complete": false
+    },
+    "is": {
+      "finished": 0,
+      "unfinished": 1758,
+      "stale": 0,
+      "problems": [],
+      "suspicious": [],
+      "menu_entry": "0/6",
+      "status": "untranslated",
+      "registry_complete": false
+    },
+    "it": {
+      "finished": 1758,
+      "unfinished": 0,
+      "stale": 0,
+      "problems": [],
+      "suspicious": [
+        "NativeWorkspace: 'iPhone via USB'"
+      ],
+      "menu_entry": "6/6",
+      "status": "complete",
+      "registry_complete": true
+    },
+    "ja": {
+      "finished": 1758,
+      "unfinished": 0,
+      "stale": 0,
+      "problems": [],
+      "suspicious": [
+        "AndroidDevices: 'the Android SDK'"
+      ],
+      "menu_entry": "6/6",
+      "status": "complete",
+      "registry_complete": true
+    },
+    "ko": {
+      "finished": 0,
+      "unfinished": 1758,
+      "stale": 0,
+      "problems": [],
+      "suspicious": [],
+      "menu_entry": "0/6",
+      "status": "untranslated",
+      "registry_complete": false
+    },
+    "lt": {
+      "finished": 0,
+      "unfinished": 1758,
+      "stale": 0,
+      "problems": [],
+      "suspicious": [],
+      "menu_entry": "0/6",
+      "status": "untranslated",
+      "registry_complete": false
+    },
+    "lv": {
+      "finished": 0,
+      "unfinished": 1758,
+      "stale": 0,
+      "problems": [],
+      "suspicious": [],
+      "menu_entry": "0/6",
+      "status": "untranslated",
+      "registry_complete": false
+    },
+    "ms": {
+      "finished": 0,
+      "unfinished": 1758,
+      "stale": 0,
+      "problems": [],
+      "suspicious": [],
+      "menu_entry": "0/6",
+      "status": "untranslated",
+      "registry_complete": false
+    },
+    "nl": {
+      "finished": 1758,
+      "unfinished": 0,
+      "stale": 0,
+      "problems": [],
+      "suspicious": [
+        "NativeWorkspace: 'iPhone via USB'"
+      ],
+      "menu_entry": "6/6",
+      "status": "complete",
+      "registry_complete": true
+    },
+    "no": {
+      "finished": 0,
+      "unfinished": 1758,
+      "stale": 0,
+      "problems": [],
+      "suspicious": [],
+      "menu_entry": "0/6",
+      "status": "untranslated",
+      "registry_complete": false
+    },
+    "pl": {
+      "finished": 536,
+      "unfinished": 1222,
+      "stale": 0,
+      "problems": [],
+      "suspicious": [],
+      "menu_entry": "0/6",
+      "status": "partial",
+      "registry_complete": false
+    },
+    "pt": {
+      "finished": 1758,
+      "unfinished": 0,
+      "stale": 0,
+      "problems": [],
+      "suspicious": [],
+      "menu_entry": "6/6",
+      "status": "complete",
+      "registry_complete": true
+    },
+    "pt-BR": {
+      "finished": 1758,
+      "unfinished": 0,
+      "stale": 0,
+      "problems": [],
+      "suspicious": [],
+      "menu_entry": "6/6",
+      "status": "complete",
+      "registry_complete": true
+    },
+    "ro": {
+      "finished": 0,
+      "unfinished": 1758,
+      "stale": 0,
+      "problems": [],
+      "suspicious": [],
+      "menu_entry": "0/6",
+      "status": "untranslated",
+      "registry_complete": false
+    },
+    "ru": {
+      "finished": 1758,
+      "unfinished": 0,
+      "stale": 0,
+      "problems": [],
+      "suspicious": [
+        "AndroidDevices: 'the Android SDK'"
+      ],
+      "menu_entry": "6/6",
+      "status": "complete",
+      "registry_complete": true
+    },
+    "si": {
+      "finished": 0,
+      "unfinished": 1758,
+      "stale": 0,
+      "problems": [],
+      "suspicious": [],
+      "menu_entry": "0/6",
+      "status": "untranslated",
+      "registry_complete": false
+    },
+    "sk": {
+      "finished": 0,
+      "unfinished": 1758,
+      "stale": 0,
+      "problems": [],
+      "suspicious": [],
+      "menu_entry": "0/6",
+      "status": "untranslated",
+      "registry_complete": false
+    },
+    "sl": {
+      "finished": 0,
+      "unfinished": 1758,
+      "stale": 0,
+      "problems": [],
+      "suspicious": [],
+      "menu_entry": "0/6",
+      "status": "untranslated",
+      "registry_complete": false
+    },
+    "sr": {
+      "finished": 0,
+      "unfinished": 1758,
+      "stale": 0,
+      "problems": [],
+      "suspicious": [],
+      "menu_entry": "0/6",
+      "status": "untranslated",
+      "registry_complete": false
+    },
+    "sv": {
+      "finished": 0,
+      "unfinished": 1758,
+      "stale": 0,
+      "problems": [],
+      "suspicious": [],
+      "menu_entry": "0/6",
+      "status": "untranslated",
+      "registry_complete": false
+    },
+    "sw": {
+      "finished": 0,
+      "unfinished": 1758,
+      "stale": 0,
+      "problems": [],
+      "suspicious": [],
+      "menu_entry": "0/6",
+      "status": "untranslated",
+      "registry_complete": false
+    },
+    "ta": {
+      "finished": 0,
+      "unfinished": 1758,
+      "stale": 0,
+      "problems": [],
+      "suspicious": [],
+      "menu_entry": "0/6",
+      "status": "untranslated",
+      "registry_complete": false
+    },
+    "th": {
+      "finished": 0,
+      "unfinished": 1758,
+      "stale": 0,
+      "problems": [],
+      "suspicious": [],
+      "menu_entry": "0/6",
+      "status": "untranslated",
+      "registry_complete": false
+    },
+    "tr": {
+      "finished": 0,
+      "unfinished": 1758,
+      "stale": 0,
+      "problems": [],
+      "suspicious": [],
+      "menu_entry": "0/6",
+      "status": "untranslated",
+      "registry_complete": false
+    },
+    "uk": {
+      "finished": 0,
+      "unfinished": 1758,
+      "stale": 0,
+      "problems": [],
+      "suspicious": [],
+      "menu_entry": "0/6",
+      "status": "untranslated",
+      "registry_complete": false
+    },
+    "ur": {
+      "finished": 0,
+      "unfinished": 1758,
+      "stale": 0,
+      "problems": [],
+      "suspicious": [],
+      "menu_entry": "0/6",
+      "status": "untranslated",
+      "registry_complete": false
+    },
+    "uz": {
+      "finished": 0,
+      "unfinished": 1758,
+      "stale": 0,
+      "problems": [],
+      "suspicious": [],
+      "menu_entry": "0/6",
+      "status": "untranslated",
+      "registry_complete": false
+    },
+    "vi": {
+      "finished": 0,
+      "unfinished": 1758,
+      "stale": 0,
+      "problems": [],
+      "suspicious": [],
+      "menu_entry": "0/6",
+      "status": "untranslated",
+      "registry_complete": false
+    },
+    "zh-CN": {
+      "finished": 1758,
+      "unfinished": 0,
+      "stale": 0,
+      "problems": [],
+      "suspicious": [
+        "AndroidDevices: 'the Android SDK'"
+      ],
+      "menu_entry": "6/6",
+      "status": "complete",
+      "registry_complete": true
+    },
+    "zh-TW": {
+      "finished": 1758,
+      "unfinished": 0,
+      "stale": 0,
+      "problems": [],
+      "suspicious": [
+        "AndroidDevices: 'the Android SDK'"
+      ],
+      "menu_entry": "6/6",
+      "status": "complete",
+      "registry_complete": true
+    }
+  },
+  "commits": [],
+  "tests": {
+    "tests/python/test_i18n.py": "18 tests OK (python3 -m unittest, TMPDIR=/tmp)"
+  },
+  "remaining": {
+    "bg": 1758,
+    "bn": 1758,
+    "ca": 1758,
+    "cs": 1758,
+    "da": 1758,
+    "el": 1758,
+    "et": 1758,
+    "fa": 1758,
+    "fi": 1758,
+    "fil": 1758,
+    "ga": 1758,
+    "he": 1758,
+    "hi": 1758,
+    "hr": 1758,
+    "hu": 1758,
+    "id": 1758,
+    "is": 1758,
+    "ko": 1758,
+    "lt": 1758,
+    "lv": 1758,
+    "ms": 1758,
+    "no": 1758,
+    "pl": 1222,
+    "ro": 1758,
+    "si": 1758,
+    "sk": 1758,
+    "sl": 1758,
+    "sr": 1758,
+    "sv": 1758,
+    "sw": 1758,
+    "ta": 1758,
+    "th": 1758,
+    "tr": 1758,
+    "uk": 1758,
+    "ur": 1758,
+    "uz": 1758,
+    "vi": 1758
+  },
+  "next_step": "Translate the remaining catalogs tranche by tranche (pl first: 536 vetted strings re-indexed), then refresh against the companion's committed UI head.",
+  "source_ready": {
+    "companion_final_source_checkpoint": null,
+    "status": "pending: companion has not published a final-source-ready checkpoint in docs/finish-progress.json"
+  },
+  "notes": [
+    "Source inventory reconciled: 1754 marked strings + 4 operation titles (device.resolve, gpx.inspect, gpx.play, gpx.status) that were in assets/operations.json but missing from qml/OperationTitles.js = 1758.",
+    "Polish: 536 vetted translations from .scratch/recovered-i18n/tr/pl.part*.tsv re-indexed by message key (old index -> key recovered by intersecting 7 reference catalogs + order check), not replayed by old index."
+  ]
+}

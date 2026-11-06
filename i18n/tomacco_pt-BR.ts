@@ -238,11 +238,11 @@ O modelo determina a tela e a moldura. O Android vem da imagem de sistema escolh
     </message>
     <message>
         <source>Install Android system</source>
-        <translation>Instalar sistema Android</translation>
+        <translation type="vanished">Instalar sistema Android</translation>
     </message>
     <message>
         <source>Installed Android system</source>
-        <translation>Sistema Android instalado</translation>
+        <translation type="vanished">Sistema Android instalado</translation>
     </message>
     <message>
         <source>Memory (MB)</source>
@@ -455,6 +455,170 @@ O modelo determina a tela e a moldura. O Android vem da imagem de sistema escolh
     <message>
         <source>Show every running device&apos;s screen side by side</source>
         <translation>Mostrar a tela de cada dispositivo em execução lado a lado</translation>
+    </message>
+    <message>
+        <source>Accept Google&apos;s Android SDK licence for this download</source>
+        <translation>Aceitar a licença do SDK do Android do Google para este download</translation>
+    </message>
+    <message>
+        <source>Android system image</source>
+        <translation>Imagem do sistema Android</translation>
+    </message>
+    <message>
+        <source>App data removed · %1 freed · the next start boots like a new device</source>
+        <translation>Dados dos apps removidos · %1 liberados · a próxima inicialização é como a de um dispositivo novo</translation>
+    </message>
+    <message>
+        <source>Cannot start: %1</source>
+        <translation>Não foi possível iniciar: %1</translation>
+    </message>
+    <message>
+        <source>Checking…</source>
+        <translation>Verificando…</translation>
+    </message>
+    <message>
+        <source>Copying device…</source>
+        <translation>Copiando o dispositivo…</translation>
+    </message>
+    <message>
+        <source>Copying…</source>
+        <translation>Copiando…</translation>
+    </message>
+    <message>
+        <source>Disk: about %1 for the emulator · %2 free</source>
+        <translation>Disco: cerca de %1 para o emulador · %2 livres</translation>
+    </message>
+    <message>
+        <source>Download about %1 (estimate) · needs Google&apos;s SDK licence: %2</source>
+        <translation>Download de cerca de %1 (estimativa) · exige a licença do SDK do Google: %2</translation>
+    </message>
+    <message>
+        <source>Download and create</source>
+        <translation>Baixar e criar</translation>
+    </message>
+    <message>
+        <source>Duplicate</source>
+        <translation>Duplicar</translation>
+    </message>
+    <message>
+        <source>Duplicate copies the emulator with its apps and data under the new name, as a job you can cancel. Rename is a real rename of the emulator through the Android SDK; the nickname moves along. A nickname alone is set with the pencil button.</source>
+        <translation>Duplicar copia o emulador com seus apps e dados com o novo nome, como uma tarefa que você pode cancelar. Renomear muda de verdade o nome do emulador pelo SDK do Android; o apelido vai junto. Só um apelido se define com o botão de lápis.</translation>
+    </message>
+    <message>
+        <source>Duplicate, rename or wipe this emulator</source>
+        <translation>Duplicar, renomear ou limpar este emulador</translation>
+    </message>
+    <message>
+        <source>Letters, digits, - and _</source>
+        <translation>Letras, dígitos, - e _</translation>
+    </message>
+    <message>
+        <source>Manage</source>
+        <translation>Gerenciar</translation>
+    </message>
+    <message>
+        <source>Manage emulator</source>
+        <translation>Gerenciar emulador</translation>
+    </message>
+    <message>
+        <source>New name</source>
+        <translation>Novo nome</translation>
+    </message>
+    <message>
+        <source>On disk: %1 · a wipe frees %2</source>
+        <translation>No disco: %1 · uma limpeza libera %2</translation>
+    </message>
+    <message>
+        <source>Pick an installed image, or type another package: it is downloaded as the first step. Tomacco creates phone, foldable and tablet emulators.</source>
+        <translation>Escolha uma imagem instalada ou digite outro pacote: ele é baixado como primeiro passo. O Tomacco cria emuladores de celular, dobrável e tablet.</translation>
+    </message>
+    <message>
+        <source>Reading disk usage…</source>
+        <translation>Lendo o uso do disco…</translation>
+    </message>
+    <message>
+        <source>Rename and wipe need the emulator&apos;s name typed here</source>
+        <translation>Renomear e limpar exigem digitar aqui o nome do emulador</translation>
+    </message>
+    <message>
+        <source>Renamed to %1</source>
+        <translation>Renomeado para %1</translation>
+    </message>
+    <message>
+        <source>Renaming…</source>
+        <translation>Renomeando…</translation>
+    </message>
+    <message>
+        <source>Start the emulator when it is ready</source>
+        <translation>Iniciar o emulador quando estiver pronto</translation>
+    </message>
+    <message>
+        <source>Steps: %1</source>
+        <translation>Etapas: %1</translation>
+    </message>
+    <message>
+        <source>System image installed · no download</source>
+        <translation>Imagem do sistema instalada · sem download</translation>
+    </message>
+    <message>
+        <source>TV, Wear, Automotive and XR images are not supported yet</source>
+        <translation>Imagens de TV, Wear, Automotive e XR ainda não são compatíveis</translation>
+    </message>
+    <message>
+        <source>The emulator is on or its lock files exist. Turn it off first; nothing here changes a running emulator.</source>
+        <translation>O emulador está ligado ou os arquivos de bloqueio dele existem. Desligue-o primeiro; nada aqui altera um emulador em execução.</translation>
+    </message>
+    <message>
+        <source>Wipe app data</source>
+        <translation>Limpar dados dos apps</translation>
+    </message>
+    <message>
+        <source>Wipe removes the apps, their data and the snapshots; the next start boots like a new device. The emulator&apos;s model and settings stay.</source>
+        <translation>A limpeza remove os apps, os dados deles e os snapshots; a próxima inicialização é como a de um dispositivo novo. O modelo e as configurações do emulador continuam.</translation>
+    </message>
+    <message>
+        <source>Wiping…</source>
+        <translation>Limpando…</translation>
+    </message>
+    <message>
+        <source>already accepted</source>
+        <translation>já aceita</translation>
+    </message>
+    <message>
+        <source>apply model</source>
+        <translation>aplicar modelo</translation>
+    </message>
+    <message>
+        <source>create</source>
+        <translation>criar</translation>
+    </message>
+    <message>
+        <source>install image</source>
+        <translation>instalar imagem</translation>
+    </message>
+    <message>
+        <source>is missing</source>
+        <translation>está faltando</translation>
+    </message>
+    <message>
+        <source>not enough free space</source>
+        <translation>espaço livre insuficiente</translation>
+    </message>
+    <message>
+        <source>not yet accepted</source>
+        <translation>ainda não aceita</translation>
+    </message>
+    <message>
+        <source>start</source>
+        <translation>iniciar</translation>
+    </message>
+    <message>
+        <source>the Android SDK</source>
+        <translation>o SDK do Android</translation>
+    </message>
+    <message>
+        <source>the name is taken</source>
+        <translation>o nome já está em uso</translation>
     </message>
 </context>
 <context>
@@ -3826,6 +3990,30 @@ O SSH usa suas chaves existentes e a identidade de host conhecida.</translation>
         <source>Start AirPlay</source>
         <translation>Iniciar AirPlay</translation>
     </message>
+    <message>
+        <source>An agent is waiting for you: %1</source>
+        <translation>Um agente está esperando você: %1</translation>
+    </message>
+    <message>
+        <source>In use elsewhere</source>
+        <translation>Em uso em outro lugar</translation>
+    </message>
+    <message>
+        <source>Reconnecting</source>
+        <translation>Reconectando</translation>
+    </message>
+    <message>
+        <source>Screenshot saved</source>
+        <translation>Captura de tela salva</translation>
+    </message>
+    <message>
+        <source>Show file</source>
+        <translation>Mostrar arquivo</translation>
+    </message>
+    <message>
+        <source>Your turn</source>
+        <translation>Sua vez</translation>
+    </message>
 </context>
 <context>
     <name>Operations</name>
@@ -4925,6 +5113,62 @@ O SSH usa suas chaves existentes e a identidade de host conhecida.</translation>
         <source>Set up emulator</source>
         <translation>Configurar emulador</translation>
     </message>
+    <message>
+        <source>Ask the person to act</source>
+        <translation>Pedir que a pessoa aja</translation>
+    </message>
+    <message>
+        <source>Draft a bug report</source>
+        <translation>Redigir um relatório de bug</translation>
+    </message>
+    <message>
+        <source>List handoffs</source>
+        <translation>Listar repasses</translation>
+    </message>
+    <message>
+        <source>Observe a session</source>
+        <translation>Observar uma sessão</translation>
+    </message>
+    <message>
+        <source>Ordered input batch</source>
+        <translation>Lote ordenado de entradas</translation>
+    </message>
+    <message>
+        <source>Read a handoff</source>
+        <translation>Ler um repasse</translation>
+    </message>
+    <message>
+        <source>The person is done</source>
+        <translation>A pessoa terminou</translation>
+    </message>
+    <message>
+        <source>Timestamped gesture trace</source>
+        <translation>Registro de gestos com data e hora</translation>
+    </message>
+    <message>
+        <source>Wait for the person</source>
+        <translation>Esperar pela pessoa</translation>
+    </message>
+    <message>
+        <source>Withdraw a handoff</source>
+        <translation>Retirar um repasse</translation>
+    </message>
+    <message>
+        <source>Find a device by name</source>
+        <translation>Encontrar um dispositivo pelo nome</translation>
+    </message>
+    <message>
+        <source>Play a GPX route</source>
+        <translation>Reproduzir uma rota GPX</translation>
+    </message>
+    <message>
+        <source>Read a GPX route</source>
+        <translation>Ler uma rota GPX</translation>
+    </message>
+    <message>
+        <source>Route playback status</source>
+        <translation>Status da reprodução de rota</translation>
+    </message>
 </context>
 <context>
     <name>ProfileWorkspace</name>
@@ -5771,6 +6015,10 @@ O SSH usa suas chaves existentes e a identidade de host conhecida.</translation>
     <message>
         <source>Turn a screen recording into a video with a 3D device.</source>
         <translation>Transforme uma gravação de tela em um vídeo com um dispositivo 3D.</translation>
+    </message>
+    <message>
+        <source>All jobs</source>
+        <translation>Todas as tarefas</translation>
     </message>
 </context>
 <context>
@@ -6812,6 +7060,176 @@ Licenciado sob a GNU General Public License, versão 2 ou posterior.</translatio
     <message>
         <source>Keep preset</source>
         <translation>Manter predefinição</translation>
+    </message>
+    <message>
+        <source>%1 points, %2 km, %3 min recorded</source>
+        <translation>%1 pontos, %2 km, %3 min gravados</translation>
+    </message>
+    <message>
+        <source>%1 points, %2 km, no times: one point per second</source>
+        <translation>%1 pontos, %2 km, sem horários: um ponto por segundo</translation>
+    </message>
+    <message>
+        <source>Change route…</source>
+        <translation>Trocar rota…</translation>
+    </message>
+    <message>
+        <source>Choose a GPX file…</source>
+        <translation>Escolher um arquivo GPX…</translation>
+    </message>
+    <message>
+        <source>Finished. The last position stays on the emulator.</source>
+        <translation>Concluído. A última posição fica no emulador.</translation>
+    </message>
+    <message>
+        <source>GPX route (*.gpx)</source>
+        <translation>Rota GPX (*.gpx)</translation>
+    </message>
+    <message>
+        <source>No route chosen</source>
+        <translation>Nenhuma rota escolhida</translation>
+    </message>
+    <message>
+        <source>Pause</source>
+        <translation>Pausar</translation>
+    </message>
+    <message>
+        <source>Paused at %1</source>
+        <translation>Pausado em %1</translation>
+    </message>
+    <message>
+        <source>Play a GPX route on the chosen emulator&apos;s location. Timed points keep their timing; untimed points play one per second.</source>
+        <translation>Reproduz uma rota GPX na localização do emulador escolhido. Pontos com horário mantêm o ritmo; pontos sem horário avançam um por segundo.</translation>
+    </message>
+    <message>
+        <source>Play route</source>
+        <translation>Reproduzir rota</translation>
+    </message>
+    <message>
+        <source>Playback ended: %1</source>
+        <translation>Reprodução encerrada: %1</translation>
+    </message>
+    <message>
+        <source>Playing %1</source>
+        <translation>Reproduzindo %1</translation>
+    </message>
+    <message>
+        <source>Playing the route on %1. The previous position is not known and will not be restored.</source>
+        <translation>Reproduzindo a rota em %1. A posição anterior não é conhecida e não será restaurada.</translation>
+    </message>
+    <message>
+        <source>Playing…</source>
+        <translation>Reproduzindo…</translation>
+    </message>
+    <message>
+        <source>Reading the route…</source>
+        <translation>Lendo a rota…</translation>
+    </message>
+    <message>
+        <source>Repeat the route</source>
+        <translation>Repetir a rota</translation>
+    </message>
+    <message>
+        <source>Resume</source>
+        <translation>Retomar</translation>
+    </message>
+    <message>
+        <source>Route playback</source>
+        <translation>Reprodução de rota</translation>
+    </message>
+    <message>
+        <source>Route playback reaches emulators only. A phone takes no mock location from here.</source>
+        <translation>A reprodução de rotas só chega aos emuladores. Um celular não recebe localização simulada daqui.</translation>
+    </message>
+    <message>
+        <source>Speed · 1 is real time</source>
+        <translation>Velocidade · 1 é tempo real</translation>
+    </message>
+    <message>
+        <source>Starting playback…</source>
+        <translation>Iniciando a reprodução…</translation>
+    </message>
+    <message>
+        <source>Stop</source>
+        <translation>Parar</translation>
+    </message>
+    <message>
+        <source>Stopped. The last position stays on the emulator.</source>
+        <translation>Parado. A última posição fica no emulador.</translation>
+    </message>
+    <message>
+        <source>The emulator does not report its position, so the position before playback is unknown and is not restored. Set one in the preset&apos;s GPS field afterwards if you need it.</source>
+        <translation>O emulador não informa a posição dele, então a posição anterior à reprodução é desconhecida e não é restaurada. Se precisar, defina uma depois no campo GPS da predefinição.</translation>
+    </message>
+    <message>
+        <source>point %1 of %2</source>
+        <translation>ponto %1 de %2</translation>
+    </message>
+</context>
+<context>
+    <name>HandoffBanner</name>
+    <message>
+        <source>%1 · an agent is waiting for you</source>
+        <translation>%1 · um agente está esperando você</translation>
+    </message>
+    <message>
+        <source>%1 · an agent is waiting for you (%2 more)</source>
+        <translation>%1 · um agente está esperando você (mais %2)</translation>
+    </message>
+    <message>
+        <source>Cancel</source>
+        <translation>Cancelar</translation>
+    </message>
+    <message>
+        <source>Do it on the device itself. Tomacco never asks for your passcode or password.</source>
+        <translation>Faça isso no próprio dispositivo. O Tomacco nunca pede seu código nem sua senha.</translation>
+    </message>
+    <message>
+        <source>Done</source>
+        <translation>Concluído</translation>
+    </message>
+    <message>
+        <source>Done: I did it on the device</source>
+        <translation>Concluído: fiz isso no dispositivo</translation>
+    </message>
+</context>
+<context>
+    <name>HandoffModel</name>
+    <message>
+        <source>Face ID or Touch ID</source>
+        <translation>Face ID ou Touch ID</translation>
+    </message>
+    <message>
+        <source>Passcode</source>
+        <translation>Código de acesso</translation>
+    </message>
+    <message>
+        <source>Permission</source>
+        <translation>Permissão</translation>
+    </message>
+    <message>
+        <source>Purchase</source>
+        <translation>Compra</translation>
+    </message>
+    <message>
+        <source>Sign-in</source>
+        <translation>Login</translation>
+    </message>
+    <message>
+        <source>Your turn on the device</source>
+        <translation>Sua vez no dispositivo</translation>
+    </message>
+</context>
+<context>
+    <name>MobileNav</name>
+    <message>
+        <source>Ctrl</source>
+        <translation>Ctrl</translation>
+    </message>
+    <message>
+        <source>More</source>
+        <comment>navigation</comment>
+        <translation>Mais</translation>
     </message>
 </context>
 </TS>

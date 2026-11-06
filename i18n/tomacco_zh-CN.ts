@@ -238,11 +238,11 @@ The model determines the display and frame. Android comes from the chosen system
     </message>
     <message>
         <source>Install Android system</source>
-        <translation>安装 Android 系统</translation>
+        <translation type="vanished">安装 Android 系统</translation>
     </message>
     <message>
         <source>Installed Android system</source>
-        <translation>已安装的 Android 系统</translation>
+        <translation type="vanished">已安装的 Android 系统</translation>
     </message>
     <message>
         <source>Memory (MB)</source>
@@ -455,6 +455,170 @@ The model determines the display and frame. Android comes from the chosen system
     <message>
         <source>Show every running device&apos;s screen side by side</source>
         <translation>并排显示每台运行中设备的屏幕</translation>
+    </message>
+    <message>
+        <source>Accept Google&apos;s Android SDK licence for this download</source>
+        <translation>为此次下载接受 Google 的 Android SDK 许可</translation>
+    </message>
+    <message>
+        <source>Android system image</source>
+        <translation>Android 系统映像</translation>
+    </message>
+    <message>
+        <source>App data removed · %1 freed · the next start boots like a new device</source>
+        <translation>已移除应用数据 · 释放了 %1 · 下次启动将如同新设备</translation>
+    </message>
+    <message>
+        <source>Cannot start: %1</source>
+        <translation>无法启动：%1</translation>
+    </message>
+    <message>
+        <source>Checking…</source>
+        <translation>正在检查…</translation>
+    </message>
+    <message>
+        <source>Copying device…</source>
+        <translation>正在复制设备…</translation>
+    </message>
+    <message>
+        <source>Copying…</source>
+        <translation>正在复制…</translation>
+    </message>
+    <message>
+        <source>Disk: about %1 for the emulator · %2 free</source>
+        <translation>磁盘：模拟器约需 %1 · 可用 %2</translation>
+    </message>
+    <message>
+        <source>Download about %1 (estimate) · needs Google&apos;s SDK licence: %2</source>
+        <translation>下载约 %1（估计）· 需要 Google 的 SDK 许可：%2</translation>
+    </message>
+    <message>
+        <source>Download and create</source>
+        <translation>下载并创建</translation>
+    </message>
+    <message>
+        <source>Duplicate</source>
+        <translation>复制</translation>
+    </message>
+    <message>
+        <source>Duplicate copies the emulator with its apps and data under the new name, as a job you can cancel. Rename is a real rename of the emulator through the Android SDK; the nickname moves along. A nickname alone is set with the pencil button.</source>
+        <translation>“复制”会以新名称拷贝模拟器及其应用和数据，作为可取消的任务运行。“重命名”通过 Android SDK 真正重命名模拟器，昵称随之保留。只设置昵称请使用铅笔按钮。</translation>
+    </message>
+    <message>
+        <source>Duplicate, rename or wipe this emulator</source>
+        <translation>复制、重命名或擦除此模拟器</translation>
+    </message>
+    <message>
+        <source>Letters, digits, - and _</source>
+        <translation>字母、数字、- 和 _</translation>
+    </message>
+    <message>
+        <source>Manage</source>
+        <translation>管理</translation>
+    </message>
+    <message>
+        <source>Manage emulator</source>
+        <translation>管理模拟器</translation>
+    </message>
+    <message>
+        <source>New name</source>
+        <translation>新名称</translation>
+    </message>
+    <message>
+        <source>On disk: %1 · a wipe frees %2</source>
+        <translation>占用磁盘：%1 · 擦除可释放 %2</translation>
+    </message>
+    <message>
+        <source>Pick an installed image, or type another package: it is downloaded as the first step. Tomacco creates phone, foldable and tablet emulators.</source>
+        <translation>选择已安装的映像，或输入其他软件包：它会在第一步下载。Tomacco 可创建手机、折叠屏和平板模拟器。</translation>
+    </message>
+    <message>
+        <source>Reading disk usage…</source>
+        <translation>正在读取磁盘用量…</translation>
+    </message>
+    <message>
+        <source>Rename and wipe need the emulator&apos;s name typed here</source>
+        <translation>重命名和擦除需要在此输入模拟器的名称</translation>
+    </message>
+    <message>
+        <source>Renamed to %1</source>
+        <translation>已重命名为 %1</translation>
+    </message>
+    <message>
+        <source>Renaming…</source>
+        <translation>正在重命名…</translation>
+    </message>
+    <message>
+        <source>Start the emulator when it is ready</source>
+        <translation>就绪后启动模拟器</translation>
+    </message>
+    <message>
+        <source>Steps: %1</source>
+        <translation>步骤：%1</translation>
+    </message>
+    <message>
+        <source>System image installed · no download</source>
+        <translation>系统映像已安装 · 无需下载</translation>
+    </message>
+    <message>
+        <source>TV, Wear, Automotive and XR images are not supported yet</source>
+        <translation>暂不支持 TV、Wear、Automotive 和 XR 映像</translation>
+    </message>
+    <message>
+        <source>The emulator is on or its lock files exist. Turn it off first; nothing here changes a running emulator.</source>
+        <translation>模拟器正在运行或其锁定文件仍存在。请先将其关闭；此处的操作不会更改正在运行的模拟器。</translation>
+    </message>
+    <message>
+        <source>Wipe app data</source>
+        <translation>擦除应用数据</translation>
+    </message>
+    <message>
+        <source>Wipe removes the apps, their data and the snapshots; the next start boots like a new device. The emulator&apos;s model and settings stay.</source>
+        <translation>擦除会移除应用、应用数据和快照；下次启动将如同新设备。模拟器的型号和设置保持不变。</translation>
+    </message>
+    <message>
+        <source>Wiping…</source>
+        <translation>正在擦除…</translation>
+    </message>
+    <message>
+        <source>already accepted</source>
+        <translation>已接受</translation>
+    </message>
+    <message>
+        <source>apply model</source>
+        <translation>应用型号</translation>
+    </message>
+    <message>
+        <source>create</source>
+        <translation>创建</translation>
+    </message>
+    <message>
+        <source>install image</source>
+        <translation>安装映像</translation>
+    </message>
+    <message>
+        <source>is missing</source>
+        <translation>缺失</translation>
+    </message>
+    <message>
+        <source>not enough free space</source>
+        <translation>可用空间不足</translation>
+    </message>
+    <message>
+        <source>not yet accepted</source>
+        <translation>尚未接受</translation>
+    </message>
+    <message>
+        <source>start</source>
+        <translation>启动</translation>
+    </message>
+    <message>
+        <source>the Android SDK</source>
+        <translation>Android SDK</translation>
+    </message>
+    <message>
+        <source>the name is taken</source>
+        <translation>该名称已被使用</translation>
     </message>
 </context>
 <context>
@@ -3817,6 +3981,30 @@ SSH 使用你现有的密钥和已知的主机身份。</translation>
         <source>Start AirPlay</source>
         <translation>启动 AirPlay</translation>
     </message>
+    <message>
+        <source>An agent is waiting for you: %1</source>
+        <translation>有智能体在等你：%1</translation>
+    </message>
+    <message>
+        <source>In use elsewhere</source>
+        <translation>正在别处使用</translation>
+    </message>
+    <message>
+        <source>Reconnecting</source>
+        <translation>正在重新连接</translation>
+    </message>
+    <message>
+        <source>Screenshot saved</source>
+        <translation>已保存屏幕截图</translation>
+    </message>
+    <message>
+        <source>Show file</source>
+        <translation>显示文件</translation>
+    </message>
+    <message>
+        <source>Your turn</source>
+        <translation>轮到你了</translation>
+    </message>
 </context>
 <context>
     <name>Operations</name>
@@ -4916,6 +5104,62 @@ SSH 使用你现有的密钥和已知的主机身份。</translation>
         <source>Set up emulator</source>
         <translation>设置模拟器</translation>
     </message>
+    <message>
+        <source>Ask the person to act</source>
+        <translation>请对方执行操作</translation>
+    </message>
+    <message>
+        <source>Draft a bug report</source>
+        <translation>起草错误报告</translation>
+    </message>
+    <message>
+        <source>List handoffs</source>
+        <translation>列出交接</translation>
+    </message>
+    <message>
+        <source>Observe a session</source>
+        <translation>观察会话</translation>
+    </message>
+    <message>
+        <source>Ordered input batch</source>
+        <translation>有序输入批次</translation>
+    </message>
+    <message>
+        <source>Read a handoff</source>
+        <translation>读取交接</translation>
+    </message>
+    <message>
+        <source>The person is done</source>
+        <translation>对方已完成</translation>
+    </message>
+    <message>
+        <source>Timestamped gesture trace</source>
+        <translation>带时间戳的手势轨迹</translation>
+    </message>
+    <message>
+        <source>Wait for the person</source>
+        <translation>等待对方</translation>
+    </message>
+    <message>
+        <source>Withdraw a handoff</source>
+        <translation>撤回交接</translation>
+    </message>
+    <message>
+        <source>Find a device by name</source>
+        <translation>按名称查找设备</translation>
+    </message>
+    <message>
+        <source>Play a GPX route</source>
+        <translation>播放 GPX 路线</translation>
+    </message>
+    <message>
+        <source>Read a GPX route</source>
+        <translation>读取 GPX 路线</translation>
+    </message>
+    <message>
+        <source>Route playback status</source>
+        <translation>路线回放状态</translation>
+    </message>
 </context>
 <context>
     <name>ProfileWorkspace</name>
@@ -5761,6 +6005,10 @@ SSH 使用你现有的密钥和已知的主机身份。</translation>
     <message>
         <source>Turn a screen recording into a video with a 3D device.</source>
         <translation>将屏幕录像制作成带 3D 设备的视频。</translation>
+    </message>
+    <message>
+        <source>All jobs</source>
+        <translation>所有任务</translation>
     </message>
 </context>
 <context>
@@ -6801,6 +7049,176 @@ Licensed under the GNU General Public License, version 2 or later.</source>
     <message>
         <source>Keep preset</source>
         <translation>保留预设</translation>
+    </message>
+    <message>
+        <source>%1 points, %2 km, %3 min recorded</source>
+        <translation>%1 个点，%2 公里，已记录 %3 分钟</translation>
+    </message>
+    <message>
+        <source>%1 points, %2 km, no times: one point per second</source>
+        <translation>%1 个点，%2 公里，无时间信息：每秒一个点</translation>
+    </message>
+    <message>
+        <source>Change route…</source>
+        <translation>更改路线…</translation>
+    </message>
+    <message>
+        <source>Choose a GPX file…</source>
+        <translation>选择 GPX 文件…</translation>
+    </message>
+    <message>
+        <source>Finished. The last position stays on the emulator.</source>
+        <translation>已完成。最后的位置保留在模拟器上。</translation>
+    </message>
+    <message>
+        <source>GPX route (*.gpx)</source>
+        <translation>GPX 路线 (*.gpx)</translation>
+    </message>
+    <message>
+        <source>No route chosen</source>
+        <translation>未选择路线</translation>
+    </message>
+    <message>
+        <source>Pause</source>
+        <translation>暂停</translation>
+    </message>
+    <message>
+        <source>Paused at %1</source>
+        <translation>已暂停于 %1</translation>
+    </message>
+    <message>
+        <source>Play a GPX route on the chosen emulator&apos;s location. Timed points keep their timing; untimed points play one per second.</source>
+        <translation>在所选模拟器的位置上播放 GPX 路线。带时间的点保持原有节奏；不带时间的点每秒播放一个。</translation>
+    </message>
+    <message>
+        <source>Play route</source>
+        <translation>播放路线</translation>
+    </message>
+    <message>
+        <source>Playback ended: %1</source>
+        <translation>播放已结束：%1</translation>
+    </message>
+    <message>
+        <source>Playing %1</source>
+        <translation>正在播放 %1</translation>
+    </message>
+    <message>
+        <source>Playing the route on %1. The previous position is not known and will not be restored.</source>
+        <translation>正在 %1 上播放路线。之前的位置未知，不会恢复。</translation>
+    </message>
+    <message>
+        <source>Playing…</source>
+        <translation>正在播放…</translation>
+    </message>
+    <message>
+        <source>Reading the route…</source>
+        <translation>正在读取路线…</translation>
+    </message>
+    <message>
+        <source>Repeat the route</source>
+        <translation>循环播放路线</translation>
+    </message>
+    <message>
+        <source>Resume</source>
+        <translation>继续</translation>
+    </message>
+    <message>
+        <source>Route playback</source>
+        <translation>路线回放</translation>
+    </message>
+    <message>
+        <source>Route playback reaches emulators only. A phone takes no mock location from here.</source>
+        <translation>路线回放仅作用于模拟器。手机不会从这里获得模拟位置。</translation>
+    </message>
+    <message>
+        <source>Speed · 1 is real time</source>
+        <translation>速度 · 1 表示实时</translation>
+    </message>
+    <message>
+        <source>Starting playback…</source>
+        <translation>正在开始播放…</translation>
+    </message>
+    <message>
+        <source>Stop</source>
+        <translation>停止</translation>
+    </message>
+    <message>
+        <source>Stopped. The last position stays on the emulator.</source>
+        <translation>已停止。最后的位置保留在模拟器上。</translation>
+    </message>
+    <message>
+        <source>The emulator does not report its position, so the position before playback is unknown and is not restored. Set one in the preset&apos;s GPS field afterwards if you need it.</source>
+        <translation>模拟器不报告自身位置，因此播放前的位置未知，不会恢复。如有需要，请之后在预设的 GPS 字段中设置。</translation>
+    </message>
+    <message>
+        <source>point %1 of %2</source>
+        <translation>第 %1 个点，共 %2 个</translation>
+    </message>
+</context>
+<context>
+    <name>HandoffBanner</name>
+    <message>
+        <source>%1 · an agent is waiting for you</source>
+        <translation>%1 · 有智能体在等你</translation>
+    </message>
+    <message>
+        <source>%1 · an agent is waiting for you (%2 more)</source>
+        <translation>%1 · 有智能体在等你（另有 %2 个）</translation>
+    </message>
+    <message>
+        <source>Cancel</source>
+        <translation>取消</translation>
+    </message>
+    <message>
+        <source>Do it on the device itself. Tomacco never asks for your passcode or password.</source>
+        <translation>请直接在设备上操作。Tomacco 从不索要你的密码或锁屏密码。</translation>
+    </message>
+    <message>
+        <source>Done</source>
+        <translation>完成</translation>
+    </message>
+    <message>
+        <source>Done: I did it on the device</source>
+        <translation>完成：我已在设备上操作</translation>
+    </message>
+</context>
+<context>
+    <name>HandoffModel</name>
+    <message>
+        <source>Face ID or Touch ID</source>
+        <translation>Face ID 或 Touch ID</translation>
+    </message>
+    <message>
+        <source>Passcode</source>
+        <translation>锁屏密码</translation>
+    </message>
+    <message>
+        <source>Permission</source>
+        <translation>权限</translation>
+    </message>
+    <message>
+        <source>Purchase</source>
+        <translation>购买</translation>
+    </message>
+    <message>
+        <source>Sign-in</source>
+        <translation>登录</translation>
+    </message>
+    <message>
+        <source>Your turn on the device</source>
+        <translation>轮到你在设备上操作</translation>
+    </message>
+</context>
+<context>
+    <name>MobileNav</name>
+    <message>
+        <source>Ctrl</source>
+        <translation>Ctrl</translation>
+    </message>
+    <message>
+        <source>More</source>
+        <comment>navigation</comment>
+        <translation>更多</translation>
     </message>
 </context>
 </TS>

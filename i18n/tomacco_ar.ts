@@ -238,11 +238,11 @@ The model determines the display and frame. Android comes from the chosen system
     </message>
     <message>
         <source>Install Android system</source>
-        <translation>تثبيت نظام Android</translation>
+        <translation type="vanished">تثبيت نظام Android</translation>
     </message>
     <message>
         <source>Installed Android system</source>
-        <translation>نظام Android المثبّت</translation>
+        <translation type="vanished">نظام Android المثبّت</translation>
     </message>
     <message>
         <source>Memory (MB)</source>
@@ -455,6 +455,170 @@ The model determines the display and frame. Android comes from the chosen system
     <message>
         <source>Show every running device&apos;s screen side by side</source>
         <translation>عرض شاشات كل الأجهزة العاملة جنبًا إلى جنب</translation>
+    </message>
+    <message>
+        <source>Accept Google&apos;s Android SDK licence for this download</source>
+        <translation>قبول ترخيص Android SDK من Google لهذا التنزيل</translation>
+    </message>
+    <message>
+        <source>Android system image</source>
+        <translation>صورة نظام Android</translation>
+    </message>
+    <message>
+        <source>App data removed · %1 freed · the next start boots like a new device</source>
+        <translation>أُزيلت بيانات التطبيقات · تحرّر %1 · سيقلع التشغيل التالي كجهاز جديد</translation>
+    </message>
+    <message>
+        <source>Cannot start: %1</source>
+        <translation>يتعذّر البدء: %1</translation>
+    </message>
+    <message>
+        <source>Checking…</source>
+        <translation>جارٍ التحقق…</translation>
+    </message>
+    <message>
+        <source>Copying device…</source>
+        <translation>جارٍ نسخ الجهاز…</translation>
+    </message>
+    <message>
+        <source>Copying…</source>
+        <translation>جارٍ النسخ…</translation>
+    </message>
+    <message>
+        <source>Disk: about %1 for the emulator · %2 free</source>
+        <translation>القرص: نحو %1 للمحاكي · %2 متاح</translation>
+    </message>
+    <message>
+        <source>Download about %1 (estimate) · needs Google&apos;s SDK licence: %2</source>
+        <translation>تنزيل بحجم نحو %1 (تقدير) · يتطلب ترخيص SDK من Google: %2</translation>
+    </message>
+    <message>
+        <source>Download and create</source>
+        <translation>تنزيل وإنشاء</translation>
+    </message>
+    <message>
+        <source>Duplicate</source>
+        <translation>تكرار</translation>
+    </message>
+    <message>
+        <source>Duplicate copies the emulator with its apps and data under the new name, as a job you can cancel. Rename is a real rename of the emulator through the Android SDK; the nickname moves along. A nickname alone is set with the pencil button.</source>
+        <translation>التكرار ينسخ المحاكي مع تطبيقاته وبياناته باسم جديد، كمهمة يمكنك إلغاؤها. إعادة التسمية تغيّر اسم المحاكي فعلًا عبر Android SDK؛ وينتقل الاسم المستعار معه. أما الاسم المستعار وحده فيُضبط بزر القلم.</translation>
+    </message>
+    <message>
+        <source>Duplicate, rename or wipe this emulator</source>
+        <translation>تكرار هذا المحاكي أو إعادة تسميته أو مسحه</translation>
+    </message>
+    <message>
+        <source>Letters, digits, - and _</source>
+        <translation>حروف وأرقام و- و_</translation>
+    </message>
+    <message>
+        <source>Manage</source>
+        <translation>إدارة</translation>
+    </message>
+    <message>
+        <source>Manage emulator</source>
+        <translation>إدارة المحاكي</translation>
+    </message>
+    <message>
+        <source>New name</source>
+        <translation>الاسم الجديد</translation>
+    </message>
+    <message>
+        <source>On disk: %1 · a wipe frees %2</source>
+        <translation>على القرص: %1 · المسح يحرّر %2</translation>
+    </message>
+    <message>
+        <source>Pick an installed image, or type another package: it is downloaded as the first step. Tomacco creates phone, foldable and tablet emulators.</source>
+        <translation>اختر صورة مثبّتة أو اكتب حزمة أخرى: ستُنزَّل كخطوة أولى. ينشئ Tomacco محاكيات للهواتف والأجهزة القابلة للطي والأجهزة اللوحية.</translation>
+    </message>
+    <message>
+        <source>Reading disk usage…</source>
+        <translation>جارٍ قراءة استخدام القرص…</translation>
+    </message>
+    <message>
+        <source>Rename and wipe need the emulator&apos;s name typed here</source>
+        <translation>تتطلب إعادة التسمية والمسح كتابة اسم المحاكي هنا</translation>
+    </message>
+    <message>
+        <source>Renamed to %1</source>
+        <translation>أُعيدت التسمية إلى %1</translation>
+    </message>
+    <message>
+        <source>Renaming…</source>
+        <translation>جارٍ إعادة التسمية…</translation>
+    </message>
+    <message>
+        <source>Start the emulator when it is ready</source>
+        <translation>تشغيل المحاكي عندما يصبح جاهزًا</translation>
+    </message>
+    <message>
+        <source>Steps: %1</source>
+        <translation>الخطوات: %1</translation>
+    </message>
+    <message>
+        <source>System image installed · no download</source>
+        <translation>صورة النظام مثبّتة · لا تنزيل</translation>
+    </message>
+    <message>
+        <source>TV, Wear, Automotive and XR images are not supported yet</source>
+        <translation>صور TV وWear وAutomotive وXR غير مدعومة بعد</translation>
+    </message>
+    <message>
+        <source>The emulator is on or its lock files exist. Turn it off first; nothing here changes a running emulator.</source>
+        <translation>المحاكي قيد التشغيل أو أن ملفات القفل الخاصة به موجودة. أوقفه أولًا؛ لا شيء هنا يغيّر محاكيًا قيد التشغيل.</translation>
+    </message>
+    <message>
+        <source>Wipe app data</source>
+        <translation>مسح بيانات التطبيقات</translation>
+    </message>
+    <message>
+        <source>Wipe removes the apps, their data and the snapshots; the next start boots like a new device. The emulator&apos;s model and settings stay.</source>
+        <translation>المسح يزيل التطبيقات وبياناتها واللقطات؛ وسيقلع التشغيل التالي كجهاز جديد. يبقى طراز المحاكي وإعداداته.</translation>
+    </message>
+    <message>
+        <source>Wiping…</source>
+        <translation>جارٍ المسح…</translation>
+    </message>
+    <message>
+        <source>already accepted</source>
+        <translation>مقبول مسبقًا</translation>
+    </message>
+    <message>
+        <source>apply model</source>
+        <translation>تطبيق الطراز</translation>
+    </message>
+    <message>
+        <source>create</source>
+        <translation>إنشاء</translation>
+    </message>
+    <message>
+        <source>install image</source>
+        <translation>تثبيت الصورة</translation>
+    </message>
+    <message>
+        <source>is missing</source>
+        <translation>مفقود</translation>
+    </message>
+    <message>
+        <source>not enough free space</source>
+        <translation>لا توجد مساحة حرة كافية</translation>
+    </message>
+    <message>
+        <source>not yet accepted</source>
+        <translation>لم يُقبل بعد</translation>
+    </message>
+    <message>
+        <source>start</source>
+        <translation>تشغيل</translation>
+    </message>
+    <message>
+        <source>the Android SDK</source>
+        <translation>Android SDK</translation>
+    </message>
+    <message>
+        <source>the name is taken</source>
+        <translation>الاسم مستخدم</translation>
     </message>
 </context>
 <context>
@@ -3862,6 +4026,30 @@ SSH uses your existing keys and the known host identity.</source>
         <source>Start AirPlay</source>
         <translation>بدء AirPlay</translation>
     </message>
+    <message>
+        <source>An agent is waiting for you: %1</source>
+        <translation>وكيل ينتظرك: %1</translation>
+    </message>
+    <message>
+        <source>In use elsewhere</source>
+        <translation>قيد الاستخدام في مكان آخر</translation>
+    </message>
+    <message>
+        <source>Reconnecting</source>
+        <translation>جارٍ إعادة الاتصال</translation>
+    </message>
+    <message>
+        <source>Screenshot saved</source>
+        <translation>حُفظت لقطة الشاشة</translation>
+    </message>
+    <message>
+        <source>Show file</source>
+        <translation>إظهار الملف</translation>
+    </message>
+    <message>
+        <source>Your turn</source>
+        <translation>دورك</translation>
+    </message>
 </context>
 <context>
     <name>Operations</name>
@@ -4961,6 +5149,62 @@ SSH uses your existing keys and the known host identity.</source>
         <source>Set up emulator</source>
         <translation>إعداد المحاكي</translation>
     </message>
+    <message>
+        <source>Ask the person to act</source>
+        <translation>طلب إجراء من الشخص</translation>
+    </message>
+    <message>
+        <source>Draft a bug report</source>
+        <translation>صياغة تقرير خطأ</translation>
+    </message>
+    <message>
+        <source>List handoffs</source>
+        <translation>سرد عمليات التسليم</translation>
+    </message>
+    <message>
+        <source>Observe a session</source>
+        <translation>مراقبة جلسة</translation>
+    </message>
+    <message>
+        <source>Ordered input batch</source>
+        <translation>دفعة إدخال مرتّبة</translation>
+    </message>
+    <message>
+        <source>Read a handoff</source>
+        <translation>قراءة عملية تسليم</translation>
+    </message>
+    <message>
+        <source>The person is done</source>
+        <translation>انتهى الشخص</translation>
+    </message>
+    <message>
+        <source>Timestamped gesture trace</source>
+        <translation>سجل إيماءات بطوابع زمنية</translation>
+    </message>
+    <message>
+        <source>Wait for the person</source>
+        <translation>انتظار الشخص</translation>
+    </message>
+    <message>
+        <source>Withdraw a handoff</source>
+        <translation>سحب عملية تسليم</translation>
+    </message>
+    <message>
+        <source>Find a device by name</source>
+        <translation>العثور على جهاز بالاسم</translation>
+    </message>
+    <message>
+        <source>Play a GPX route</source>
+        <translation>تشغيل مسار GPX</translation>
+    </message>
+    <message>
+        <source>Read a GPX route</source>
+        <translation>قراءة مسار GPX</translation>
+    </message>
+    <message>
+        <source>Route playback status</source>
+        <translation>حالة تشغيل المسار</translation>
+    </message>
 </context>
 <context>
     <name>ProfileWorkspace</name>
@@ -5811,6 +6055,10 @@ SSH uses your existing keys and the known host identity.</source>
     <message>
         <source>Turn a screen recording into a video with a 3D device.</source>
         <translation>حوّل تسجيل شاشة إلى فيديو مع جهاز ثلاثي الأبعاد.</translation>
+    </message>
+    <message>
+        <source>All jobs</source>
+        <translation>كل المهام</translation>
     </message>
 </context>
 <context>
@@ -6856,6 +7104,176 @@ Licensed under the GNU General Public License, version 2 or later.</source>
     <message>
         <source>Keep preset</source>
         <translation>الاحتفاظ بالإعداد المسبق</translation>
+    </message>
+    <message>
+        <source>%1 points, %2 km, %3 min recorded</source>
+        <translation>%1 نقطة، %2 كم، %3 دقيقة مسجّلة</translation>
+    </message>
+    <message>
+        <source>%1 points, %2 km, no times: one point per second</source>
+        <translation>%1 نقطة، %2 كم، بلا أوقات: نقطة واحدة في الثانية</translation>
+    </message>
+    <message>
+        <source>Change route…</source>
+        <translation>تغيير المسار…</translation>
+    </message>
+    <message>
+        <source>Choose a GPX file…</source>
+        <translation>اختيار ملف GPX…</translation>
+    </message>
+    <message>
+        <source>Finished. The last position stays on the emulator.</source>
+        <translation>اكتمل. يبقى الموضع الأخير على المحاكي.</translation>
+    </message>
+    <message>
+        <source>GPX route (*.gpx)</source>
+        <translation>مسار GPX (*.gpx)</translation>
+    </message>
+    <message>
+        <source>No route chosen</source>
+        <translation>لم يُختر مسار</translation>
+    </message>
+    <message>
+        <source>Pause</source>
+        <translation>إيقاف مؤقت</translation>
+    </message>
+    <message>
+        <source>Paused at %1</source>
+        <translation>متوقف مؤقتًا عند %1</translation>
+    </message>
+    <message>
+        <source>Play a GPX route on the chosen emulator&apos;s location. Timed points keep their timing; untimed points play one per second.</source>
+        <translation>تشغيل مسار GPX على موقع المحاكي المختار. تحافظ النقاط ذات التوقيت على توقيتها؛ وتُشغَّل النقاط بلا توقيت بمعدل نقطة في الثانية.</translation>
+    </message>
+    <message>
+        <source>Play route</source>
+        <translation>تشغيل المسار</translation>
+    </message>
+    <message>
+        <source>Playback ended: %1</source>
+        <translation>انتهى التشغيل: %1</translation>
+    </message>
+    <message>
+        <source>Playing %1</source>
+        <translation>جارٍ تشغيل %1</translation>
+    </message>
+    <message>
+        <source>Playing the route on %1. The previous position is not known and will not be restored.</source>
+        <translation>جارٍ تشغيل المسار على %1. الموضع السابق غير معروف ولن يُستعاد.</translation>
+    </message>
+    <message>
+        <source>Playing…</source>
+        <translation>جارٍ التشغيل…</translation>
+    </message>
+    <message>
+        <source>Reading the route…</source>
+        <translation>جارٍ قراءة المسار…</translation>
+    </message>
+    <message>
+        <source>Repeat the route</source>
+        <translation>تكرار المسار</translation>
+    </message>
+    <message>
+        <source>Resume</source>
+        <translation>استئناف</translation>
+    </message>
+    <message>
+        <source>Route playback</source>
+        <translation>تشغيل المسار</translation>
+    </message>
+    <message>
+        <source>Route playback reaches emulators only. A phone takes no mock location from here.</source>
+        <translation>تشغيل المسار يصل إلى المحاكيات فقط. لا يتلقى الهاتف من هنا أي موقع وهمي.</translation>
+    </message>
+    <message>
+        <source>Speed · 1 is real time</source>
+        <translation>السرعة · 1 تعني الوقت الفعلي</translation>
+    </message>
+    <message>
+        <source>Starting playback…</source>
+        <translation>جارٍ بدء التشغيل…</translation>
+    </message>
+    <message>
+        <source>Stop</source>
+        <translation>إيقاف</translation>
+    </message>
+    <message>
+        <source>Stopped. The last position stays on the emulator.</source>
+        <translation>توقّف. يبقى الموضع الأخير على المحاكي.</translation>
+    </message>
+    <message>
+        <source>The emulator does not report its position, so the position before playback is unknown and is not restored. Set one in the preset&apos;s GPS field afterwards if you need it.</source>
+        <translation>لا يبلّغ المحاكي عن موضعه، لذا فإن الموضع قبل التشغيل غير معروف ولن يُستعاد. اضبط موضعًا بعد ذلك في حقل GPS في الإعداد المسبق إن احتجت إليه.</translation>
+    </message>
+    <message>
+        <source>point %1 of %2</source>
+        <translation>النقطة %1 من %2</translation>
+    </message>
+</context>
+<context>
+    <name>HandoffBanner</name>
+    <message>
+        <source>%1 · an agent is waiting for you</source>
+        <translation>%1 · وكيل ينتظرك</translation>
+    </message>
+    <message>
+        <source>%1 · an agent is waiting for you (%2 more)</source>
+        <translation>%1 · وكيل ينتظرك (%2 آخرون)</translation>
+    </message>
+    <message>
+        <source>Cancel</source>
+        <translation>إلغاء</translation>
+    </message>
+    <message>
+        <source>Do it on the device itself. Tomacco never asks for your passcode or password.</source>
+        <translation>نفّذ ذلك على الجهاز نفسه. لا يطلب Tomacco رمز المرور أو كلمة المرور أبدًا.</translation>
+    </message>
+    <message>
+        <source>Done</source>
+        <translation>تم</translation>
+    </message>
+    <message>
+        <source>Done: I did it on the device</source>
+        <translation>تم: أنجزته على الجهاز</translation>
+    </message>
+</context>
+<context>
+    <name>HandoffModel</name>
+    <message>
+        <source>Face ID or Touch ID</source>
+        <translation>Face ID أو Touch ID</translation>
+    </message>
+    <message>
+        <source>Passcode</source>
+        <translation>رمز المرور</translation>
+    </message>
+    <message>
+        <source>Permission</source>
+        <translation>إذن</translation>
+    </message>
+    <message>
+        <source>Purchase</source>
+        <translation>شراء</translation>
+    </message>
+    <message>
+        <source>Sign-in</source>
+        <translation>تسجيل الدخول</translation>
+    </message>
+    <message>
+        <source>Your turn on the device</source>
+        <translation>دورك على الجهاز</translation>
+    </message>
+</context>
+<context>
+    <name>MobileNav</name>
+    <message>
+        <source>Ctrl</source>
+        <translation>Ctrl</translation>
+    </message>
+    <message>
+        <source>More</source>
+        <comment>navigation</comment>
+        <translation>المزيد</translation>
     </message>
 </context>
 </TS>

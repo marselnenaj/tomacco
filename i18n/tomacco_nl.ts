@@ -238,11 +238,11 @@ Het model bepaalt het scherm en de behuizing. Android komt uit de gekozen systee
     </message>
     <message>
         <source>Install Android system</source>
-        <translation>Android-systeem installeren</translation>
+        <translation type="vanished">Android-systeem installeren</translation>
     </message>
     <message>
         <source>Installed Android system</source>
-        <translation>Geïnstalleerd Android-systeem</translation>
+        <translation type="vanished">Geïnstalleerd Android-systeem</translation>
     </message>
     <message>
         <source>Memory (MB)</source>
@@ -455,6 +455,170 @@ Het model bepaalt het scherm en de behuizing. Android komt uit de gekozen systee
     <message>
         <source>Show every running device&apos;s screen side by side</source>
         <translation>Het scherm van elk actief apparaat naast elkaar tonen</translation>
+    </message>
+    <message>
+        <source>Accept Google&apos;s Android SDK licence for this download</source>
+        <translation>Google’s Android SDK-licentie voor deze download accepteren</translation>
+    </message>
+    <message>
+        <source>Android system image</source>
+        <translation>Android-systeemkopie</translation>
+    </message>
+    <message>
+        <source>App data removed · %1 freed · the next start boots like a new device</source>
+        <translation>App-gegevens verwijderd · %1 vrijgemaakt · de volgende start is als bij een nieuw apparaat</translation>
+    </message>
+    <message>
+        <source>Cannot start: %1</source>
+        <translation>Kan niet starten: %1</translation>
+    </message>
+    <message>
+        <source>Checking…</source>
+        <translation>Controleren…</translation>
+    </message>
+    <message>
+        <source>Copying device…</source>
+        <translation>Apparaat kopiëren…</translation>
+    </message>
+    <message>
+        <source>Copying…</source>
+        <translation>Kopiëren…</translation>
+    </message>
+    <message>
+        <source>Disk: about %1 for the emulator · %2 free</source>
+        <translation>Schijf: ongeveer %1 voor de emulator · %2 vrij</translation>
+    </message>
+    <message>
+        <source>Download about %1 (estimate) · needs Google&apos;s SDK licence: %2</source>
+        <translation>Download van ongeveer %1 (schatting) · vereist Google’s SDK-licentie: %2</translation>
+    </message>
+    <message>
+        <source>Download and create</source>
+        <translation>Downloaden en aanmaken</translation>
+    </message>
+    <message>
+        <source>Duplicate</source>
+        <translation>Dupliceren</translation>
+    </message>
+    <message>
+        <source>Duplicate copies the emulator with its apps and data under the new name, as a job you can cancel. Rename is a real rename of the emulator through the Android SDK; the nickname moves along. A nickname alone is set with the pencil button.</source>
+        <translation>Dupliceren kopieert de emulator met zijn apps en gegevens onder de nieuwe naam, als een taak die je kunt annuleren. Hernoemen hernoemt de emulator echt via de Android SDK; de bijnaam gaat mee. Alleen een bijnaam stel je in met de potloodknop.</translation>
+    </message>
+    <message>
+        <source>Duplicate, rename or wipe this emulator</source>
+        <translation>Deze emulator dupliceren, hernoemen of wissen</translation>
+    </message>
+    <message>
+        <source>Letters, digits, - and _</source>
+        <translation>Letters, cijfers, - en _</translation>
+    </message>
+    <message>
+        <source>Manage</source>
+        <translation>Beheren</translation>
+    </message>
+    <message>
+        <source>Manage emulator</source>
+        <translation>Emulator beheren</translation>
+    </message>
+    <message>
+        <source>New name</source>
+        <translation>Nieuwe naam</translation>
+    </message>
+    <message>
+        <source>On disk: %1 · a wipe frees %2</source>
+        <translation>Op schijf: %1 · wissen maakt %2 vrij</translation>
+    </message>
+    <message>
+        <source>Pick an installed image, or type another package: it is downloaded as the first step. Tomacco creates phone, foldable and tablet emulators.</source>
+        <translation>Kies een geïnstalleerde kopie of typ een ander pakket: dat wordt als eerste stap gedownload. Tomacco maakt emulators voor telefoons, vouwtelefoons en tablets.</translation>
+    </message>
+    <message>
+        <source>Reading disk usage…</source>
+        <translation>Schijfgebruik lezen…</translation>
+    </message>
+    <message>
+        <source>Rename and wipe need the emulator&apos;s name typed here</source>
+        <translation>Voor hernoemen en wissen moet je hier de naam van de emulator typen</translation>
+    </message>
+    <message>
+        <source>Renamed to %1</source>
+        <translation>Hernoemd naar %1</translation>
+    </message>
+    <message>
+        <source>Renaming…</source>
+        <translation>Hernoemen…</translation>
+    </message>
+    <message>
+        <source>Start the emulator when it is ready</source>
+        <translation>De emulator starten zodra hij klaar is</translation>
+    </message>
+    <message>
+        <source>Steps: %1</source>
+        <translation>Stappen: %1</translation>
+    </message>
+    <message>
+        <source>System image installed · no download</source>
+        <translation>Systeemkopie geïnstalleerd · geen download</translation>
+    </message>
+    <message>
+        <source>TV, Wear, Automotive and XR images are not supported yet</source>
+        <translation>TV-, Wear-, Automotive- en XR-kopieën worden nog niet ondersteund</translation>
+    </message>
+    <message>
+        <source>The emulator is on or its lock files exist. Turn it off first; nothing here changes a running emulator.</source>
+        <translation>De emulator staat aan of zijn vergrendelingsbestanden bestaan. Zet hem eerst uit; niets hier wijzigt een draaiende emulator.</translation>
+    </message>
+    <message>
+        <source>Wipe app data</source>
+        <translation>App-gegevens wissen</translation>
+    </message>
+    <message>
+        <source>Wipe removes the apps, their data and the snapshots; the next start boots like a new device. The emulator&apos;s model and settings stay.</source>
+        <translation>Wissen verwijdert de apps, hun gegevens en de snapshots; de volgende start is als bij een nieuw apparaat. Het model en de instellingen van de emulator blijven.</translation>
+    </message>
+    <message>
+        <source>Wiping…</source>
+        <translation>Wissen…</translation>
+    </message>
+    <message>
+        <source>already accepted</source>
+        <translation>al geaccepteerd</translation>
+    </message>
+    <message>
+        <source>apply model</source>
+        <translation>model toepassen</translation>
+    </message>
+    <message>
+        <source>create</source>
+        <translation>aanmaken</translation>
+    </message>
+    <message>
+        <source>install image</source>
+        <translation>kopie installeren</translation>
+    </message>
+    <message>
+        <source>is missing</source>
+        <translation>ontbreekt</translation>
+    </message>
+    <message>
+        <source>not enough free space</source>
+        <translation>niet genoeg vrije ruimte</translation>
+    </message>
+    <message>
+        <source>not yet accepted</source>
+        <translation>nog niet geaccepteerd</translation>
+    </message>
+    <message>
+        <source>start</source>
+        <translation>starten</translation>
+    </message>
+    <message>
+        <source>the Android SDK</source>
+        <translation>de Android SDK</translation>
+    </message>
+    <message>
+        <source>the name is taken</source>
+        <translation>de naam is al in gebruik</translation>
     </message>
 </context>
 <context>
@@ -3826,6 +3990,30 @@ SSH gebruikt je bestaande sleutels en de bekende hostidentiteit.</translation>
         <source>Start AirPlay</source>
         <translation>AirPlay starten</translation>
     </message>
+    <message>
+        <source>An agent is waiting for you: %1</source>
+        <translation>Een agent wacht op je: %1</translation>
+    </message>
+    <message>
+        <source>In use elsewhere</source>
+        <translation>Elders in gebruik</translation>
+    </message>
+    <message>
+        <source>Reconnecting</source>
+        <translation>Opnieuw verbinden</translation>
+    </message>
+    <message>
+        <source>Screenshot saved</source>
+        <translation>Schermafbeelding opgeslagen</translation>
+    </message>
+    <message>
+        <source>Show file</source>
+        <translation>Bestand tonen</translation>
+    </message>
+    <message>
+        <source>Your turn</source>
+        <translation>Jouw beurt</translation>
+    </message>
 </context>
 <context>
     <name>Operations</name>
@@ -4925,6 +5113,62 @@ SSH gebruikt je bestaande sleutels en de bekende hostidentiteit.</translation>
         <source>Set up emulator</source>
         <translation>Emulator instellen</translation>
     </message>
+    <message>
+        <source>Ask the person to act</source>
+        <translation>De persoon vragen iets te doen</translation>
+    </message>
+    <message>
+        <source>Draft a bug report</source>
+        <translation>Een bugrapport opstellen</translation>
+    </message>
+    <message>
+        <source>List handoffs</source>
+        <translation>Overdrachten weergeven</translation>
+    </message>
+    <message>
+        <source>Observe a session</source>
+        <translation>Een sessie observeren</translation>
+    </message>
+    <message>
+        <source>Ordered input batch</source>
+        <translation>Geordende invoerreeks</translation>
+    </message>
+    <message>
+        <source>Read a handoff</source>
+        <translation>Een overdracht lezen</translation>
+    </message>
+    <message>
+        <source>The person is done</source>
+        <translation>De persoon is klaar</translation>
+    </message>
+    <message>
+        <source>Timestamped gesture trace</source>
+        <translation>Gebarenspoor met tijdstempels</translation>
+    </message>
+    <message>
+        <source>Wait for the person</source>
+        <translation>Op de persoon wachten</translation>
+    </message>
+    <message>
+        <source>Withdraw a handoff</source>
+        <translation>Een overdracht intrekken</translation>
+    </message>
+    <message>
+        <source>Find a device by name</source>
+        <translation>Een apparaat op naam zoeken</translation>
+    </message>
+    <message>
+        <source>Play a GPX route</source>
+        <translation>Een GPX-route afspelen</translation>
+    </message>
+    <message>
+        <source>Read a GPX route</source>
+        <translation>Een GPX-route lezen</translation>
+    </message>
+    <message>
+        <source>Route playback status</source>
+        <translation>Status van route afspelen</translation>
+    </message>
 </context>
 <context>
     <name>ProfileWorkspace</name>
@@ -5771,6 +6015,10 @@ SSH gebruikt je bestaande sleutels en de bekende hostidentiteit.</translation>
     <message>
         <source>Turn a screen recording into a video with a 3D device.</source>
         <translation>Maak van een schermopname een video met een 3D-apparaat.</translation>
+    </message>
+    <message>
+        <source>All jobs</source>
+        <translation>Alle taken</translation>
     </message>
 </context>
 <context>
@@ -6812,6 +7060,176 @@ Gelicentieerd onder de GNU General Public License, versie 2 of later.</translati
     <message>
         <source>Keep preset</source>
         <translation>Preset behouden</translation>
+    </message>
+    <message>
+        <source>%1 points, %2 km, %3 min recorded</source>
+        <translation>%1 punten, %2 km, %3 min opgenomen</translation>
+    </message>
+    <message>
+        <source>%1 points, %2 km, no times: one point per second</source>
+        <translation>%1 punten, %2 km, geen tijden: één punt per seconde</translation>
+    </message>
+    <message>
+        <source>Change route…</source>
+        <translation>Route wijzigen…</translation>
+    </message>
+    <message>
+        <source>Choose a GPX file…</source>
+        <translation>Een GPX-bestand kiezen…</translation>
+    </message>
+    <message>
+        <source>Finished. The last position stays on the emulator.</source>
+        <translation>Klaar. De laatste positie blijft op de emulator.</translation>
+    </message>
+    <message>
+        <source>GPX route (*.gpx)</source>
+        <translation>GPX-route (*.gpx)</translation>
+    </message>
+    <message>
+        <source>No route chosen</source>
+        <translation>Geen route gekozen</translation>
+    </message>
+    <message>
+        <source>Pause</source>
+        <translation>Pauzeren</translation>
+    </message>
+    <message>
+        <source>Paused at %1</source>
+        <translation>Gepauzeerd bij %1</translation>
+    </message>
+    <message>
+        <source>Play a GPX route on the chosen emulator&apos;s location. Timed points keep their timing; untimed points play one per second.</source>
+        <translation>Speel een GPX-route af op de locatie van de gekozen emulator. Punten met een tijd houden hun timing; punten zonder tijd lopen één per seconde.</translation>
+    </message>
+    <message>
+        <source>Play route</source>
+        <translation>Route afspelen</translation>
+    </message>
+    <message>
+        <source>Playback ended: %1</source>
+        <translation>Afspelen beëindigd: %1</translation>
+    </message>
+    <message>
+        <source>Playing %1</source>
+        <translation>%1 wordt afgespeeld</translation>
+    </message>
+    <message>
+        <source>Playing the route on %1. The previous position is not known and will not be restored.</source>
+        <translation>De route wordt afgespeeld op %1. De vorige positie is onbekend en wordt niet hersteld.</translation>
+    </message>
+    <message>
+        <source>Playing…</source>
+        <translation>Afspelen…</translation>
+    </message>
+    <message>
+        <source>Reading the route…</source>
+        <translation>Route lezen…</translation>
+    </message>
+    <message>
+        <source>Repeat the route</source>
+        <translation>Route herhalen</translation>
+    </message>
+    <message>
+        <source>Resume</source>
+        <translation>Hervatten</translation>
+    </message>
+    <message>
+        <source>Route playback</source>
+        <translation>Route afspelen</translation>
+    </message>
+    <message>
+        <source>Route playback reaches emulators only. A phone takes no mock location from here.</source>
+        <translation>Route afspelen werkt alleen voor emulators. Een telefoon krijgt van hier geen gesimuleerde locatie.</translation>
+    </message>
+    <message>
+        <source>Speed · 1 is real time</source>
+        <translation>Snelheid · 1 is realtime</translation>
+    </message>
+    <message>
+        <source>Starting playback…</source>
+        <translation>Afspelen starten…</translation>
+    </message>
+    <message>
+        <source>Stop</source>
+        <translation>Stoppen</translation>
+    </message>
+    <message>
+        <source>Stopped. The last position stays on the emulator.</source>
+        <translation>Gestopt. De laatste positie blijft op de emulator.</translation>
+    </message>
+    <message>
+        <source>The emulator does not report its position, so the position before playback is unknown and is not restored. Set one in the preset&apos;s GPS field afterwards if you need it.</source>
+        <translation>De emulator meldt zijn positie niet, dus de positie van vóór het afspelen is onbekend en wordt niet hersteld. Stel er daarna een in via het GPS-veld van de voorinstelling als je die nodig hebt.</translation>
+    </message>
+    <message>
+        <source>point %1 of %2</source>
+        <translation>punt %1 van %2</translation>
+    </message>
+</context>
+<context>
+    <name>HandoffBanner</name>
+    <message>
+        <source>%1 · an agent is waiting for you</source>
+        <translation>%1 · een agent wacht op je</translation>
+    </message>
+    <message>
+        <source>%1 · an agent is waiting for you (%2 more)</source>
+        <translation>%1 · een agent wacht op je (nog %2)</translation>
+    </message>
+    <message>
+        <source>Cancel</source>
+        <translation>Annuleren</translation>
+    </message>
+    <message>
+        <source>Do it on the device itself. Tomacco never asks for your passcode or password.</source>
+        <translation>Doe het op het apparaat zelf. Tomacco vraagt nooit om je toegangscode of wachtwoord.</translation>
+    </message>
+    <message>
+        <source>Done</source>
+        <translation>Klaar</translation>
+    </message>
+    <message>
+        <source>Done: I did it on the device</source>
+        <translation>Klaar: ik heb het op het apparaat gedaan</translation>
+    </message>
+</context>
+<context>
+    <name>HandoffModel</name>
+    <message>
+        <source>Face ID or Touch ID</source>
+        <translation>Face ID of Touch ID</translation>
+    </message>
+    <message>
+        <source>Passcode</source>
+        <translation>Toegangscode</translation>
+    </message>
+    <message>
+        <source>Permission</source>
+        <translation>Toestemming</translation>
+    </message>
+    <message>
+        <source>Purchase</source>
+        <translation>Aankoop</translation>
+    </message>
+    <message>
+        <source>Sign-in</source>
+        <translation>Inloggen</translation>
+    </message>
+    <message>
+        <source>Your turn on the device</source>
+        <translation>Jouw beurt op het apparaat</translation>
+    </message>
+</context>
+<context>
+    <name>MobileNav</name>
+    <message>
+        <source>Ctrl</source>
+        <translation>Ctrl</translation>
+    </message>
+    <message>
+        <source>More</source>
+        <comment>navigation</comment>
+        <translation>Meer</translation>
     </message>
 </context>
 </TS>

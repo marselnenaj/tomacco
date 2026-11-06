@@ -238,11 +238,11 @@ The model determines the display and frame. Android comes from the chosen system
     </message>
     <message>
         <source>Install Android system</source>
-        <translation>Android システムをインストール</translation>
+        <translation type="vanished">Android システムをインストール</translation>
     </message>
     <message>
         <source>Installed Android system</source>
-        <translation>インストール済みの Android システム</translation>
+        <translation type="vanished">インストール済みの Android システム</translation>
     </message>
     <message>
         <source>Memory (MB)</source>
@@ -455,6 +455,170 @@ The model determines the display and frame. Android comes from the chosen system
     <message>
         <source>Show every running device&apos;s screen side by side</source>
         <translation>実行中のすべてのデバイスの画面を並べて表示</translation>
+    </message>
+    <message>
+        <source>Accept Google&apos;s Android SDK licence for this download</source>
+        <translation>このダウンロードのために Google の Android SDK ライセンスに同意する</translation>
+    </message>
+    <message>
+        <source>Android system image</source>
+        <translation>Android システムイメージ</translation>
+    </message>
+    <message>
+        <source>App data removed · %1 freed · the next start boots like a new device</source>
+        <translation>アプリデータを削除しました · %1 を解放 · 次回の起動は新しいデバイスと同じになります</translation>
+    </message>
+    <message>
+        <source>Cannot start: %1</source>
+        <translation>起動できません: %1</translation>
+    </message>
+    <message>
+        <source>Checking…</source>
+        <translation>確認しています…</translation>
+    </message>
+    <message>
+        <source>Copying device…</source>
+        <translation>デバイスをコピーしています…</translation>
+    </message>
+    <message>
+        <source>Copying…</source>
+        <translation>コピーしています…</translation>
+    </message>
+    <message>
+        <source>Disk: about %1 for the emulator · %2 free</source>
+        <translation>ディスク: エミュレーターに約 %1 · 空き %2</translation>
+    </message>
+    <message>
+        <source>Download about %1 (estimate) · needs Google&apos;s SDK licence: %2</source>
+        <translation>約 %1 をダウンロード (推定) · Google の SDK ライセンスが必要: %2</translation>
+    </message>
+    <message>
+        <source>Download and create</source>
+        <translation>ダウンロードして作成</translation>
+    </message>
+    <message>
+        <source>Duplicate</source>
+        <translation>複製</translation>
+    </message>
+    <message>
+        <source>Duplicate copies the emulator with its apps and data under the new name, as a job you can cancel. Rename is a real rename of the emulator through the Android SDK; the nickname moves along. A nickname alone is set with the pencil button.</source>
+        <translation>複製は、エミュレーターをアプリとデータごと新しい名前でコピーします。キャンセルできるジョブとして実行されます。名前変更は Android SDK を通じてエミュレーターの名前を実際に変更し、ニックネームも引き継がれます。ニックネームだけを付けるには鉛筆ボタンを使います。</translation>
+    </message>
+    <message>
+        <source>Duplicate, rename or wipe this emulator</source>
+        <translation>このエミュレーターを複製、名前変更、ワイプ</translation>
+    </message>
+    <message>
+        <source>Letters, digits, - and _</source>
+        <translation>英字、数字、- と _</translation>
+    </message>
+    <message>
+        <source>Manage</source>
+        <translation>管理</translation>
+    </message>
+    <message>
+        <source>Manage emulator</source>
+        <translation>エミュレーターを管理</translation>
+    </message>
+    <message>
+        <source>New name</source>
+        <translation>新しい名前</translation>
+    </message>
+    <message>
+        <source>On disk: %1 · a wipe frees %2</source>
+        <translation>ディスク上: %1 · ワイプで %2 を解放</translation>
+    </message>
+    <message>
+        <source>Pick an installed image, or type another package: it is downloaded as the first step. Tomacco creates phone, foldable and tablet emulators.</source>
+        <translation>インストール済みのイメージを選ぶか、別のパッケージを入力してください。最初のステップでダウンロードされます。Tomacco はスマートフォン、折りたたみ端末、タブレットのエミュレーターを作成します。</translation>
+    </message>
+    <message>
+        <source>Reading disk usage…</source>
+        <translation>ディスク使用量を読み取っています…</translation>
+    </message>
+    <message>
+        <source>Rename and wipe need the emulator&apos;s name typed here</source>
+        <translation>名前変更とワイプには、ここにエミュレーターの名前を入力する必要があります</translation>
+    </message>
+    <message>
+        <source>Renamed to %1</source>
+        <translation>%1 に名前を変更しました</translation>
+    </message>
+    <message>
+        <source>Renaming…</source>
+        <translation>名前を変更しています…</translation>
+    </message>
+    <message>
+        <source>Start the emulator when it is ready</source>
+        <translation>準備ができたらエミュレーターを起動する</translation>
+    </message>
+    <message>
+        <source>Steps: %1</source>
+        <translation>ステップ: %1</translation>
+    </message>
+    <message>
+        <source>System image installed · no download</source>
+        <translation>システムイメージはインストール済み · ダウンロード不要</translation>
+    </message>
+    <message>
+        <source>TV, Wear, Automotive and XR images are not supported yet</source>
+        <translation>TV、Wear、Automotive、XR のイメージはまだサポートされていません</translation>
+    </message>
+    <message>
+        <source>The emulator is on or its lock files exist. Turn it off first; nothing here changes a running emulator.</source>
+        <translation>エミュレーターが起動中か、ロックファイルが残っています。まず停止してください。ここでの操作は実行中のエミュレーターを変更しません。</translation>
+    </message>
+    <message>
+        <source>Wipe app data</source>
+        <translation>アプリデータをワイプ</translation>
+    </message>
+    <message>
+        <source>Wipe removes the apps, their data and the snapshots; the next start boots like a new device. The emulator&apos;s model and settings stay.</source>
+        <translation>ワイプするとアプリ、そのデータ、スナップショットが削除され、次回の起動は新しいデバイスと同じになります。エミュレーターのモデルと設定は残ります。</translation>
+    </message>
+    <message>
+        <source>Wiping…</source>
+        <translation>ワイプしています…</translation>
+    </message>
+    <message>
+        <source>already accepted</source>
+        <translation>同意済み</translation>
+    </message>
+    <message>
+        <source>apply model</source>
+        <translation>モデルを適用</translation>
+    </message>
+    <message>
+        <source>create</source>
+        <translation>作成</translation>
+    </message>
+    <message>
+        <source>install image</source>
+        <translation>イメージをインストール</translation>
+    </message>
+    <message>
+        <source>is missing</source>
+        <translation>がありません</translation>
+    </message>
+    <message>
+        <source>not enough free space</source>
+        <translation>空き容量が不足しています</translation>
+    </message>
+    <message>
+        <source>not yet accepted</source>
+        <translation>未同意</translation>
+    </message>
+    <message>
+        <source>start</source>
+        <translation>起動</translation>
+    </message>
+    <message>
+        <source>the Android SDK</source>
+        <translation>Android SDK</translation>
+    </message>
+    <message>
+        <source>the name is taken</source>
+        <translation>その名前は使用済みです</translation>
     </message>
 </context>
 <context>
@@ -3817,6 +3981,30 @@ SSH は既存の鍵と既知のホスト ID を使用します。</translation>
         <source>Start AirPlay</source>
         <translation>AirPlay を開始</translation>
     </message>
+    <message>
+        <source>An agent is waiting for you: %1</source>
+        <translation>エージェントが待っています: %1</translation>
+    </message>
+    <message>
+        <source>In use elsewhere</source>
+        <translation>別の場所で使用中</translation>
+    </message>
+    <message>
+        <source>Reconnecting</source>
+        <translation>再接続しています</translation>
+    </message>
+    <message>
+        <source>Screenshot saved</source>
+        <translation>スクリーンショットを保存しました</translation>
+    </message>
+    <message>
+        <source>Show file</source>
+        <translation>ファイルを表示</translation>
+    </message>
+    <message>
+        <source>Your turn</source>
+        <translation>あなたの番です</translation>
+    </message>
 </context>
 <context>
     <name>Operations</name>
@@ -4916,6 +5104,62 @@ SSH は既存の鍵と既知のホスト ID を使用します。</translation>
         <source>Set up emulator</source>
         <translation>エミュレーターをセットアップ</translation>
     </message>
+    <message>
+        <source>Ask the person to act</source>
+        <translation>相手に操作を依頼</translation>
+    </message>
+    <message>
+        <source>Draft a bug report</source>
+        <translation>バグレポートの下書きを作成</translation>
+    </message>
+    <message>
+        <source>List handoffs</source>
+        <translation>引き継ぎの一覧</translation>
+    </message>
+    <message>
+        <source>Observe a session</source>
+        <translation>セッションを観察</translation>
+    </message>
+    <message>
+        <source>Ordered input batch</source>
+        <translation>順序付きの入力バッチ</translation>
+    </message>
+    <message>
+        <source>Read a handoff</source>
+        <translation>引き継ぎを読む</translation>
+    </message>
+    <message>
+        <source>The person is done</source>
+        <translation>相手の操作が完了</translation>
+    </message>
+    <message>
+        <source>Timestamped gesture trace</source>
+        <translation>タイムスタンプ付きのジェスチャートレース</translation>
+    </message>
+    <message>
+        <source>Wait for the person</source>
+        <translation>相手を待つ</translation>
+    </message>
+    <message>
+        <source>Withdraw a handoff</source>
+        <translation>引き継ぎを取り下げる</translation>
+    </message>
+    <message>
+        <source>Find a device by name</source>
+        <translation>名前でデバイスを検索</translation>
+    </message>
+    <message>
+        <source>Play a GPX route</source>
+        <translation>GPX ルートを再生</translation>
+    </message>
+    <message>
+        <source>Read a GPX route</source>
+        <translation>GPX ルートを読み込む</translation>
+    </message>
+    <message>
+        <source>Route playback status</source>
+        <translation>ルート再生の状態</translation>
+    </message>
 </context>
 <context>
     <name>ProfileWorkspace</name>
@@ -5761,6 +6005,10 @@ SSH は既存の鍵と既知のホスト ID を使用します。</translation>
     <message>
         <source>Turn a screen recording into a video with a 3D device.</source>
         <translation>画面録画を 3D デバイス付きの動画にします。</translation>
+    </message>
+    <message>
+        <source>All jobs</source>
+        <translation>すべてのジョブ</translation>
     </message>
 </context>
 <context>
@@ -6801,6 +7049,176 @@ GNU General Public License バージョン 2 以降の下で公開されてい�
     <message>
         <source>Keep preset</source>
         <translation>プリセットを保持</translation>
+    </message>
+    <message>
+        <source>%1 points, %2 km, %3 min recorded</source>
+        <translation>%1 ポイント、%2 km、%3 分を記録</translation>
+    </message>
+    <message>
+        <source>%1 points, %2 km, no times: one point per second</source>
+        <translation>%1 ポイント、%2 km、時刻なし: 1 秒に 1 ポイント</translation>
+    </message>
+    <message>
+        <source>Change route…</source>
+        <translation>ルートを変更…</translation>
+    </message>
+    <message>
+        <source>Choose a GPX file…</source>
+        <translation>GPX ファイルを選択…</translation>
+    </message>
+    <message>
+        <source>Finished. The last position stays on the emulator.</source>
+        <translation>完了しました。最後の位置はエミュレーターに残ります。</translation>
+    </message>
+    <message>
+        <source>GPX route (*.gpx)</source>
+        <translation>GPX ルート (*.gpx)</translation>
+    </message>
+    <message>
+        <source>No route chosen</source>
+        <translation>ルートが選択されていません</translation>
+    </message>
+    <message>
+        <source>Pause</source>
+        <translation>一時停止</translation>
+    </message>
+    <message>
+        <source>Paused at %1</source>
+        <translation>%1 で一時停止中</translation>
+    </message>
+    <message>
+        <source>Play a GPX route on the chosen emulator&apos;s location. Timed points keep their timing; untimed points play one per second.</source>
+        <translation>選択したエミュレーターの位置情報で GPX ルートを再生します。時刻付きのポイントはそのタイミングを保ち、時刻のないポイントは 1 秒に 1 つずつ進みます。</translation>
+    </message>
+    <message>
+        <source>Play route</source>
+        <translation>ルートを再生</translation>
+    </message>
+    <message>
+        <source>Playback ended: %1</source>
+        <translation>再生が終了しました: %1</translation>
+    </message>
+    <message>
+        <source>Playing %1</source>
+        <translation>%1 を再生中</translation>
+    </message>
+    <message>
+        <source>Playing the route on %1. The previous position is not known and will not be restored.</source>
+        <translation>%1 でルートを再生しています。以前の位置は不明なため、復元されません。</translation>
+    </message>
+    <message>
+        <source>Playing…</source>
+        <translation>再生しています…</translation>
+    </message>
+    <message>
+        <source>Reading the route…</source>
+        <translation>ルートを読み込んでいます…</translation>
+    </message>
+    <message>
+        <source>Repeat the route</source>
+        <translation>ルートを繰り返す</translation>
+    </message>
+    <message>
+        <source>Resume</source>
+        <translation>再開</translation>
+    </message>
+    <message>
+        <source>Route playback</source>
+        <translation>ルート再生</translation>
+    </message>
+    <message>
+        <source>Route playback reaches emulators only. A phone takes no mock location from here.</source>
+        <translation>ルート再生はエミュレーターにのみ届きます。スマートフォンはここから疑似位置情報を受け取りません。</translation>
+    </message>
+    <message>
+        <source>Speed · 1 is real time</source>
+        <translation>速度 · 1 は実時間</translation>
+    </message>
+    <message>
+        <source>Starting playback…</source>
+        <translation>再生を開始しています…</translation>
+    </message>
+    <message>
+        <source>Stop</source>
+        <translation>停止</translation>
+    </message>
+    <message>
+        <source>Stopped. The last position stays on the emulator.</source>
+        <translation>停止しました。最後の位置はエミュレーターに残ります。</translation>
+    </message>
+    <message>
+        <source>The emulator does not report its position, so the position before playback is unknown and is not restored. Set one in the preset&apos;s GPS field afterwards if you need it.</source>
+        <translation>エミュレーターは自分の位置を報告しないため、再生前の位置は不明で、復元されません。必要な場合は、後でプリセットの GPS 欄で設定してください。</translation>
+    </message>
+    <message>
+        <source>point %1 of %2</source>
+        <translation>ポイント %1 / %2</translation>
+    </message>
+</context>
+<context>
+    <name>HandoffBanner</name>
+    <message>
+        <source>%1 · an agent is waiting for you</source>
+        <translation>%1 · エージェントが待っています</translation>
+    </message>
+    <message>
+        <source>%1 · an agent is waiting for you (%2 more)</source>
+        <translation>%1 · エージェントが待っています (ほかに %2 件)</translation>
+    </message>
+    <message>
+        <source>Cancel</source>
+        <translation>キャンセル</translation>
+    </message>
+    <message>
+        <source>Do it on the device itself. Tomacco never asks for your passcode or password.</source>
+        <translation>デバイス本体で操作してください。Tomacco がパスコードやパスワードを尋ねることはありません。</translation>
+    </message>
+    <message>
+        <source>Done</source>
+        <translation>完了</translation>
+    </message>
+    <message>
+        <source>Done: I did it on the device</source>
+        <translation>完了: デバイスで操作しました</translation>
+    </message>
+</context>
+<context>
+    <name>HandoffModel</name>
+    <message>
+        <source>Face ID or Touch ID</source>
+        <translation>Face ID または Touch ID</translation>
+    </message>
+    <message>
+        <source>Passcode</source>
+        <translation>パスコード</translation>
+    </message>
+    <message>
+        <source>Permission</source>
+        <translation>許可</translation>
+    </message>
+    <message>
+        <source>Purchase</source>
+        <translation>購入</translation>
+    </message>
+    <message>
+        <source>Sign-in</source>
+        <translation>サインイン</translation>
+    </message>
+    <message>
+        <source>Your turn on the device</source>
+        <translation>デバイスでのあなたの番です</translation>
+    </message>
+</context>
+<context>
+    <name>MobileNav</name>
+    <message>
+        <source>Ctrl</source>
+        <translation>Ctrl</translation>
+    </message>
+    <message>
+        <source>More</source>
+        <comment>navigation</comment>
+        <translation>その他</translation>
     </message>
 </context>
 </TS>

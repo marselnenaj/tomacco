@@ -238,11 +238,11 @@ The model determines the display and frame. Android comes from the chosen system
     </message>
     <message>
         <source>Install Android system</source>
-        <translation>Установить систему Android</translation>
+        <translation type="vanished">Установить систему Android</translation>
     </message>
     <message>
         <source>Installed Android system</source>
-        <translation>Установленная система Android</translation>
+        <translation type="vanished">Установленная система Android</translation>
     </message>
     <message>
         <source>Memory (MB)</source>
@@ -455,6 +455,170 @@ The model determines the display and frame. Android comes from the chosen system
     <message>
         <source>Show every running device&apos;s screen side by side</source>
         <translation>Показать экраны всех работающих устройств рядом</translation>
+    </message>
+    <message>
+        <source>Accept Google&apos;s Android SDK licence for this download</source>
+        <translation>Принять лицензию Android SDK от Google для этой загрузки</translation>
+    </message>
+    <message>
+        <source>Android system image</source>
+        <translation>Системный образ Android</translation>
+    </message>
+    <message>
+        <source>App data removed · %1 freed · the next start boots like a new device</source>
+        <translation>Данные приложений удалены · освобождено %1 · следующий запуск пройдёт как на новом устройстве</translation>
+    </message>
+    <message>
+        <source>Cannot start: %1</source>
+        <translation>Не удаётся запустить: %1</translation>
+    </message>
+    <message>
+        <source>Checking…</source>
+        <translation>Проверка…</translation>
+    </message>
+    <message>
+        <source>Copying device…</source>
+        <translation>Копирование устройства…</translation>
+    </message>
+    <message>
+        <source>Copying…</source>
+        <translation>Копирование…</translation>
+    </message>
+    <message>
+        <source>Disk: about %1 for the emulator · %2 free</source>
+        <translation>Диск: около %1 для эмулятора · свободно %2</translation>
+    </message>
+    <message>
+        <source>Download about %1 (estimate) · needs Google&apos;s SDK licence: %2</source>
+        <translation>Загрузка около %1 (оценка) · нужна лицензия SDK от Google: %2</translation>
+    </message>
+    <message>
+        <source>Download and create</source>
+        <translation>Загрузить и создать</translation>
+    </message>
+    <message>
+        <source>Duplicate</source>
+        <translation>Дублировать</translation>
+    </message>
+    <message>
+        <source>Duplicate copies the emulator with its apps and data under the new name, as a job you can cancel. Rename is a real rename of the emulator through the Android SDK; the nickname moves along. A nickname alone is set with the pencil button.</source>
+        <translation>Дублирование копирует эмулятор с приложениями и данными под новым именем как задание, которое можно отменить. Переименование действительно переименовывает эмулятор через Android SDK; псевдоним переходит вместе с ним. Только псевдоним задаётся кнопкой с карандашом.</translation>
+    </message>
+    <message>
+        <source>Duplicate, rename or wipe this emulator</source>
+        <translation>Дублировать, переименовать или стереть этот эмулятор</translation>
+    </message>
+    <message>
+        <source>Letters, digits, - and _</source>
+        <translation>Буквы, цифры, - и _</translation>
+    </message>
+    <message>
+        <source>Manage</source>
+        <translation>Управление</translation>
+    </message>
+    <message>
+        <source>Manage emulator</source>
+        <translation>Управление эмулятором</translation>
+    </message>
+    <message>
+        <source>New name</source>
+        <translation>Новое имя</translation>
+    </message>
+    <message>
+        <source>On disk: %1 · a wipe frees %2</source>
+        <translation>На диске: %1 · стирание освободит %2</translation>
+    </message>
+    <message>
+        <source>Pick an installed image, or type another package: it is downloaded as the first step. Tomacco creates phone, foldable and tablet emulators.</source>
+        <translation>Выберите установленный образ или введите другой пакет: он будет загружен первым шагом. Tomacco создаёт эмуляторы телефонов, складных устройств и планшетов.</translation>
+    </message>
+    <message>
+        <source>Reading disk usage…</source>
+        <translation>Чтение занятого места на диске…</translation>
+    </message>
+    <message>
+        <source>Rename and wipe need the emulator&apos;s name typed here</source>
+        <translation>Для переименования и стирания введите здесь имя эмулятора</translation>
+    </message>
+    <message>
+        <source>Renamed to %1</source>
+        <translation>Переименовано в %1</translation>
+    </message>
+    <message>
+        <source>Renaming…</source>
+        <translation>Переименование…</translation>
+    </message>
+    <message>
+        <source>Start the emulator when it is ready</source>
+        <translation>Запустить эмулятор, когда он будет готов</translation>
+    </message>
+    <message>
+        <source>Steps: %1</source>
+        <translation>Шаги: %1</translation>
+    </message>
+    <message>
+        <source>System image installed · no download</source>
+        <translation>Системный образ установлен · загрузка не нужна</translation>
+    </message>
+    <message>
+        <source>TV, Wear, Automotive and XR images are not supported yet</source>
+        <translation>Образы TV, Wear, Automotive и XR пока не поддерживаются</translation>
+    </message>
+    <message>
+        <source>The emulator is on or its lock files exist. Turn it off first; nothing here changes a running emulator.</source>
+        <translation>Эмулятор включён или существуют его файлы блокировки. Сначала выключите его; ничто здесь не меняет работающий эмулятор.</translation>
+    </message>
+    <message>
+        <source>Wipe app data</source>
+        <translation>Стереть данные приложений</translation>
+    </message>
+    <message>
+        <source>Wipe removes the apps, their data and the snapshots; the next start boots like a new device. The emulator&apos;s model and settings stay.</source>
+        <translation>Стирание удаляет приложения, их данные и снимки; следующий запуск пройдёт как на новом устройстве. Модель и настройки эмулятора сохраняются.</translation>
+    </message>
+    <message>
+        <source>Wiping…</source>
+        <translation>Стирание…</translation>
+    </message>
+    <message>
+        <source>already accepted</source>
+        <translation>уже принята</translation>
+    </message>
+    <message>
+        <source>apply model</source>
+        <translation>применить модель</translation>
+    </message>
+    <message>
+        <source>create</source>
+        <translation>создать</translation>
+    </message>
+    <message>
+        <source>install image</source>
+        <translation>установить образ</translation>
+    </message>
+    <message>
+        <source>is missing</source>
+        <translation>отсутствует</translation>
+    </message>
+    <message>
+        <source>not enough free space</source>
+        <translation>недостаточно свободного места</translation>
+    </message>
+    <message>
+        <source>not yet accepted</source>
+        <translation>ещё не принята</translation>
+    </message>
+    <message>
+        <source>start</source>
+        <translation>запустить</translation>
+    </message>
+    <message>
+        <source>the Android SDK</source>
+        <translation>Android SDK</translation>
+    </message>
+    <message>
+        <source>the name is taken</source>
+        <translation>имя уже занято</translation>
     </message>
 </context>
 <context>
@@ -3835,6 +3999,30 @@ SSH использует ваши существующие ключи и изв�
         <source>Start AirPlay</source>
         <translation>Запустить AirPlay</translation>
     </message>
+    <message>
+        <source>An agent is waiting for you: %1</source>
+        <translation>Агент ждёт вас: %1</translation>
+    </message>
+    <message>
+        <source>In use elsewhere</source>
+        <translation>Используется в другом месте</translation>
+    </message>
+    <message>
+        <source>Reconnecting</source>
+        <translation>Переподключение</translation>
+    </message>
+    <message>
+        <source>Screenshot saved</source>
+        <translation>Снимок экрана сохранён</translation>
+    </message>
+    <message>
+        <source>Show file</source>
+        <translation>Показать файл</translation>
+    </message>
+    <message>
+        <source>Your turn</source>
+        <translation>Ваша очередь</translation>
+    </message>
 </context>
 <context>
     <name>Operations</name>
@@ -4934,6 +5122,62 @@ SSH использует ваши существующие ключи и изв�
         <source>Set up emulator</source>
         <translation>Настроить эмулятор</translation>
     </message>
+    <message>
+        <source>Ask the person to act</source>
+        <translation>Попросить человека выполнить действие</translation>
+    </message>
+    <message>
+        <source>Draft a bug report</source>
+        <translation>Составить отчёт об ошибке</translation>
+    </message>
+    <message>
+        <source>List handoffs</source>
+        <translation>Список передач управления</translation>
+    </message>
+    <message>
+        <source>Observe a session</source>
+        <translation>Наблюдать за сеансом</translation>
+    </message>
+    <message>
+        <source>Ordered input batch</source>
+        <translation>Упорядоченный пакет ввода</translation>
+    </message>
+    <message>
+        <source>Read a handoff</source>
+        <translation>Прочитать передачу управления</translation>
+    </message>
+    <message>
+        <source>The person is done</source>
+        <translation>Человек закончил</translation>
+    </message>
+    <message>
+        <source>Timestamped gesture trace</source>
+        <translation>Трасса жестов с отметками времени</translation>
+    </message>
+    <message>
+        <source>Wait for the person</source>
+        <translation>Ждать человека</translation>
+    </message>
+    <message>
+        <source>Withdraw a handoff</source>
+        <translation>Отозвать передачу управления</translation>
+    </message>
+    <message>
+        <source>Find a device by name</source>
+        <translation>Найти устройство по имени</translation>
+    </message>
+    <message>
+        <source>Play a GPX route</source>
+        <translation>Воспроизвести маршрут GPX</translation>
+    </message>
+    <message>
+        <source>Read a GPX route</source>
+        <translation>Прочитать маршрут GPX</translation>
+    </message>
+    <message>
+        <source>Route playback status</source>
+        <translation>Состояние воспроизведения маршрута</translation>
+    </message>
 </context>
 <context>
     <name>ProfileWorkspace</name>
@@ -5781,6 +6025,10 @@ SSH использует ваши существующие ключи и изв�
     <message>
         <source>Turn a screen recording into a video with a 3D device.</source>
         <translation>Превратите запись экрана в видео с 3D-устройством.</translation>
+    </message>
+    <message>
+        <source>All jobs</source>
+        <translation>Все задания</translation>
     </message>
 </context>
 <context>
@@ -6823,6 +7071,176 @@ Licensed under the GNU General Public License, version 2 or later.</source>
     <message>
         <source>Keep preset</source>
         <translation>Оставить пресет</translation>
+    </message>
+    <message>
+        <source>%1 points, %2 km, %3 min recorded</source>
+        <translation>%1 точек, %2 км, записано %3 мин</translation>
+    </message>
+    <message>
+        <source>%1 points, %2 km, no times: one point per second</source>
+        <translation>%1 точек, %2 км, без времени: одна точка в секунду</translation>
+    </message>
+    <message>
+        <source>Change route…</source>
+        <translation>Сменить маршрут…</translation>
+    </message>
+    <message>
+        <source>Choose a GPX file…</source>
+        <translation>Выбрать файл GPX…</translation>
+    </message>
+    <message>
+        <source>Finished. The last position stays on the emulator.</source>
+        <translation>Готово. Последняя позиция остаётся на эмуляторе.</translation>
+    </message>
+    <message>
+        <source>GPX route (*.gpx)</source>
+        <translation>Маршрут GPX (*.gpx)</translation>
+    </message>
+    <message>
+        <source>No route chosen</source>
+        <translation>Маршрут не выбран</translation>
+    </message>
+    <message>
+        <source>Pause</source>
+        <translation>Пауза</translation>
+    </message>
+    <message>
+        <source>Paused at %1</source>
+        <translation>Пауза на %1</translation>
+    </message>
+    <message>
+        <source>Play a GPX route on the chosen emulator&apos;s location. Timed points keep their timing; untimed points play one per second.</source>
+        <translation>Воспроизводит маршрут GPX как местоположение выбранного эмулятора. Точки со временем сохраняют свой темп; точки без времени идут по одной в секунду.</translation>
+    </message>
+    <message>
+        <source>Play route</source>
+        <translation>Воспроизвести маршрут</translation>
+    </message>
+    <message>
+        <source>Playback ended: %1</source>
+        <translation>Воспроизведение завершено: %1</translation>
+    </message>
+    <message>
+        <source>Playing %1</source>
+        <translation>Воспроизводится %1</translation>
+    </message>
+    <message>
+        <source>Playing the route on %1. The previous position is not known and will not be restored.</source>
+        <translation>Маршрут воспроизводится на %1. Предыдущая позиция неизвестна и не будет восстановлена.</translation>
+    </message>
+    <message>
+        <source>Playing…</source>
+        <translation>Воспроизведение…</translation>
+    </message>
+    <message>
+        <source>Reading the route…</source>
+        <translation>Чтение маршрута…</translation>
+    </message>
+    <message>
+        <source>Repeat the route</source>
+        <translation>Повторять маршрут</translation>
+    </message>
+    <message>
+        <source>Resume</source>
+        <translation>Продолжить</translation>
+    </message>
+    <message>
+        <source>Route playback</source>
+        <translation>Воспроизведение маршрута</translation>
+    </message>
+    <message>
+        <source>Route playback reaches emulators only. A phone takes no mock location from here.</source>
+        <translation>Воспроизведение маршрута работает только на эмуляторах. Телефон не получает отсюда фиктивное местоположение.</translation>
+    </message>
+    <message>
+        <source>Speed · 1 is real time</source>
+        <translation>Скорость · 1 — реальное время</translation>
+    </message>
+    <message>
+        <source>Starting playback…</source>
+        <translation>Запуск воспроизведения…</translation>
+    </message>
+    <message>
+        <source>Stop</source>
+        <translation>Остановить</translation>
+    </message>
+    <message>
+        <source>Stopped. The last position stays on the emulator.</source>
+        <translation>Остановлено. Последняя позиция остаётся на эмуляторе.</translation>
+    </message>
+    <message>
+        <source>The emulator does not report its position, so the position before playback is unknown and is not restored. Set one in the preset&apos;s GPS field afterwards if you need it.</source>
+        <translation>Эмулятор не сообщает свою позицию, поэтому позиция до воспроизведения неизвестна и не восстанавливается. При необходимости задайте её потом в поле GPS пресета.</translation>
+    </message>
+    <message>
+        <source>point %1 of %2</source>
+        <translation>точка %1 из %2</translation>
+    </message>
+</context>
+<context>
+    <name>HandoffBanner</name>
+    <message>
+        <source>%1 · an agent is waiting for you</source>
+        <translation>%1 · агент ждёт вас</translation>
+    </message>
+    <message>
+        <source>%1 · an agent is waiting for you (%2 more)</source>
+        <translation>%1 · агент ждёт вас (ещё %2)</translation>
+    </message>
+    <message>
+        <source>Cancel</source>
+        <translation>Отмена</translation>
+    </message>
+    <message>
+        <source>Do it on the device itself. Tomacco never asks for your passcode or password.</source>
+        <translation>Сделайте это на самом устройстве. Tomacco никогда не запрашивает ваш код-пароль или пароль.</translation>
+    </message>
+    <message>
+        <source>Done</source>
+        <translation>Готово</translation>
+    </message>
+    <message>
+        <source>Done: I did it on the device</source>
+        <translation>Готово: я сделал это на устройстве</translation>
+    </message>
+</context>
+<context>
+    <name>HandoffModel</name>
+    <message>
+        <source>Face ID or Touch ID</source>
+        <translation>Face ID или Touch ID</translation>
+    </message>
+    <message>
+        <source>Passcode</source>
+        <translation>Код-пароль</translation>
+    </message>
+    <message>
+        <source>Permission</source>
+        <translation>Разрешение</translation>
+    </message>
+    <message>
+        <source>Purchase</source>
+        <translation>Покупка</translation>
+    </message>
+    <message>
+        <source>Sign-in</source>
+        <translation>Вход</translation>
+    </message>
+    <message>
+        <source>Your turn on the device</source>
+        <translation>Ваша очередь на устройстве</translation>
+    </message>
+</context>
+<context>
+    <name>MobileNav</name>
+    <message>
+        <source>Ctrl</source>
+        <translation>Ctrl</translation>
+    </message>
+    <message>
+        <source>More</source>
+        <comment>navigation</comment>
+        <translation>Ещё</translation>
     </message>
 </context>
 </TS>

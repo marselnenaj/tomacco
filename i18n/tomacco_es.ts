@@ -40,7 +40,7 @@
         <translation>1  Copiar la configuración.</translation>
     </message>
     <message>
-        <source>2  Paste it into your agent's MCP settings.</source>
+        <source>2  Paste it into your agent&apos;s MCP settings.</source>
         <translation>2  Pegarla en los ajustes MCP del agente.</translation>
     </message>
     <message>
@@ -445,11 +445,11 @@ El modelo determina la pantalla y el marco. Android procede de la imagen del sis
         <translation>Mostrar la lista de dispositivos</translation>
     </message>
     <message>
-        <source>Show every running device's screen side by side</source>
+        <source>Show every running device&apos;s screen side by side</source>
         <translation>Mostrar una junto a otra las pantallas de todos los dispositivos en marcha</translation>
     </message>
     <message>
-        <source>Accept Google's Android SDK licence for this download</source>
+        <source>Accept Google&apos;s Android SDK licence for this download</source>
         <translation>Aceptar la licencia del SDK de Android de Google para esta descarga</translation>
     </message>
     <message>
@@ -481,7 +481,7 @@ El modelo determina la pantalla y el marco. Android procede de la imagen del sis
         <translation>Disco: unos %1 para el emulador · %2 libres</translation>
     </message>
     <message>
-        <source>Download about %1 (estimate) · needs Google's SDK licence: %2</source>
+        <source>Download about %1 (estimate) · needs Google&apos;s SDK licence: %2</source>
         <translation>Descarga de unos %1 (estimación) · requiere la licencia del SDK de Google: %2</translation>
     </message>
     <message>
@@ -529,7 +529,7 @@ El modelo determina la pantalla y el marco. Android procede de la imagen del sis
         <translation>Leyendo el uso de disco…</translation>
     </message>
     <message>
-        <source>Rename and wipe need the emulator's name typed here</source>
+        <source>Rename and wipe need the emulator&apos;s name typed here</source>
         <translation>Renombrar y borrar requieren escribir aquí el nombre del emulador</translation>
     </message>
     <message>
@@ -565,7 +565,7 @@ El modelo determina la pantalla y el marco. Android procede de la imagen del sis
         <translation>Borrar datos de apps</translation>
     </message>
     <message>
-        <source>Wipe removes the apps, their data and the snapshots; the next start boots like a new device. The emulator's model and settings stay.</source>
+        <source>Wipe removes the apps, their data and the snapshots; the next start boots like a new device. The emulator&apos;s model and settings stay.</source>
         <translation>El borrado elimina las apps, sus datos y las instantáneas; el próximo inicio arranca como un dispositivo nuevo. El modelo y los ajustes del emulador se conservan.</translation>
     </message>
     <message>
@@ -881,15 +881,15 @@ El modelo determina la pantalla y el marco. Android procede de la imagen del sis
         <translation>Tomacco ya está abierto en otra ventana; los agentes siguen controlando esa. Para controlar también esta ventana, iníciala con --preview-session y otro nombre.</translation>
     </message>
     <message>
-        <source>Tomacco's control program (tomaccoctl) could not be started. Reinstall Tomacco or run install.py again.</source>
+        <source>Tomacco&apos;s control program (tomaccoctl) could not be started. Reinstall Tomacco or run install.py again.</source>
         <translation>No se pudo iniciar el programa de control de Tomacco (tomaccoctl). Reinstala Tomacco o vuelve a ejecutar install.py.</translation>
     </message>
     <message>
-        <source>Tomacco's control program (tomaccoctl) is not working: %1</source>
+        <source>Tomacco&apos;s control program (tomaccoctl) is not working: %1</source>
         <translation>El programa de control de Tomacco (tomaccoctl) no funciona: %1</translation>
     </message>
     <message>
-        <source>Tomacco's control program (tomaccoctl) was not found. Reinstall Tomacco or run install.py again.</source>
+        <source>Tomacco&apos;s control program (tomaccoctl) was not found. Reinstall Tomacco or run install.py again.</source>
         <translation>No se encontró el programa de control de Tomacco (tomaccoctl). Reinstala Tomacco o vuelve a ejecutar install.py.</translation>
     </message>
     <message>
@@ -1148,7 +1148,7 @@ El modelo determina la pantalla y el marco. Android procede de la imagen del sis
         <translation>Un programa en este equipo, inspeccionado con LLDB.</translation>
     </message>
     <message>
-        <source>Take over your agent's session</source>
+        <source>Take over your agent&apos;s session</source>
         <translation>Tomar la sesión del agente</translation>
     </message>
     <message>
@@ -1411,7 +1411,7 @@ El modelo determina la pantalla y el marco. Android procede de la imagen del sis
         <translation>Acoplar</translation>
     </message>
     <message>
-        <source>Edge swipes start on the frame or at the screen's edge</source>
+        <source>Edge swipes start on the frame or at the screen&apos;s edge</source>
         <translation>Los gestos de borde empiezan en el marco o en el borde de la pantalla</translation>
     </message>
     <message>
@@ -1609,7 +1609,7 @@ El modelo determina la pantalla y el marco. Android procede de la imagen del sis
         <translation>El dispositivo iOS virtual admite un paquete .app compilado para iOS arm64.</translation>
     </message>
     <message>
-        <source>Set up the virtual iOS device's profile before adding apps.</source>
+        <source>Set up the virtual iOS device&apos;s profile before adding apps.</source>
         <translation>Configura el perfil del dispositivo iOS virtual antes de añadir apps.</translation>
     </message>
     <message>
@@ -1663,7 +1663,7 @@ El modelo determina la pantalla y el marco. Android procede de la imagen del sis
         <translation>Se aplica a partir del próximo inicio.</translation>
     </message>
     <message>
-        <source>Your own arm64 .app bundles. Each start installs them together with the device's helper tools. Changes apply from the next start.</source>
+        <source>Your own arm64 .app bundles. Each start installs them together with the device&apos;s helper tools. Changes apply from the next start.</source>
         <translation>Paquetes .app arm64 propios. Cada inicio los instala junto con las herramientas auxiliares del dispositivo. Los cambios se aplican a partir del próximo inicio.</translation>
     </message>
     <message>
@@ -1747,7 +1747,7 @@ El modelo determina la pantalla y el marco. Android procede de la imagen del sis
         <translation>Error al leer el estado del controlador: %1</translation>
     </message>
     <message>
-        <source>For controller development: Apple's original firmware runs alone on a simulated ARM processor. The simulated controller still rests on unconfirmed hardware guesses; the firmware's services and its connection to iOS are not verified.</source>
+        <source>For controller development: Apple&apos;s original firmware runs alone on a simulated ARM processor. The simulated controller still rests on unconfirmed hardware guesses; the firmware&apos;s services and its connection to iOS are not verified.</source>
         <translation>Para el desarrollo del controlador: el firmware original de Apple se ejecuta solo en un procesador ARM simulado. El controlador simulado aún se basa en suposiciones de hardware no confirmadas; los servicios del firmware y su conexión con iOS no están verificados.</translation>
     </message>
     <message>
@@ -1887,7 +1887,7 @@ El modelo determina la pantalla y el marco. Android procede de la imagen del sis
         <translation>Ruta a un directorio .app (arm64)</translation>
     </message>
     <message>
-        <source>Addresses 0x1000000 to 0x11fffff of the firmware's memory. Reading checks the saved copy; the firmware is not run again for it.</source>
+        <source>Addresses 0x1000000 to 0x11fffff of the firmware&apos;s memory. Reading checks the saved copy; the firmware is not run again for it.</source>
         <translation>Direcciones 0x1000000 a 0x11fffff de la memoria del firmware. La lectura consulta la copia guardada; el firmware no se vuelve a ejecutar para ello.</translation>
     </message>
     <message>
@@ -1931,7 +1931,7 @@ El modelo determina la pantalla y el marco. Android procede de la imagen del sis
         <translation>Listo para una ejecución de prueba</translation>
     </message>
     <message>
-        <source>Actual image from the start-up screen · not yet the device's main display</source>
+        <source>Actual image from the start-up screen · not yet the device&apos;s main display</source>
         <translation>Imagen real de la pantalla de arranque · aún no es la pantalla principal del dispositivo</translation>
     </message>
     <message>
@@ -1959,7 +1959,7 @@ El modelo determina la pantalla y el marco. Android procede de la imagen del sis
         <translation>Ejecución %1 · %2</translation>
     </message>
     <message>
-        <source>Run iOS, or the iPhone's power-management firmware on its own, directly on Linux. Each run writes its own report; runs started from the command line or by an agent appear here too.</source>
+        <source>Run iOS, or the iPhone&apos;s power-management firmware on its own, directly on Linux. Each run writes its own report; runs started from the command line or by an agent appear here too.</source>
         <translation>Ejecutar iOS, o solo el firmware de gestión de energía del iPhone, directamente en Linux. Cada ejecución escribe su propio informe; las ejecuciones iniciadas desde la línea de comandos o por un agente también aparecen aquí.</translation>
     </message>
     <message>
@@ -1967,7 +1967,7 @@ El modelo determina la pantalla y el marco. Android procede de la imagen del sis
         <translation>Ejecución finalizada</translation>
     </message>
     <message>
-        <source>Save a copy of the firmware's memory with the report (2 MiB)</source>
+        <source>Save a copy of the firmware&apos;s memory with the report (2 MiB)</source>
         <translation>Guardar una copia de la memoria del firmware con el informe (2 MiB)</translation>
     </message>
     <message>
@@ -2249,11 +2249,11 @@ El modelo determina la pantalla y el marco. Android procede de la imagen del sis
         <translation>deteniendo…</translation>
     </message>
     <message>
-        <source>the device's helper tools are too old for this (before build 368)</source>
+        <source>the device&apos;s helper tools are too old for this (before build 368)</source>
         <translation>las herramientas auxiliares del dispositivo son demasiado antiguas para esto (anteriores a la compilación 368)</translation>
     </message>
     <message>
-        <source>this computer's time zone has no standard name such as Europe/Vienna</source>
+        <source>this computer&apos;s time zone has no standard name such as Europe/Vienna</source>
         <translation>la zona horaria de este equipo no tiene un nombre estándar como Europe/Vienna</translation>
     </message>
     <message>
@@ -2625,7 +2625,7 @@ F12                        Inspector web</translation>
         <translation>HERRAMIENTAS</translation>
     </message>
     <message>
-        <source>The layout preview uses Chromium. Build and run native Android and iOS apps from the workspace on an emulator or a connected device. The profiles contain the manufacturers' resolutions and approximated bodies, cutouts and safe areas. CSS env(safe-area-inset-*) and Safari are not emulated here.</source>
+        <source>The layout preview uses Chromium. Build and run native Android and iOS apps from the workspace on an emulator or a connected device. The profiles contain the manufacturers&apos; resolutions and approximated bodies, cutouts and safe areas. CSS env(safe-area-inset-*) and Safari are not emulated here.</source>
         <translation>La vista previa de diseño usa Chromium. Las apps nativas de Android e iOS se compilan y ejecutan desde el área de trabajo en un emulador o un dispositivo conectado. Los perfiles contienen las resoluciones de los fabricantes y carcasas, recortes y áreas seguras aproximados. CSS env(safe-area-inset-*) y Safari no se emulan aquí.</translation>
     </message>
     <message>
@@ -2685,7 +2685,7 @@ F12                        Inspector web</translation>
         <translation>El SDK de iOS aún no está configurado</translation>
     </message>
     <message>
-        <source>xtool builds and signs SwiftPM apps for iOS. This needs Apple's SDK from Xcode and a separate sign-in for signing.</source>
+        <source>xtool builds and signs SwiftPM apps for iOS. This needs Apple&apos;s SDK from Xcode and a separate sign-in for signing.</source>
         <translation>xtool compila y firma apps SwiftPM para iOS. Para ello se necesitan el SDK de Apple incluido en Xcode y un inicio de sesión aparte para la firma.</translation>
     </message>
     <message>
@@ -2913,7 +2913,7 @@ xtool setup</translation>
         <translation>Un iPhone instala un único archivo .ipa firmado.</translation>
     </message>
     <message>
-        <source>Apps for the Mac's simulator are installed with Apple's tools.</source>
+        <source>Apps for the Mac&apos;s simulator are installed with Apple&apos;s tools.</source>
         <translation>Las apps para el simulador del Mac se instalan con las herramientas de Apple.</translation>
     </message>
     <message>
@@ -3156,7 +3156,7 @@ xtool setup</translation>
         <translation>Archivos</translation>
     </message>
     <message>
-        <source>First click into the app's text field. This text is pasted through the device clipboard.</source>
+        <source>First click into the app&apos;s text field. This text is pasted through the device clipboard.</source>
         <translation>Haz clic antes en el campo de texto de la app. Este texto se pega a través del portapapeles del dispositivo.</translation>
     </message>
     <message>
@@ -3278,7 +3278,7 @@ SSH usa tus claves existentes y la identidad de host conocida.</translation>
         <translation>Emparejar dispositivo</translation>
     </message>
     <message>
-        <source>Play the app's sound on this computer</source>
+        <source>Play the app&apos;s sound on this computer</source>
         <translation>Reproducir el sonido de la app en este equipo</translation>
     </message>
     <message>
@@ -3609,7 +3609,7 @@ SSH usa tus claves existentes y la identidad de host conocida.</translation>
         <translation>Guardar el archivo actual</translation>
     </message>
     <message>
-        <source>Search the project's source code</source>
+        <source>Search the project&apos;s source code</source>
         <translation>Buscar en el código fuente del proyecto</translation>
     </message>
     <message>
@@ -3733,7 +3733,7 @@ SSH usa tus claves existentes y la identidad de host conocida.</translation>
         <translation>Otro equipo</translation>
     </message>
     <message>
-        <source>Appearance, language, notifications, updates and the device view's choices, as a JSON file. Paths, window sizes and history stay on this computer.</source>
+        <source>Appearance, language, notifications, updates and the device view&apos;s choices, as a JSON file. Paths, window sizes and history stay on this computer.</source>
         <translation>Apariencia, idioma, notificaciones, actualizaciones y las opciones de la vista del dispositivo, como archivo JSON. Las rutas, los tamaños de ventana y el historial permanecen en este equipo.</translation>
     </message>
     <message>
@@ -3951,7 +3951,7 @@ SSH usa tus claves existentes y la identidad de host conocida.</translation>
         <translation>Nombre, p. ej. pruebas o depuración</translation>
     </message>
     <message>
-        <source>Restarting AirPlay. Then choose Tomacco again in the iPhone's Screen Mirroring.</source>
+        <source>Restarting AirPlay. Then choose Tomacco again in the iPhone&apos;s Screen Mirroring.</source>
         <translation>Reiniciando AirPlay. Después, selecciona Tomacco de nuevo en Duplicar pantalla del iPhone.</translation>
     </message>
     <message>
@@ -3985,6 +3985,30 @@ SSH usa tus claves existentes y la identidad de host conocida.</translation>
     <message>
         <source>Start AirPlay</source>
         <translation>Iniciar AirPlay</translation>
+    </message>
+    <message>
+        <source>An agent is waiting for you: %1</source>
+        <translation>Un agente te está esperando: %1</translation>
+    </message>
+    <message>
+        <source>In use elsewhere</source>
+        <translation>En uso en otro lugar</translation>
+    </message>
+    <message>
+        <source>Reconnecting</source>
+        <translation>Reconectando</translation>
+    </message>
+    <message>
+        <source>Screenshot saved</source>
+        <translation>Captura de pantalla guardada</translation>
+    </message>
+    <message>
+        <source>Show file</source>
+        <translation>Mostrar archivo</translation>
+    </message>
+    <message>
+        <source>Your turn</source>
+        <translation>Te toca</translation>
     </message>
 </context>
 <context>
@@ -5085,6 +5109,62 @@ SSH usa tus claves existentes y la identidad de host conocida.</translation>
         <source>Set up emulator</source>
         <translation>Configurar emulador</translation>
     </message>
+    <message>
+        <source>Ask the person to act</source>
+        <translation>Pedir a la persona que actúe</translation>
+    </message>
+    <message>
+        <source>Draft a bug report</source>
+        <translation>Redactar un informe de error</translation>
+    </message>
+    <message>
+        <source>List handoffs</source>
+        <translation>Listar traspasos</translation>
+    </message>
+    <message>
+        <source>Observe a session</source>
+        <translation>Observar una sesión</translation>
+    </message>
+    <message>
+        <source>Ordered input batch</source>
+        <translation>Lote ordenado de entradas</translation>
+    </message>
+    <message>
+        <source>Read a handoff</source>
+        <translation>Leer un traspaso</translation>
+    </message>
+    <message>
+        <source>The person is done</source>
+        <translation>La persona ha terminado</translation>
+    </message>
+    <message>
+        <source>Timestamped gesture trace</source>
+        <translation>Traza de gestos con marcas de tiempo</translation>
+    </message>
+    <message>
+        <source>Wait for the person</source>
+        <translation>Esperar a la persona</translation>
+    </message>
+    <message>
+        <source>Withdraw a handoff</source>
+        <translation>Retirar un traspaso</translation>
+    </message>
+    <message>
+        <source>Find a device by name</source>
+        <translation>Buscar un dispositivo por nombre</translation>
+    </message>
+    <message>
+        <source>Play a GPX route</source>
+        <translation>Reproducir una ruta GPX</translation>
+    </message>
+    <message>
+        <source>Read a GPX route</source>
+        <translation>Leer una ruta GPX</translation>
+    </message>
+    <message>
+        <source>Route playback status</source>
+        <translation>Estado de la reproducción de ruta</translation>
+    </message>
 </context>
 <context>
     <name>ProfileWorkspace</name>
@@ -5704,7 +5784,7 @@ SSH usa tus claves existentes y la identidad de host conocida.</translation>
         <translation>Todo lo que puede hacer el agente, como un formulario para rellenar.</translation>
     </message>
     <message>
-        <source>Pause your app and see what it's doing.</source>
+        <source>Pause your app and see what it&apos;s doing.</source>
         <translation>Pausa la app y mira qué está haciendo.</translation>
     </message>
     <message>
@@ -5716,7 +5796,7 @@ SSH usa tus claves existentes y la identidad de host conocida.</translation>
         <translation>Descubre en qué se va el tiempo y detecta regresiones.</translation>
     </message>
     <message>
-        <source>Search, edit and save your project's files.</source>
+        <source>Search, edit and save your project&apos;s files.</source>
         <translation>Buscar, editar y guardar los archivos del proyecto.</translation>
     </message>
     <message>
@@ -5756,7 +5836,7 @@ SSH usa tus claves existentes y la identidad de host conocida.</translation>
         <translation>Conecta un teléfono con la depuración USB activada o inicia un emulador.</translation>
     </message>
     <message>
-        <source>Build or test from the project. Your agent's jobs show up here too, with logs and results.</source>
+        <source>Build or test from the project. Your agent&apos;s jobs show up here too, with logs and results.</source>
         <translation>Compila o prueba desde el proyecto. Las tareas del agente también aparecen aquí, con registros y resultados.</translation>
     </message>
     <message>
@@ -5932,6 +6012,10 @@ SSH usa tus claves existentes y la identidad de host conocida.</translation>
         <source>Turn a screen recording into a video with a 3D device.</source>
         <translation>Convierte una grabación de pantalla en un vídeo con un dispositivo 3D.</translation>
     </message>
+    <message>
+        <source>All jobs</source>
+        <translation>Todas las tareas</translation>
+    </message>
 </context>
 <context>
     <name>main</name>
@@ -5986,7 +6070,7 @@ Licensed under the GNU General Public License, version 2 or later.</source>
 Con licencia GNU General Public License, versión 2 o posterior.</translation>
     </message>
     <message>
-        <source>Run the preview's interactive checks</source>
+        <source>Run the preview&apos;s interactive checks</source>
         <translation>Ejecutar las comprobaciones interactivas de la vista previa</translation>
     </message>
     <message>
@@ -6141,7 +6225,7 @@ Con licencia GNU General Public License, versión 2 o posterior.</translation>
         <translation>Comprobar ahora</translation>
     </message>
     <message>
-        <source>What's new ↗</source>
+        <source>What&apos;s new ↗</source>
         <translation>Novedades ↗</translation>
     </message>
     <message>
@@ -6958,7 +7042,7 @@ Con licencia GNU General Public License, versión 2 o posterior.</translation>
         <translation>Plan para %1 (%2) · revisión del ajuste %3</translation>
     </message>
     <message>
-        <source>TalkBack here switches the screen reader on the device and keeps your other accessibility services. It does not show that your app works with a screen reader; the accessibility audit only checks the screen's structure.</source>
+        <source>TalkBack here switches the screen reader on the device and keeps your other accessibility services. It does not show that your app works with a screen reader; the accessibility audit only checks the screen&apos;s structure.</source>
         <translation>Aquí TalkBack activa o desactiva el lector de pantalla del dispositivo y conserva tus otros servicios de accesibilidad. No demuestra que tu app funcione con un lector de pantalla; la auditoría de accesibilidad solo revisa la estructura de la pantalla.</translation>
     </message>
     <message>
@@ -6976,6 +7060,176 @@ Con licencia GNU General Public License, versión 2 o posterior.</translation>
     <message>
         <source>Keep preset</source>
         <translation>Conservar ajuste</translation>
+    </message>
+    <message>
+        <source>%1 points, %2 km, %3 min recorded</source>
+        <translation>%1 puntos, %2 km, %3 min grabados</translation>
+    </message>
+    <message>
+        <source>%1 points, %2 km, no times: one point per second</source>
+        <translation>%1 puntos, %2 km, sin tiempos: un punto por segundo</translation>
+    </message>
+    <message>
+        <source>Change route…</source>
+        <translation>Cambiar ruta…</translation>
+    </message>
+    <message>
+        <source>Choose a GPX file…</source>
+        <translation>Elegir un archivo GPX…</translation>
+    </message>
+    <message>
+        <source>Finished. The last position stays on the emulator.</source>
+        <translation>Terminado. La última posición se queda en el emulador.</translation>
+    </message>
+    <message>
+        <source>GPX route (*.gpx)</source>
+        <translation>Ruta GPX (*.gpx)</translation>
+    </message>
+    <message>
+        <source>No route chosen</source>
+        <translation>Ninguna ruta elegida</translation>
+    </message>
+    <message>
+        <source>Pause</source>
+        <translation>Pausa</translation>
+    </message>
+    <message>
+        <source>Paused at %1</source>
+        <translation>En pausa en %1</translation>
+    </message>
+    <message>
+        <source>Play a GPX route on the chosen emulator&apos;s location. Timed points keep their timing; untimed points play one per second.</source>
+        <translation>Reproduce una ruta GPX en la ubicación del emulador elegido. Los puntos con hora mantienen su ritmo; los puntos sin hora avanzan uno por segundo.</translation>
+    </message>
+    <message>
+        <source>Play route</source>
+        <translation>Reproducir ruta</translation>
+    </message>
+    <message>
+        <source>Playback ended: %1</source>
+        <translation>Reproducción terminada: %1</translation>
+    </message>
+    <message>
+        <source>Playing %1</source>
+        <translation>Reproduciendo %1</translation>
+    </message>
+    <message>
+        <source>Playing the route on %1. The previous position is not known and will not be restored.</source>
+        <translation>Reproduciendo la ruta en %1. La posición anterior no se conoce y no se restaurará.</translation>
+    </message>
+    <message>
+        <source>Playing…</source>
+        <translation>Reproduciendo…</translation>
+    </message>
+    <message>
+        <source>Reading the route…</source>
+        <translation>Leyendo la ruta…</translation>
+    </message>
+    <message>
+        <source>Repeat the route</source>
+        <translation>Repetir la ruta</translation>
+    </message>
+    <message>
+        <source>Resume</source>
+        <translation>Reanudar</translation>
+    </message>
+    <message>
+        <source>Route playback</source>
+        <translation>Reproducción de ruta</translation>
+    </message>
+    <message>
+        <source>Route playback reaches emulators only. A phone takes no mock location from here.</source>
+        <translation>La reproducción de rutas solo llega a los emuladores. Un teléfono no recibe ubicaciones simuladas desde aquí.</translation>
+    </message>
+    <message>
+        <source>Speed · 1 is real time</source>
+        <translation>Velocidad · 1 es tiempo real</translation>
+    </message>
+    <message>
+        <source>Starting playback…</source>
+        <translation>Iniciando la reproducción…</translation>
+    </message>
+    <message>
+        <source>Stop</source>
+        <translation>Detener</translation>
+    </message>
+    <message>
+        <source>Stopped. The last position stays on the emulator.</source>
+        <translation>Detenido. La última posición se queda en el emulador.</translation>
+    </message>
+    <message>
+        <source>The emulator does not report its position, so the position before playback is unknown and is not restored. Set one in the preset&apos;s GPS field afterwards if you need it.</source>
+        <translation>El emulador no informa de su posición, así que la posición previa a la reproducción es desconocida y no se restaura. Si la necesitas, fíjala después en el campo GPS del preajuste.</translation>
+    </message>
+    <message>
+        <source>point %1 of %2</source>
+        <translation>punto %1 de %2</translation>
+    </message>
+</context>
+<context>
+    <name>HandoffBanner</name>
+    <message>
+        <source>%1 · an agent is waiting for you</source>
+        <translation>%1 · un agente te está esperando</translation>
+    </message>
+    <message>
+        <source>%1 · an agent is waiting for you (%2 more)</source>
+        <translation>%1 · un agente te está esperando (%2 más)</translation>
+    </message>
+    <message>
+        <source>Cancel</source>
+        <translation>Cancelar</translation>
+    </message>
+    <message>
+        <source>Do it on the device itself. Tomacco never asks for your passcode or password.</source>
+        <translation>Hazlo en el propio dispositivo. Tomacco nunca te pide el código ni la contraseña.</translation>
+    </message>
+    <message>
+        <source>Done</source>
+        <translation>Hecho</translation>
+    </message>
+    <message>
+        <source>Done: I did it on the device</source>
+        <translation>Hecho: lo he hecho en el dispositivo</translation>
+    </message>
+</context>
+<context>
+    <name>HandoffModel</name>
+    <message>
+        <source>Face ID or Touch ID</source>
+        <translation>Face ID o Touch ID</translation>
+    </message>
+    <message>
+        <source>Passcode</source>
+        <translation>Código de acceso</translation>
+    </message>
+    <message>
+        <source>Permission</source>
+        <translation>Permiso</translation>
+    </message>
+    <message>
+        <source>Purchase</source>
+        <translation>Compra</translation>
+    </message>
+    <message>
+        <source>Sign-in</source>
+        <translation>Inicio de sesión</translation>
+    </message>
+    <message>
+        <source>Your turn on the device</source>
+        <translation>Te toca en el dispositivo</translation>
+    </message>
+</context>
+<context>
+    <name>MobileNav</name>
+    <message>
+        <source>Ctrl</source>
+        <translation>Ctrl</translation>
+    </message>
+    <message>
+        <source>More</source>
+        <comment>navigation</comment>
+        <translation>Más</translation>
     </message>
 </context>
 </TS>

@@ -234,14 +234,6 @@ The model determines the display and frame. Android comes from the chosen system
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>Install Android system</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Installed Android system</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
         <source>Memory (MB)</source>
         <translation type="unfinished"></translation>
     </message>
@@ -451,6 +443,170 @@ The model determines the display and frame. Android comes from the chosen system
     </message>
     <message>
         <source>Show every running device&apos;s screen side by side</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Accept Google&apos;s Android SDK licence for this download</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Android system image</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>App data removed · %1 freed · the next start boots like a new device</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Cannot start: %1</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Checking…</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Copying device…</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Copying…</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Disk: about %1 for the emulator · %2 free</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Download about %1 (estimate) · needs Google&apos;s SDK licence: %2</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Download and create</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Duplicate</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Duplicate copies the emulator with its apps and data under the new name, as a job you can cancel. Rename is a real rename of the emulator through the Android SDK; the nickname moves along. A nickname alone is set with the pencil button.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Duplicate, rename or wipe this emulator</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Letters, digits, - and _</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Manage</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Manage emulator</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>New name</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>On disk: %1 · a wipe frees %2</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Pick an installed image, or type another package: it is downloaded as the first step. Tomacco creates phone, foldable and tablet emulators.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Reading disk usage…</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Rename and wipe need the emulator&apos;s name typed here</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Renamed to %1</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Renaming…</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Start the emulator when it is ready</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Steps: %1</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>System image installed · no download</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>TV, Wear, Automotive and XR images are not supported yet</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>The emulator is on or its lock files exist. Turn it off first; nothing here changes a running emulator.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Wipe app data</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Wipe removes the apps, their data and the snapshots; the next start boots like a new device. The emulator&apos;s model and settings stay.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Wiping…</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>already accepted</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>apply model</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>create</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>install image</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>is missing</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>not enough free space</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>not yet accepted</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>start</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>the Android SDK</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>the name is taken</source>
         <translation type="unfinished"></translation>
     </message>
 </context>
@@ -3825,6 +3981,30 @@ SSH uses your existing keys and the known host identity.</source>
         <source>Start AirPlay</source>
         <translation type="unfinished"></translation>
     </message>
+    <message>
+        <source>An agent is waiting for you: %1</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>In use elsewhere</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Reconnecting</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Screenshot saved</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Show file</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Your turn</source>
+        <translation type="unfinished"></translation>
+    </message>
 </context>
 <context>
     <name>Operations</name>
@@ -4924,6 +5104,62 @@ SSH uses your existing keys and the known host identity.</source>
         <source>Set up emulator</source>
         <translation type="unfinished"></translation>
     </message>
+    <message>
+        <source>Ask the person to act</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Draft a bug report</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>List handoffs</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Observe a session</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Ordered input batch</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Read a handoff</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>The person is done</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Timestamped gesture trace</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Wait for the person</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Withdraw a handoff</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Find a device by name</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Play a GPX route</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Read a GPX route</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Route playback status</source>
+        <translation type="unfinished"></translation>
+    </message>
 </context>
 <context>
     <name>ProfileWorkspace</name>
@@ -5770,6 +6006,10 @@ SSH uses your existing keys and the known host identity.</source>
     </message>
     <message>
         <source>Turn a screen recording into a video with a 3D device.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>All jobs</source>
         <translation type="unfinished"></translation>
     </message>
 </context>
@@ -6806,6 +7046,176 @@ Licensed under the GNU General Public License, version 2 or later.</source>
     </message>
     <message>
         <source>Keep preset</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>%1 points, %2 km, %3 min recorded</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>%1 points, %2 km, no times: one point per second</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Change route…</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Choose a GPX file…</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Finished. The last position stays on the emulator.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>GPX route (*.gpx)</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>No route chosen</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Pause</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Paused at %1</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Play a GPX route on the chosen emulator&apos;s location. Timed points keep their timing; untimed points play one per second.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Play route</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Playback ended: %1</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Playing %1</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Playing the route on %1. The previous position is not known and will not be restored.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Playing…</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Reading the route…</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Repeat the route</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Resume</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Route playback</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Route playback reaches emulators only. A phone takes no mock location from here.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Speed · 1 is real time</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Starting playback…</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Stop</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Stopped. The last position stays on the emulator.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>The emulator does not report its position, so the position before playback is unknown and is not restored. Set one in the preset&apos;s GPS field afterwards if you need it.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>point %1 of %2</source>
+        <translation type="unfinished"></translation>
+    </message>
+</context>
+<context>
+    <name>HandoffBanner</name>
+    <message>
+        <source>%1 · an agent is waiting for you</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>%1 · an agent is waiting for you (%2 more)</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Cancel</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Do it on the device itself. Tomacco never asks for your passcode or password.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Done</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Done: I did it on the device</source>
+        <translation type="unfinished"></translation>
+    </message>
+</context>
+<context>
+    <name>HandoffModel</name>
+    <message>
+        <source>Face ID or Touch ID</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Passcode</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Permission</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Purchase</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Sign-in</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Your turn on the device</source>
+        <translation type="unfinished"></translation>
+    </message>
+</context>
+<context>
+    <name>MobileNav</name>
+    <message>
+        <source>Ctrl</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>More</source>
+        <comment>navigation</comment>
         <translation type="unfinished"></translation>
     </message>
 </context>
