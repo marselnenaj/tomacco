@@ -13,7 +13,8 @@ StudioDialog {
     modal: true
     property var steps: []
     property bool checking: false
-    property bool copied: false
+    // Connect opens the agent picker (NativeWorkspace.connectAgent).
+    signal connectRequested()
     property int request: -1
     // The doctor's steps say what to run for an agent; these say what it means for a person.
     function plain(step) {
@@ -29,7 +30,7 @@ StudioDialog {
         checking=true;steps=[]
         request=Agent.request("doctor",{})
     }
-    onAboutToShow: {copied=false;Studio.saveSetting("onboarding/shown",true);check()}
+    onAboutToShow: {Studio.saveSetting("onboarding/shown",true);check()}
     Connections {
         target: Agent
         function onApiFinished(id,op,response) {
@@ -62,13 +63,12 @@ StudioDialog {
                 Layout.fillWidth: true; spacing: Theme.gapSm
                 StudioButton {
                     objectName: "onboardingConnect"; accent: true
-                    text: sheet.copied ? qsTr("Copied") : qsTr("Connect your coding agent")
-                    iconName: sheet.copied ? "check" : "copy"
-                    onClicked: {Studio.copy(JSON.stringify({mcpServers:{[Agent.cliPath.split("/").pop()]:{command:Agent.cliPath,args:["mcp"]}}},null,2));sheet.copied=true}
+                    text: qsTr("Connect your coding agent")
+                    iconName: "plus"
+                    onClicked: sheet.connectRequested()
                 }
                 StudioButton {objectName:"onboardingSkip";text:qsTr("Skip");quiet:true;onClicked:sheet.close()}
             }
-            Text {objectName:"onboardingCopied";Layout.fillWidth:true;visible:sheet.copied;text:qsTr("The MCP configuration is on the clipboard. Paste it into your agent's MCP settings.");color:Theme.muted;font.pixelSize:Theme.fontSmall;wrapMode:Text.WordWrap}
         }
     }
 }

@@ -4389,6 +4389,46 @@ for line in sys.stdin:
         workspace->setProperty("status",QString());workspace->setProperty("failed",false);
         QVERIFY2(qmlErrors.isEmpty(),qPrintable(qmlErrors.join('\n')));
     }
+    void jobs_on_a_phone_are_rows_that_open_the_job_and_go_back() {
+        // Below 600 logical px the job list is phone rows (Bogen "Mobile / Row", 56 px or more,
+        // nothing cut at the side); a tap opens the job full width, "All jobs" goes back.
+        open("jobs");
+        const double now=QDateTime::currentSecsSinceEpoch();
+        const QVariantMap failed{{"id","phone-failed"},{"label","Build Android · debug, a long label that has to wrap on a phone"},{"state","failed"},{"created",now-900},{"updated",now-780},{"plan",QVariantMap{{"exclusive",directory.filePath("project")}}},{"log_path","/nonexistent/phone-failed.log"}};
+        const QVariantMap done{{"id","phone-done"},{"label","Install app"},{"state","succeeded"},{"created",now-4000},{"updated",now-3990},{"plan",QVariantMap{{"exclusive",""}}}};
+        for(int width:{360,393,412}) {
+            window->resize(width,852);QTest::qWait(60);
+            QTRY_VERIFY(workspace->property("phone").toBool());
+            // The window polls job.list; these fixture jobs are set again after each resize.
+            workspace->setProperty("jobs",QVariantList{failed,done});
+            QTRY_VERIFY(item("jobRow-phone-failed") && item("jobRow-phone-failed")->isVisible());
+            auto *row=item("jobRow-phone-failed");
+            QVERIFY2(visualItem(row,"rowTitle"),"phone rows are MobileRow");
+            QVERIFY(row->height()>=56);
+            QCOMPARE(row->property("project").toString(),QString("project"));
+            const auto r=row->mapRectToScene(QRectF(0,0,row->width(),row->height()));
+            QVERIFY2(r.left()>=-0.5 && r.right()<=width+0.5,qPrintable(QString("%1: %2..%3").arg(width).arg(r.left()).arg(r.right())));
+            auto *title=visualItem(row,"rowTitle");QVERIFY(title->property("lineCount").toInt()>=1);
+            QTest::mouseClick(window,Qt::LeftButton,Qt::NoModifier,r.center().toPoint());
+            QTRY_COMPARE(workspace->property("selectedJob").toString(),QString("phone-failed"));
+            QTRY_VERIFY(!item("jobListColumn")->isVisible());
+            auto *back=item("jobBack");QVERIFY(back && back->isVisible());
+            // 48 px touch target for this in-page back button is still open (docs/finish-progress.json).
+            QVERIFY(back->height()>=30);
+            // Back by keyboard (Space on the focused button): reachable without a pointer, too.
+            back->forceActiveFocus();QTRY_VERIFY(back->hasActiveFocus());QTest::keyClick(window,Qt::Key_Space);
+            QTRY_COMPARE(workspace->property("selectedJob").toString(),QString());
+            workspace->setProperty("jobs",QVariantList{failed,done}); // the poll may have emptied the list meanwhile
+            QTRY_VERIFY(item("jobListColumn")->isVisible());
+        }
+        // Back to a desktop width: the compact desktop rows again.
+        window->resize(1380,970);QTest::qWait(60);
+        QTRY_VERIFY(!workspace->property("phone").toBool());
+        workspace->setProperty("jobs",QVariantList{failed,done});
+        QTRY_VERIFY(item("jobRow-phone-failed") && !visualItem(item("jobRow-phone-failed"),"rowTitle"));
+        workspace->setProperty("selectedJob",QString());workspace->setProperty("activeJob",QVariantMap{});workspace->setProperty("jobs",QVariantList{});
+        QVERIFY2(qmlErrors.isEmpty(),qPrintable(qmlErrors.join('\n')));
+    }
     void a_job_that_ends_in_the_background_is_notified() {
         // A job that ran a while and ends while no window of the app is active becomes a desktop
         // notification (here only the signal: the offscreen test platform sends none); clicking it
@@ -4612,12 +4652,34 @@ for line in sys.stdin:
         const auto steps=sheet->property("steps").toStringList();
         QCOMPARE(item("onboardingReady")->isVisible(),steps.isEmpty());
         for(const auto &step:steps)QVERIFY2(!step.contains("tomaccoctl setup --yes") && !step.contains("pacman"),qPrintable(step));
-        // Connect copies the MCP configuration.
-        QGuiApplication::clipboard()->clear();
+        // Connect opens the agent picker: every client setup knows, from the real
+        // `tomaccoctl setup agents status --json` in this test's own HOME, each
+        // with its own text. Nothing is written by looking.
         clickItem("onboardingConnect");
+        auto *agents=object("agentClientDialog");QVERIFY(agents);
+        QTRY_VERIFY(agents->property("visible").toBool());
+        auto *picker=item("agentClientPicker");QVERIFY(picker);
+        QTRY_VERIFY_WITH_TIMEOUT(picker->property("clients").toList().size()>=10,patient(30000));
+        QCOMPARE(picker->property("error").toString(),QString());
+        QStringList ids;for(const auto &c:picker->property("clients").toList())ids<<c.toMap().value("id").toString();
+        for(const char *id:{"claude-code","codex","gemini-cli","cursor","vscode","zed","opencode","grok-cli","hermes","omp"})
+            QVERIFY2(ids.contains(QString::fromLatin1(id)),id);
+        QGuiApplication::clipboard()->clear();
+        clickItem("agentClient-claude-code");QTRY_COMPARE(picker->property("selected").toString(),QString("claude-code"));
+        clickItem("agentClientCopy");
+        QTRY_VERIFY(QGuiApplication::clipboard()->text().startsWith("claude mcp add"));
+        QVERIFY(QGuiApplication::clipboard()->text().contains(control->cliPath()));
+        clickItem("agentClient-gemini-cli");
+        QTRY_COMPARE(picker->property("selected").toString(),QString("gemini-cli"));
+        {   // Connect is offered only where setup would add or update Tomacco's own entry.
+            const auto current=picker->property("current").toMap();
+            const bool offer=current.value("found").toBool() && QStringList{"absent","not_connected","outdated"}.contains(current.value("state").toString());
+            QCOMPARE(item("agentClientSetUp")->isVisible(),offer);
+        }
+        clickItem("agentClientCopy");
         QTRY_VERIFY(QGuiApplication::clipboard()->text().contains("\"mcpServers\""));
         QVERIFY(QGuiApplication::clipboard()->text().contains(control->cliPath()));
-        QVERIFY(item("onboardingCopied")->isVisible());
+        clickItem("agentClientDialogClose");QTRY_VERIFY(!agents->property("visible").toBool());
         clickItem("onboardingSkip");QTRY_VERIFY(!sheet->property("visible").toBool());
         // Not again by itself, nor as a new version's sheet.
         QVERIFY(QMetaObject::invokeMethod(view,"startupSheets",Q_ARG(QVariant,true)));QTest::qWait(50);

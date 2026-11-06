@@ -32,6 +32,11 @@ public:
     Q_INVOKABLE int request(const QString &operation, const QVariantMap &arguments={});
     Q_INVOKABLE void complete(int requestId, const QVariant &result, const QString &error={});
     Q_INVOKABLE QVariantMap captureWindow(QObject *window, const QString &path, double scale=1);
+    // The coding agents setup knows (tomaccoctl setup agents --json): action is
+    // status (reads only), setup (adds or updates Tomacco's own entry, with a
+    // backup) or remove (removes only the entry setup owns); client limits it
+    // to one id. Answers agentClientsFinished with the JSON report.
+    Q_INVOKABLE bool agentClients(const QString &action=QStringLiteral("status"), const QString &client={});
     // The environment of the tomaccoctl processes this window starts.
     static QProcessEnvironment personEnvironment();
 signals:
@@ -41,6 +46,8 @@ signals:
     void previewRequest(int requestId, const QString &method, const QVariantMap &parameters);
     // A preview request answered: error is empty when it worked.
     void previewFinished(int requestId, const QString &error);
+    // The report of agentClients(); error is empty when the program answered.
+    void agentClientsFinished(const QString &action, const QString &client, const QVariantMap &report, const QString &error);
 private:
     void accept();
     void spawn(int requestId, const QString &operation, const QVariantMap &arguments);

@@ -82,7 +82,7 @@ target_compile_definitions(tomacco PRIVATE TOMACCO_VERSION="${PROJECT_VERSION}")
 set(TOMACCO_QML_RESOURCES
     qml/StudioScrollView.qml qml/StudioScrollBar.qml qml/AppDropArea.qml qml/AppFiles.js qml/LogFilter.js qml/Fuzzy.js qml/Numbers.js qml/DropOverlay.qml
     qml/NativeDeviceFrame.qml qml/DeviceWindow.qml qml/NativeProfiles.js qml/AndroidDevices.qml qml/IosResearch.qml qml/IosGuestView.qml qml/ScreenRecorder.qml qml/DeviceGrid.qml qml/DeviceLogPane.qml qml/StageLogPane.qml
-    qml/qmldir qml/Theme.qml qml/Theme.js qml/ActivityPanel.qml qml/StudioHeading.qml qml/StudioBand.qml qml/BrandMark.qml qml/DeviceHero.qml qml/StudioStatus.qml qml/StudioSection.qml qml/StudioPanel.qml qml/StudioEmptyState.qml qml/StudioSegmented.qml qml/StudioSpinBox.qml qml/StudioCodeView.qml qml/OperationTitles.js qml/ColorNames.js qml/StudioIcon.qml qml/StudioTextField.qml qml/StudioComboBox.qml qml/StudioCheckBox.qml qml/StudioDialog.qml qml/CommandPalette.qml qml/Main.qml qml/StudioButton.qml qml/Device.qml qml/Workspace.qml qml/NativeWorkspace.qml qml/DebugWorkspace.qml qml/TestWorkspace.qml qml/ProfileWorkspace.qml qml/FileWorkspace.qml qml/ReleaseWorkspace.qml qml/DemoWorkspace.qml qml/EnvironmentPanel.qml qml/PreviewAutomation.qml qml/PreviewProtocol.qml qml/SystemStatus.qml qml/UpdateModel.qml qml/UpdateSection.qml qml/UpdateNotice.qml qml/UpdateBanner.qml qml/HandoffModel.qml qml/HandoffBanner.qml qml/OnboardingSheet.qml qml/ApprovalDialog.qml qml/NotificationCentre.qml qml/MobileNav.qml qml/MobileRow.qml assets/models.json assets/demo.html assets/page-errors.js assets/icon.svg assets/logo.svg assets/fonts/archivo-var.ttf assets/fonts/jetbrains-mono-var.ttf i18n/languages.json)
+    qml/qmldir qml/Theme.qml qml/Theme.js qml/ActivityPanel.qml qml/StudioHeading.qml qml/StudioBand.qml qml/BrandMark.qml qml/DeviceHero.qml qml/StudioStatus.qml qml/StudioSection.qml qml/StudioPanel.qml qml/StudioEmptyState.qml qml/StudioSegmented.qml qml/StudioSpinBox.qml qml/StudioCodeView.qml qml/OperationTitles.js qml/ColorNames.js qml/StudioIcon.qml qml/StudioTextField.qml qml/StudioComboBox.qml qml/StudioCheckBox.qml qml/StudioDialog.qml qml/CommandPalette.qml qml/Main.qml qml/StudioButton.qml qml/Device.qml qml/Workspace.qml qml/NativeWorkspace.qml qml/DebugWorkspace.qml qml/TestWorkspace.qml qml/ProfileWorkspace.qml qml/FileWorkspace.qml qml/ReleaseWorkspace.qml qml/DemoWorkspace.qml qml/EnvironmentPanel.qml qml/PreviewAutomation.qml qml/PreviewProtocol.qml qml/SystemStatus.qml qml/UpdateModel.qml qml/UpdateSection.qml qml/UpdateNotice.qml qml/UpdateBanner.qml qml/HandoffModel.qml qml/HandoffBanner.qml qml/OnboardingSheet.qml qml/ApprovalDialog.qml qml/NotificationCentre.qml qml/MobileNav.qml qml/MobileRow.qml qml/AgentClientPicker.qml qml/AgentClientDialog.qml assets/models.json assets/demo.html assets/page-errors.js assets/icon.svg assets/logo.svg assets/fonts/archivo-var.ttf assets/fonts/jetbrains-mono-var.ttf i18n/languages.json)
 qt_add_resources(tomacco resources PREFIX / FILES ${TOMACCO_QML_RESOURCES})
 # Interface translations. English is the source language: its file only
 # carries plural forms. i18n/languages.json is the registry of every other
@@ -159,6 +159,10 @@ install(PROGRAMS tools/collect_ios_crash_reports.py tools/ios_persistence_probe.
 install(PROGRAMS tools/collect_ios_service_artifacts.py DESTINATION share/tomacco/tools)
 install(PROGRAMS tools/build_source_release.py tools/build_release_notes.py tools/make_release.py tools/build_portable.py tools/build_reference.py tools/build_site_docs.py tools/build_container.py tools/check_dependencies.py tools/build_sbom.py DESTINATION share/tomacco/tools)
 install(DIRECTORY tools/site-diagrams DESTINATION share/tomacco/tools)
+# The agent loop benchmark, the phone parity generator and the language registry
+# module that tools/i18n_catalog.py and the tests import.
+install(PROGRAMS tools/benchmark_agent_loop.py tools/build_mobile_parity.py DESTINATION share/tomacco/tools)
+install(FILES tools/tomacco_i18n.py DESTINATION share/tomacco/tools)
 install(FILES tools/ios_guest_tools.py tools/ios_guest_control.py tools/build_provenance.py DESTINATION share/tomacco/tools)
 install(FILES tools/ios_host_pressure.py tools/ios_hot_install.py DESTINATION share/tomacco/tools)
 install(PROGRAMS tools/ios_debug_bridge.py tools/ios_virtual_record.py tools/ios_device_record.py tools/ios_ipa_inspect.py DESTINATION share/tomacco/tools)
@@ -219,6 +223,12 @@ if(BUILD_TESTING)
     target_link_libraries(test-handoff-banner PRIVATE Qt6::Test Qt6::Quick Qt6::QuickControls2)
     add_test(NAME handoff-banner COMMAND test-handoff-banner)
     set_tests_properties(handoff-banner PROPERTIES ENVIRONMENT "QT_QPA_PLATFORM=offscreen;QT_QUICK_BACKEND=software;QT_QUICK_CONTROLS_STYLE=Basic;QT_QPA_PLATFORMTHEME=generic")
+    qt_add_executable(test-agent-client-picker tests/agent_client_picker_test.cpp)
+    set_target_properties(test-agent-client-picker PROPERTIES QT_QML_MODULE_NO_IMPORT_SCAN TRUE)
+    target_compile_definitions(test-agent-client-picker PRIVATE TOMACCO_SOURCE_DIR="${CMAKE_CURRENT_SOURCE_DIR}")
+    target_link_libraries(test-agent-client-picker PRIVATE Qt6::Test Qt6::Quick Qt6::QuickControls2)
+    add_test(NAME agent-client-picker COMMAND test-agent-client-picker)
+    set_tests_properties(agent-client-picker PROPERTIES ENVIRONMENT "QT_QPA_PLATFORM=offscreen;QT_QUICK_BACKEND=software;QT_QUICK_CONTROLS_STYLE=Basic;QT_QPA_PLATFORMTHEME=generic")
     set_tests_properties(environment-panel PROPERTIES ENVIRONMENT "QT_QPA_PLATFORM=offscreen;QT_QUICK_BACKEND=software;QT_QUICK_CONTROLS_STYLE=Basic;QT_QPA_PLATFORMTHEME=generic")
     qt_add_executable(test-mobile-nav tests/mobile_nav_test.cpp)
     set_target_properties(test-mobile-nav PROPERTIES QT_QML_MODULE_NO_IMPORT_SCAN TRUE)

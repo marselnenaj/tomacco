@@ -6,6 +6,8 @@ operations and their JSON results.
 
 ## Unreleased
 
+`tomaccoctl` now has one typed API of 288 operations.
+
 ### Added
 - **One fresh look for agents.** `runtime.observe` answers a frame with its id, time and age, the
   geometry it was taken in, the foreground app, keyboard and focus where the transport reports them

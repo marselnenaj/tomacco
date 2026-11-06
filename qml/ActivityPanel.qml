@@ -19,6 +19,7 @@ Rectangle {
     // The recent notifications (NotificationCentre) and where a click on one leads.
     property var notifications: null
     signal notificationChosen(var entry)
+    signal connectAgentRequested()
     readonly property var notificationEntries: notifications ? notifications.entries : []
     property bool allNotifications: false
     readonly property var shownNotifications: allNotifications ? notificationEntries : notificationEntries.slice(0,6)
@@ -174,11 +175,17 @@ Rectangle {
                     StudioHeading {Layout.fillWidth:true;text:qsTr("Connect your agent.");color:Theme.background;size:Theme.fontHero}
                     Text {Layout.fillWidth:true;Layout.topMargin:Theme.gapSm;text:qsTr("Claude Code, Codex or any MCP client. It can then do everything this window can.");color:Theme.background;font.pixelSize:Theme.fontLead;font.weight:Font.Medium;lineHeight:1.15;wrapMode:Text.WordWrap}
                     StudioButton {
-                        objectName:"activityCopyMcp";Layout.topMargin:Theme.gapMd;inverted:true;invertedFill:Theme.background;invertedText:Theme.text
-                        text:panel.copied?qsTr("Copied"):qsTr("Copy MCP configuration");iconName:panel.copied?"check":"copy"
-                        onClicked:{Studio.copy(JSON.stringify({mcpServers:{[Agent.cliPath.split("/").pop()]:panel.mcpServer()}},null,2));panel.copied=true;copiedTimer.restart()}
+                        objectName:"activityConnectAgent";Layout.topMargin:Theme.gapMd;inverted:true;invertedFill:Theme.background;invertedText:Theme.text
+                        text:qsTr("Connect your agent");iconName:"plus"
+                        onClicked:panel.connectAgentRequested()
                     }
-                    Text {Layout.fillWidth:true;Layout.topMargin:Theme.gapMd;text:qsTr("1  Copy the configuration.")+"\n"+qsTr("2  Paste it into your agent's MCP settings.")+"\n"+qsTr("3  Ask it to run your app.");color:Theme.background;font.family:Theme.mono;font.pixelSize:Theme.fontSmall;lineHeight:1.5;wrapMode:Text.WordWrap}
+                    // Any other MCP client: the plain stdio entry, with the session log when one is set.
+                    StudioButton {
+                        objectName:"activityCopyMcp";quiet:true;inverted:true;invertedFill:Theme.text;invertedText:Theme.background
+                        text:panel.copied?qsTr("Copied"):qsTr("Copy entry for another MCP client");iconName:panel.copied?"check":"copy"
+                        onClicked:{Studio.copy(JSON.stringify({mcpServers:{tomacco:panel.mcpServer()}},null,2));panel.copied=true;copiedTimer.restart()}
+                    }
+                    Text {Layout.fillWidth:true;Layout.topMargin:Theme.gapMd;text:qsTr("1  Pick your agent.")+"\n"+qsTr("2  Connect it, or copy its own setting.")+"\n"+qsTr("3  Ask it to run your app.");color:Theme.background;font.family:Theme.mono;font.pixelSize:Theme.fontSmall;lineHeight:1.5;wrapMode:Text.WordWrap}
                 }
             }
             // The device's state, big enough to read from across the room.

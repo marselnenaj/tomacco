@@ -34,13 +34,13 @@ URL_BASE = "/docs"
 # Navigation: group title and the pages in it, as paths below docs/ (without .md).
 GROUPS = [
     ("Getting started", ["getting-started", "tutorial-android", "tutorial-virtual-iphone", "agent-setup", "recipes"]),
-    ("Agents", ["agents", "agent-patterns", "screen-export", "container"]),
-    ("Use Tomacco", ["desktop", "android", "iphone", "linux-hosts"]),
+    ("Agents", ["agents", "agent-patterns", "agent-clients", "screen-export", "container"]),
+    ("Use Tomacco", ["desktop", "android", "iphone", "linux-hosts", "mobile-native", "demo-studio"]),
     ("Virtual iOS device", ["virtual-ios/README", "virtual-ios/setup", "virtual-ios/usage",
                             "virtual-ios/troubleshooting", "virtual-ios/how-it-works"]),
     ("Reference", ["reference/README", "reference/errors"]),
     ("Help", ["troubleshooting", "faq"]),
-    ("Project", ["architecture", "building", "research-engines", "legal", "privacy", "RELEASE_NOTES"]),
+    ("Project", ["architecture", "building", "research-engines", "mobile-parity", "agent-platform-ui-contract", "design/README", "legal", "privacy", "RELEASE_NOTES"]),
 ]
 SHORT_TITLES = {
     "README": "Overview",
@@ -57,6 +57,12 @@ SHORT_TITLES = {
     "tutorial-android": "First Android app",
     "tutorial-virtual-iphone": "First SwiftUI app",
     "RELEASE_NOTES": "Release notes",
+    "agent-clients": "Agent clients",
+    "mobile-native": "On the phone",
+    "demo-studio": "Demo Studio",
+    "mobile-parity": "Phone parity",
+    "agent-platform-ui-contract": "Agent UI contract",
+    "design/README": "Design references",
 }
 
 # The web index uses the same groups as the directory, with task-focused headings.

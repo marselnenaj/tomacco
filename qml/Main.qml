@@ -514,6 +514,7 @@ ApplicationWindow {
     Workspace { id: workspace; parent: nativeWorkspace.workspaceHost; anchors.fill: parent; visible: opened && root.nativeMode;
         guestSolo: nativeWorkspace.solo
         onGuestCloseRequested: nativeWorkspace.quitApp()
+        onConnectAgentRequested: nativeWorkspace.connectAgent()
         onGuestDockRequested: { nativeWorkspace.showMainWindow(); root.nativeMode=true; workspace.showTab("ios-research") } onProfilesChanged: { root.selectDevice(0); Studio.reloadModels() } }
     StudioDialog { id: unsavedClose; objectName: "unsavedCloseDialog"; anchors.centerIn: parent; modal: true; title: qsTr("Unsaved changes"); standardButtons: Dialog.Discard | Dialog.Cancel; Label { text: qsTr("The workspace has unsaved changes."); color: Theme.muted } onDiscarded: {root.discardOnClose=true;root.close()} }
     FileDialog { id: profileImport; title: qsTr("Import device profiles"); nameFilters: [qsTr("Device profiles (*.json)")]; onAccepted: Agent.request("catalog.import",{path:decodeURIComponent(selectedFile.toString().replace(/^file:\/\//,""))}) }
