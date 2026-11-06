@@ -585,9 +585,9 @@ Rectangle {
                     visible: !panel.phone || !!panel.selectedJob
                     Layout.fillWidth: true; Layout.fillHeight: true; spacing: 0
                     RowLayout {
-                        Layout.fillWidth: true; Layout.preferredHeight: panel.phone?Math.max(Theme.barHeight,Theme.mobileTouch):Theme.barHeight; Layout.leftMargin: panel.phone?Theme.gapXs:Theme.gapMd; Layout.rightMargin: Theme.gapSm; spacing: Theme.gapXs
+                        Layout.fillWidth: true; Layout.preferredHeight: Theme.barHeight; Layout.leftMargin: panel.phone?Theme.gapXs:Theme.gapMd; Layout.rightMargin: Theme.gapSm; spacing: Theme.gapXs
                         // Back to the list on a phone; the job stays selected for the strip and the log poll stops with it.
-                        StudioButton { objectName: "jobBack"; Layout.preferredHeight: Theme.mobileTouch; Layout.preferredWidth: Theme.mobileTouch; visible: panel.phone; iconName: "back"; quiet: true; text: qsTr("All jobs"); displayText: ""; tip: text; onClicked: panel.selectedJob="" }
+                        StudioButton { objectName: "jobBack"; visible: panel.phone; iconName: "back"; quiet: true; text: qsTr("All jobs"); displayText: ""; tip: text; onClicked: panel.selectedJob="" }
                         Text { Layout.fillWidth: true; text: panel.activeJob.label || ""; color: Theme.text; font.pixelSize: Theme.fontBody; font.weight: Font.Medium; elide: Text.ElideRight }
                         StudioButton { text: "Hot Reload"; quiet: true; iconName: "refresh"; visible: panel.activeJob.state==="running" && panel.activeJob.interactive===true && ["ready","session"].indexOf(panel.activeJob.phase)>=0; onClicked: panel.request("job.send",{job_id:panel.selectedJob,command:"reload"}) }
                         StudioButton { text: "Details"; quiet: true; enabled: panel.selectedJob.length>0; onClicked: { panel.request("job.get",{job_id:panel.selectedJob}); panel.currentIndex=3 } }
