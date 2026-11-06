@@ -1,9 +1,9 @@
 {
-  "updated_at": "2026-11-06T17:30:10+00:00",
+  "updated_at": "2026-11-06T17:35:28+00:00",
   "model": "claude-opus-5-5",
   "branch": "finish/omarchy-languages",
   "base_head": "0f465cb8caf0871ef49513dbd0bb4fa10a9748b8",
-  "current_head": "545b76fa27e1b97011a71be41f1ab8d07054d9d6",
+  "current_head": "bd62ef5f8228659cb150bb1d2f99f549bc226198",
   "current_ui_head": "4c549a1 (companion integration/finish-tomacco; merged here as 545b76f; source digest unchanged 3390181968e6 / 1800 texts)",
   "source_digest": "3390181968e6",
   "source_count": 1800,
@@ -15,6 +15,7 @@
     "es",
     "es-MX",
     "fr",
+    "id",
     "it",
     "ja",
     "nl",
@@ -43,7 +44,6 @@
     "hi",
     "hr",
     "hu",
-    "id",
     "is",
     "ko",
     "lt",
@@ -273,14 +273,14 @@
       "registry_complete": false
     },
     "id": {
-      "finished": 0,
-      "unfinished": 1800,
+      "finished": 1800,
+      "unfinished": 0,
       "stale": 0,
       "problems": [],
       "suspicious": [],
-      "menu_entry": "0/6",
-      "status": "untranslated",
-      "registry_complete": false
+      "menu_entry": "6/6",
+      "status": "complete",
+      "registry_complete": true
     },
     "is": {
       "finished": 0,
@@ -592,6 +592,7 @@
     }
   },
   "commits": [
+    "bd62ef5 docs: language-lane progress after merging companion 4c549a1 (18/50 complete, exact remaining list)",
     "545b76f Merge companion integration/finish-tomacco 4c549a1 into language branch",
     "ef84183 i18n: complete uk (all current source texts, menu entry, registry complete)",
     "b269094 i18n: complete no (all current source texts, menu entry, registry complete)",
@@ -633,7 +634,6 @@
     "hi": 1800,
     "hr": 1800,
     "hu": 1800,
-    "id": 1800,
     "is": 1800,
     "ko": 1800,
     "lt": 1800,
