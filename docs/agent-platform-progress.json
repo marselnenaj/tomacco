@@ -250,7 +250,7 @@
     "9e31fe4 Add human handoff",
     "391c39d Add GPX route playback, device.resolve and a stop that reaches interactive playback jobs",
     "9281bd1 Add diagnostics.report_draft",
-    "(next) Desktop session states, screenshot Show file and the UI contract"
+    "5ccd572 Desktop: explicit session states, Show file after a screenshot, and the UI contract for the mobile lane"
   ],
   "test_commands": [
     "CARGO_TARGET_DIR=$PWD/target TMPDIR=/tmp cargo test --offline --locked",
