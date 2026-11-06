@@ -6,11 +6,16 @@ CHANGELOG.md is history and is not checked; the generated reference has its own 
 import json
 import re
 import subprocess
+import sys
 import unittest
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[2]
-LANGUAGES = {"de": "German", "en": "English", "es": "Spanish", "fr": "French", "it": "Italian"}
+sys.path.insert(0, str(ROOT / "tools"))
+import tomacco_i18n  # noqa: E402
+
+# The desktop languages the guides may list by name: the registry's complete ones (i18n/languages.json).
+LANGUAGES = {language.code: language.english_name for language in tomacco_i18n.load_registry().languages if language.complete}
 
 
 def read(path):
@@ -93,19 +98,19 @@ class ConsistencyTests(unittest.TestCase):
         self.assertTrue(len(qts) >= 2, "docs/getting-started.md no longer names the Qt minimum")
         self.assertEqual(set(qts), {qt}, f"docs/getting-started.md names Qt {qts}; CMakeLists.txt needs {qt}")
 
-    def test_every_language_list_names_every_translation(self):
-        shipped = {LANGUAGES[path.stem.split("_", 1)[1]] for path in (ROOT / "i18n").glob("tomacco_*.ts")}
-        self.assertTrue(len(shipped) >= 5)
-        lists = 0
+    def test_guides_do_not_hardcode_the_language_list(self):
+        """The interface languages come from i18n/languages.json and i18n/COVERAGE.md; a guide that names them
+        in prose goes stale with every language added, so none may."""
+        self.assertTrue(len(LANGUAGES) >= 5)
         for path in guides():
-            for match in re.finditer(r"English(?:, [A-Z][a-z]+)*,? and [A-Z][a-z]+", flat(path)):
-                context = flat(path)[max(0, match.start() - 80):match.end()]
+            text = flat(path)
+            for match in re.finditer(r"English(?:, [A-Z][a-z]+)*,? and [A-Z][a-z]+", text):
+                context = text[max(0, match.start() - 80):match.end()]
                 if "layout" in context or "keyboard" in context:
                     continue  # the virtual iPhone's keyboard layouts, not the desktop's languages
-                lists += 1
-                named = set(re.findall(r"[A-Z][a-z]+", match.group(0)))
-                self.assertEqual(named, shipped, f"{path}: {match.group(0)!r} is not the set of desktop languages")
-        self.assertTrue(lists >= 3, "the language lists this test checks are gone")
+                self.fail(f"{path}: {match.group(0)!r} hardcodes the interface languages; point at i18n/COVERAGE.md instead")
+        for path in ("README.md", "docs/desktop.md", "docs/building.md", "CONTRIBUTING.md"):
+            self.assertIn("i18n/COVERAGE.md", read(path), f"{path} no longer points at the coverage report")
 
     def test_every_tomaccoctl_flag_a_guide_shows_exists(self):
         manual = read("docs/tomaccoctl.1").replace("\\-", "-")

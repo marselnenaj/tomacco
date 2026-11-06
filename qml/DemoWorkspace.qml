@@ -3,6 +3,7 @@ import QtQuick.Controls
 import QtQuick.Layouts
 import QtQuick.Dialogs
 import "."
+import "Numbers.js" as Numbers
 
 StudioScrollView {
     id: view
@@ -75,8 +76,9 @@ StudioScrollView {
         if(group)next[group][key]=value;else next[key]=value
         draft=next;editVersion++;message("",false)
     }
+    // Numbers are typed the way the interface language writes them (Numbers.js) and stored canonically.
     function numberField(group,key,text) {
-        const value=Number(text)
+        const value=Numbers.parse(text)
         if(text.trim()==="" || !Number.isFinite(value)){invalidNumber(group+"."+key,true);message(qsTr("Enter a valid number."),true);return}
         setField(group,key,value)
     }
@@ -86,7 +88,7 @@ StudioScrollView {
         const next=clone(draft);next.keyframes[selectedPose][key]=value;draft=next;editVersion++;message("",false)
     }
     function poseNumber(key,text) {
-        const value=Number(text)
+        const value=Numbers.parse(text)
         if(text.trim()==="" || !Number.isFinite(value)){invalidNumber("pose."+selectedPose+"."+key,true);message(qsTr("Enter a valid number."),true);return}
         setPose(key,value)
     }
@@ -116,7 +118,7 @@ StudioScrollView {
         if(!path)return
         jobKind=kind;jobOutput=path;jobState="queued";completedOutput="";jobId=""
         const args={path:scenePath,if_revision:revision,output:path}
-        if(kind==="preview")args.time=Math.max(0,Math.min(Number(previewTime.text) || 0,draft.output.duration))
+        if(kind==="preview")args.time=Math.max(0,Math.min(Numbers.parse(previewTime.text) || 0,draft.output.duration))
         call(kind==="preview"?"demo.preview":"demo.export",args,{kind:kind,path:scenePath,revision:revision,output:path})
     }
     function pollJob() { if(!jobId || !rendering || jobPollPending)return;jobPollPending=true;call("job.get",{job_id:jobId},{jobId:jobId}) }
@@ -164,7 +166,7 @@ StudioScrollView {
         spacing:Theme.gapXs
         Layout.fillWidth:true;Layout.minimumWidth:0
         Caption {text:field.label}
-        StudioTextField {objectName:field.objectName+"Input";Layout.fillWidth:true;Layout.minimumWidth:0;text:String(field.value);placeholderText:field.label;onTextEdited:field.edited(text)}
+        StudioTextField {objectName:field.objectName+"Input";Layout.fillWidth:true;Layout.minimumWidth:0;machine:true;text:typeof field.value==="number"?Numbers.show(field.value,Studio.decimalPoint):String(field.value);placeholderText:field.label;onTextEdited:field.edited(text)}
     }
     ColumnLayout {
         width:Math.max(0,view.availableWidth);spacing:Theme.gapXl
@@ -175,7 +177,7 @@ StudioScrollView {
             Layout.fillWidth:true;title:qsTr("A recording, made into a demo")
             lead:qsTr("Choose a local video, place it in a device and set its motion. Your source stays unchanged.")
             GridLayout {Layout.fillWidth:true;columns:width>=Theme.px(520)?2:1;columnSpacing:Theme.gapSm;rowSpacing:Theme.gapSm
-                StudioTextField {id:sourceFile;objectName:"demoSource";Layout.fillWidth:true;Layout.minimumWidth:0;placeholderText:qsTr("Source video")}
+                StudioTextField {id:sourceFile;objectName:"demoSource";Layout.fillWidth:true;Layout.minimumWidth:0;machine:true;placeholderText:qsTr("Source video")}
                 StudioButton {Layout.maximumWidth:parent.width;text:qsTr("Choose video");onClicked:sourceDialog.open()}
             }
             Flow {Layout.fillWidth:true;spacing:Theme.gapSm
@@ -183,7 +185,7 @@ StudioScrollView {
                 Text {width:Math.min(parent.width,implicitWidth);visible:!!view.media.width;text:view.media.width+" × "+view.media.height+" · "+Number(view.media.duration || 0).toFixed(1)+" s";color:Theme.muted;font.family:Theme.mono;font.pixelSize:Theme.fontSmall;wrapMode:Text.WrapAnywhere}
             }
             GridLayout {Layout.fillWidth:true;columns:width>=Theme.px(520)?2:1;columnSpacing:Theme.gapSm;rowSpacing:Theme.gapSm
-                StudioTextField {id:sceneFile;objectName:"demoScenePath";Layout.fillWidth:true;Layout.minimumWidth:0;placeholderText:qsTr("Scene file (.json)")}
+                StudioTextField {id:sceneFile;objectName:"demoScenePath";Layout.fillWidth:true;Layout.minimumWidth:0;machine:true;placeholderText:qsTr("Scene file (.json)")}
                 StudioButton {text:qsTr("Choose scene path");Layout.maximumWidth:parent.width;onClicked:sceneSaveDialog.open()}
                 StudioTextField {id:titleInput;Layout.fillWidth:true;Layout.minimumWidth:0;placeholderText:qsTr("Scene title")}
                 StudioComboBox {id:preset;objectName:"demoPreset";Layout.fillWidth:true;Layout.minimumWidth:0;model:view.presetIds}

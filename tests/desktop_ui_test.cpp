@@ -3720,17 +3720,21 @@ for line in sys.stdin:
         // The navigation is rebuilt in the new language, so its buttons are looked up each time.
         const auto label=[&](const char *name){auto *button=item(name);return button?button->property("text").toString():QString();};
         auto *picker=object("languagePicker");QVERIFY(picker);
+        // The picker lists the registry's complete languages: System, English, then by English name.
+        const auto codes=picker->property("codes").toStringList();
+        QCOMPARE(codes.mid(0,2),QStringList{"system","en"});
+        const int german=codes.indexOf("de");QVERIFY(german>1);
         QCOMPARE(label("nav-files"),QString("Files"));
         QTRY_COMPARE(picker->property("currentIndex").toInt(),1);
         // English plural forms come from the plurals-only English file.
         QCOMPARE(QCoreApplication::translate("Main","%n model(s)",nullptr,1),QString("1 model"));
         QCOMPARE(QCoreApplication::translate("Main","%n model(s)",nullptr,3),QString("3 models"));
         // Choosing Deutsch in the settings persists and retranslates the running interface.
-        QVERIFY(QMetaObject::invokeMethod(picker,"activated",Q_ARG(int,2)));
+        QVERIFY(QMetaObject::invokeMethod(picker,"activated",Q_ARG(int,german)));
         QCOMPARE(backend->language(),QString("de"));QCOMPARE(backend->uiLanguage(),QString("de"));
         QCOMPARE(QSettings().value("language").toString(),QString("de"));
         QTRY_COMPARE(label("nav-files"),QString("Dateien"));
-        QTRY_COMPARE(picker->property("currentIndex").toInt(),2);
+        QTRY_COMPARE(picker->property("currentIndex").toInt(),german);
         QCOMPARE(object("languagePicker")->property("currentText").toString(),QString("Deutsch"));
         QCOMPARE(label("nav-runtime"),QString("Live-Gerät"));
         QCOMPARE(label("nav-jobs"),QString("Builds & Aufträge"));

@@ -47,6 +47,13 @@ Backend::Backend(QString initialUrl, QObject *parent, bool autoProbe): QObject(p
     connect(&m_themeWatcher,&QFileSystemWatcher::directoryChanged,&m_themeReload,qOverload<>(&QTimer::start));
     connect(&m_themeWatcher,&QFileSystemWatcher::fileChanged,&m_themeReload,qOverload<>(&QTimer::start));
     reloadOmarchyTheme();
+    // With the choice "system" the interface follows Omarchy's language file, also while running.
+    m_languageReload.setSingleShot(true);
+    m_languageReload.setInterval(250);
+    connect(&m_languageReload,&QTimer::timeout,this,&Backend::reloadSystemLanguage);
+    connect(&m_languageWatcher,&QFileSystemWatcher::directoryChanged,&m_languageReload,qOverload<>(&QTimer::start));
+    connect(&m_languageWatcher,&QFileSystemWatcher::fileChanged,&m_languageReload,qOverload<>(&QTimer::start));
+    watchSystemLanguage();
 }
 QString Backend::omarchyThemeDirectory() {
     const auto state=qEnvironmentVariableIsEmpty("XDG_STATE_HOME")?QDir::homePath()+"/.local/state":qEnvironmentVariable("XDG_STATE_HOME");
@@ -118,21 +125,112 @@ void Backend::reloadModels() {
     emit modelsChanged();
 }
 QString Backend::s_uiLanguage=QStringLiteral("en");
-// The interface languages, by ISO 639 code; each but English has i18n/tomacco_CODE.ts.
-static const QStringList interfaceLanguages{QStringLiteral("en"),QStringLiteral("de"),QStringLiteral("fr"),QStringLiteral("es"),QStringLiteral("it")};
-static const QStringList languageChoices=QStringList{QStringLiteral("system")}+interfaceLanguages;
-static QString resolveLanguage(const QString &choice) {
-    if(interfaceLanguages.contains(choice)) return choice;
-    // The first desktop language the interface has, English otherwise.
-    for(const auto &name: QLocale::system().uiLanguages()) {
-        const auto code=QLocale::languageToCode(QLocale(name).language());
-        if(interfaceLanguages.contains(code)) return code;
+bool Backend::s_rightToLeft=false;
+// The interface languages come from i18n/languages.json (compiled in as
+// :/i18n/languages.json): Omarchy's language registry plus the desktop's own
+// data per language. tools/i18n_catalog.py keeps the file in step with Omarchy.
+namespace {
+struct InterfaceLanguage { QString code,name,englishName,formatLocale,qtLocale,direction,decimal; bool complete; };
+struct LanguageRegistry { QList<InterfaceLanguage> languages; QHash<QString,QString> aliases; };
+const LanguageRegistry &languageRegistry() {
+    static const LanguageRegistry registry=[]{
+        LanguageRegistry result;
+        QFile file(QStringLiteral(":/i18n/languages.json"));
+        if(file.open(QIODevice::ReadOnly)) {
+            const auto document=QJsonDocument::fromJson(file.readAll()).object();
+            for(const auto &value:document.value("languages").toArray()) {
+                const auto entry=value.toObject();
+                result.languages.append({entry.value("code").toString(),entry.value("name").toString(),entry.value("englishName").toString(),
+                    entry.value("formatLocale").toString(),entry.value("qtLocale").toString(),entry.value("direction").toString(QStringLiteral("ltr")),
+                    entry.value("decimal").toString(QStringLiteral(".")),entry.value("complete").toBool()});
+            }
+            const auto aliases=document.value("aliases").toObject();
+            for(auto it=aliases.begin();it!=aliases.end();++it) result.aliases.insert(it.key().toLower(),it.value().toString());
+        } else fprintf(stderr,"Tomacco: the language registry is missing from this build\n");
+        if(result.languages.isEmpty())
+            result.languages.append({QStringLiteral("en"),QStringLiteral("English"),QStringLiteral("English"),QStringLiteral("en-US"),QStringLiteral("en"),QStringLiteral("ltr"),QStringLiteral("."),true});
+        return result;
+    }();
+    return registry;
+}
+const InterfaceLanguage *languageEntry(const QString &code) {
+    for(const auto &language:languageRegistry().languages) if(language.code==code) return &language;
+    return nullptr;
+}
+// A language the settings offer: every text translated (or English).
+bool offeredLanguage(const QString &code) { const auto *entry=languageEntry(code); return entry && entry->complete; }
+bool languageChoice(const QString &text) { return text==QLatin1String("system") || offeredLanguage(text); }
+// The forms a tag is tried in: the whole tag, language and region, language and script, the language.
+QStringList tagCandidates(const QString &tag) {
+    static const QRegularExpression cut(QStringLiteral("[.@].*$")),languageShape(QStringLiteral("^[A-Za-z]{2,3}$")),
+        scriptShape(QStringLiteral("^[A-Za-z]{4}$")),regionShape(QStringLiteral("^([A-Za-z]{2}|[0-9]{3})$"));
+    QString cleaned=tag.trimmed();
+    cleaned.remove(cut);
+    cleaned.replace(QLatin1Char('_'),QLatin1Char('-'));
+    const auto parts=cleaned.split(QLatin1Char('-'),Qt::SkipEmptyParts);
+    if(parts.isEmpty() || !languageShape.match(parts.first()).hasMatch()) return {};
+    const auto language=parts.first().toLower();
+    QStringList candidates{(QStringList{language}+parts.mid(1)).join(QLatin1Char('-'))};
+    for(const auto &part:parts.mid(1)) if(regionShape.match(part).hasMatch()) candidates.append(language+QLatin1Char('-')+part.toUpper());
+    for(const auto &part:parts.mid(1)) if(scriptShape.match(part).hasMatch()) candidates.append(language+QLatin1Char('-')+part.left(1).toUpper()+part.mid(1).toLower());
+    candidates.append(language);
+    QStringList unique;
+    for(const auto &candidate:candidates) if(!unique.contains(candidate,Qt::CaseInsensitive)) unique.append(candidate);
+    return unique;
+}
+}
+QString Backend::matchLanguage(const QString &tag,bool offeredOnly) {
+    const auto &registry=languageRegistry();
+    const auto accepted=[&](const QString &code){ const auto *entry=languageEntry(code); return entry && (!offeredOnly || entry->complete); };
+    for(const auto &candidate:tagCandidates(tag)) {
+        const auto lowered=candidate.toLower();
+        for(const auto &language:registry.languages) if(language.code.toLower()==lowered && accepted(language.code)) return language.code;
+        const auto alias=registry.aliases.value(lowered);
+        if(!alias.isEmpty() && accepted(alias)) return alias;
     }
+    return {};
+}
+QVariantList Backend::languageList() {
+    QList<InterfaceLanguage> offered;
+    for(const auto &language:languageRegistry().languages) if(language.complete) offered.append(language);
+    // English first, the rest by English name: findable whatever language the interface shows (as Omarchy's own list).
+    std::sort(offered.begin(),offered.end(),[](const InterfaceLanguage &a,const InterfaceLanguage &b){
+        const auto keyA=a.code==QLatin1String("en")?QString():a.englishName,keyB=b.code==QLatin1String("en")?QString():b.englishName;
+        return keyA<keyB;
+    });
+    QVariantList list;
+    for(const auto &language:offered)
+        list.append(QVariantMap{{"code",language.code},{"name",language.name},{"englishName",language.englishName},{"direction",language.direction}});
+    return list;
+}
+QString Backend::uiLocale() { const auto *entry=languageEntry(s_uiLanguage); return entry?entry->formatLocale:QStringLiteral("en-US"); }
+QString Backend::decimalPoint() const { const auto *entry=languageEntry(s_uiLanguage); return entry?entry->decimal:QStringLiteral("."); }
+QString Backend::omarchyLanguageFile() {
+    // OMARCHY_LANGUAGE_FILE moves it, as it does for Omarchy's own tools. Read only; omarchy-language writes it.
+    if(!qEnvironmentVariableIsEmpty("OMARCHY_LANGUAGE_FILE")) return qEnvironmentVariable("OMARCHY_LANGUAGE_FILE");
+    const auto config=qEnvironmentVariableIsEmpty("XDG_CONFIG_HOME")?QDir::homePath()+"/.config":qEnvironmentVariable("XDG_CONFIG_HOME");
+    return config+"/omarchy/language";
+}
+QString Backend::omarchyLanguage() {
+    QFile file(omarchyLanguageFile());
+    if(!file.open(QIODevice::ReadOnly)) return {};
+    // The first line holds a registry code (da, pt-BR); anything else means English, as in Omarchy's I18n.qml.
+    static const QRegularExpression shape(QStringLiteral("^[a-z]{2,3}(-[A-Za-z]{2,4})?$"));
+    const auto code=QString::fromUtf8(file.readLine(64)).trimmed();
+    return shape.match(code).hasMatch()?code:QStringLiteral("en");
+}
+static QString resolveLanguage(const QString &choice) {
+    if(offeredLanguage(choice)) return choice;
+    if(choice!=QLatin1String("system")) { const auto matched=Backend::matchLanguage(choice); if(!matched.isEmpty()) return matched; }
+    // System: the language Omarchy is set to, then the first desktop language the interface has, English otherwise.
+    const auto omarchy=Backend::omarchyLanguage();
+    if(!omarchy.isEmpty()) { const auto matched=Backend::matchLanguage(omarchy); if(!matched.isEmpty()) return matched; }
+    for(const auto &name:QLocale::system().uiLanguages()) { const auto matched=Backend::matchLanguage(name); if(!matched.isEmpty()) return matched; }
     return QStringLiteral("en");
 }
 QString Backend::storedLanguage() {
     const auto value=QSettings().value("language","system").toString();
-    return languageChoices.contains(value)?value:QStringLiteral("system");
+    return languageChoice(value)?value:QStringLiteral("system");
 }
 QString Backend::dataDirectory() {
     if(qEnvironmentVariableIsSet("TOMACCO_HOME")) return qEnvironmentVariable("TOMACCO_HOME");
@@ -143,28 +241,54 @@ QString Backend::applyLanguage(const QString &choice) {
     static QList<QTranslator *> installed;
     for(auto *translator: std::as_const(installed)) { QCoreApplication::removeTranslator(translator); delete translator; }
     installed.clear();
+    // TOMACCO_LANGUAGE overrides the choice; for tests it may also name a language whose translation is not complete.
     const auto forced=qEnvironmentVariable("TOMACCO_LANGUAGE");
-    const auto language=resolveLanguage(languageChoices.contains(forced)?forced:choice);
+    QString language=forced.isEmpty()?QString():(languageEntry(forced)?forced:matchLanguage(forced,false));
+    if(language.isEmpty()) language=resolveLanguage(choice);
+    const auto *entry=languageEntry(language);
     auto *own=new QTranslator;
     if(own->load(":/i18n/tomacco_"+language+".qm")) installed.append(own);
     else { delete own; fprintf(stderr,"Tomacco: no %s translation in this build\n",qPrintable(language)); }
+    const QLocale locale(entry?entry->formatLocale:QStringLiteral("en-US"));
     if(language!=QLatin1String("en")) {
-        // Qt's own texts (standard dialog buttons), where the system has them.
+        // Qt's own texts (standard dialog buttons, Qt Quick dialogs), where the system has them:
+        // the qt_ meta catalog with its dependencies, or qtbase alone; pt_BR before pt, as QTranslator searches.
         auto *qt=new QTranslator;
-        if(qt->load("qtbase_"+language,QLibraryInfo::path(QLibraryInfo::TranslationsPath))) installed.append(qt);
+        const auto path=QLibraryInfo::path(QLibraryInfo::TranslationsPath);
+        if(qt->load(locale,QStringLiteral("qt"),QStringLiteral("_"),path) || qt->load(locale,QStringLiteral("qtbase"),QStringLiteral("_"),path)) installed.append(qt);
         else delete qt;
     }
     for(auto *translator: std::as_const(installed)) QCoreApplication::installTranslator(translator);
+    // Numbers and dates (Qt.locale(), %L1, toLocaleString) follow the interface language; the
+    // control plane's JSON stays canonical, it never goes through QLocale.
+    QLocale::setDefault(locale);
     s_uiLanguage=language;
+    s_rightToLeft=entry && entry->direction==QLatin1String("rtl");
+    if(qGuiApp) QGuiApplication::setLayoutDirection(s_rightToLeft?Qt::RightToLeft:Qt::LeftToRight);
     return language;
 }
 QString Backend::language() const { return storedLanguage(); }
 void Backend::setLanguage(const QString &choice) {
-    const auto value=languageChoices.contains(choice)?choice:QStringLiteral("system");
+    QString value=QStringLiteral("system");
+    if(offeredLanguage(choice)) value=choice;
+    else if(choice!=QLatin1String("system")) { const auto matched=matchLanguage(choice); if(!matched.isEmpty()) value=matched; }
     m_settings.setValue("language",value);
     applyLanguage(value);
     emit languageChanged();
     emit toolchainChanged();
+}
+void Backend::watchSystemLanguage() {
+    // The file may not exist yet; its directory tells when it appears, the file itself when it changes.
+    const QFileInfo file(omarchyLanguageFile());
+    for(const auto &path:{file.absolutePath(),file.absoluteFilePath()})
+        if(QFileInfo::exists(path) && !m_languageWatcher.files().contains(path) && !m_languageWatcher.directories().contains(path)) m_languageWatcher.addPath(path);
+}
+void Backend::reloadSystemLanguage() {
+    watchSystemLanguage();
+    if(storedLanguage()!=QLatin1String("system") || !qEnvironmentVariableIsEmpty("TOMACCO_LANGUAGE")) return;
+    const auto before=s_uiLanguage;
+    applyLanguage(QStringLiteral("system"));
+    if(before!=s_uiLanguage) { emit languageChanged(); emit toolchainChanged(); }
 }
 QString Backend::appearance() const {
     const auto value=m_settings.value("appearance","system").toString();
@@ -231,7 +355,7 @@ static bool portableSetting(const QString &key,const QJsonValue &value,QVariant 
     const auto text=value.toString();
     if(!value.isString()) return false;
     if(key==QLatin1String("appearance") && QStringList{"system","dark","light"}.contains(text)) { *out=text; return true; }
-    if(key==QLatin1String("language") && languageChoices.contains(text)) { *out=text; return true; }
+    if(key==QLatin1String("language") && languageChoice(text)) { *out=text; return true; }
     if((key==QLatin1String("NativeIphone/runnerBundle") || key==QLatin1String("device")) && identifier.match(text).hasMatch()) { *out=text; return true; }
     if(key==QLatin1String("updates/mode") && QStringList{"off","notify","auto"}.contains(text)) { *out=text; return true; }
     if(key==QLatin1String("updates/channel") && QStringList{"stable","prerelease"}.contains(text)) { *out=text; return true; }

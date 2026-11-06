@@ -6,6 +6,9 @@ import "."
 // while the reader is at the end.
 StudioScrollView {
     id: view
+    // Code, logs and JSON read left to right whatever the interface language.
+    LayoutMirroring.enabled: false
+    LayoutMirroring.childrenInherit: true
     property alias text: area.text
     property alias placeholderText: area.placeholderText
     property alias textColor: area.color
@@ -16,6 +19,7 @@ StudioScrollView {
         objectName: view.objectName ? view.objectName+"-text" : ""
         readOnly: true
         selectByMouse: true
+        horizontalAlignment: TextEdit.AlignLeft
         wrapMode: TextEdit.Wrap
         font.family: Theme.mono
         font.pixelSize: Theme.fontSmall

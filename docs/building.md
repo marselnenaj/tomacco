@@ -134,13 +134,29 @@ A failing run prints its seed; `TOMACCO_FUZZ_SEED` repeats it. On the developmen
 
 ## Translations
 
-The desktop speaks English, German, French, Spanish and Italian. The translations are in `i18n/tomacco_de.ts`,
-`i18n/tomacco_fr.ts`, `i18n/tomacco_es.ts` and `i18n/tomacco_it.ts`; `i18n/tomacco_en.ts` holds only the English plural forms. With Qt's Linguist tools (`qt6-tools`), this refreshes
-them after text changes; without those tools, the build compiles them with `tools/ts2qm.py`.
+`i18n/languages.json` is the registry of interface languages: Omarchy's 50, imported from
+`/usr/share/omarchy/default/i18n/locales.json` with its SHA-256 and import date recorded under `source`, plus
+Spanish. Every language but English has `i18n/tomacco_CODE.ts` with every marked text; `i18n/tomacco_en.ts` holds
+only the English plural forms. The build reads the registry for the catalogs to compile and bundle. With Qt's
+Linguist tools (`qt6-tools`) it compiles them with `lrelease`; without them, `tools/ts2qm.py` compiles them with the
+same plural rules per language (`tests/python/test_i18n.py` checks both agree). The settings offer a language once its
+catalog is complete and the registry says `"complete": true`; `i18n/COVERAGE.md` is the generated report of every
+catalog's state and must be current.
+
+After changing texts in `qml/` or `src/`:
 
 ```sh
-cmake --build build --target update_translations
+python3 tools/i18n_catalog.py sync                                 # new texts become unfinished entries in every catalog
+python3 tools/i18n_catalog.py sources --language pt --unfinished   # the numbered texts a translator still has to do
+python3 tools/i18n_catalog.py apply pt translations.tsv            # merge index<TAB>JSON lines; plural forms and placeholders are checked
+python3 tools/i18n_catalog.py report --write i18n/COVERAGE.md      # refresh the coverage report
+python3 tools/i18n_catalog.py check-registry                       # compare the registry with the installed Omarchy one (read only)
+cmake --build build --target update_translations                   # with Qt's tools: lupdate over the same registry
 ```
+
+A translation that repeats the English text is not finished unless it is a name, a code or a unit; the report lists such
+texts as *suspicious* for review. Regional variants (`pt` and `pt-BR`, `es` and `es-MX`, `zh-CN` and `zh-TW`) are separate
+catalogs, never aliases of each other.
 
 ## Packaging
 

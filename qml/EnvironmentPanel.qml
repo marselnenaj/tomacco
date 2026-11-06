@@ -3,6 +3,7 @@ import QtQuick.Controls
 import QtQuick.Layouts
 import QtQuick.Dialogs
 import "."
+import "Numbers.js" as Numbers
 
 // Named QA environments: the same environment.* operations agents call.
 // The target device is chosen here on purpose and never taken from the
@@ -153,8 +154,8 @@ ColumnLayout {
                     text:current===undefined?"":modelData.location?current.latitude+", "+current.longitude:String(current)
                     placeholderText:modelData.location?qsTr("Latitude, longitude"):modelData.number?qsTr("0.5 to 2"):qsTr("Language tags · e.g. de-DE")
                     onEditingFinished:{
-                        if(modelData.number){const n=Number(text);if(n>=.5 && n<=2)view.setSetting(modelData.key,n)}
-                        else if(modelData.location){const p=text.split(",").map(x=>Number(x.trim()));if(p.length===2 && p.every(x=>isFinite(x)))view.setSetting(modelData.key,{latitude:p[0],longitude:p[1]})}
+                        if(modelData.number){const n=Numbers.parse(text);if(n>=.5 && n<=2)view.setSetting(modelData.key,n)}
+                        else if(modelData.location){const p=text.split(/[,;]/).length===2?text.split(/[,;]/).map(x=>Numbers.parse(x)):text.split(/\s+/).map(x=>Numbers.parse(x));if(p.length===2 && p.every(x=>isFinite(x)))view.setSetting(modelData.key,{latitude:p[0],longitude:p[1]})}
                         else view.setSetting(modelData.key,text.trim())
                     }
                 }
