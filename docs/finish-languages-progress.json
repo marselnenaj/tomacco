@@ -1,10 +1,10 @@
 {
-  "updated_at": "2026-11-06T17:28:25+00:00",
+  "updated_at": "2026-11-06T17:30:10+00:00",
   "model": "claude-opus-5-5",
   "branch": "finish/omarchy-languages",
   "base_head": "0f465cb8caf0871ef49513dbd0bb4fa10a9748b8",
-  "current_head": "b269094254c9ca4209209375b6e258a649c5fa81",
-  "current_ui_head": "912ce5cc682e9b4435d0bd0131542a4f2ddde38e (companion integration/finish-tomacco, merged into this branch as 9449dd4; companion has not yet published a final-source-ready flag)",
+  "current_head": "545b76fa27e1b97011a71be41f1ab8d07054d9d6",
+  "current_ui_head": "4c549a1 (companion integration/finish-tomacco; merged here as 545b76f; source digest unchanged 3390181968e6 / 1800 texts)",
   "source_digest": "3390181968e6",
   "source_count": 1800,
   "catalogs": 51,
@@ -592,8 +592,11 @@
     }
   },
   "commits": [
+    "545b76f Merge companion integration/finish-tomacco 4c549a1 into language branch",
+    "ef84183 i18n: complete uk (all current source texts, menu entry, registry complete)",
     "b269094 i18n: complete no (all current source texts, menu entry, registry complete)",
     "5075ad0 i18n: translate the 48 texts from the merged agent-client picker for all 16 complete catalogs",
+    "4c549a1 Sync catalogs to the final 1800 source texts; German complete; honest registry flags",
     "9449dd4 Merge companion integration/finish-tomacco 912ce5c (agent client picker, phone jobs UI) into language branch",
     "ba3b64d i18n: complete da (all current source texts, menu entry, registry complete)",
     "912ce5c Phone jobs test: keyboard back, poll-safe fixtures; keep the scaled back button",
@@ -605,7 +608,15 @@
     "755541a Close merged integration gates: parity rows for handoff/GPX/report drafts, site groups, packaged tools, counts"
   ],
   "tests": {
-    "tests/python/test_i18n.py": "18 tests OK on merged source 1800 texts (python3 -m unittest, TMPDIR=/tmp)"
+    "tests/python/test_i18n.py": "18 tests OK on merged source (python3 -m unittest, TMPDIR=/tmp)",
+    "qm_roundtrip": "50 catalogs compiled with tools/tomacco_i18n.compile_catalog, 32400 finished messages read back identical, numerus rules valid",
+    "lrelease_parity": "NOT RUN: no lrelease/lrelease6 binary on this host",
+    "registry_vs_omarchy": "check-registry against /usr/share/omarchy/default/i18n/locales.json: 50 languages, sha dbe622637c2e..., in_step true",
+    "registry_vs_coverage": "18 complete in coverage == 18 complete flags in i18n/languages.json, no mismatch",
+    "tests/python/test_mobile_parity.py": "OK",
+    "tests/python/test_docs_virtual_iphone.py": "OK",
+    "tests/python/test_agent_clients.py": "ERROR ModuleNotFoundError native_client; identical on companion tree 4c549a1 -> companion lane",
+    "rust/qt/control-plane": "NOT RUN in this lane (120 s command limit; companion owns non-i18n integration failures)"
   },
   "remaining": {
     "bg": 1800,
@@ -641,14 +652,16 @@
     "uz": 1800,
     "vi": 1800
   },
-  "next_step": "Translate the remaining 36 catalogs one complete language per tranche set; refresh against the companion committed UI head when it publishes one.",
+  "next_step": "Translate the 32 remaining catalogs (1800 texts each) with the same verified tranche pipeline; re-merge companion commits and translate any new texts for all complete catalogs; run lrelease parity where lrelease is available.",
   "source_ready": {
     "companion_final_source_checkpoint": null,
-    "status": "pending: companion has not published a final-source-ready checkpoint in docs/finish-progress.json"
+    "companion_head": "4c549a1",
+    "status": "pending: companion docs/finish-progress.json (committed) has no final-source-ready flag; refresh again when it publishes one"
   },
   "notes": [
     "Source inventory reconciled: 1754 marked strings + 4 operation titles (device.resolve, gpx.inspect, gpx.play, gpx.status) that were in assets/operations.json but missing from qml/OperationTitles.js = 1758.",
     "Polish: 536 vetted translations from .scratch/recovered-i18n/tr/pl.part*.tsv re-indexed by message key (old index -> key recovered by intersecting 7 reference catalogs + order check), not replayed by old index.",
-    "Merged companion 912ce5c: +48 texts (agent client picker, activity panel) translated for all 16 complete catalogs; search-only keyword string (NativeWorkspace connectAgent search) carries localized search terms after the product names."
+    "Merged companion 912ce5c: +48 texts (agent client picker, activity panel) translated for all 16 complete catalogs; search-only keyword string (NativeWorkspace connectAgent search) carries localized search terms after the product names.",
+    "Merged companion 4c549a1 (it had synced all catalogs to 1800 and set registry flags from its own view). Per-file check proved its catalogs add no finished translation missing here; language-lane catalogs kept, registry flags kept as derived from actual catalogs, OperationTitles.js taken from companion after equality check with assets/operations.json. Companion should not edit catalogs (lane-ownership)."
   ]
 }
