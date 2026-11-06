@@ -1,6 +1,7 @@
 // The status of the virtual iPhone is one large json! literal.
 #![recursion_limit = "256"]
 mod accessibility;
+mod agent_clients;
 mod analyze;
 mod android_debug;
 mod android_device;
@@ -305,9 +306,15 @@ Usage:
                     it for a person: what it does, its arguments with their
                     types, choices and defaults, and an example call. The
                     same as tomaccoctl call OPERATION --help.
-  tomaccoctl setup [--yes]
+  tomaccoctl setup [--yes] [--tools MODE] [--opencode-config v1|v2]
                     Check this machine in plain text and offer to install the
-                    Android SDK and connect your coding agents.
+                    Android SDK and connect your coding agents. --tools picks
+                    the MCP tool list (full, compact, grouped) for new entries.
+  tomaccoctl setup agents [status|remove] [--yes] [--json] [--client ID]
+                    Connect the coding agents only (Claude Code, Codex, Gemini
+                    CLI, Cursor, VS Code, Zed, OpenCode, Grok CLI, Hermes
+                    Agent, omp), report each one's state without changes, or
+                    take Tomacco's own entries and skill links out again.
   tomaccoctl doctor  Check the toolchains and devices this machine can use.
   tomaccoctl report [FILE.tar.gz]
                     Write a bug-report bundle (version, host, doctor,

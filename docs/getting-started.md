@@ -167,7 +167,7 @@ tomaccoctl setup
 ```
 
 It lists what this computer can do and what is missing, in plain text. Then it offers to connect
-the coding agents it finds (Claude Code, Codex, Gemini CLI, Cursor, VS Code, Zed and OpenCode), and to install the Android SDK with an emulator called `Tomacco`. That
+the coding agents it finds (Claude Code, Codex, Gemini CLI, Cursor, VS Code, Zed, OpenCode, Grok CLI, Hermes Agent and omp), and to install the Android SDK with an emulator called `Tomacco`. That
 download is about 5 GB and accepts Google's Android SDK license, so it asks first. A missing tool
 is fine until you need it. For the same check as JSON, use `tomaccoctl doctor`.
 

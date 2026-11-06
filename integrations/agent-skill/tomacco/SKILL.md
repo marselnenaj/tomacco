@@ -29,6 +29,9 @@ structured JSON.
    `full` (one tool per operation), `compact` (shorter descriptions, a `schema` tool for the rest) or
    `grouped` (one tool per area; pass `operation` and `arguments`, and call `schema` for one
    operation's arguments). In every mode, the operation's own name also works.
+   Some clients prefix the names: "mcp__tomacco__device_list" (Hermes Agent), "tomacco_device_list"
+   (OpenCode), "mcp__tomacco_device_list" (omp). The operation is the part after the server's name,
+   with dots for the underscores.
 2. **CLI.** Otherwise run `tomaccoctl` from the shell. Each call prints one JSON object,
    `{"ok":true,"result":...}` or `{"ok":false,"error":{"code","message","remedy"}}`.
 
@@ -80,8 +83,8 @@ it with `result.read`. `workflow.run` runs up to 20 operations in order and foll
   `policy_denied` answer is final for you: do not look for another way round it. With desktop approval
   on, a destructive MCP call waits for the person to approve it in the Tomacco window;
   `approval_denied` means no.
-- **Look before you act and after.** A launched app is not a working app. Check the screen after a
-  step (see the loops).
+- **Look before you act and after.** A launched app is not a working app. Take a fresh screenshot
+  after every step and after a rotation; marks from an earlier screen are stale (see the loops).
 - **Clean up.** Stop emulators and sessions you started (`android.emulator` with `stop`,
   `ios.virtual.stop`, `runtime.stop`) unless the person wants them running.
 

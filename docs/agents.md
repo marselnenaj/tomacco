@@ -10,14 +10,15 @@ installing from a source checkout and the optional iOS preparation recipes do.
 
 ## Connect a client
 
-`tomaccoctl setup` connects Claude Code and Codex through their `mcp add` commands, and Gemini CLI,
-Cursor, VS Code, Zed and OpenCode by adding a `tomacco` entry to their JSON settings: `~/.gemini/settings.json`
-(`mcpServers`), `~/.cursor/mcp.json` (`mcpServers`), `~/.config/Code/User/mcp.json` (`servers`),
-`~/.config/zed/settings.json` (`context_servers`) and `~/.config/opencode/opencode.json` (`mcp`), with `$XDG_CONFIG_HOME` in place of `~/.config` when it
-is set. It asks first for each agent it finds and keeps
-everything else in the file. A file with comments, such as Zed's usual settings, or a file that is a
-symbolic link is left alone; setup prints the entry to add by hand. Only the file handling is tested,
-on a scratch home directory; whether each agent then starts the server has not been checked here.
+`tomaccoctl setup` connects Claude Code and Codex through their `mcp add` commands, OpenCode 2 through
+`opencode mcp add --global`, and Gemini CLI, Cursor, VS Code, Zed, OpenCode 1, Grok CLI and omp by adding a
+`tomacco` entry to the JSON file each one reads, and Hermes Agent by adding one to the `mcp_servers` block of
+its `config.yaml`. It asks first for each agent it finds and keeps everything else in the file. A file it
+does not rewrite, such as Zed's usual settings with comments, gets the entry printed to add by hand.
+`tomaccoctl setup agents status` reports every client without changing anything and `setup agents remove`
+takes the entries out again. [Agent clients](agent-clients.md) has each client's file, layout, tool names,
+skill directory, the upstream version it was written against and what of it was checked: the file handling
+and the server each entry starts, in a scratch home, not the agents themselves.
 [T3 Code](https://github.com/pingdotgg/t3code) and similar apps run these agents for you, so they use the
 same connection: once setup has connected Claude Code, Codex, Cursor or OpenCode, a session T3 Code starts
 with that agent should have Tomacco's tools. This follows from how T3 Code starts the agents and has not

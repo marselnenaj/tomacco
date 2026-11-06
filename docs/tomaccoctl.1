@@ -19,6 +19,17 @@ tomaccoctl \- the Tomacco control plane for building, running and testing mobile
 .br
 .B tomaccoctl setup
 .RB [ \-\-yes ]
+.RB [ \-\-tools
+.IR MODE ]
+.RB [ \-\-opencode\-config
+.IR v1|v2 ]
+.br
+.B tomaccoctl setup agents
+.RB [ status | remove ]
+.RB [ \-\-yes ]
+.RB [ \-\-json ]
+.RB [ \-\-client
+.IR ID ]
 .br
 .B tomaccoctl doctor
 .br
@@ -109,11 +120,32 @@ Without an operation, print the command-line help. With one, describe it
 in plain text: what it does, each argument with its type, choices, limits
 and default, whether it changes anything, and an example call.
 .TP
-.BR setup " [" \-\-yes ]
+.BR setup " [" \-\-yes "] [" \-\-tools " \fIMODE\fR] [" \-\-opencode\-config " \fIv1|v2\fR]"
 Check this machine in plain text and offer to install the Android SDK and
 connect coding agents.
 .B \-\-yes
 answers every question with yes.
+.B \-\-tools
+picks the MCP tool list a new entry asks for: full, compact or grouped
+(Grok CLI defaults to grouped, the others to full).
+.B \-\-opencode\-config
+names the OpenCode layout when neither its program nor its file says which:
+v1 lists servers under mcp, v2 under mcp.servers.
+.TP
+.BR "setup agents" " [" status | remove "] [" \-\-yes "] [" \-\-json "] [" \-\-client " \fIID\fR]"
+The coding agents only: connect Claude Code, Codex, Gemini CLI, Cursor,
+VS Code, Zed, OpenCode, Grok CLI, Hermes Agent and omp, asking first for
+each one found, and link the agent skill where each reads it.
+.B status
+reports every client without changing anything and exits 1 when one that
+is here needs a hand;
+.B remove
+takes Tomacco's own entries and skill links out again.
+.B \-\-json
+prints the report as JSON, questions and their yes on standard error;
+.B \-\-client
+limits the run to one client id (claude-code, codex, gemini-cli, cursor,
+vscode, zed, opencode, grok-cli, hermes, omp), repeatable.
 .TP
 .B doctor
 Check the toolchains and devices this machine can use, and list what is

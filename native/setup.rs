@@ -1,7 +1,9 @@
 //! `tomaccoctl setup`: a readable check of this machine that offers to fix what
 //! it can. It changes nothing without a yes, from the person or from `--yes`.
+use crate::agent_clients as clients;
 use crate::api;
 use crate::core::*;
+use crate::mcp_tools::Mode;
 use crate::product;
 use serde_json::{Value, json};
 use std::io::{BufRead, IsTerminal, Write};
@@ -20,234 +22,6 @@ const SDK_PACKAGES: [&str; 5] = [
 ];
 const EMULATOR_NAME: &str = "Tomacco";
 const EMULATOR_PROFILE: &str = "pixel-11";
-
-/// Agents Tomacco can register with, and how each one adds a local server.
-const AGENTS: [(&str, &str, &[&str]); 2] = [
-    (
-        "Claude Code",
-        "claude",
-        &[
-            "mcp",
-            "add",
-            "--transport",
-            "stdio",
-            "--scope",
-            "user",
-            "tomacco",
-            "--",
-        ],
-    ),
-    ("Codex", "codex", &["mcp", "add", "tomacco", "--"]),
-];
-
-/// An agent whose MCP servers are listed in a JSON file Tomacco can add
-/// itself to: found when its configuration directory exists or one of its
-/// programs is on PATH.
-struct FileAgent {
-    name: &'static str,
-    programs: &'static [&'static str],
-    directory: PathBuf,
-    file: PathBuf,
-    /// The object in the file that holds one entry per server.
-    key: &'static str,
-    entry: fn(&str) -> Value,
-}
-
-/// The agents configured by file, under a HOME and an XDG config directory.
-fn file_agents(home: &Path, config: &Path) -> Vec<FileAgent> {
-    let plain = |program: &str| json!({"command":program,"args":["mcp"]});
-    let agent = |name, programs, directory: PathBuf, file: &str, key, entry| FileAgent {
-        name,
-        programs,
-        file: directory.join(file),
-        directory,
-        key,
-        entry,
-    };
-    vec![
-        agent(
-            "Gemini CLI",
-            &["gemini"],
-            home.join(".gemini"),
-            "settings.json",
-            "mcpServers",
-            plain,
-        ),
-        agent(
-            "Cursor",
-            &["cursor"],
-            home.join(".cursor"),
-            "mcp.json",
-            "mcpServers",
-            plain,
-        ),
-        agent(
-            "VS Code",
-            &["code"],
-            config.join("Code/User"),
-            "mcp.json",
-            "servers",
-            |program| json!({"type":"stdio","command":program,"args":["mcp"]}),
-        ),
-        agent(
-            "Zed",
-            &["zed", "zeditor"],
-            config.join("zed"),
-            "settings.json",
-            "context_servers",
-            |program| json!({"source":"custom","command":program,"args":["mcp"],"env":{}}),
-        ),
-        agent(
-            "OpenCode",
-            &["opencode"],
-            config.join("opencode"),
-            "opencode.json",
-            "mcp",
-            |program| json!({"type":"local","command":[program,"mcp"],"enabled":true}),
-        ),
-    ]
-}
-
-/// Agents that read skills from `<directory>/skills`, as install.py links the
-/// agent skill: who reads it, and the directory under HOME.
-const SKILL_AGENTS: [(&str, &str); 3] = [
-    ("Claude Code", ".claude"),
-    ("Codex", ".codex"),
-    ("Agents that read ~/.agents", ".agents"),
-];
-
-#[derive(Debug, PartialEq)]
-enum SkillLink {
-    /// The agent's directory or the installed skill is not here.
-    Absent,
-    Present,
-    Declined,
-    Added,
-    /// Something else has the skill's name there; it stays.
-    Taken(PathBuf),
-}
-
-/// Links the installed agent skill into an agent's skills directory after the
-/// person's yes, as install.py does. An entry of that name that is not a link
-/// to the installed skill is left alone. `tomaccoctl uninstall` removes the
-/// link with the installation.
-fn link_skill(home: &Path, directory: &str, name: &str, answers: &Answers) -> Result<SkillLink> {
-    let skill = home
-        .join(product::INSTALLED_LIBRARY)
-        .join("skills")
-        .join(product::REPO_NAME);
-    let config = home.join(directory);
-    if !config.is_dir() || !skill.join("SKILL.md").is_file() {
-        return Ok(SkillLink::Absent);
-    }
-    let skills = config.join("skills");
-    let link = skills.join(product::REPO_NAME);
-    match std::fs::symlink_metadata(&link) {
-        Ok(meta) => {
-            let ours = meta.is_symlink()
-                && (std::fs::read_link(&link).is_ok_and(|target| target == skill)
-                    || std::fs::canonicalize(&link).ok() == std::fs::canonicalize(&skill).ok());
-            return Ok(if ours {
-                SkillLink::Present
-            } else {
-                SkillLink::Taken(link)
-            });
-        }
-        Err(error) if error.kind() == std::io::ErrorKind::NotFound => {}
-        Err(error) => return Err(error.into()),
-    }
-    if !answers.ask(&format!(
-        "Add the {} skill to {name}? This links {} to {}.",
-        product::PRODUCT_NAME,
-        link.display(),
-        skill.display()
-    )) {
-        return Ok(SkillLink::Declined);
-    }
-    std::fs::create_dir_all(&skills)?;
-    std::os::unix::fs::symlink(&skill, &link)?;
-    Ok(SkillLink::Added)
-}
-
-#[derive(Debug, PartialEq)]
-enum Connection {
-    /// Neither its directory nor its program is here.
-    Absent,
-    Present,
-    Declined,
-    Added,
-    /// The file is not one Tomacco should rewrite; the reason, for the person.
-    ByHand(String),
-}
-
-/// Adds Tomacco to an agent's file after the person's yes. Other servers and
-/// settings stay as they are; a file with comments, a link or anything but a
-/// JSON object is left alone for the person to edit.
-fn connect_file_agent(
-    agent: &FileAgent,
-    program: &str,
-    found: bool,
-    answers: &Answers,
-) -> Result<Connection> {
-    if !found {
-        return Ok(Connection::Absent);
-    }
-    let file = agent.file.display();
-    let (mut settings, mode) = match std::fs::symlink_metadata(&agent.file) {
-        Ok(meta) if !meta.is_file() => {
-            return Ok(Connection::ByHand(format!(
-                "{file} is a link or not a regular file"
-            )));
-        }
-        Ok(meta) => {
-            let text = std::fs::read_to_string(&agent.file)?;
-            match serde_json::from_str::<Value>(&text) {
-                Ok(value) if value.is_object() => (value, Some(meta.permissions())),
-                _ => {
-                    return Ok(Connection::ByHand(format!(
-                        "{file} is not plain JSON; it may have comments"
-                    )));
-                }
-            }
-        }
-        Err(error) if error.kind() == std::io::ErrorKind::NotFound => (json!({}), None),
-        Err(error) => return Err(error.into()),
-    };
-    match settings.get(agent.key) {
-        Some(servers) if servers.get("tomacco").is_some() => return Ok(Connection::Present),
-        Some(servers) if !servers.is_object() => {
-            return Ok(Connection::ByHand(format!(
-                "{} in {file} is not an object",
-                agent.key
-            )));
-        }
-        _ => {}
-    }
-    if !answers.ask(&format!(
-        "Connect {} to {}? This adds tomacco to {file}.",
-        agent.name,
-        product::PRODUCT_NAME
-    )) {
-        return Ok(Connection::Declined);
-    }
-    if settings.get(agent.key).is_none() {
-        settings[agent.key] = json!({});
-    }
-    settings[agent.key]["tomacco"] = (agent.entry)(program);
-    std::fs::create_dir_all(&agent.directory)?;
-    let mut temporary = tempfile::NamedTempFile::new_in(&agent.directory)?;
-    let mut bytes = serde_json::to_vec_pretty(&settings)?;
-    bytes.push(b'\n');
-    temporary.write_all(&bytes)?;
-    temporary.as_file().sync_all()?;
-    if let Some(permissions) = mode {
-        std::fs::set_permissions(temporary.path(), permissions)?;
-    }
-    temporary
-        .persist(&agent.file)
-        .map_err(|error| Error::from(error.error))?;
-    Ok(Connection::Added)
-}
 
 fn tool<'a>(doctor: &'a Value, name: &str) -> Option<&'a Value> {
     doctor["tools"]
@@ -570,11 +344,17 @@ pub fn with_next_steps(mut doctor: Value) -> Value {
 struct Answers {
     yes: bool,
     interactive: bool,
+    /// Questions and their yes go to standard error: standard output carries JSON.
+    aside: bool,
 }
 impl Answers {
     fn ask(&self, question: &str) -> bool {
         if self.yes {
-            println!("{question} yes");
+            if self.aside {
+                eprintln!("{question} yes");
+            } else {
+                println!("{question} yes");
+            }
             return true;
         }
         if !self.interactive {
@@ -596,85 +376,267 @@ fn accepted(answer: &str) -> bool {
     )
 }
 
-fn quiet(program: &str, args: &[&str]) -> bool {
-    Command::new(program)
-        .args(args)
-        .stdin(Stdio::null())
-        .stdout(Stdio::null())
-        .stderr(Stdio::null())
-        .status()
-        .is_ok_and(|status| status.success())
+/// What `setup` and `setup agents` take from the command line.
+#[derive(Debug, PartialEq)]
+struct Arguments {
+    action: Action,
+    yes: bool,
+    json: bool,
+    tools: Option<Mode>,
+    opencode: Option<clients::Layout>,
+    /// Only these clients, by id; empty for all.
+    only: Vec<clients::ClientId>,
 }
-fn on_path(program: &str) -> bool {
-    std::env::var_os("PATH").is_some_and(|path| {
-        std::env::split_paths(&path).any(|directory| directory.join(program).is_file())
+#[derive(Debug, Clone, Copy, PartialEq)]
+enum Action {
+    /// The whole check: agents, then Android.
+    Setup,
+    /// The agents only.
+    Agents,
+    /// The agents' state, changing nothing.
+    Status,
+    /// Tomacco's own entries and skill links taken out again.
+    Remove,
+}
+impl Action {
+    fn name(self) -> &'static str {
+        match self {
+            Self::Setup => "setup",
+            Self::Agents => "connect",
+            Self::Status => "status",
+            Self::Remove => "remove",
+        }
+    }
+}
+
+const USAGE: &str = "Usage: tomaccoctl setup [--yes] [--tools full|compact|grouped] [--opencode-config v1|v2]\n       tomaccoctl setup agents [status|remove] [--yes] [--json] [--client ID] [--tools MODE] [--opencode-config v1|v2]";
+
+fn parse(arguments: &[String]) -> std::result::Result<Arguments, String> {
+    let mut parsed = Arguments {
+        action: Action::Setup,
+        yes: false,
+        json: false,
+        tools: None,
+        opencode: None,
+        only: Vec::new(),
+    };
+    let mut words = arguments.iter().map(String::as_str);
+    while let Some(word) = words.next() {
+        match word {
+            "agents" if parsed.action == Action::Setup => parsed.action = Action::Agents,
+            "status" if parsed.action == Action::Agents => parsed.action = Action::Status,
+            "remove" if parsed.action == Action::Agents => parsed.action = Action::Remove,
+            "--yes" | "-y" => parsed.yes = true,
+            "--json" if parsed.action != Action::Setup => parsed.json = true,
+            "--tools" => {
+                let value = words.next().unwrap_or("");
+                parsed.tools = Some(
+                    Mode::parse(value)
+                        .filter(|_| !value.is_empty())
+                        .ok_or_else(|| {
+                            format!(
+                                "--tools takes full, compact or grouped, not {value:?}. {USAGE}"
+                            )
+                        })?,
+                );
+            }
+            "--client" if parsed.action != Action::Setup => {
+                let value = words.next().unwrap_or("");
+                parsed
+                    .only
+                    .push(clients::ClientId::parse(value).ok_or_else(|| {
+                        format!(
+                            "--client takes one of {}, not {value:?}. {USAGE}",
+                            clients::CLIENTS
+                                .iter()
+                                .map(|c| c.id())
+                                .collect::<Vec<_>>()
+                                .join(", ")
+                        )
+                    })?);
+            }
+            "--opencode-config" => {
+                let value = words.next().unwrap_or("");
+                parsed.opencode = Some(clients::Layout::parse(value).ok_or_else(|| {
+                    format!("--opencode-config takes v1 or v2, not {value:?}. {USAGE}")
+                })?);
+            }
+            other => return Err(format!("Unknown option {other}. {USAGE}")),
+        }
+    }
+    Ok(parsed)
+}
+
+/// The printed line for one client's report, in the style of the rest of
+/// setup: a verdict, the client, and what to do when something is left.
+fn client_line(report: &clients::Report, action: Action) -> Option<String> {
+    use clients::State;
+    let name = report.id.name();
+    let detail = report.state.detail().unwrap_or("");
+    let file = report
+        .file
+        .as_ref()
+        .map(|path| path.display().to_string())
+        .unwrap_or_default();
+    let with_snippet = |head: String| {
+        let mut text = head;
+        if let Some(command) = &report.command {
+            text.push_str(&format!("\n             {command}"));
+        }
+        if !report.snippet.is_empty()
+            && !matches!(
+                report.id,
+                clients::ClientId::ClaudeCode | clients::ClientId::Codex
+            )
+        {
+            text.push_str(&format!("\n             In {file}:"));
+            for line in report.snippet.lines() {
+                text.push_str(&format!("\n               {line}"));
+            }
+        }
+        text
+    };
+    Some(match &report.state {
+        State::Absent if action == Action::Status => {
+            format!("  -        {name} is not on this machine")
+        }
+        State::Absent => return None,
+        State::Connected | State::Added => format!("  ok       {name} is connected"),
+        State::Updated => format!("  ok       {name} is connected (entry updated)"),
+        State::Removed => format!("  ok       {name} is disconnected"),
+        State::Declined => format!("  skipped  {name}"),
+        State::NotConnected if action == Action::Remove => return None,
+        State::NotConnected => {
+            format!("  missing  {name} is not connected: tomaccoctl setup agents")
+        }
+        State::Disabled => format!(
+            "  off      {name} has {} switched off in {file}; left as it is",
+            product::PRODUCT_NAME
+        ),
+        State::Outdated(_) => format!(
+            "  outdated {name}: its {} entry {detail}; tomaccoctl setup agents updates it",
+            clients::SERVER
+        ),
+        State::Conflict(_) => with_snippet(format!("  conflict {name}: {detail}; left as it is")),
+        State::Manual(_) => with_snippet(format!("  manual   {name}: {detail}. Add it yourself:")),
+        State::Unknown(_) => with_snippet(format!("  unknown  {name}: {detail}")),
+        State::Failed(_) => format!("  failed   {name}: {detail}"),
     })
 }
 
-fn connect_agents(answers: &Answers) -> Result<()> {
-    let program = std::env::current_exe()?;
-    let program = program.to_string_lossy().into_owned();
-    for (name, command, add) in AGENTS {
-        if !on_path(command) {
+fn skill_line(
+    target: &clients::SkillTarget,
+    state: &clients::SkillState,
+    action: Action,
+) -> Option<String> {
+    use clients::SkillState;
+    let label = &target.label;
+    Some(match state {
+        SkillState::Absent => return None,
+        SkillState::Linked | SkillState::Added => format!("  ok       {label} has the agent skill"),
+        SkillState::Removed => format!("  ok       Agent skill removed from {label}"),
+        SkillState::NotLinked if action == Action::Remove => return None,
+        SkillState::NotLinked => {
+            format!("  missing  Agent skill for {label}: tomaccoctl setup agents links it")
+        }
+        SkillState::Declined => format!("  skipped  Agent skill for {label}"),
+        SkillState::Taken(link) => format!(
+            "  manual   Agent skill for {label}: {} is not {}'s; left as it is",
+            link.display(),
+            product::PRODUCT_NAME
+        ),
+        SkillState::Failed(error) => format!("  failed   Agent skill for {label}: {error}"),
+    })
+}
+
+/// Connects the coding agents on this machine to Tomacco, reports them or
+/// takes Tomacco out of them again, each after the person's yes, and links
+/// the agent skill where each one reads it. The result is the report that
+/// `--json` prints; the lines are printed as it goes unless `json` is set.
+fn agents(arguments: &Arguments, answers: &Answers) -> Result<Value> {
+    let action = arguments.action;
+    let env = clients::Environment::current()?;
+    let options = clients::Options {
+        program: std::env::current_exe()?,
+        tools: arguments.tools,
+        opencode: arguments.opencode,
+    };
+    let mut ask = |question: &str| answers.ask(question);
+    let mut reports = Vec::new();
+    for id in clients::CLIENTS {
+        if !arguments.only.is_empty() && !arguments.only.contains(&id) {
             continue;
         }
-        if quiet(command, &["mcp", "get", "tomacco"]) {
-            println!("  ok       {name} is connected");
-            continue;
-        }
-        if !answers.ask(&format!("Connect {name} to {}?", product::PRODUCT_NAME)) {
-            println!("  skipped  {name}");
-            continue;
-        }
-        let mut args: Vec<&str> = add.to_vec();
-        args.extend([program.as_str(), "mcp"]);
-        if quiet(command, &args) {
-            println!("  ok       {name} is connected");
-        } else {
-            println!(
-                "  failed   {name}: run `{command} {}` yourself",
-                args.join(" ")
-            );
-        }
-    }
-    let home = PathBuf::from(
-        std::env::var_os("HOME").ok_or_else(|| Error::new("setup_failed", "HOME is not set"))?,
-    );
-    let config = std::env::var_os("XDG_CONFIG_HOME")
-        .map(PathBuf::from)
-        .filter(|path| path.is_absolute())
-        .unwrap_or_else(|| home.join(".config"));
-    for agent in file_agents(&home, &config) {
-        let found = agent.directory.is_dir() || agent.programs.iter().any(|p| on_path(p));
-        let name = agent.name;
-        match connect_file_agent(&agent, &program, found, answers) {
-            Ok(Connection::Absent) => {}
-            Ok(Connection::Present) => println!("  ok       {name} is connected"),
-            Ok(Connection::Added) => println!("  ok       {name} is connected"),
-            Ok(Connection::Declined) => println!("  skipped  {name}"),
-            Ok(Connection::ByHand(reason)) => println!(
-                "  manual   {name}: {reason}. Add this under \"{}\" yourself: \"tomacco\": {}",
-                agent.key,
-                (agent.entry)(&program)
-            ),
-            Err(error) => println!("  failed   {name}: {}", error.message),
-        }
-    }
-    for (name, directory) in SKILL_AGENTS {
-        match link_skill(&home, directory, name, answers) {
-            Ok(SkillLink::Absent) => {}
-            Ok(SkillLink::Present | SkillLink::Added) => {
-                println!("  ok       {name} has the agent skill")
+        let resolved = clients::resolve(id, &env, &options);
+        let report = match action {
+            Action::Status => clients::inspect(&resolved, &options),
+            Action::Remove => clients::remove(&env, &resolved, &options, &mut ask),
+            Action::Setup | Action::Agents => clients::connect(&env, &resolved, &options, &mut ask),
+        };
+        if !arguments.json {
+            if let Some(line) = client_line(&report, action) {
+                println!("{line}");
             }
-            Ok(SkillLink::Declined) => println!("  skipped  Agent skill for {name}"),
-            Ok(SkillLink::Taken(link)) => println!(
-                "  manual   Agent skill for {name}: {} is not Tomacco's; left as it is",
-                link.display()
-            ),
-            Err(error) => println!("  failed   Agent skill for {name}: {}", error.message),
+            if action == Action::Status {
+                for note in &report.notes {
+                    println!("           {note}");
+                }
+            }
         }
+        reports.push(report);
     }
-    Ok(())
+    let found =
+        |id: clients::ClientId| reports.iter().any(|report| report.id == id && report.found);
+    let targets = clients::skill_targets(&env, &found);
+    let mut skills = Vec::new();
+    for target in &targets {
+        let state = match action {
+            Action::Status => Ok(clients::skill_state(&env.home, target)),
+            Action::Remove => clients::unlink_skill(&env.home, target),
+            Action::Setup | Action::Agents => clients::link_skill(&env.home, target, &mut ask),
+        }
+        .unwrap_or_else(|error| clients::SkillState::Failed(error.message));
+        if !arguments.json {
+            if let Some(line) = skill_line(target, &state, action) {
+                println!("{line}");
+            }
+        }
+        let detail = match &state {
+            clients::SkillState::Taken(link) => Some(link.display().to_string()),
+            clients::SkillState::Failed(error) => Some(error.clone()),
+            _ => None,
+        };
+        skills.push(json!({
+            "label": target.label,
+            "link": target.directory.join("skills").join(product::REPO_NAME),
+            "state": state.kind(),
+            "detail": detail,
+        }));
+    }
+    let attention = reports
+        .iter()
+        .filter(|report| report.found)
+        .filter(|report| {
+            use clients::State;
+            matches!(
+                report.state,
+                State::NotConnected
+                    | State::Outdated(_)
+                    | State::Conflict(_)
+                    | State::Manual(_)
+                    | State::Unknown(_)
+                    | State::Failed(_)
+            )
+        })
+        .count();
+    Ok(json!({
+        "action": action.name(),
+        "program": options.program,
+        "tools": options.tools.map(Mode::name),
+        "clients": reports.iter().map(clients::Report::value).collect::<Vec<_>>(),
+        "skills": skills,
+        "attention": attention,
+    }))
 }
 
 /// The latest command-line tools for Linux from Google's repository index:
@@ -849,20 +811,31 @@ fn set_up_android(doctor: &Value, answers: &Answers) -> Result<()> {
 }
 
 pub fn run(arguments: &[String]) -> Result<i32> {
-    let mut yes = false;
-    for argument in arguments {
-        match argument.as_str() {
-            "--yes" | "-y" => yes = true,
-            other => {
-                println!("Unknown option {other}. Usage: tomaccoctl setup [--yes]");
-                return Ok(2);
-            }
+    let parsed = match parse(arguments) {
+        Ok(parsed) => parsed,
+        Err(message) => {
+            println!("{message}");
+            return Ok(2);
         }
-    }
-    let answers = Answers {
-        yes,
-        interactive: std::io::stdin().is_terminal(),
     };
+    let answers = Answers {
+        yes: parsed.yes,
+        interactive: std::io::stdin().is_terminal() && !parsed.json,
+        aside: parsed.json,
+    };
+    if parsed.action != Action::Setup {
+        let report = agents(&parsed, &answers)?;
+        if parsed.json {
+            println!("{}", serde_json::to_string_pretty(&report)?);
+        }
+        // A status that needs a hand is exit 1, as `tomaccoctl omarchy status` is.
+        let attention = report["attention"].as_u64().unwrap_or(0);
+        return Ok(if parsed.action == Action::Status && attention > 0 {
+            1
+        } else {
+            0
+        });
+    }
     let doctor = api::dispatch("doctor", &json!({}))?;
     let virtual_device = api::dispatch("ios.virtual.status", &json!({}))
         .is_ok_and(|status| status["configured"] == true);
@@ -886,7 +859,7 @@ pub fn run(arguments: &[String]) -> Result<i32> {
         );
     }
     println!();
-    connect_agents(&answers)?;
+    agents(&parsed, &answers)?;
     set_up_android(&doctor, &answers)?;
     println!("\nStart the app with `tomacco`. docs/getting-started.md has your first project.");
     Ok(0)
@@ -1174,175 +1147,40 @@ mod tests {
     }
 
     #[test]
-    fn agents_configured_by_file_are_connected_only_after_a_yes() {
-        use std::os::unix::fs::PermissionsExt;
-        let home = tempfile::tempdir().unwrap();
-        let config = home.path().join(".config");
-        let agents = file_agents(home.path(), &config);
-        let names: Vec<_> = agents.iter().map(|agent| agent.name).collect();
+    fn setup_and_setup_agents_take_their_own_options() {
+        let words =
+            |text: &str| -> Vec<String> { text.split_whitespace().map(String::from).collect() };
+        let plain = parse(&[]).unwrap();
+        assert_eq!(plain.action, Action::Setup);
+        assert!(!plain.yes && !plain.json && plain.tools.is_none() && plain.opencode.is_none());
+        let full = parse(&words("--yes --tools grouped --opencode-config v1")).unwrap();
         assert_eq!(
-            names,
-            ["Gemini CLI", "Cursor", "VS Code", "Zed", "OpenCode"]
+            (full.yes, full.tools, full.opencode),
+            (true, Some(Mode::Grouped), Some(clients::Layout::OpenCodeV1))
         );
-        let agent = |name: &str| agents.iter().find(|agent| agent.name == name).unwrap();
-        let no = Answers {
-            yes: false,
-            interactive: false,
-        };
-        let yes = Answers {
-            yes: true,
-            interactive: false,
-        };
-        let program = "/opt/tomacco/tomaccoctl";
-        // Not installed: nothing is asked or written.
-        for agent in &agents {
-            assert_eq!(
-                connect_file_agent(agent, program, false, &yes).unwrap(),
-                Connection::Absent
-            );
+        let status = parse(&words("agents status --json")).unwrap();
+        assert_eq!((status.action, status.json), (Action::Status, true));
+        let remove = parse(&words("agents remove -y --client hermes --client omp")).unwrap();
+        assert_eq!((remove.action, remove.yes), (Action::Remove, true));
+        assert_eq!(
+            remove.only,
+            [clients::ClientId::Hermes, clients::ClientId::Omp]
+        );
+        assert_eq!(parse(&words("agents")).unwrap().action, Action::Agents);
+        for wrong in [
+            "--json",
+            "status",
+            "agents agents",
+            "--tools tiny",
+            "--tools",
+            "--opencode-config 3",
+            "--what",
+            "--client hermes",
+            "agents --client grok",
+        ] {
+            let error = parse(&words(wrong)).unwrap_err();
+            assert!(error.contains("Usage"), "{wrong}: {error}");
         }
-        assert!(!home.path().join(".gemini").exists());
-
-        // Gemini CLI with its own settings and another server.
-        let gemini = agent("Gemini CLI");
-        std::fs::create_dir_all(&gemini.directory).unwrap();
-        let before = "{\"theme\":\"Dracula\",\"mcpServers\":{\"other\":{\"command\":\"x\"}}}";
-        std::fs::write(&gemini.file, before).unwrap();
-        std::fs::set_permissions(&gemini.file, std::fs::Permissions::from_mode(0o640)).unwrap();
-        assert_eq!(
-            connect_file_agent(gemini, program, true, &no).unwrap(),
-            Connection::Declined
-        );
-        assert_eq!(std::fs::read_to_string(&gemini.file).unwrap(), before);
-        assert_eq!(
-            connect_file_agent(gemini, program, true, &yes).unwrap(),
-            Connection::Added
-        );
-        let written: Value =
-            serde_json::from_str(&std::fs::read_to_string(&gemini.file).unwrap()).unwrap();
-        assert_eq!(written["theme"], "Dracula");
-        assert_eq!(written["mcpServers"]["other"]["command"], "x");
-        assert_eq!(
-            written["mcpServers"]["tomacco"],
-            json!({"command":program,"args":["mcp"]})
-        );
-        let mode = std::fs::metadata(&gemini.file)
-            .unwrap()
-            .permissions()
-            .mode();
-        assert_eq!(mode & 0o777, 0o640);
-        // Connected already: left exactly as it is.
-        let after = std::fs::read_to_string(&gemini.file).unwrap();
-        assert_eq!(
-            connect_file_agent(gemini, program, true, &yes).unwrap(),
-            Connection::Present
-        );
-        assert_eq!(std::fs::read_to_string(&gemini.file).unwrap(), after);
-
-        // Found on PATH without a directory: the file is created.
-        let code = agent("VS Code");
-        assert_eq!(
-            connect_file_agent(code, program, true, &yes).unwrap(),
-            Connection::Added
-        );
-        let written: Value =
-            serde_json::from_str(&std::fs::read_to_string(&code.file).unwrap()).unwrap();
-        assert_eq!(
-            written,
-            json!({"servers":{"tomacco":{"type":"stdio","command":program,"args":["mcp"]}}})
-        );
-        assert!(code.file.starts_with(home.path().join(".config/Code/User")));
-
-        // Zed's settings usually have comments: not rewritten.
-        let zed = agent("Zed");
-        std::fs::create_dir_all(&zed.directory).unwrap();
-        let commented = "// Zed settings\n{\"vim_mode\": true}\n";
-        std::fs::write(&zed.file, commented).unwrap();
-        assert!(matches!(
-            connect_file_agent(zed, program, true, &yes).unwrap(),
-            Connection::ByHand(reason) if reason.contains("comments")
-        ));
-        assert_eq!(std::fs::read_to_string(&zed.file).unwrap(), commented);
-        std::fs::write(&zed.file, "{\"vim_mode\": true}").unwrap();
-        connect_file_agent(zed, program, true, &yes).unwrap();
-        let written: Value =
-            serde_json::from_str(&std::fs::read_to_string(&zed.file).unwrap()).unwrap();
-        assert_eq!(written["vim_mode"], true);
-        assert_eq!(written["context_servers"]["tomacco"]["source"], "custom");
-
-        // A link, as dotfile managers make, and a malformed server list.
-        let cursor = agent("Cursor");
-        std::fs::create_dir_all(&cursor.directory).unwrap();
-        let target = home.path().join("dotfiles-mcp.json");
-        std::fs::write(&target, "{}").unwrap();
-        std::os::unix::fs::symlink(&target, &cursor.file).unwrap();
-        assert!(matches!(
-            connect_file_agent(cursor, program, true, &yes).unwrap(),
-            Connection::ByHand(_)
-        ));
-        assert_eq!(std::fs::read_to_string(&target).unwrap(), "{}");
-        std::fs::remove_file(&cursor.file).unwrap();
-        std::fs::write(&cursor.file, "{\"mcpServers\":[]}").unwrap();
-        assert!(matches!(
-            connect_file_agent(cursor, program, true, &yes).unwrap(),
-            Connection::ByHand(reason) if reason.contains("not an object")
-        ));
-    }
-
-    #[test]
-    fn the_agent_skill_is_linked_only_after_a_yes_and_never_over_another_entry() {
-        let home = tempfile::tempdir().unwrap();
-        let home = home.path();
-        let no = Answers {
-            yes: false,
-            interactive: false,
-        };
-        let yes = Answers {
-            yes: true,
-            interactive: false,
-        };
-        let skill = home.join(".local/lib/tomacco/skills/tomacco");
-        std::fs::create_dir_all(home.join(".claude")).unwrap();
-        // Not installed: nothing to link.
-        assert_eq!(
-            link_skill(home, ".claude", "Claude Code", &yes).unwrap(),
-            SkillLink::Absent
-        );
-        std::fs::create_dir_all(&skill).unwrap();
-        std::fs::write(skill.join("SKILL.md"), "---\nname: tomacco\n---\n").unwrap();
-        // No agent directory: nothing is asked or made.
-        assert_eq!(
-            link_skill(home, ".codex", "Codex", &yes).unwrap(),
-            SkillLink::Absent
-        );
-        assert!(!home.join(".codex").exists());
-        let link = home.join(".claude/skills/tomacco");
-        assert_eq!(
-            link_skill(home, ".claude", "Claude Code", &no).unwrap(),
-            SkillLink::Declined
-        );
-        assert!(std::fs::symlink_metadata(&link).is_err());
-        assert_eq!(
-            link_skill(home, ".claude", "Claude Code", &yes).unwrap(),
-            SkillLink::Added
-        );
-        assert_eq!(std::fs::read_link(&link).unwrap(), skill);
-        assert_eq!(
-            link_skill(home, ".claude", "Claude Code", &yes).unwrap(),
-            SkillLink::Present
-        );
-        // Another skill of that name stays as it is.
-        let other = home.join(".agents/skills/tomacco");
-        std::fs::create_dir_all(&other).unwrap();
-        std::fs::write(other.join("SKILL.md"), "theirs").unwrap();
-        assert_eq!(
-            link_skill(home, ".agents", "Agents", &yes).unwrap(),
-            SkillLink::Taken(other.clone())
-        );
-        assert_eq!(
-            std::fs::read_to_string(other.join("SKILL.md")).unwrap(),
-            "theirs"
-        );
     }
 
     #[test]
@@ -1350,6 +1188,7 @@ mod tests {
         let answers = Answers {
             yes: false,
             interactive: false,
+            aside: false,
         };
         assert!(!answers.ask("Install?"));
     }

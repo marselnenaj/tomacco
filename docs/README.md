@@ -11,6 +11,7 @@ These guides describe version 1.4.1; see [what's new](RELEASE_NOTES.md).
 | Go from an install to a Compose app on the emulator, with a screenshot and a UI test | [Your first Android app](tutorial-android.md) |
 | Have my coding agent set everything up | [Agent setup](agent-setup.md) |
 | Connect a coding agent over MCP or the JSON CLI | [Agents](agents.md) |
+| Connect, check or disconnect a particular agent: Claude Code, Codex, Gemini CLI, Cursor, VS Code, Zed, OpenCode 1 and 2, Grok CLI, Hermes Agent, omp | [Agent clients](agent-clients.md) |
 | Hand a device screen, with its geometry and element tree, to a design tool, an agent or a comparison | [Screen export format](screen-export.md) |
 | Run tomaccoctl headless in Docker, for an agent, a server or CI | [Container image](container.md) |
 | Know what ran on which Linux distribution, and use Tomacco on SteamOS, NixOS, Silverblue or a small computer | [Linux distributions and hardware](linux-hosts.md) |

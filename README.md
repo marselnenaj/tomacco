@@ -96,7 +96,7 @@ rollback and uninstall, see [installing](docs/building.md#installing).
 
 ## For agents
 
-`tomaccoctl setup` connects Claude Code, Codex, Gemini CLI, Cursor, VS Code, Zed and OpenCode, asking
+`tomaccoctl setup` connects Claude Code, Codex, Gemini CLI, Cursor, VS Code, Zed, OpenCode, Grok CLI, Hermes Agent and omp, asking
 first for each; [connect a client](docs/agents.md#connect-a-client) says which file it changes for each.
 The installer also links an [agent skill](docs/agents.md#agent-skill) into `~/.claude/skills`, `~/.codex/skills`
 and `~/.agents/skills`, so those agents know when to use Tomacco; `--no-agent-skill` leaves it out.

@@ -26,6 +26,14 @@ impl Mode {
             _ => None,
         }
     }
+    /// The value that names this mode.
+    pub fn name(self) -> &'static str {
+        match self {
+            Mode::Full => "full",
+            Mode::Compact => "compact",
+            Mode::Grouped => "grouped",
+        }
+    }
     /// The mode `TOMACCO_MCP_TOOLS` names; an unknown value is the full list,
     /// and the server says so on standard error when it starts.
     pub fn from_env() -> Self {

@@ -1,0 +1,16 @@
+{
+  "apiKey": "xai-REDACTED-FIXTURE",
+  "model": "grok-4.3",
+  "mcp": {
+    "servers": [
+      {
+        "id": "github",
+        "label": "GitHub",
+        "enabled": false,
+        "transport": "stdio",
+        "command": "npx",
+        "args": ["-y", "@modelcontextprotocol/server-github"]
+      }
+    ]
+  }
+}
