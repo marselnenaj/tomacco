@@ -20,6 +20,7 @@ use std::{
     thread,
     time::{Duration, Instant},
 };
+pub mod actions;
 pub mod airplay;
 pub mod android;
 pub mod audio;
@@ -467,6 +468,7 @@ pub fn handle(op: &str, a: &Value) -> Result {
             request(id, "observe", &a)
         }
         "runtime.gesture" => request(id, "gesture", a),
+        "runtime.actions" => actions::run(a),
         _ => Err(Error::new("operation_not_found", op)),
     }
 }

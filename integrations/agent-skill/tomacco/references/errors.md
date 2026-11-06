@@ -2,11 +2,13 @@
 
 # Error codes
 
-506 codes. A failure is `{"ok":false,"error":{"code":...,"message":...,"remedy":...}}`. Branch on `code`, show `message`, follow `remedy`. The remedy in the call's own answer can be more specific than the general one here; a … in the meaning stands for a value the message fills in.
+512 codes. A failure is `{"ok":false,"error":{"code":...,"message":...,"remedy":...}}`. Branch on `code`, show `message`, follow `remedy`. The remedy in the call's own answer can be more specific than the general one here; a … in the meaning stands for a value the message fills in.
 
 | Code | Meaning | Remedy |
 | --- | --- | --- |
 | `action_unsupported` | project.dependency_updates reads Gradle builds, pubspec.yaml, package.json dependencies and Package.resolved; this project has none. | Use an explicitly configured project task for framework-specific commands. |
+| `actions_step_failed` | A step of runtime.actions failed; the steps before it ran and details.applied_steps names those that reached the device. | Do not resend the applied steps. Observe the screen with runtime.observe, fix the failed step and continue from it (details.skipped lists the rest). |
+| `actions_timeout` | The whole batch of runtime.actions ran past its timeout; details lists the steps that ran and those skipped. | Observe the screen, then continue from the first skipped step with a longer timeout or shorter waits. |
 | `adb_forward` | ADB did not allocate a forwarding port. | Check with device.list that the device is online, then stop the session with runtime.stop and start it again. |
 | `airplay_runtime` | The AirPlay receiver for iPhone mirroring did not start or stopped, for example because another AirPlay receiver holds its ports. | Read the session's error and uxplay.log, stop the other receiver (such as a UxPlay started by hand), open TCP 7000, 7001, 7100 and UDP 6000, 6001, 7011 to the local network, then start the session again. |
 | `ambiguous_selector` | Selector matched … elements; refine it or specify index. | Add properties to the selector, or pass index. |
@@ -126,8 +128,11 @@
 | `fixture_runtime` | The offline fixture runtime was asked for but is off, or its scenario is missing or broken. | Set TOMACCO_FIXTURE_RUNTIME to the directory that holds NAME/scenario.json, or connect a real device instead; the fixture is for tests and benchmarks only. |
 | `flutter_ios_missing` | This is not a Flutter project with an ios directory. | Run flutter create --platforms ios . in the project. |
 | `flutter_setup_required` | This Flutter install still has Apple's macOS gen_snapshot. | Call ios.flutter_setup once per Flutter version. |
+| `focus_timeout` | No field took the input focus within the wait of a text step, so nothing was typed. | Tap the field first (a tap step before the text step), wait longer with focus_timeout_ms, or look at the screen with runtime.observe. |
+| `focus_unobservable` | The text step required the focus to be observed, and this transport does not report it. | Use focus wait (which settles briefly where focus cannot be observed) or focus none, and verify with expect or runtime.observe. |
 | `form_factor_unsupported` | The system image is for TV, Wear, Automotive, XR or Desktop, which Tomacco does not create AVDs for. | Create it with avdmanager and the SDK device definition the error names, or use a phone or tablet image. |
 | `frame_missing` | The debugger could not start, attach or answer. | Read the stack before reading frame variables. |
+| `frame_stale` | The screen's size or orientation differs from the frame the batch was planned on; nothing was sent. | Observe again with runtime.observe and plan the steps on the new frame. |
 | `git_failed` | git could not list the changed files for testing.impact. | Run it in a Git working tree, or pass the changed files explicitly. |
 | `guest_diagnostic_failed` | The virtual iOS device or its research engine refused the request or stopped answering. | Read the message; ios.virtual.status and the job's log show the device's state, and docs/virtual-ios/troubleshooting.md lists known causes. |
 | `guest_observation_timeout` | The guest did not complete both platform observations. | Read the message; ios.virtual.status and the job's log show the device's state, and docs/virtual-ios/troubleshooting.md lists known causes. |
@@ -363,6 +368,7 @@
 | `policy_denied` | The agent policy in force does not allow this operation for this caller. | Call agent.policy to see the policy; only the person can change it, from a terminal with settings.configure agent_policy. |
 | `policy_invalid` | settings.json has an agent_policy that cannot be read, so agent calls are blocked until it is fixed. | From a terminal, set a valid agent_policy with settings.configure. |
 | `port_busy` | Port … is already in use, perhaps by another Metro bundler. | Stop the other bundler, or its project.run job, then run again. |
+| `postcondition_failed` | The step was applied, but the text its expect names did not appear (or go) in time. | The action reached the device: do not send it again. Observe the screen and decide from what is there. |
 | `preview_disconnected` | Preview closed before replying. | Check that the dev server answers at the URL, then preview.reload or start the preview again. |
 | `preview_unavailable` | Cannot reach preview session …: … | Start tomacco --preview-session … |
 | `process_missing` | No Android process to attach; launch a debuggable build. | Check the session with debug.list and its log; the app must be a debuggable build that is running. |

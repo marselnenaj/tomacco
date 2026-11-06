@@ -10069,6 +10069,464 @@
     }
   },
   {
+    "name": "runtime.actions",
+    "title": "Ordered input batch",
+    "description": "Run up to 50 input and wait steps in order on one session, in one call, with a result per step. A text step waits until a field has the focus (polling the session's focus and keyboard) before it types, so the first characters are not lost, and answers focus_timeout with nothing typed when no field takes it; where the transport cannot report focus it says so and settles briefly instead. A tap can name a mark from the last screen.marks of this session and is verified like screen.tap. A step may carry expect, a text that must appear or go afterwards: met makes the step verified, otherwise postcondition_failed stops the batch with the step still counted as applied. The first failure stops the rest: the error's details list every step so far (steps), the indexes that reached the device (applied_steps) and those not run (skipped), so an agent never resends an applied step. The whole batch is bounded by timeout and by the client's cancellation. With frame (width, height, orientation from runtime.observe) the batch is refused with frame_stale and nothing sent when the screen's geometry changed since. observe_after appends a fresh runtime.observe. The answer's evidence is fixture on the offline fixture runtime.",
+    "inputSchema": {
+      "type": "object",
+      "properties": {
+        "session": {
+          "type": "string",
+          "pattern": "^[a-f0-9]{32}$",
+          "description": "ID returned by runtime.start; separate from desktop preview sessions."
+        },
+        "steps": {
+          "type": "array",
+          "minItems": 1,
+          "maxItems": 50,
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "action"
+            ],
+            "properties": {
+              "action": {
+                "type": "string",
+                "enum": [
+                  "tap",
+                  "swipe",
+                  "key",
+                  "text",
+                  "fill",
+                  "pinch",
+                  "rotate",
+                  "gesture",
+                  "wait",
+                  "wait_text",
+                  "wait_text_gone",
+                  "wait_stable",
+                  "observe"
+                ],
+                "description": "tap (x, y or mark), swipe, key, text (after the field has the focus), fill, pinch, rotate and gesture change the device; wait, wait_text, wait_text_gone, wait_stable and observe only look"
+              },
+              "x": {
+                "type": "number",
+                "minimum": 0,
+                "maximum": 1,
+                "description": "0..1 of the frame's width"
+              },
+              "y": {
+                "type": "number",
+                "minimum": 0,
+                "maximum": 1,
+                "description": "0..1 of the frame's height"
+              },
+              "x2": {
+                "type": "number",
+                "minimum": 0,
+                "maximum": 1,
+                "description": "Swipe end"
+              },
+              "y2": {
+                "type": "number",
+                "minimum": 0,
+                "maximum": 1,
+                "description": "Swipe end"
+              },
+              "mark": {
+                "type": "integer",
+                "minimum": 1,
+                "maximum": 200,
+                "description": "For tap: a mark number from the last screen.marks of this session, verified like screen.tap"
+              },
+              "verify": {
+                "type": "boolean",
+                "default": true,
+                "description": "For tap by mark: check the mark still matches first"
+              },
+              "hold_ms": {
+                "type": "integer",
+                "minimum": 100,
+                "maximum": 5000,
+                "description": "For tap: hold this long (a long press)"
+              },
+              "duration": {
+                "type": "number",
+                "minimum": 0.01,
+                "maximum": 5,
+                "description": "Seconds for swipe and pinch"
+              },
+              "key": {
+                "type": "string",
+                "enum": [
+                  "home",
+                  "back",
+                  "escape",
+                  "enter",
+                  "backspace",
+                  "delete",
+                  "tab",
+                  "up",
+                  "down",
+                  "left",
+                  "right",
+                  "power",
+                  "volume_up",
+                  "volume_down",
+                  "apps"
+                ]
+              },
+              "text": {
+                "type": "string",
+                "maxLength": 16000,
+                "description": "For text and fill: what to type; for wait_text and wait_text_gone: what to wait for"
+              },
+              "focus": {
+                "type": "string",
+                "enum": [
+                  "wait",
+                  "require",
+                  "none"
+                ],
+                "default": "wait",
+                "description": "For text: wait polls the session until a field has the focus (or the keyboard shows where focus is not reported) before typing, and answers focus_timeout with nothing typed when none does; require also fails when the transport cannot report focus; none types at once"
+              },
+              "focus_timeout_ms": {
+                "type": "integer",
+                "minimum": 0,
+                "maximum": 60000,
+                "default": 2000
+              },
+              "settle_ms": {
+                "type": "integer",
+                "minimum": 0,
+                "maximum": 5000,
+                "default": 300,
+                "description": "For text when focus cannot be observed: how long to wait before typing"
+              },
+              "orientation": {
+                "type": "string",
+                "enum": [
+                  "portrait",
+                  "portrait_upside_down",
+                  "landscape_left",
+                  "landscape_right"
+                ]
+              },
+              "scale": {
+                "type": "number",
+                "minimum": 0.05,
+                "maximum": 20
+              },
+              "contacts": {
+                "type": "array",
+                "minItems": 1,
+                "maxItems": 5,
+                "items": {
+                  "type": "object",
+                  "additionalProperties": false,
+                  "required": [
+                    "points"
+                  ],
+                  "properties": {
+                    "points": {
+                      "type": "array",
+                      "minItems": 2,
+                      "maxItems": 240,
+                      "items": {
+                        "type": "object",
+                        "additionalProperties": false,
+                        "required": [
+                          "x",
+                          "y",
+                          "t_ms"
+                        ],
+                        "properties": {
+                          "x": {
+                            "type": "number",
+                            "minimum": 0,
+                            "maximum": 1
+                          },
+                          "y": {
+                            "type": "number",
+                            "minimum": 0,
+                            "maximum": 1
+                          },
+                          "t_ms": {
+                            "type": "integer",
+                            "minimum": 0,
+                            "maximum": 10000
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              },
+              "ms": {
+                "type": "integer",
+                "minimum": 0,
+                "maximum": 10000,
+                "description": "For wait"
+              },
+              "timeout_ms": {
+                "type": "integer",
+                "minimum": 0,
+                "maximum": 300000,
+                "default": 5000,
+                "description": "For wait_text, wait_text_gone and wait_stable"
+              },
+              "interval_ms": {
+                "type": "integer",
+                "minimum": 50,
+                "maximum": 10000,
+                "default": 200
+              },
+              "stable_ms": {
+                "type": "integer",
+                "minimum": 100,
+                "maximum": 60000,
+                "default": 500
+              },
+              "threshold": {
+                "type": "number",
+                "minimum": 0,
+                "maximum": 1,
+                "default": 0.001
+              },
+              "tolerance": {
+                "type": "integer",
+                "minimum": 0,
+                "maximum": 255,
+                "default": 24
+              },
+              "ignore": {
+                "type": "array",
+                "maxItems": 100,
+                "items": {
+                  "type": "object",
+                  "additionalProperties": false,
+                  "required": [
+                    "x",
+                    "y",
+                    "width",
+                    "height"
+                  ],
+                  "properties": {
+                    "x": {
+                      "type": "integer",
+                      "minimum": 0
+                    },
+                    "y": {
+                      "type": "integer",
+                      "minimum": 0
+                    },
+                    "width": {
+                      "type": "integer",
+                      "minimum": 1
+                    },
+                    "height": {
+                      "type": "integer",
+                      "minimum": 1
+                    }
+                  }
+                }
+              },
+              "source": {
+                "type": "string",
+                "enum": [
+                  "auto",
+                  "hierarchy",
+                  "ocr"
+                ],
+                "default": "auto"
+              },
+              "fuzzy": {
+                "type": "boolean",
+                "default": false
+              },
+              "min_confidence": {
+                "type": "number",
+                "minimum": 0,
+                "maximum": 100,
+                "default": 40
+              },
+              "language": {
+                "type": "string",
+                "pattern": "^[A-Za-z0-9_+]+$",
+                "default": "eng"
+              },
+              "region": {
+                "type": "object",
+                "additionalProperties": false,
+                "required": [
+                  "x",
+                  "y",
+                  "width",
+                  "height"
+                ],
+                "properties": {
+                  "x": {
+                    "type": "integer",
+                    "minimum": 0
+                  },
+                  "y": {
+                    "type": "integer",
+                    "minimum": 0
+                  },
+                  "width": {
+                    "type": "integer",
+                    "minimum": 1
+                  },
+                  "height": {
+                    "type": "integer",
+                    "minimum": 1
+                  }
+                }
+              },
+              "context": {
+                "type": "boolean",
+                "default": true,
+                "description": "For observe: also read app, keyboard and focus"
+              },
+              "expect": {
+                "type": "object",
+                "additionalProperties": false,
+                "description": "A postcondition checked after the step: text that must appear (text) or go (text_gone) within timeout_ms; met makes the step verified, otherwise postcondition_failed stops the batch with the step still counted as applied",
+                "properties": {
+                  "text": {
+                    "type": "string",
+                    "minLength": 1
+                  },
+                  "text_gone": {
+                    "type": "string",
+                    "minLength": 1
+                  },
+                  "timeout_ms": {
+                    "type": "integer",
+                    "minimum": 0,
+                    "maximum": 300000,
+                    "default": 3000
+                  },
+                  "interval_ms": {
+                    "type": "integer",
+                    "minimum": 50,
+                    "maximum": 10000,
+                    "default": 200
+                  },
+                  "source": {
+                    "type": "string",
+                    "enum": [
+                      "auto",
+                      "hierarchy",
+                      "ocr"
+                    ],
+                    "default": "auto"
+                  },
+                  "fuzzy": {
+                    "type": "boolean",
+                    "default": false
+                  },
+                  "min_confidence": {
+                    "type": "number",
+                    "minimum": 0,
+                    "maximum": 100,
+                    "default": 40
+                  },
+                  "language": {
+                    "type": "string",
+                    "pattern": "^[A-Za-z0-9_+]+$",
+                    "default": "eng"
+                  },
+                  "region": {
+                    "type": "object",
+                    "additionalProperties": false,
+                    "required": [
+                      "x",
+                      "y",
+                      "width",
+                      "height"
+                    ],
+                    "properties": {
+                      "x": {
+                        "type": "integer",
+                        "minimum": 0
+                      },
+                      "y": {
+                        "type": "integer",
+                        "minimum": 0
+                      },
+                      "width": {
+                        "type": "integer",
+                        "minimum": 1
+                      },
+                      "height": {
+                        "type": "integer",
+                        "minimum": 1
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "timeout": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 300,
+          "default": 30,
+          "description": "Seconds for the whole batch, waits included"
+        },
+        "frame": {
+          "type": "object",
+          "additionalProperties": false,
+          "description": "The frame the steps were planned on, from runtime.observe: refused with frame_stale when the screen's size or orientation differs now",
+          "properties": {
+            "id": {
+              "type": "string",
+              "maxLength": 64
+            },
+            "width": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 16384
+            },
+            "height": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 16384
+            },
+            "orientation": {
+              "type": "string",
+              "enum": [
+                "portrait",
+                "landscape"
+              ]
+            }
+          }
+        },
+        "observe_after": {
+          "type": "boolean",
+          "default": false,
+          "description": "Append a fresh observation of the session to the answer"
+        }
+      },
+      "required": [
+        "session",
+        "steps"
+      ],
+      "additionalProperties": false
+    },
+    "annotations": {
+      "readOnlyHint": false,
+      "destructiveHint": false,
+      "idempotentHint": false,
+      "openWorldHint": true
+    }
+  },
+  {
     "name": "ios.doctor",
     "title": "Check iPhone development on Linux",
     "description": "Check Swift/xtool, managed swift/swiftc identity, SDK availability, Apple authentication, USB and project compatibility without exposing credentials. Compiler/SDK compatibility is reported as not_checked. No Mac is contacted. linux_toolkit reports the optional omarchy-apple-dev checkout and what it lacks; it does not count towards ready.",

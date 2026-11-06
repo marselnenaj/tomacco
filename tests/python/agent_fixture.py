@@ -70,6 +70,8 @@ def write_login_scenario(root, name="login", size=(360, 640), focus_after_ms=120
     (directory / "field.xml").write_text(hierarchy(w, h, 0, [dict(nodes[0], focused=True), nodes[1]]))
     (directory / "wide.xml").write_text(hierarchy(h, w, 1, [{"class": "android.widget.Button", "id": "com.example.app:id/sign_in",
                                                             "text": "Sign in", "rect": (h // 2 - 100, w // 2, h // 2 + 100, w // 2 + 60)}]))
+    (directory / "loading.xml").write_text(hierarchy(w, h, 0, [{"class": "android.widget.TextView", "text": "Loading", "rect": (20, 100, w - 20, 160)}]))
+    (directory / "welcome.xml").write_text(hierarchy(w, h, 0, [{"class": "android.widget.TextView", "text": "Welcome", "rect": (20, 100, w - 20, 160)}]))
     app = {"bundle_id": "com.example.app", "name": "Example", "home_screen": False}
     tap_field = {"left": field[0], "top": field[1], "right": field[2], "bottom": field[3], "to": "field", "after_ms": focus_after_ms}
     tap_button = {"left": button[0], "top": button[1], "right": button[2], "bottom": button[3], "to": "loading", "after_ms": 0}
@@ -79,11 +81,11 @@ def write_login_scenario(root, name="login", size=(360, 640), focus_after_ms=120
         "field": {"frame": "field.png", "hierarchy": "field.xml", "app": app, "keyboard": True, "focused": True,
                   "taps": [tap_field, tap_button], "text_to": "typed", "key_to": {"back": "home"}},
         "typed": {"frame": "typed.png", "hierarchy": "field.xml", "app": app, "keyboard": True, "focused": True,
-                  "taps": [tap_button], "key_to": {"enter": "loading"}},
-        "loading": {"frame": "spin1.png", "app": app, "keyboard": False, "focused": False,
+                  "taps": [tap_button], "key_to": {"enter": "loading", "back": "home"}},
+        "loading": {"frame": "spin1.png", "hierarchy": "loading.xml", "app": app, "keyboard": False, "focused": False,
                     "animated": {"frames": ["spin1.png", "spin2.png"], "interval_ms": 0},
-                    "taps": [{"left": 0, "top": 0, "right": w, "bottom": h, "to": "welcome", "after_ms": 0}]},
-        "welcome": {"frame": "welcome.png", "app": app, "keyboard": False, "focused": False, "key_to": {"back": "home"}},
+                    "taps": [{"left": 0, "top": 0, "right": w, "bottom": h, "to": "welcome", "after_ms": 0}], "key_to": {"back": "home"}},
+        "welcome": {"frame": "welcome.png", "hierarchy": "welcome.xml", "app": app, "keyboard": False, "focused": False, "key_to": {"back": "home"}},
         "wide": {"frame": "wide.png", "hierarchy": "wide.xml", "app": app, "orientation": "landscape", "keyboard": False,
                  "focused": False, "rotate_to": {"portrait": "home"}}}}
     (directory / "scenario.json").write_text(json.dumps(scenario, indent=1))

@@ -2,7 +2,7 @@
 
 # `runtime` operations
 
-10 operations. Generated from `assets/operations.json`; [all areas](README.md).
+11 operations. Generated from `assets/operations.json`; [all areas](README.md).
 
 ### runtime.start
 
@@ -191,4 +191,84 @@ Annotations: writes, not idempotent, open world.
 
 ```sh
 tomaccoctl call runtime.gesture '{"session":"<session>","contacts":[{"points":[{"x":0,"y":0,"t_ms":0},{"x":0,"y":0,"t_ms":0}]}]}'
+```
+
+### runtime.actions
+
+**Ordered input batch**
+
+Run up to 50 input and wait steps in order on one session, in one call, with a result per step. A text step waits until a field has the focus (polling the session's focus and keyboard) before it types, so the first characters are not lost, and answers focus_timeout with nothing typed when no field takes it; where the transport cannot report focus it says so and settles briefly instead. A tap can name a mark from the last screen.marks of this session and is verified like screen.tap. A step may carry expect, a text that must appear or go afterwards: met makes the step verified, otherwise postcondition_failed stops the batch with the step still counted as applied. The first failure stops the rest: the error's details list every step so far (steps), the indexes that reached the device (applied_steps) and those not run (skipped), so an agent never resends an applied step. The whole batch is bounded by timeout and by the client's cancellation. With frame (width, height, orientation from runtime.observe) the batch is refused with frame_stale and nothing sent when the screen's geometry changed since. observe_after appends a fresh runtime.observe. The answer's evidence is fixture on the offline fixture runtime.
+
+Annotations: writes, not idempotent, open world.
+
+| Argument | Type | Required | Default | Details |
+| --- | --- | --- | --- | --- |
+| `session` | string | yes |  | matching `^[a-f0-9]{32}$`; ID returned by runtime.start; separate from desktop preview sessions. |
+| `steps` | array of object | yes |  | 1 to 50 items |
+| `steps[].action` | string | yes |  | one of `tap`, `swipe`, `key`, `text`, `fill`, `pinch`, `rotate`, `gesture`, `wait`, `wait_text`, `wait_text_gone`, `wait_stable`, `observe`; tap (x, y or mark), swipe, key, text (after the field has the focus), fill, pinch, rotate and gesture change the device; wait, wait_text, wait_text_gone, wait_stable and observe only look |
+| `steps[].x` | number |  |  | 0 to 1; 0..1 of the frame's width |
+| `steps[].y` | number |  |  | 0 to 1; 0..1 of the frame's height |
+| `steps[].x2` | number |  |  | 0 to 1; Swipe end |
+| `steps[].y2` | number |  |  | 0 to 1; Swipe end |
+| `steps[].mark` | integer |  |  | 1 to 200; For tap: a mark number from the last screen.marks of this session, verified like screen.tap |
+| `steps[].verify` | boolean |  | `true` | For tap by mark: check the mark still matches first |
+| `steps[].hold_ms` | integer |  |  | 100 to 5000; For tap: hold this long (a long press) |
+| `steps[].duration` | number |  |  | 0.01 to 5; Seconds for swipe and pinch |
+| `steps[].key` | string |  |  | one of `home`, `back`, `escape`, `enter`, `backspace`, `delete`, `tab`, `up`, `down`, `left`, `right`, `power`, `volume_up`, `volume_down`, `apps` |
+| `steps[].text` | string |  |  | up to 16000 characters; For text and fill: what to type; for wait_text and wait_text_gone: what to wait for |
+| `steps[].focus` | string |  | `"wait"` | one of `wait`, `require`, `none`; For text: wait polls the session until a field has the focus (or the keyboard shows where focus is not reported) before typing, and answers focus_timeout with nothing typed when none does; require also fails when the transport cannot report focus; none types at once |
+| `steps[].focus_timeout_ms` | integer |  | `2000` | 0 to 60000 |
+| `steps[].settle_ms` | integer |  | `300` | 0 to 5000; For text when focus cannot be observed: how long to wait before typing |
+| `steps[].orientation` | string |  |  | one of `portrait`, `portrait_upside_down`, `landscape_left`, `landscape_right` |
+| `steps[].scale` | number |  |  | 0.05 to 20 |
+| `steps[].contacts` | array of object |  |  | 1 to 5 items |
+| `steps[].contacts[].points` | array of object | yes |  | 2 to 240 items |
+| `steps[].contacts[].points[].x` | number | yes |  | 0 to 1 |
+| `steps[].contacts[].points[].y` | number | yes |  | 0 to 1 |
+| `steps[].contacts[].points[].t_ms` | integer | yes |  | 0 to 10000 |
+| `steps[].ms` | integer |  |  | 0 to 10000; For wait |
+| `steps[].timeout_ms` | integer |  | `5000` | 0 to 300000; For wait_text, wait_text_gone and wait_stable |
+| `steps[].interval_ms` | integer |  | `200` | 50 to 10000 |
+| `steps[].stable_ms` | integer |  | `500` | 100 to 60000 |
+| `steps[].threshold` | number |  | `0.001` | 0 to 1 |
+| `steps[].tolerance` | integer |  | `24` | 0 to 255 |
+| `steps[].ignore` | array of object |  |  | up to 100 items |
+| `steps[].ignore[].x` | integer | yes |  | at least 0 |
+| `steps[].ignore[].y` | integer | yes |  | at least 0 |
+| `steps[].ignore[].width` | integer | yes |  | at least 1 |
+| `steps[].ignore[].height` | integer | yes |  | at least 1 |
+| `steps[].source` | string |  | `"auto"` | one of `auto`, `hierarchy`, `ocr` |
+| `steps[].fuzzy` | boolean |  | `false` |  |
+| `steps[].min_confidence` | number |  | `40` | 0 to 100 |
+| `steps[].language` | string |  | `"eng"` | matching `^[A-Za-z0-9_+]+$` |
+| `steps[].region` | object |  |  |  |
+| `steps[].region.x` | integer | yes |  | at least 0 |
+| `steps[].region.y` | integer | yes |  | at least 0 |
+| `steps[].region.width` | integer | yes |  | at least 1 |
+| `steps[].region.height` | integer | yes |  | at least 1 |
+| `steps[].context` | boolean |  | `true` | For observe: also read app, keyboard and focus |
+| `steps[].expect` | object |  |  | A postcondition checked after the step: text that must appear (text) or go (text_gone) within timeout_ms; met makes the step verified, otherwise postcondition_failed stops the batch with the step still counted as applied |
+| `steps[].expect.text` | string |  |  | non-empty |
+| `steps[].expect.text_gone` | string |  |  | non-empty |
+| `steps[].expect.timeout_ms` | integer |  | `3000` | 0 to 300000 |
+| `steps[].expect.interval_ms` | integer |  | `200` | 50 to 10000 |
+| `steps[].expect.source` | string |  | `"auto"` | one of `auto`, `hierarchy`, `ocr` |
+| `steps[].expect.fuzzy` | boolean |  | `false` |  |
+| `steps[].expect.min_confidence` | number |  | `40` | 0 to 100 |
+| `steps[].expect.language` | string |  | `"eng"` | matching `^[A-Za-z0-9_+]+$` |
+| `steps[].expect.region` | object |  |  |  |
+| `steps[].expect.region.x` | integer | yes |  | at least 0 |
+| `steps[].expect.region.y` | integer | yes |  | at least 0 |
+| `steps[].expect.region.width` | integer | yes |  | at least 1 |
+| `steps[].expect.region.height` | integer | yes |  | at least 1 |
+| `timeout` | integer |  | `30` | 1 to 300; Seconds for the whole batch, waits included |
+| `frame` | object |  |  | The frame the steps were planned on, from runtime.observe: refused with frame_stale when the screen's size or orientation differs now |
+| `frame.id` | string |  |  | up to 64 characters |
+| `frame.width` | integer |  |  | 1 to 16384 |
+| `frame.height` | integer |  |  | 1 to 16384 |
+| `frame.orientation` | string |  |  | one of `portrait`, `landscape` |
+| `observe_after` | boolean |  | `false` | Append a fresh observation of the session to the answer |
+
+```sh
+tomaccoctl call runtime.actions '{"session":"<session>","steps":[{"action":"tap"}]}'
 ```

@@ -3,47 +3,224 @@
   "workspace": "/home/maslos/Work/tomacco-agent-platform",
   "branch": "feat/agent-platform",
   "base_commit": "bdd708c40719e755ad6b71a5c6969aa2797d20a5",
-  "updated": "2026-11-06T11:40:00Z",
+  "updated": "2026-11-06T10:40:07Z",
   "status": "in_progress",
   "hardware_constraint": "No physical device, USB, ADB, Fastboot, SSH, network or runtime probes while the Pixel is being flashed. Everything below is verified offline only: unit tests, loopback fakes and the env-gated fixture runtime. Physical iPhone (WDA), Android, AirPlay and Simulator paths are code-reviewed and contract-tested, not hardware-qualified.",
   "capability_gap_table": [
-    {"capability": "Session-addressed fresh observation (frame id, time, age, orientation, geometry, app, keyboard, focus)", "before": "runtime.capture writes a PNG; runtime.state has stale width/height for the iPhone; no app/keyboard/focus; no frame id", "target": "runtime.observe on every session transport with explicit unavailable fields", "state": "planned"},
-    {"capability": "screen.* (marks, tap, tree, ocr, wait, diff, export) on a physical USB iPhone", "before": "with_screen routes Android serials and virtual-iphone only; WDA XML is not the UIAutomator format the tree reader takes", "target": "a runtime session ID is a screen device; WDA XML converted to hierarchy nodes with point-to-pixel scaling", "state": "planned"},
-    {"capability": "Stale geometry rejection after rotation", "before": "screen.tap compares pixels or element bounds; a rotation reads as a generic mark_stale", "target": "marks carry frame id and size; a changed size answers mark_stale naming the rotation; batches carry the frame they were planned on", "state": "planned"},
-    {"capability": "Ordered tap -> focus -> type without lost characters", "before": "runtime.input text sends at once; fill taps and types through WDA/accessibility; no focus wait", "target": "runtime.actions: per-step results, focus readiness wait with a bounded deadline, applied vs verified status, optional postconditions, no blind replay", "state": "planned"},
-    {"capability": "Gesture contract: atomic timestamped trace vs live stream, multi-contact, pinch", "before": "iPhone USB buffers touch until up (not live); pinch unsupported on USB iPhone and Android runtime; capabilities not reported", "target": "input_capabilities per transport in runtime.state; runtime.gesture traces; two-finger pinch over WDA W3C actions and scrcpy pointer ids", "state": "planned"},
-    {"capability": "USB iPhone window/size roundtrip", "before": "dimensions() requests /window/size before every tap, touch-down, swipe and fill", "target": "cached point size invalidated by the MJPEG frame size (rotation) and by rotate", "state": "planned"},
-    {"capability": "OCR repeated frames", "before": "a tesseract process per read, also for an unchanged frame in screen.wait loops", "target": "content-addressed in-process cache (PNG digest + language + invert + region); worker reuse remains a hypothesis", "state": "planned"},
-    {"capability": "Benchmark runner with measured boundaries", "before": "tests/benchmark_control_plane.py measures schema/catalog/jobs only", "target": "tools/benchmark_agent_loop.py over the fixture runtime, >=100 trials per case, p50/p95, failures kept, hardware matrix pending", "state": "planned"},
-    {"capability": "Human handoff", "before": "approval dialog for destructive MCP calls only", "target": "handoff.* durable request/status/wait/complete/cancel, desktop banner, fresh observation on resume", "state": "planned"},
-    {"capability": "Unicode device name resolution", "before": "operations take ids; nicknames are display only", "target": "device.resolve: NFC + apostrophe folding, exact first, ambiguity error, never a fuzzy pick", "state": "planned"},
-    {"capability": "GPX route playback", "before": "android.emulator location sets one fix", "target": "gpx.validate / gpx.preview / gpx.play job with speed, loop, pause, resume, cancel on emulators; other transports answer unsupported", "state": "planned"},
-    {"capability": "Reviewable bug-report draft", "before": "diagnostics.bundle writes a redacted tar.gz", "target": "diagnostics.report_draft: issue.md, attachment metadata, redaction receipt, nothing sent", "state": "planned"},
-    {"capability": "Mirror polish: reconnect/ownership, screenshot affordance, states", "before": "notice text and a retry for AirPlay", "target": "explicit waiting-for-person / reconnecting / owner conflict / unsupported / paused / failed states where the backend reports them", "state": "planned"}
+    {
+      "capability": "Session-addressed fresh observation (frame id, time, age, orientation, geometry, app, keyboard, focus)",
+      "before": "runtime.capture writes a PNG; runtime.state has stale width/height for the iPhone; no app/keyboard/focus; no frame id",
+      "target": "runtime.observe on every session transport with explicit unavailable fields",
+      "state": "implemented, offline-tested (fixture, loopback WDA fake, unit tests); hardware unverified"
+    },
+    {
+      "capability": "screen.* (marks, tap, tree, ocr, wait, diff, export) on a physical USB iPhone",
+      "before": "with_screen routes Android serials and virtual-iphone only; WDA XML is not the UIAutomator format the tree reader takes",
+      "target": "a runtime session ID is a screen device; WDA XML converted to hierarchy nodes with point-to-pixel scaling",
+      "state": "implemented, offline-tested (fixture, loopback WDA fake, unit tests); hardware unverified"
+    },
+    {
+      "capability": "Stale geometry rejection after rotation",
+      "before": "screen.tap compares pixels or element bounds; a rotation reads as a generic mark_stale",
+      "target": "marks carry frame id and size; a changed size answers mark_stale naming the rotation; batches carry the frame they were planned on",
+      "state": "implemented, offline-tested (fixture, loopback WDA fake, unit tests); hardware unverified"
+    },
+    {
+      "capability": "Ordered tap -> focus -> type without lost characters",
+      "before": "runtime.input text sends at once; fill taps and types through WDA/accessibility; no focus wait",
+      "target": "runtime.actions: per-step results, focus readiness wait with a bounded deadline, applied vs verified status, optional postconditions, no blind replay",
+      "state": "implemented, offline-tested (fixture, loopback WDA fake, unit tests); hardware unverified"
+    },
+    {
+      "capability": "Gesture contract: atomic timestamped trace vs live stream, multi-contact, pinch",
+      "before": "iPhone USB buffers touch until up (not live); pinch unsupported on USB iPhone and Android runtime; capabilities not reported",
+      "target": "input_capabilities per transport in runtime.state; runtime.gesture traces; two-finger pinch over WDA W3C actions and scrcpy pointer ids",
+      "state": "implemented, offline-tested (fixture, loopback WDA fake, unit tests); hardware unverified"
+    },
+    {
+      "capability": "USB iPhone window/size roundtrip",
+      "before": "dimensions() requests /window/size before every tap, touch-down, swipe and fill",
+      "target": "cached point size invalidated by the MJPEG frame size (rotation) and by rotate",
+      "state": "implemented, offline-tested (fixture, loopback WDA fake, unit tests); hardware unverified"
+    },
+    {
+      "capability": "OCR repeated frames",
+      "before": "a tesseract process per read, also for an unchanged frame in screen.wait loops",
+      "target": "content-addressed in-process cache (PNG digest + language + invert + region); worker reuse remains a hypothesis",
+      "state": "implemented, offline-tested (fixture, loopback WDA fake, unit tests); hardware unverified"
+    },
+    {
+      "capability": "Benchmark runner with measured boundaries",
+      "before": "tests/benchmark_control_plane.py measures schema/catalog/jobs only",
+      "target": "tools/benchmark_agent_loop.py over the fixture runtime, >=100 trials per case, p50/p95, failures kept, hardware matrix pending",
+      "state": "planned"
+    },
+    {
+      "capability": "Human handoff",
+      "before": "approval dialog for destructive MCP calls only",
+      "target": "handoff.* durable request/status/wait/complete/cancel, desktop banner, fresh observation on resume",
+      "state": "planned"
+    },
+    {
+      "capability": "Unicode device name resolution",
+      "before": "operations take ids; nicknames are display only",
+      "target": "device.resolve: NFC + apostrophe folding, exact first, ambiguity error, never a fuzzy pick",
+      "state": "planned"
+    },
+    {
+      "capability": "GPX route playback",
+      "before": "android.emulator location sets one fix",
+      "target": "gpx.validate / gpx.preview / gpx.play job with speed, loop, pause, resume, cancel on emulators; other transports answer unsupported",
+      "state": "planned"
+    },
+    {
+      "capability": "Reviewable bug-report draft",
+      "before": "diagnostics.bundle writes a redacted tar.gz",
+      "target": "diagnostics.report_draft: issue.md, attachment metadata, redaction receipt, nothing sent",
+      "state": "planned"
+    },
+    {
+      "capability": "Mirror polish: reconnect/ownership, screenshot affordance, states",
+      "before": "notice text and a retry for AirPlay",
+      "target": "explicit waiting-for-person / reconnecting / owner conflict / unsupported / paused / failed states where the backend reports them",
+      "state": "planned"
+    }
   ],
   "acceptance_matrix": [
-    {"id": "A1", "case": "runtime.observe answers frame id, captured_at, size, orientation and explicit unavailable app/keyboard on the fixture runtime", "how": "tests/python/test_agent_runtime.py", "state": "planned"},
-    {"id": "A2", "case": "screen.marks + screen.tap on a session id; tap after rotation answers mark_stale naming the size change and taps nothing", "how": "tests/python/test_agent_runtime.py + native/screen.rs unit test", "state": "planned"},
-    {"id": "A3", "case": "WDA XML becomes hierarchy nodes with scaled pixel bounds, editable/clickable flags and focus", "how": "native/screen_tree.rs unit test", "state": "planned"},
-    {"id": "A4", "case": "iPhone point size is requested once per geometry epoch; a changed MJPEG frame size or rotate refreshes it; pinch sends two pointer sources", "how": "native/runtime/iphone.rs loopback test", "state": "planned"},
-    {"id": "A5", "case": "runtime.actions: text after tap waits for focus; focus never appearing fails the step with nothing typed; partial failure lists applied and skipped steps; deadline and cancellation are bounded", "how": "tests/python/test_agent_runtime.py", "state": "planned"},
-    {"id": "A6", "case": "OCR cache answers an unchanged frame without a tesseract run and a changed frame with one", "how": "native/screen_ocr.rs unit test", "state": "planned"},
-    {"id": "A7", "case": "benchmark runner writes p50/p95 per case with evidence=fixture and keeps failed trials", "how": "tools/benchmark_agent_loop.py --trials 100", "state": "planned"},
-    {"id": "B1", "case": "handoff request survives a new process, completes only through an explicit person action, resume answers a fresh observation", "how": "tests/python/test_handoff.py + QML test", "state": "planned"},
-    {"id": "B2", "case": "device.resolve: curly apostrophe and emoji names match exactly; two candidates answer device_ambiguous", "how": "native/devices.rs unit test", "state": "planned"},
-    {"id": "C1", "case": "gpx.validate rejects external entities and oversized files; preview orders untimed points; play job pauses, resumes, loops and cancels on a fake console", "how": "native/gpx.rs unit tests + tests/python", "state": "planned"},
-    {"id": "C2", "case": "report draft masks secrets and home, lists attachments with digests and a redaction receipt, sends nothing", "how": "native/diagnostics.rs unit test", "state": "planned"}
+    {
+      "id": "A1",
+      "case": "runtime.observe answers frame id, captured_at, size, orientation and explicit unavailable app/keyboard on the fixture runtime",
+      "how": "tests/python/test_agent_runtime.py",
+      "state": "passing offline"
+    },
+    {
+      "id": "A2",
+      "case": "screen.marks + screen.tap on a session id; tap after rotation answers mark_stale naming the size change and taps nothing",
+      "how": "tests/python/test_agent_runtime.py + native/screen.rs unit test",
+      "state": "passing offline"
+    },
+    {
+      "id": "A3",
+      "case": "WDA XML becomes hierarchy nodes with scaled pixel bounds, editable/clickable flags and focus",
+      "how": "native/screen_tree.rs unit test",
+      "state": "passing offline"
+    },
+    {
+      "id": "A4",
+      "case": "iPhone point size is requested once per geometry epoch; a changed MJPEG frame size or rotate refreshes it; pinch sends two pointer sources",
+      "how": "native/runtime/iphone.rs loopback test",
+      "state": "passing offline"
+    },
+    {
+      "id": "A5",
+      "case": "runtime.actions: text after tap waits for focus; focus never appearing fails the step with nothing typed; partial failure lists applied and skipped steps; deadline and cancellation are bounded",
+      "how": "tests/python/test_agent_runtime.py",
+      "state": "passing offline"
+    },
+    {
+      "id": "A6",
+      "case": "OCR cache answers an unchanged frame without a tesseract run and a changed frame with one",
+      "how": "native/screen_ocr.rs unit test",
+      "state": "passing offline"
+    },
+    {
+      "id": "A7",
+      "case": "benchmark runner writes p50/p95 per case with evidence=fixture and keeps failed trials",
+      "how": "tools/benchmark_agent_loop.py --trials 100",
+      "state": "planned"
+    },
+    {
+      "id": "B1",
+      "case": "handoff request survives a new process, completes only through an explicit person action, resume answers a fresh observation",
+      "how": "tests/python/test_handoff.py + QML test",
+      "state": "planned"
+    },
+    {
+      "id": "B2",
+      "case": "device.resolve: curly apostrophe and emoji names match exactly; two candidates answer device_ambiguous",
+      "how": "native/devices.rs unit test",
+      "state": "planned"
+    },
+    {
+      "id": "C1",
+      "case": "gpx.validate rejects external entities and oversized files; preview orders untimed points; play job pauses, resumes, loops and cancels on a fake console",
+      "how": "native/gpx.rs unit tests + tests/python",
+      "state": "planned"
+    },
+    {
+      "id": "C2",
+      "case": "report draft masks secrets and home, lists attachments with digests and a redaction receipt, sends nothing",
+      "how": "native/diagnostics.rs unit test",
+      "state": "planned"
+    }
   ],
-  "completed": [],
-  "implemented": [],
-  "tested": [],
-  "unverified": ["Every physical-device path (WDA, scrcpy, AirPlay HID, Simulator companion) until hardware clearance"],
-  "remaining": ["All items of the capability table"],
-  "next_step": "Slice A: fixture runtime, Session screen, runtime.observe, WDA tree, geometry invalidation, OCR cache",
-  "changed_files": [],
-  "commits": [],
-  "test_commands": [],
-  "receipts": [],
+  "completed": [
+    "Slice A: runtime.observe, input_capabilities, runtime.gesture, pinch (WDA two pointers, scrcpy two pointers), screen.* on a session with WDA XML conversion, mark_stale on rotation, WDA point-size cache invalidated by MJPEG frame size, OCR content cache, env-gated fixture runtime",
+    "Slice B: runtime.actions ordered batch with focus wait, postconditions, applied/skipped report, deadline, frame guard"
+  ],
+  "implemented": [
+    "Slice A: runtime.observe, input_capabilities, runtime.gesture, pinch (WDA two pointers, scrcpy two pointers), screen.* on a session with WDA XML conversion, mark_stale on rotation, WDA point-size cache invalidated by MJPEG frame size, OCR content cache, env-gated fixture runtime",
+    "Slice B: runtime.actions ordered batch with focus wait, postconditions, applied/skipped report, deadline, frame guard"
+  ],
+  "tested": [
+    "cargo test: 669+ unit tests incl. runtime::fixture, screen_tree::wda_tests, screen::tests (stale geometry), runtime::iphone loopback (cache, pinch, trace, context), screen_ocr cache, runtime::actions",
+    "tests/python/test_agent_runtime.py (6) and test_agent_actions.py (7) end to end on the fixture runtime with transport traps",
+    "tests/python docs/reference/skill consistency tests"
+  ],
+  "unverified": [
+    "Every physical-device path (WDA activeAppInfo/keyboard/active element, scrcpy pointer-id multitouch, dumpsys parsing on a real device, AirPlay HID, Simulator companion) until hardware clearance"
+  ],
+  "remaining": [
+    "Benchmark runner (Slice C)",
+    "Human handoff (Slice D)",
+    "device.resolve Unicode names",
+    "GPX playback",
+    "Bug-report draft",
+    "Mirror polish (reconnect/ownership states, screenshot affordance, zoom/pan, safe-area mapping)",
+    "Roadmap items kept: TV/Wear profiles, Demo Studio next phases, offline AirPlay reliability"
+  ],
+  "next_step": "Slice C: tools/benchmark_agent_loop.py over the fixture runtime with p50/p95, failure retention and a pending hardware matrix",
+  "changed_files": [
+    "native/runtime.rs",
+    "native/runtime/fixture.rs",
+    "native/runtime/actions.rs",
+    "native/runtime/android.rs",
+    "native/runtime/iphone.rs",
+    "native/runtime/ios.rs",
+    "native/runtime/airplay.rs",
+    "native/screen.rs",
+    "native/screen_tree.rs",
+    "native/screen_ocr.rs",
+    "native/screen_export.rs",
+    "native/ios_emulator/ui_testing.rs",
+    "assets/operations.json",
+    "assets/errors.json",
+    "docs/agents.md",
+    "docs/reference/*",
+    "integrations/agent-skill/tomacco/references/*",
+    "integrations/agent-skill/tomacco/SKILL.md",
+    "README.md",
+    "docs/agent-patterns.md",
+    "CHANGELOG.md",
+    "tests/python/agent_fixture.py",
+    "tests/python/test_agent_runtime.py",
+    "tests/python/test_agent_actions.py"
+  ],
+  "commits": [
+    "1253efc Agent observation: runtime.observe, screens on a session, gesture contract and fixture runtime"
+  ],
+  "test_commands": [
+    "CARGO_TARGET_DIR=$PWD/target TMPDIR=/tmp cargo test --offline --locked",
+    "cd tests/python && TOMACCOCTL=$PWD/../../target/debug/tomaccoctl python3 -m unittest test_agent_runtime test_agent_actions test_docs_reference test_agent_skill test_docs_consistency test_docs_links",
+    "python3 tools/build_reference.py"
+  ],
+  "receipts": [
+    "cargo test: 669 passed, 0 failed (unit) + 2 (update_e2e) after Slice A",
+    "test_agent_runtime: 6 OK; test_agent_actions: 7 OK (one uses the installed tesseract)"
+  ],
   "i18n_strings_for_reconciliation": [],
-  "cross_lane_notes": ["Mobile lane owns Bogen app design; this lane ships desktop QML surfaces and a contract only.", "i18n lane owns translation catalogues; new qsTr strings are listed here, not added to the .ts files."]
+  "cross_lane_notes": [
+    "Mobile lane owns Bogen app design; this lane ships desktop QML surfaces and a contract only.",
+    "i18n lane owns translation catalogues; new qsTr strings are listed here, not added to the .ts files."
+  ]
 }

@@ -13,6 +13,11 @@ operations and their JSON results.
   a one-line context. `runtime.state` reports `input_capabilities`; `runtime.gesture` sends
   timestamped traces and says whether they went live or as one atomic request. Pinch works on the
   USB iPhone (two WebDriverAgent pointers) and Android (two scrcpy pointers), not yet hardware-qualified.
+- **Ordered input batches.** `runtime.actions` runs input and wait steps in order on one session with
+  a result per step: a text step waits for a focused field before it types (focus_timeout with
+  nothing typed otherwise), a tap can name a mark, a step's `expect` makes it verified or stops the
+  batch, and a failure reports the applied and skipped steps so nothing is replayed blindly. A
+  `frame` from `runtime.observe` refuses a batch planned on another geometry.
 - **Screens on a session.** Every `screen.*` operation takes a runtime session ID, so a USB iPhone
   gets marks, taps, tree, OCR, waits, diffs and exports: its WebDriverAgent hierarchy is read in
   screenshot pixels. Marks carry the frame id and size they were made on, and a tap after a rotation

@@ -779,6 +779,20 @@ works on the USB iPhone as two WebDriverAgent touch pointers and on Android as t
 yet. A USB iPhone's point size is read once and again only after a rotation or when the MJPEG frames change size, so a tap costs one
 request, and a phone the person turned is never mapped with the old size.
 
+**Ordered steps.** `runtime.actions` runs up to 50 input and wait steps in order on one session and answers a result per step
+(`applied`, `verified`, `failed`, `skipped`). A `text` step first waits until a field has the focus, polling the session's focus and
+keyboard, so the first characters are not lost; no focus in `focus_timeout_ms` answers `focus_timeout` with nothing typed, and a
+transport that cannot report focus says so and settles briefly instead. A `tap` may name a `mark` from the last `screen.marks` of the
+session and is verified like `screen.tap`. A step's `expect` names text that must appear (or `text_gone`) afterwards: met makes it
+`verified`, otherwise `postcondition_failed` stops the batch with the step still counted as applied. The first failure stops the rest, and
+the error's details carry every step so far, `applied_steps` (what reached the device) and `skipped`, so an agent never resends an
+applied step. `timeout` bounds the whole batch; `frame` (from `runtime.observe`) refuses the batch with `frame_stale` when the screen's
+size or orientation changed since; `observe_after` appends a fresh observation.
+
+```sh
+tomaccoctl call runtime.actions '{"session":"SESSION_ID","steps":[{"action":"tap","mark":1},{"action":"text","text":"ana@example.com"},{"action":"key","key":"enter","expect":{"text":"Welcome","timeout_ms":5000}}],"frame":{"width":1170,"height":2532},"observe_after":true}'
+```
+
 **Screens on a session.** Every `screen.*` operation takes a runtime session ID as its `device`, so a USB iPhone gets `screen.marks`,
 `screen.tap`, `screen.tree`, `screen.ocr`, `screen.wait`, `screen.diff` and `screen.export` too: its WebDriverAgent hierarchy is converted
 to the same node format with bounds in screenshot pixels. Marks carry the `frame_id` and size they were made on; a tap after the screen

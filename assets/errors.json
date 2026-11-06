@@ -3,6 +3,14 @@
     "cause": "project.dependency_updates reads Gradle builds, pubspec.yaml, package.json dependencies and Package.resolved; this project has none.",
     "remedy": "Use an explicitly configured project task for framework-specific commands."
   },
+  "actions_step_failed": {
+    "cause": "A step of runtime.actions failed; the steps before it ran and details.applied_steps names those that reached the device.",
+    "remedy": "Do not resend the applied steps. Observe the screen with runtime.observe, fix the failed step and continue from it (details.skipped lists the rest)."
+  },
+  "actions_timeout": {
+    "cause": "The whole batch of runtime.actions ran past its timeout; details lists the steps that ran and those skipped.",
+    "remedy": "Observe the screen, then continue from the first skipped step with a longer timeout or shorter waits."
+  },
   "adb_forward": {
     "cause": "ADB did not allocate a forwarding port.",
     "remedy": "Check with device.list that the device is online, then stop the session with runtime.stop and start it again."
@@ -479,6 +487,14 @@
     "cause": "This Flutter install still has Apple's macOS gen_snapshot.",
     "remedy": "Call ios.flutter_setup once per Flutter version."
   },
+  "focus_timeout": {
+    "cause": "No field took the input focus within the wait of a text step, so nothing was typed.",
+    "remedy": "Tap the field first (a tap step before the text step), wait longer with focus_timeout_ms, or look at the screen with runtime.observe."
+  },
+  "focus_unobservable": {
+    "cause": "The text step required the focus to be observed, and this transport does not report it.",
+    "remedy": "Use focus wait (which settles briefly where focus cannot be observed) or focus none, and verify with expect or runtime.observe."
+  },
   "form_factor_unsupported": {
     "cause": "The system image is for TV, Wear, Automotive, XR or Desktop, which Tomacco does not create AVDs for.",
     "remedy": "Create it with avdmanager and the SDK device definition the error names, or use a phone or tablet image."
@@ -486,6 +502,10 @@
   "frame_missing": {
     "cause": "The debugger could not start, attach or answer.",
     "remedy": "Read the stack before reading frame variables."
+  },
+  "frame_stale": {
+    "cause": "The screen's size or orientation differs from the frame the batch was planned on; nothing was sent.",
+    "remedy": "Observe again with runtime.observe and plan the steps on the new frame."
   },
   "git_failed": {
     "cause": "git could not list the changed files for testing.impact.",
@@ -1426,6 +1446,10 @@
   "port_busy": {
     "cause": "Port … is already in use, perhaps by another Metro bundler.",
     "remedy": "Stop the other bundler, or its project.run job, then run again."
+  },
+  "postcondition_failed": {
+    "cause": "The step was applied, but the text its expect names did not appear (or go) in time.",
+    "remedy": "The action reached the device: do not send it again. Observe the screen and decide from what is there."
   },
   "preview_disconnected": {
     "cause": "Preview closed before replying.",

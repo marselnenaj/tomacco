@@ -2,7 +2,7 @@
 
 # `runtime` operations
 
-10 operations. Generated from `assets/operations.json`; [all references](index.md).
+11 operations. Generated from `assets/operations.json`; [all references](index.md).
 
 ### runtime.start
 
@@ -149,4 +149,20 @@ Deliver one or more contacts as timestamped traces in 0..1 of the frame: each co
 
 ```sh
 tomaccoctl call runtime.gesture '{"session":"<session>","contacts":[{"points":[{"x":0,"y":0,"t_ms":0},{"x":0,"y":0,"t_ms":0}]}]}'
+```
+
+### runtime.actions
+
+Ordered input batch. writes.
+
+Run up to 50 input and wait steps in order on one session, in one call, with a result per step. A text step waits until a field has the focus (polling the session's focus and keyboard) before it types, so the first characters are not lost, and answers focus_timeout with nothing typed when no field takes it; where the transport cannot report focus it says so and settles briefly instead. A tap can name a mark from the last screen.marks of this session and is verified like screen.tap. A step may carry expect, a text that must appear or go afterwards: met makes the step verified, otherwise postcondition_failed stops the batch with the step still counted as applied. The first failure stops the rest: the error's details list every step so far (steps), the indexes that reached the device (applied_steps) and those not run (skipped), so an agent never resends an applied step. The whole batch is bounded by timeout and by the client's cancellation. With frame (width, height, orientation from runtime.observe) the batch is refused with frame_stale and nothing sent when the screen's geometry changed since. observe_after appends a fresh runtime.observe. The answer's evidence is fixture on the offline fixture runtime.
+
+- `session` string, required (matching `^[a-f0-9]{32}$`): ID returned by runtime.start; separate from desktop preview sessions.
+- `steps` array of object {action, x, y, x2, y2, mark, verify, hold_ms, duration, key, text, focus, focus_timeout_ms, settle_ms, orientation, scale, contacts, ms, timeout_ms, interval_ms, stable_ms, threshold, tolerance, ignore, source, fuzzy, min_confidence, language, region, context, expect}, required (1 to 50 items)
+- `timeout` integer (1 to 300; default 30): Seconds for the whole batch, waits included
+- `frame` object {id, width, height, orientation}: The frame the steps were planned on, from runtime.observe: refused with frame_stale when the screen's size or orientation differs now
+- `observe_after` boolean (default false): Append a fresh observation of the session to the answer
+
+```sh
+tomaccoctl call runtime.actions '{"session":"<session>","steps":[{"action":"tap"}]}'
 ```
