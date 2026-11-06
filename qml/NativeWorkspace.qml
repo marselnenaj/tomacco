@@ -128,6 +128,14 @@ Rectangle {
     // Bounds the wait for the session to stop before the app ends.
     Timer {id:quitTimer;interval:2500;onTriggered:view.quitApp()}
     UpdateModel {id:updates;onRestartRequested:view.restartForUpdate();onBannerKindChanged:view.noteUpdate()}
+    // An agent waiting for the person on the device: a banner, a line in the
+    // activity panel, and a desktop notification when no Tomacco window is active.
+    HandoffModel {id:handoffs;polling:!smokeTest && Agent.operations.some(o=>o.name==="handoff.list");onArrived:handoff=>view.noteHandoff(handoff)}
+    function noteHandoff(handoff) {
+        const title=qsTr("An agent is waiting for you: %1").arg(handoffs.kindText(handoff.kind))
+        notifications.add("agent","warn",title,handoff.reason,{})
+        if(!appActive)Studio.notify(title,handoff.reason,"handoff:"+handoff.id)
+    }
     // A new version found while no Tomacco window is active is also reported on
     // the desktop, once per version.
     function noteUpdate() {
@@ -345,7 +353,7 @@ Rectangle {
     Connections {
         target:Studio
         function onNotificationActivated(tag) {
-            if(tag.indexOf("update:")===0){view.showMainWindow();return}
+            if(tag.indexOf("update:")===0 || tag.indexOf("handoff:")===0){view.showMainWindow();return}
             const job=view.workspace.jobs.find(x=>x.id===tag)
             view.showMainWindow()
             if(job)view.workspace.selectJob(job)
@@ -840,6 +848,7 @@ Rectangle {
             Rectangle {anchors.bottom:parent.bottom;width:parent.width;height:1;color:Theme.subtle}
         }
         UpdateBanner {Layout.fillWidth:true;Layout.preferredHeight:implicitHeight;model:updates}
+        HandoffBanner {Layout.fillWidth:true;Layout.preferredHeight:implicitHeight;model:handoffs}
         RowLayout {
             Layout.fillWidth:true;Layout.fillHeight:true;spacing:0
             // The rail: icons in a narrow window, icons, names and keys in a wide one.

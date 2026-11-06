@@ -14,7 +14,7 @@ description: >
 # Tomacco
 
 Tomacco builds, runs, tests and inspects mobile apps on Linux. Its control plane, `tomaccoctl`,
-offers 277 typed operations. The MCP server, the JSON CLI and the desktop app call the same
+offers 283 typed operations. The MCP server, the JSON CLI and the desktop app call the same
 operations. This file is the router: it says how to reach Tomacco, how to stay safe and where each
 task lives. The operation details are in `references/`, one file per area, read only when needed.
 
@@ -110,7 +110,8 @@ The `Start with` operations are the usual entry points.
 | Live preview of a screen | `preview.sessions`, `preview.capture` | [preview](references/preview.md) |
 | Named QA environments (theme, font size, animations, airplane mode, app language, GPS, TalkBack): plan, apply to one named device, restore | `android.environment.preset.save`, `android.environment.plan`, `android.environment.apply`, `android.environment.restore` | [android](references/android.md) |
 | Make a 3D device video from a local recording | `demo.capabilities`, `demo.media.inspect`, `demo.scene.create` | [demo](references/demo.md) |
-| Mirror a device as a session | `runtime.start`, `runtime.capture`, `runtime.stop` | [runtime](references/runtime.md) |
+| Mirror a device as a session; observe, act and verify on it | `runtime.start`, `runtime.observe`, `runtime.actions`, `runtime.stop` | [runtime](references/runtime.md) |
+| Hand the device to the person (Face ID, passcode, sign-in, purchase, permission) and wait | `handoff.request`, `handoff.wait` | [handoff](references/handoff.md) |
 | Remote build hosts | `remote.list`, `remote.run` | [remote](references/remote.md) |
 | Jobs | `job.wait`, `job.logs`, `job.get`, `job.list`, `job.cancel` | [job](references/job.md) |
 | Several operations in one call | `workflow.run` | [workflow](references/workflow.md) |

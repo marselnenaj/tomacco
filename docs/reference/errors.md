@@ -2,7 +2,7 @@
 
 # Error codes
 
-Every error code `tomaccoctl` returns, 512 codes, generated from `assets/errors.json`. A failure is `{"ok":false,"error":{"code":...,"message":...,"remedy":...}}`, and over MCP the same object under `structuredContent.error`. Branch on `code`. The message says what happened this time; when the place that failed has no remedy of its own, `remedy` is the general one below. In the middle column, … stands for a value the message fills in. [All operations](README.md).
+Every error code `tomaccoctl` returns, 515 codes, generated from `assets/errors.json`. A failure is `{"ok":false,"error":{"code":...,"message":...,"remedy":...}}`, and over MCP the same object under `structuredContent.error`. Branch on `code`. The message says what happened this time; when the place that failed has no remedy of its own, `remedy` is the general one below. In the middle column, … stands for a value the message fills in. [All operations](README.md).
 
 | Code | What it means | What to do |
 | --- | --- | --- |
@@ -138,6 +138,9 @@ Every error code `tomaccoctl` returns, 512 codes, generated from `assets/errors.
 | `guest_observation_timeout` | The guest did not complete both platform observations. | Read the message; ios.virtual.status and the job's log show the device's state, and docs/virtual-ios/troubleshooting.md lists known causes. |
 | `guest_script_failed` | Guest script exited with … | Read the message; ios.virtual.status and the job's log show the device's state, and docs/virtual-ios/troubleshooting.md lists known causes. |
 | `guest_shell_timeout` | No verified command response from the restore shell within the requested time. | Read the message; ios.virtual.status and the job's log show the device's state, and docs/virtual-ios/troubleshooting.md lists known causes. |
+| `handoff_not_found` | No handoff has this ID. | List the open handoffs with handoff.list, or ask for a new one with handoff.request. |
+| `handoff_not_waiting` | The handoff already ended: it was completed, cancelled or expired. | A handoff ends once. Ask for a new one with handoff.request if the person has to act again. |
+| `handoff_person_only` | An agent over MCP tried to complete a handoff; only the person does that, from the desktop banner or their terminal. | Wait with handoff.wait until the person has acted, then observe the screen and go on. |
 | `heap_dump_failed` | The heap dump pulled from the device is empty. | Heap dumps need a debuggable app, or an emulator image without Google Play. |
 | `incomplete_research_inputs` | Research graft preparation requires kernel, boot_manifest and device_tree together. | Read the message; ios.virtual.status and the job's log show the device's state, and docs/virtual-ios/troubleshooting.md lists known causes. |
 | `input_too_large` | JSON exceeds 2 MiB: … | Check the session with debug.list and its log; the app must be a debuggable build that is running. |

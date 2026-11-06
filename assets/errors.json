@@ -527,6 +527,18 @@
     "cause": "No verified command response from the restore shell within the requested time.",
     "remedy": "Read the message; ios.virtual.status and the job's log show the device's state, and docs/virtual-ios/troubleshooting.md lists known causes."
   },
+  "handoff_not_found": {
+    "cause": "No handoff has this ID.",
+    "remedy": "List the open handoffs with handoff.list, or ask for a new one with handoff.request."
+  },
+  "handoff_not_waiting": {
+    "cause": "The handoff already ended: it was completed, cancelled or expired.",
+    "remedy": "A handoff ends once. Ask for a new one with handoff.request if the person has to act again."
+  },
+  "handoff_person_only": {
+    "cause": "An agent over MCP tried to complete a handoff; only the person does that, from the desktop banner or their terminal.",
+    "remedy": "Wait with handoff.wait until the person has acted, then observe the screen and go on."
+  },
   "heap_dump_failed": {
     "cause": "The heap dump pulled from the device is empty.",
     "remedy": "Heap dumps need a debuggable app, or an emulator image without Google Play."

@@ -1678,6 +1678,219 @@
     }
   },
   {
+    "name": "handoff.request",
+    "title": "Ask the person to act",
+    "description": "Hand the device to the person for something an agent must not do itself: Face ID or Touch ID (biometric), a passcode, a sign-in, a purchase, a system permission. The request is written to disk, so it outlives this call, the MCP connection and the desktop; the desktop shows it as a banner with a Done button, and a terminal can complete it with handoff.complete. Then call handoff.wait. Do not ask for, type or store the person's secret, and do not try to get past the prompt. This is separate from the approval of destructive calls: an approval lets a call run; a handoff waits for the person's hands.",
+    "inputSchema": {
+      "type": "object",
+      "properties": {
+        "reason": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 500,
+          "description": "Why the person is needed, as the banner shows it"
+        },
+        "kind": {
+          "type": "string",
+          "enum": [
+            "biometric",
+            "passcode",
+            "sign_in",
+            "purchase",
+            "permission",
+            "other"
+          ],
+          "default": "other"
+        },
+        "instructions": {
+          "type": "string",
+          "maxLength": 2000,
+          "default": "",
+          "description": "What to do on the device, in plain words; never a secret"
+        },
+        "session": {
+          "type": "string",
+          "pattern": "^[0-9a-f]{32}$",
+          "description": "The runtime session the person acts on; handoff.wait then answers a fresh observation of it once they are done"
+        },
+        "job": {
+          "type": "string",
+          "pattern": "^[0-9a-f]{32}$",
+          "description": "A job this handoff belongs to, for the record"
+        },
+        "timeout_seconds": {
+          "type": "integer",
+          "minimum": 60,
+          "maximum": 86400,
+          "default": 900,
+          "description": "After this the request expires on its own"
+        }
+      },
+      "required": [
+        "reason"
+      ],
+      "additionalProperties": false
+    },
+    "annotations": {
+      "readOnlyHint": false,
+      "destructiveHint": false,
+      "idempotentHint": false,
+      "openWorldHint": false
+    }
+  },
+  {
+    "name": "handoff.get",
+    "title": "Read a handoff",
+    "description": "One handoff as it is now: waiting, completed, cancelled or expired, with who completed it and when.",
+    "inputSchema": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string",
+          "pattern": "^[0-9a-f]{32}$",
+          "description": "The handoff's ID from handoff.request"
+        }
+      },
+      "required": [
+        "id"
+      ],
+      "additionalProperties": false
+    },
+    "annotations": {
+      "readOnlyHint": true,
+      "destructiveHint": false,
+      "idempotentHint": true,
+      "openWorldHint": false
+    }
+  },
+  {
+    "name": "handoff.list",
+    "title": "List handoffs",
+    "description": "The handoffs on this computer, newest first: by default those waiting for the person; state all lists every one. The desktop polls this for its banner.",
+    "inputSchema": {
+      "type": "object",
+      "properties": {
+        "state": {
+          "type": "string",
+          "enum": [
+            "waiting",
+            "completed",
+            "cancelled",
+            "expired",
+            "all"
+          ],
+          "default": "waiting"
+        },
+        "limit": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 200,
+          "default": 20
+        }
+      },
+      "required": [],
+      "additionalProperties": false
+    },
+    "annotations": {
+      "readOnlyHint": true,
+      "destructiveHint": false,
+      "idempotentHint": true,
+      "openWorldHint": false
+    }
+  },
+  {
+    "name": "handoff.wait",
+    "title": "Wait for the person",
+    "description": "Wait up to seconds for the handoff to end, and answer its state: waiting (call again; do not act on the device meanwhile), completed, cancelled or expired. A completed handoff with a session also answers a fresh runtime.observe of it under observation, and resume says to continue from what is on the screen now, never by replaying the step that needed the person.",
+    "inputSchema": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string",
+          "pattern": "^[0-9a-f]{32}$",
+          "description": "The handoff's ID from handoff.request"
+        },
+        "seconds": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 60,
+          "default": 30
+        }
+      },
+      "required": [
+        "id"
+      ],
+      "additionalProperties": false
+    },
+    "annotations": {
+      "readOnlyHint": true,
+      "destructiveHint": false,
+      "idempotentHint": true,
+      "openWorldHint": false
+    }
+  },
+  {
+    "name": "handoff.complete",
+    "title": "The person is done",
+    "description": "Marks the handoff completed: the person's own action, from the desktop banner or their terminal. An agent over MCP cannot call it (handoff_person_only); it waits with handoff.wait instead. Completing a completed handoff again answers already true; a cancelled or expired one answers handoff_not_waiting.",
+    "inputSchema": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string",
+          "pattern": "^[0-9a-f]{32}$",
+          "description": "The handoff's ID from handoff.request"
+        },
+        "note": {
+          "type": "string",
+          "maxLength": 500,
+          "default": "",
+          "description": "What the person did, for the record"
+        }
+      },
+      "required": [
+        "id"
+      ],
+      "additionalProperties": false
+    },
+    "annotations": {
+      "readOnlyHint": false,
+      "destructiveHint": false,
+      "idempotentHint": true,
+      "openWorldHint": false
+    }
+  },
+  {
+    "name": "handoff.cancel",
+    "title": "Withdraw a handoff",
+    "description": "Cancels a waiting handoff, from the agent that no longer needs it or from the person. A completed or expired one answers handoff_not_waiting.",
+    "inputSchema": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string",
+          "pattern": "^[0-9a-f]{32}$",
+          "description": "The handoff's ID from handoff.request"
+        },
+        "reason": {
+          "type": "string",
+          "maxLength": 500,
+          "default": ""
+        }
+      },
+      "required": [
+        "id"
+      ],
+      "additionalProperties": false
+    },
+    "annotations": {
+      "readOnlyHint": false,
+      "destructiveHint": false,
+      "idempotentHint": true,
+      "openWorldHint": false
+    }
+  },
+  {
     "name": "storage.prune",
     "title": "Clean up old jobs and reports",
     "description": "List, and with apply remove, what Tomacco keeps of finished work under its data directory: records and logs of jobs that ended before older_than_days, log files without a job, and report directories under reports/. A dry run by default; also reports the size of each top-level entry of the data directory. Never touches queued or running jobs, emulators, SDKs, the virtual iOS device, settings, or artifacts in projects.",

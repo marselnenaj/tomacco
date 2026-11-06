@@ -2,13 +2,13 @@
 
 # Operation reference
 
-Every `tomaccoctl` operation, 277 in all, generated from `assets/operations.json`, the schema `tomaccoctl schema` prints and the MCP server offers as tools. Over MCP the operation name is the tool name.
+Every `tomaccoctl` operation, 283 in all, generated from `assets/operations.json`, the schema `tomaccoctl schema` prints and the MCP server offers as tools. Over MCP the operation name is the tool name.
 
 Each entry gives the arguments with their types, limits and defaults, what the operation changes (from its MCP annotations) and an example call made from the schema, the same one `tomaccoctl help OPERATION` prints. Values in angle brackets are placeholders. The [agent guide](../agents.md) explains jobs, errors and the workflows that combine these.
 
 The annotations are the hints MCP clients see. **Read-only** changes nothing. **Writes** changes state but is not marked as deleting data. **Destructive** may delete or overwrite data: ask the user first. **Idempotent** means repeating the call with the same arguments has no further effect. **Open world** means it reaches beyond Tomacco's own state: devices, tools, files or the network.
 
-[Error codes](errors.md) lists all 512 error codes with what each means and what to do.
+[Error codes](errors.md) lists all 515 error codes with what each means and what to do.
 
 ## [general](general.md)
 
@@ -169,6 +169,17 @@ The annotations are the hints MCP clients see. **Read-only** changes nothing. **
 | [`files.write`](files.md#fileswrite) | Save source file | **destructive** |
 | [`files.mkdir`](files.md#filesmkdir) | Create project folder | writes |
 | [`files.search`](files.md#filessearch) | Search project | read-only |
+
+## [handoff](handoff.md)
+
+| Operation | Title | Annotation |
+| --- | --- | --- |
+| [`handoff.request`](handoff.md#handoffrequest) | Ask the person to act | writes |
+| [`handoff.get`](handoff.md#handoffget) | Read a handoff | read-only |
+| [`handoff.list`](handoff.md#handofflist) | List handoffs | read-only |
+| [`handoff.wait`](handoff.md#handoffwait) | Wait for the person | read-only |
+| [`handoff.complete`](handoff.md#handoffcomplete) | The person is done | writes |
+| [`handoff.cancel`](handoff.md#handoffcancel) | Withdraw a handoff | writes |
 
 ## [ios](ios.md)
 

@@ -33,6 +33,7 @@ mod environment;
 mod files;
 mod gradle_model;
 mod guard;
+mod handoff;
 mod host;
 mod install;
 mod instrumentation;

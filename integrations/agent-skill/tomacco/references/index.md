@@ -2,7 +2,7 @@
 
 # Tomacco references
 
-277 operations in all, in 32 files, one per area. Read the file of the area you need, not all of them. Each operation lists its arguments (required first) and one example call; `tomaccoctl help OPERATION` prints the same with the full argument descriptions. [Error codes](errors.md).
+283 operations in all, in 33 files, one per area. Read the file of the area you need, not all of them. Each operation lists its arguments (required first) and one example call; `tomaccoctl help OPERATION` prints the same with the full argument descriptions. [Error codes](errors.md).
 
 | File | Operations | Areas and names |
 | --- | --- | --- |
@@ -18,6 +18,7 @@
 | [device](device.md) | 8 | Devices of either platform: list, install, capture, logs. `device.list`, `device.info`, `device.label`, … |
 | [diagnostics](diagnostics.md) | 1 | Bug-report bundle with secrets masked. `diagnostics.bundle` |
 | [files](files.md) | 5 | Files inside the allowed roots. `files.list`, `files.read`, `files.write`, … |
+| [handoff](handoff.md) | 6 | Hand the device to the person for Face ID, a passcode, a sign-in, a purchase or a permission, and wait. `handoff.request`, `handoff.get`, `handoff.list`, … |
 | [ios](ios.md) | 16 | iPhone over USB, iOS toolkit, signing, store upload. `ios.sdk_install`, `ios.toolkit_install`, `ios.flutter_setup`, … |
 | [ios-research](ios-research.md) | 22 | Research engine steps behind the virtual iPhone. `ios.emulator.inspect`, `ios.emulator.probe`, `ios.emulator.exec`, … |
 | [ios-virtual](ios-virtual.md) | 21 | The virtual iPhone: setup, start and stop, deploy, states, screenshots. `ios.virtual.status`, `ios.virtual.host_check`, `ios.virtual.doctor`, … |

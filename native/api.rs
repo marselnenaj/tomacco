@@ -225,6 +225,7 @@ pub fn dispatch(name: &str, args: &Value) -> Result {
         "android.network_capture" => crate::network_capture::capture(&a),
         name if name.starts_with("play.") => play_store::handle(name, &a),
         name if name.starts_with("runtime.") => crate::runtime::handle(name, &a),
+        name if name.starts_with("handoff.") => crate::handoff::handle(name, &a),
         name if name.starts_with("apple.") => apple::handle(name, &a),
         name if name.starts_with("demo.") => crate::demo::handle(name, &a).map(redacted),
         name if name.starts_with("android.environment.") => crate::environment::handle(name, &a),

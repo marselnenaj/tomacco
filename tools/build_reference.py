@@ -267,6 +267,7 @@ AREA_NOTES = {
     "result": "Read a large result a call stored.",
     "storage": "Free disk space by pruning Tomacco's caches.",
     "workflow": "Run up to 20 operations in order in one call.",
+    "handoff": "Hand the device to the person for Face ID, a passcode, a sign-in, a purchase or a permission, and wait.",
     "android": "Emulators and devices: input, files, settings, SDK, AVDs, store screenshots.",
     "apple": "Xcode tools on macOS hosts: build, test, archive, export, simulator.",
     "catalog": "Saved project and device catalogue.",

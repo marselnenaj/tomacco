@@ -26,6 +26,11 @@ operations and their JSON results.
   `fixture:NAME` connects a scripted device for tests and the benchmark runner, labelled
   `evidence: fixture` everywhere.
 
+- **Human handoff.** `handoff.request`, `handoff.wait`, `handoff.list`, `handoff.get`,
+  `handoff.cancel` and the person's `handoff.complete` hand the device to the person for Face ID,
+  a passcode, a sign-in, a purchase or a permission. Requests are files that outlive the agent,
+  the MCP connection and the desktop; the desktop shows them as a banner with Done and Cancel; an
+  agent over MCP cannot complete one; a completed handoff answers a fresh observation, never a replay.
 - **Agent-loop benchmark.** `tools/benchmark_agent_loop.py` measures observe, marks, OCR, action
   acknowledgement, visible postcondition and the whole loop through one MCP server with p50/p95
   over 100 trials per case, keeps failed trials and labels fixture evidence apart from a pending

@@ -96,7 +96,7 @@ version. For an agent with a small context, set `TOMACCO_MCP_TOOLS` in the `env`
 | --- | --- | --- |
 | `full` (the default) | One per operation, with every description. | 321,785 bytes |
 | `compact` | One per operation; each description is its first sentence, arguments have no descriptions, and annotations equal to MCP's defaults are left out. | 157,922 bytes |
-| `grouped` | One per area, such as `android` or `job`: 30 tools. Each takes `operation`, the operation's name, and `arguments`, its own arguments, and its description lists the area's operations with their titles and whether each is read-only, writes or is destructive. | 33,148 bytes |
+| `grouped` | One per area, such as `android` or `job`: 31 tools. Each takes `operation`, the operation's name, and `arguments`, its own arguments, and its description lists the area's operations with their titles and whether each is read-only, writes or is destructive. | 33,148 bytes |
 
 The sizes were measured with this version's schema. In `compact` and `grouped` there is also a `schema` tool that
 answers one operation's whole schema, as does the resource `tomacco://reference/{operation}`. A grouped tool's
@@ -320,6 +320,29 @@ masked (`redacted`). `--dry-run` lists what it would call without calling anythi
 TOMACCO_SESSION_LOG=/absolute/session.jsonl tomaccoctl call project.run '{"path":"/absolute/MyApp","platform":"android","device":"emulator-5554"}'
 tomaccoctl replay /absolute/session.jsonl --dry-run
 tomaccoctl replay /absolute/session.jsonl
+```
+
+## Human handoff
+
+Some steps are the person's, not the agent's: Face ID or Touch ID, a passcode, a sign-in, a purchase, a system permission. An agent
+that reaches one asks the person with `handoff.request` (a `reason`, a `kind`, plain `instructions` for what to do on the device, and
+the runtime `session` it is working on) and then waits with `handoff.wait`. The request is a file in the data directory, so it outlives
+the agent's process, the MCP connection and the desktop. The desktop shows every waiting request as a banner with **Done** and
+**Cancel**; a terminal completes one with `handoff.complete`. An agent over MCP cannot complete it (`handoff_person_only`): only the
+person says it is done. `handoff.wait` answers `waiting` (call again, and do not act on the device meanwhile), `completed`, `cancelled`
+or `expired` (after `timeout_seconds`, 15 minutes by default); a completed handoff with a session also answers a fresh
+`runtime.observe` of it under `observation`, and `resume` says to continue from what is on the screen now, never by replaying the step
+that needed the person. `handoff.cancel` withdraws a request the agent no longer needs; `handoff.list` and `handoff.get` read them.
+
+This is separate from the approval of destructive calls under [Guardrails](#guardrails): an approval lets a call run; a handoff hands
+the device to the person. Never ask the person for a secret, type one, or try to get past a prompt; there is no automatic detection of
+such prompts, so the agent asks when it sees one.
+
+```sh
+tomaccoctl call handoff.request '{"reason":"Confirm the purchase with Face ID","kind":"purchase","session":"SESSION_ID"}'
+tomaccoctl call handoff.wait '{"id":"HANDOFF_ID","seconds":60}'
+# The person, at a terminal instead of the desktop banner:
+tomaccoctl call handoff.complete '{"id":"HANDOFF_ID"}'
 ```
 
 ## Guardrails

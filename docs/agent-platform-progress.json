@@ -3,7 +3,7 @@
   "workspace": "/home/maslos/Work/tomacco-agent-platform",
   "branch": "feat/agent-platform",
   "base_commit": "bdd708c40719e755ad6b71a5c6969aa2797d20a5",
-  "updated": "2026-11-06T10:40:07Z",
+  "updated": "2026-11-06T10:58:43Z",
   "status": "in_progress",
   "hardware_constraint": "No physical device, USB, ADB, Fastboot, SSH, network or runtime probes while the Pixel is being flashed. Everything below is verified offline only: unit tests, loopback fakes and the env-gated fixture runtime. Physical iPhone (WDA), Android, AirPlay and Simulator paths are code-reviewed and contract-tested, not hardware-qualified.",
   "capability_gap_table": [
@@ -218,9 +218,99 @@
     "cargo test: 669 passed, 0 failed (unit) + 2 (update_e2e) after Slice A",
     "test_agent_runtime: 6 OK; test_agent_actions: 7 OK (one uses the installed tesseract)"
   ],
-  "i18n_strings_for_reconciliation": [],
+  "i18n_strings_for_reconciliation": [
+    {
+      "context": "HandoffBanner",
+      "source": "%1 · an agent is waiting for you"
+    },
+    {
+      "context": "HandoffBanner",
+      "source": "%1 · an agent is waiting for you (%2 more)"
+    },
+    {
+      "context": "HandoffBanner",
+      "source": "Cancel"
+    },
+    {
+      "context": "HandoffBanner",
+      "source": "Do it on the device itself. Tomacco never asks for your passcode or password."
+    },
+    {
+      "context": "HandoffBanner",
+      "source": "Done"
+    },
+    {
+      "context": "HandoffBanner",
+      "source": "Done: I did it on the device"
+    },
+    {
+      "context": "HandoffModel",
+      "source": "Face ID or Touch ID"
+    },
+    {
+      "context": "HandoffModel",
+      "source": "Passcode"
+    },
+    {
+      "context": "HandoffModel",
+      "source": "Permission"
+    },
+    {
+      "context": "HandoffModel",
+      "source": "Purchase"
+    },
+    {
+      "context": "HandoffModel",
+      "source": "Sign-in"
+    },
+    {
+      "context": "HandoffModel",
+      "source": "Your turn on the device"
+    },
+    {
+      "context": "NativeWorkspace",
+      "source": "An agent is waiting for you: %1"
+    },
+    {
+      "context": "Operations",
+      "source": "Observe a session"
+    },
+    {
+      "context": "Operations",
+      "source": "Timestamped gesture trace"
+    },
+    {
+      "context": "Operations",
+      "source": "Ordered input batch"
+    },
+    {
+      "context": "Operations",
+      "source": "Ask the person to act"
+    },
+    {
+      "context": "Operations",
+      "source": "Read a handoff"
+    },
+    {
+      "context": "Operations",
+      "source": "List handoffs"
+    },
+    {
+      "context": "Operations",
+      "source": "Wait for the person"
+    },
+    {
+      "context": "Operations",
+      "source": "The person is done"
+    },
+    {
+      "context": "Operations",
+      "source": "Withdraw a handoff"
+    }
+  ],
   "cross_lane_notes": [
     "Mobile lane owns Bogen app design; this lane ships desktop QML surfaces and a contract only.",
     "i18n lane owns translation catalogues; new qsTr strings are listed here, not added to the .ts files."
-  ]
+  ],
+  "i18n_note": "These qsTr strings are new on feat/agent-platform and have no entries in i18n/tomacco_{de,fr,es,it}.ts yet (catalogues are owned by the i18n lane); tests/python/test_i18n.py fails on exactly these until the catalogues are reconciled."
 }
