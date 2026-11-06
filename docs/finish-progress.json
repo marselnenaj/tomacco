@@ -1,0 +1,286 @@
+{
+ "updated": "2026-11-06",
+ "branch": "integration/finish-tomacco",
+ "base": "0f465cb8caf0871ef49513dbd0bb4fa10a9748b8",
+ "merged_refs": {
+  "core": "d41594a",
+  "client-input": "a057967",
+  "mobile-input": "0e458c1",
+  "i18n-input": "cc07651",
+  "integrated_by_root": "548cd39,90fe3b0,7392d12,0f465cb"
+ },
+ "commits": [
+  "912ce5c Phone jobs test: keyboard back, poll-safe fixtures; keep the scaled back button",
+  "45279b5 Phone: jobs as Mobile / Row with a 48 px way back",
+  "2d31213 Desktop: connect each coding agent with its own state and setting",
+  "755541a Close merged integration gates: parity rows for handoff/GPX/report drafts, site groups, packaged tools, counts"
+ ],
+ "implemented": [
+  "mobile parity: handoff.*, gpx.inspect (local), gpx.play/status (remote, KVM emulator host), diagnostics.report_draft classified; unknown families still raise",
+  "test_mobile_parity converted to unittest so control-plane runs it (was 0 tests under unittest)",
+  "site docs groups for agent-clients, mobile-native, demo-studio, mobile-parity, agent-platform-ui-contract, design/README",
+  "CMake installs benchmark_agent_loop.py, build_mobile_parity.py, tomacco_i18n.py",
+  "Grok grouped list contract: one tool per area + schema, <=350 (xAI cap), < full list",
+  "operation counts 288/104/28 in docs, CHANGELOG, regenerated README graphics; HANDOFF_ID placeholder validated as 32-hex",
+  "per-client agent onboarding: Control::agentClients -> tomaccoctl setup agents status|setup|remove --json; AgentClientPicker/AgentClientDialog in onboarding, activity panel, tools page, palette",
+  "phone job list uses MobileRow below 600 logical px",
+  "OperationTitles.js regenerated (device.resolve, gpx.*); catalogs synced to final source; German complete; registry complete flags corrected"
+ ],
+ "tested": {
+  "control_plane_python": "1627 tests via .scratch/run_py_tests.py (isolated HOME/XDG/TMPDIR, device executables trapped exit 97); all modules green except test_i18n before final sync",
+  "qt_desktop_ui": "83 functions (113 incl. init/cleanup in two ordered halves) passed after 912ce5c",
+  "qt_agent_client_picker": "6/6 passed (fake agent)",
+  "final_targeted_run": "145 tests: 2 failures listed under remaining"
+ },
+ "test_commands": [
+  "python3 .scratch/run_py_tests.py",
+  "bash .scratch/run_qt_halves.sh test-desktop-ui",
+  "bash .scratch/run_qt.sh test-agent-client-picker",
+  "python3 tools/build_mobile_parity.py --check",
+  "python3 tools/i18n_catalog.py report --json"
+ ],
+ "test_receipts": ".scratch/test-logs/ (ignored work cache); summary.json per run",
+ "locale_coverage": {
+  "texts": 1800,
+  "digest": "7fe2ce1447d6",
+  "complete": [
+   "de"
+  ],
+  "per_language": {
+   "ar": [
+    1650,
+    150
+   ],
+   "bg": [
+    0,
+    1800
+   ],
+   "bn": [
+    0,
+    1800
+   ],
+   "ca": [
+    0,
+    1800
+   ],
+   "cs": [
+    0,
+    1800
+   ],
+   "da": [
+    0,
+    1800
+   ],
+   "de": [
+    1800,
+    0
+   ],
+   "el": [
+    0,
+    1800
+   ],
+   "es": [
+    1691,
+    109
+   ],
+   "es-MX": [
+    1650,
+    150
+   ],
+   "et": [
+    0,
+    1800
+   ],
+   "fa": [
+    0,
+    1800
+   ],
+   "fi": [
+    0,
+    1800
+   ],
+   "fil": [
+    0,
+    1800
+   ],
+   "fr": [
+    1691,
+    109
+   ],
+   "ga": [
+    0,
+    1800
+   ],
+   "he": [
+    0,
+    1800
+   ],
+   "hi": [
+    0,
+    1800
+   ],
+   "hr": [
+    0,
+    1800
+   ],
+   "hu": [
+    0,
+    1800
+   ],
+   "id": [
+    0,
+    1800
+   ],
+   "is": [
+    0,
+    1800
+   ],
+   "it": [
+    1691,
+    109
+   ],
+   "ja": [
+    1650,
+    150
+   ],
+   "ko": [
+    0,
+    1800
+   ],
+   "lt": [
+    0,
+    1800
+   ],
+   "lv": [
+    0,
+    1800
+   ],
+   "ms": [
+    0,
+    1800
+   ],
+   "nl": [
+    1650,
+    150
+   ],
+   "no": [
+    0,
+    1800
+   ],
+   "pl": [
+    0,
+    1800
+   ],
+   "pt": [
+    1650,
+    150
+   ],
+   "pt-BR": [
+    1650,
+    150
+   ],
+   "ro": [
+    0,
+    1800
+   ],
+   "ru": [
+    1650,
+    150
+   ],
+   "si": [
+    0,
+    1800
+   ],
+   "sk": [
+    0,
+    1800
+   ],
+   "sl": [
+    0,
+    1800
+   ],
+   "sr": [
+    0,
+    1800
+   ],
+   "sv": [
+    0,
+    1800
+   ],
+   "sw": [
+    0,
+    1800
+   ],
+   "ta": [
+    0,
+    1800
+   ],
+   "th": [
+    0,
+    1800
+   ],
+   "tr": [
+    0,
+    1800
+   ],
+   "uk": [
+    0,
+    1800
+   ],
+   "ur": [
+    0,
+    1800
+   ],
+   "uz": [
+    0,
+    1800
+   ],
+   "vi": [
+    0,
+    1800
+   ],
+   "zh-CN": [
+    1650,
+    150
+   ],
+   "zh-TW": [
+    1650,
+    150
+   ]
+  }
+ },
+ "design_checkpoints": {
+  "existing": [
+   "mw4tbo22-e4a661cd",
+   "mw4tofvf-8998a432",
+   "mw4u4lek-15ecdd50",
+   "mw4uews2-22fda9ef"
+  ],
+  "new_in_this_run": [],
+  "note": "Bogen not edited in this run; client picker and phone job rows follow existing Mobile/Row component and tokens but were not rendered into Bogen or screenshot-reviewed"
+ },
+ "arm64_artifact": {
+  "built": false,
+  "reason": "not attempted in this run (step budget spent on integration, onboarding, phone rows, i18n). tools/build_portable.py build --arch aarch64 with packaging/portable/Dockerfile.aarch64 is the path; needs qemu/container, no hardware"
+ },
+ "hardware_blocked": [
+  "all Pixel/MacBook/USB/ADB/Fastboot/SSH qualification",
+  "verified_on_pixel false for all 288 rows",
+  "AirPlay physical audio",
+  "GPX on physical devices (unsupported)"
+ ],
+ "unverified": [
+  "real client loaders/parsers (Grok CLI, OpenCode 1/2, Hermes, omp) beyond fixture/fake protocol tests",
+  "client picker visual review in Bogen/screenshots"
+ ],
+ "remaining": [
+  "test_i18n.test_picker_order_is_english_first_then_by_english_name and test_docs_consistency.test_guides_do_not_hardcode_the_language_list fail after correcting registry complete flags (only de complete now); align picker/guides with the honest complete set",
+  "translations: 12 formerly complete languages miss 109-150 strings each; 36 registry languages untranslated (0/1800); German 1800/1800",
+  "48 px touch target for in-page back buttons on phone (jobBack squeezed at 200 % when fixed)",
+  "MobileRow in devices (AndroidDevices), files search, project/build-run, settings pages; host selection, keyboard/insets, landscape/tablet/external display checks",
+  "ARM64 native build + offscreen smoke test",
+  "Bogen consistency for handoff/GPX/client-picker surfaces with rendered review",
+  "backlog kept: TV/Wear qualified controls, Demo Studio next phases, AirPlay audio/swipe reliability"
+ ],
+ "next_step": "fix the two registry-dependent tests honestly, then translation tranches per language against digest 7fe2ce1447d6, then devices/files MobileRow and ARM64 build"
+}
