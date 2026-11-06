@@ -77,7 +77,7 @@ ColumnLayout {
         Layout.fillWidth:true
         columns:width<Theme.px(920)?1:3
         columnSpacing:Theme.gapXs;rowSpacing:Theme.gapXs
-        StudioTextField {id:appField;objectName:"deviceLogApp";Layout.fillWidth:true;placeholderText:qsTr("App ID, all apps when empty");font.family:Theme.mono
+        StudioTextField {id:appField;objectName:"deviceLogApp";Layout.fillWidth:true;machine:true;placeholderText:qsTr("App ID, all apps when empty");font.family:Theme.mono
             onEditingFinished:{const value=text.trim();if(value!==pane.bundleId){pane.bundleId=value;if(pane.following)pane.restart()}}}
         Flow {
             objectName:"deviceLogLevel";Layout.fillWidth:true;spacing:Theme.gapXs
@@ -103,6 +103,8 @@ ColumnLayout {
         Layout.fillWidth:true;Layout.fillHeight:true;radius:Theme.radiusSmall;color:Theme.inset;border.color:Theme.subtle
         ListView {
             id:logView;objectName:"deviceLogLines"
+            // Log lines read left to right whatever the interface language.
+            LayoutMirroring.enabled:false;LayoutMirroring.childrenInherit:true
             anchors.fill:parent;anchors.margins:Theme.gapXs;clip:true
             model:pane.lines
             // Stays at the newest line unless the reader scrolled up.
@@ -111,7 +113,7 @@ ColumnLayout {
             onCountChanged:if(atEnd)positionViewAtEnd()
             delegate:Text {
                 required property string modelData
-                width:ListView.view.width;text:modelData;wrapMode:Text.WrapAnywhere;textFormat:Text.PlainText
+                width:ListView.view.width;text:modelData;wrapMode:Text.WrapAnywhere;textFormat:Text.PlainText;horizontalAlignment:Text.AlignLeft
                 font.family:Theme.mono;font.pixelSize:Theme.fontMicro
                 color:{const level=LogFilter.level(modelData);return level==="error"?Theme.danger:level==="warning"?Theme.warning:Theme.text}
             }

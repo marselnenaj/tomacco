@@ -21,8 +21,16 @@ class Backend final : public QObject {
     Q_PROPERTY(QString initialUrl READ initialUrl CONSTANT)
     // The stored interface language choice: "system" or a language code ("en", "de", ...).
     Q_PROPERTY(QString language READ language NOTIFY languageChanged)
-    // The language the interface shows, as a code: "en", "de", ...
+    // The language the interface shows, as its registry code: "en", "de", "pt-BR", ...
     Q_PROPERTY(QString uiLanguage READ uiLanguage NOTIFY languageChanged)
+    // The languages the settings offer, each {code, name, englishName, direction}: English first, then by English name.
+    Q_PROPERTY(QVariantList languages READ languages CONSTANT)
+    // Whether the interface language runs right to left (Arabic, Hebrew, Persian, Urdu): the layout mirrors.
+    Q_PROPERTY(bool rightToLeft READ rightToLeft NOTIFY languageChanged)
+    // The interface language's locale for numbers and dates, as a BCP 47 tag ("pt-BR").
+    Q_PROPERTY(QString uiLocale READ uiLocale NOTIFY languageChanged)
+    // Its decimal separator, from Omarchy's registry.
+    Q_PROPERTY(QString decimalPoint READ decimalPoint NOTIFY languageChanged)
     // The stored appearance choice: "system", "dark" or "light".
     Q_PROPERTY(QString appearance READ appearance NOTIFY appearanceChanged)
     // App chrome size, independent of the monitor and device preview zoom.
@@ -54,6 +62,21 @@ public:
     QString initialUrl() const { return m_initial; }
     QString language() const;
     QString uiLanguage() const { return s_uiLanguage; }
+    QVariantList languages() const { return languageList(); }
+    static QVariantList languageList();
+    bool rightToLeft() const { return s_rightToLeft; }
+    static QString uiLocale();
+    QString decimalPoint() const;
+    // The interface language a language tag names ("de-AT", "pt_BR.UTF-8", "zh-Hant-TW", "nb"), or an
+    // empty string: the whole tag, then language and region, language and script, the language alone,
+    // each directly and through the registry's aliases. Only complete languages unless offeredOnly is false.
+    static QString matchLanguage(const QString &tag, bool offeredOnly=true);
+    // Omarchy's language file (XDG_CONFIG_HOME or ~/.config/omarchy/language; OMARCHY_LANGUAGE_FILE
+    // moves it) and the code it holds: empty when there is no such file. Never written.
+    static QString omarchyLanguageFile();
+    static QString omarchyLanguage();
+    // Applies Omarchy's language again when the choice is "system"; the watcher calls it by itself.
+    Q_INVOKABLE void reloadSystemLanguage();
     QString appearance() const;
     bool dark() const;
     Q_INVOKABLE void setAppearance(const QString &choice);
@@ -104,9 +127,10 @@ public:
     // Persists the choice and installs its translators. The application's
     // QML engine retranslates on languageChanged (see main.cpp).
     Q_INVOKABLE void setLanguage(const QString &choice);
-    // Installs the translators for a choice ("system", "en", "de", ...; anything
-    // else counts as "system") and returns the effective language. The
-    // TOMACCO_LANGUAGE environment variable overrides the choice.
+    // Installs the translators for a choice ("system", "en", "de", "pt-BR", ...; a tag such as
+    // "pt_BR" or "nb" is matched, anything else counts as "system"), sets the default locale and
+    // layout direction and returns the effective language. "system" follows Omarchy's language
+    // file, then the desktop's languages. The TOMACCO_LANGUAGE environment variable overrides the choice.
     static QString applyLanguage(const QString &choice);
     // The stored choice, without a Backend (main() needs it before parsing
     // the command line).
@@ -199,6 +223,10 @@ private slots:
     void notificationAction(uint id,const QString &action);
 private:
     static QString s_uiLanguage;
+    static bool s_rightToLeft;
+    void watchSystemLanguage();
+    QFileSystemWatcher m_languageWatcher;
+    QTimer m_languageReload;
     // A probe result is the tool's output or one of these states, which are
     // translated when read so a language change also reaches them.
     static QString probeLabel(const QString &value);

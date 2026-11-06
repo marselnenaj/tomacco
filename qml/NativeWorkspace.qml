@@ -1277,14 +1277,15 @@ Rectangle {
             }
             // Interface language: the desktop's language, or one chosen here (stored, applied at once).
             ColumnLayout {id:languageSection;objectName:"settingsLanguage";Layout.fillWidth:true;spacing:Theme.gapSm
-                visible:view.settingShown([qsTr("Language"),qsTr("System"),"English Deutsch Français Español Italiano",qsTr("Interface language; System follows the desktop language")])
+                visible:view.settingShown([qsTr("Language"),qsTr("System"),Studio.languages.map(l=>l.name+" "+l.englishName).join(" "),qsTr("Interface language; System follows the desktop language")])
                 Text {text:qsTr("Language");color:Theme.muted;font.pixelSize:Theme.fontSmall}
                 StudioComboBox {
                     id:languagePicker;objectName:"languagePicker";Layout.fillWidth:true
-                    readonly property var codes:["system","en","de","fr","es","it"]
+                    // The registry's complete languages (i18n/languages.json): English first, then by English name.
+                    readonly property var codes:["system"].concat(Studio.languages.map(l=>l.code))
                     readonly property string choice:Studio.language
                     // Each language names itself, the same in every language.
-                    model:[qsTr("System"),"English","Deutsch","Français","Español","Italiano"]
+                    model:[qsTr("System")].concat(Studio.languages.map(l=>l.name))
                     function sync() {currentIndex=Math.max(0,codes.indexOf(choice))}
                     onChoiceChanged:sync()
                     onModelChanged:Qt.callLater(sync)
@@ -1459,7 +1460,7 @@ Rectangle {
             Text {Layout.fillWidth:true;text:qsTr("The Mac needs Xcode with an iOS simulator runtime, SSH access and idb_companion. Your own Mac or a rented one works.");wrapMode:Text.WordWrap;color:Theme.muted;font.pixelSize:Theme.fontSmall}
             StudioTextField {id:macName;Layout.fillWidth:true;placeholderText:qsTr("Connection name, e.g. build-mac")}
             StudioTextField {id:macHost;Layout.fillWidth:true;placeholderText:qsTr("SSH target, e.g. user@mac.local")}
-            StudioTextField {id:macDirectory;Layout.fillWidth:true;placeholderText:qsTr("Project directory on the Mac, e.g. /Users/me/Projects/app")}
+            StudioTextField {id:macDirectory;Layout.fillWidth:true;machine:true;placeholderText:qsTr("Project directory on the Mac, e.g. /Users/me/Projects/app")}
             Text {Layout.fillWidth:true;text:qsTr("Mac terminal: brew install facebook/fb/idb\nSSH uses your existing keys and the known host identity.");wrapMode:Text.WordWrap;color:Theme.muted;font.family:Theme.mono;font.pixelSize:Theme.fontSmall}
             StudioButton {text:qsTr("Copy companion command");onClicked:Studio.copy("brew install facebook/fb/idb")}
             StudioButton {text:qsTr("Save & load simulators");accent:true;enabled:!!macName.text && !!macHost.text && macDirectory.text.startsWith("/");onClicked:view.request("remote.configure",{name:macName.text,host:macHost.text,directory:macDirectory.text})}

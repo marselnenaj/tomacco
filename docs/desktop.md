@@ -49,11 +49,22 @@ paste into your agent's MCP settings; **Skip** (*Überspringen*) closes the shee
 
 ## Languages
 
-The desktop speaks English, German, French, Spanish and Italian. It follows the desktop language: the
-first of the system's UI languages that it has, English otherwise. Choose *System*,
-*English*, *Deutsch*, *Français*, *Español* or *Italiano* under **Language** in **Settings** (Ctrl+,); the
-choice is stored and applies at once. `TOMACCO_LANGUAGE=en|de|fr|es|it` overrides it for one
-run. `tomaccoctl` and MCP output always stay English.
+The desktop's interface languages come from `i18n/languages.json`, the project's copy of Omarchy's
+language registry (all 50 Omarchy languages, plus Spanish). A language appears under **Language** in
+**Settings** (Ctrl+,) once its translation is complete; `i18n/COVERAGE.md` shows every language's state.
+The list shows each language by its own name. The choice is stored and applies at once.
+
+*System* follows Omarchy's language: the choice of `omarchy-language` in `~/.config/omarchy/language`
+(or `$XDG_CONFIG_HOME/omarchy/language`), read only, also when it changes while Tomacco runs. Outside
+Omarchy it follows the first of the system's UI languages that Tomacco has, English otherwise. A
+regional tag falls back to its language (`pt-PT` to Portuguese, `zh-Hant-HK` to Traditional Chinese).
+`TOMACCO_LANGUAGE=CODE` with a registry code such as `de`, `pt-BR` or `zh-TW` overrides the choice for
+one run. `tomaccoctl` and MCP output always stay English.
+
+Arabic, Persian, Urdu and Hebrew lay the interface out right to left. Device pictures, pointer
+coordinates, code, logs, paths and URLs keep their direction. Numbers, dates and times in the interface
+follow the language's locale; values typed into fields that the machine side reads, such as the Demo
+Studio's times, accept the locale's decimal separator and a plain dot and are stored canonically.
 
 ## Appearance
 

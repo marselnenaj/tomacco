@@ -80,14 +80,25 @@ if(TOMACCO_EMBED_SOURCE_DIR)
 endif()
 target_compile_definitions(tomacco PRIVATE TOMACCO_VERSION="${PROJECT_VERSION}")
 set(TOMACCO_QML_RESOURCES
-    qml/StudioScrollView.qml qml/StudioScrollBar.qml qml/AppDropArea.qml qml/AppFiles.js qml/LogFilter.js qml/Fuzzy.js qml/DropOverlay.qml
+    qml/StudioScrollView.qml qml/StudioScrollBar.qml qml/AppDropArea.qml qml/AppFiles.js qml/LogFilter.js qml/Fuzzy.js qml/Numbers.js qml/DropOverlay.qml
     qml/NativeDeviceFrame.qml qml/DeviceWindow.qml qml/NativeProfiles.js qml/AndroidDevices.qml qml/IosResearch.qml qml/IosGuestView.qml qml/ScreenRecorder.qml qml/DeviceGrid.qml qml/DeviceLogPane.qml qml/StageLogPane.qml
-    qml/qmldir qml/Theme.qml qml/Theme.js qml/ActivityPanel.qml qml/StudioHeading.qml qml/StudioBand.qml qml/BrandMark.qml qml/DeviceHero.qml qml/StudioStatus.qml qml/StudioSection.qml qml/StudioPanel.qml qml/StudioEmptyState.qml qml/StudioSegmented.qml qml/StudioSpinBox.qml qml/StudioCodeView.qml qml/OperationTitles.js qml/ColorNames.js qml/StudioIcon.qml qml/StudioTextField.qml qml/StudioComboBox.qml qml/StudioCheckBox.qml qml/StudioDialog.qml qml/CommandPalette.qml qml/Main.qml qml/StudioButton.qml qml/Device.qml qml/Workspace.qml qml/NativeWorkspace.qml qml/DebugWorkspace.qml qml/TestWorkspace.qml qml/ProfileWorkspace.qml qml/FileWorkspace.qml qml/ReleaseWorkspace.qml qml/DemoWorkspace.qml qml/EnvironmentPanel.qml qml/PreviewAutomation.qml qml/PreviewProtocol.qml qml/SystemStatus.qml qml/UpdateModel.qml qml/UpdateSection.qml qml/UpdateNotice.qml qml/UpdateBanner.qml qml/HandoffModel.qml qml/HandoffBanner.qml qml/OnboardingSheet.qml qml/ApprovalDialog.qml qml/NotificationCentre.qml qml/MobileNav.qml qml/MobileRow.qml
-    assets/models.json assets/demo.html assets/page-errors.js assets/icon.svg assets/logo.svg assets/fonts/archivo-var.ttf assets/fonts/jetbrains-mono-var.ttf)
+    qml/qmldir qml/Theme.qml qml/Theme.js qml/ActivityPanel.qml qml/StudioHeading.qml qml/StudioBand.qml qml/BrandMark.qml qml/DeviceHero.qml qml/StudioStatus.qml qml/StudioSection.qml qml/StudioPanel.qml qml/StudioEmptyState.qml qml/StudioSegmented.qml qml/StudioSpinBox.qml qml/StudioCodeView.qml qml/OperationTitles.js qml/ColorNames.js qml/StudioIcon.qml qml/StudioTextField.qml qml/StudioComboBox.qml qml/StudioCheckBox.qml qml/StudioDialog.qml qml/CommandPalette.qml qml/Main.qml qml/StudioButton.qml qml/Device.qml qml/Workspace.qml qml/NativeWorkspace.qml qml/DebugWorkspace.qml qml/TestWorkspace.qml qml/ProfileWorkspace.qml qml/FileWorkspace.qml qml/ReleaseWorkspace.qml qml/DemoWorkspace.qml qml/EnvironmentPanel.qml qml/PreviewAutomation.qml qml/PreviewProtocol.qml qml/SystemStatus.qml qml/UpdateModel.qml qml/UpdateSection.qml qml/UpdateNotice.qml qml/UpdateBanner.qml qml/HandoffModel.qml qml/HandoffBanner.qml qml/OnboardingSheet.qml qml/ApprovalDialog.qml qml/NotificationCentre.qml qml/MobileNav.qml qml/MobileRow.qml assets/models.json assets/demo.html assets/page-errors.js assets/icon.svg assets/logo.svg assets/fonts/archivo-var.ttf assets/fonts/jetbrains-mono-var.ttf i18n/languages.json)
 qt_add_resources(tomacco resources PREFIX / FILES ${TOMACCO_QML_RESOURCES})
 # Interface translations. English is the source language: its file only
-# carries plural forms. Each other language has one file with every text.
-set(TOMACCO_TS_FILE i18n/tomacco_de.ts i18n/tomacco_fr.ts i18n/tomacco_es.ts i18n/tomacco_it.ts)
+# carries plural forms. i18n/languages.json is the registry of every other
+# language (Omarchy's registry plus the desktop's data per language;
+# tools/i18n_catalog.py keeps it in step); each has one file with every text.
+file(READ "${CMAKE_CURRENT_SOURCE_DIR}/i18n/languages.json" TOMACCO_LANGUAGE_REGISTRY)
+set_property(DIRECTORY APPEND PROPERTY CMAKE_CONFIGURE_DEPENDS i18n/languages.json)
+string(JSON TOMACCO_LANGUAGE_COUNT LENGTH "${TOMACCO_LANGUAGE_REGISTRY}" languages)
+math(EXPR TOMACCO_LANGUAGE_LAST "${TOMACCO_LANGUAGE_COUNT}-1")
+set(TOMACCO_TS_FILE)
+foreach(index RANGE ${TOMACCO_LANGUAGE_LAST})
+    string(JSON code GET "${TOMACCO_LANGUAGE_REGISTRY}" languages ${index} code)
+    if(NOT code STREQUAL "en")
+        list(APPEND TOMACCO_TS_FILE "i18n/tomacco_${code}.ts")
+    endif()
+endforeach()
 set(TOMACCO_PLURALS_TS_FILE i18n/tomacco_en.ts)
 if(TARGET Qt6::lrelease AND NOT TOMACCO_USE_TS2QM)
     # lupdate reads the target's C++ and QML/JS sources; the other resources hold no UI text.
@@ -236,7 +247,8 @@ if(BUILD_TESTING)
     add_test(NAME desktop-ui COMMAND test-desktop-ui)
     set_tests_properties(desktop-ui PROPERTIES ENVIRONMENT "QT_QPA_PLATFORM=offscreen;QT_QUICK_BACKEND=software;QT_QUICK_CONTROLS_STYLE=Basic;QT_QPA_PLATFORMTHEME=generic;QT_FORCE_STDERR_LOGGING=1;TOMACCO_UPDATES=off")
     qt_add_executable(test-backend tests/backend_test.cpp src/backend.cpp src/backend.h)
-    qt_add_resources(test-backend fixtures PREFIX / FILES assets/models.json)
+    qt_add_resources(test-backend fixtures PREFIX / FILES assets/models.json i18n/languages.json)
+    qt_add_resources(test-backend translations PREFIX /i18n FILES ${TOMACCO_QM_FILES})
     target_include_directories(test-backend PRIVATE src)
     target_link_libraries(test-backend PRIVATE Qt6::Test Qt6::Gui Qt6::Network)
     if(TARGET Qt6::DBus)

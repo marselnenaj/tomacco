@@ -10,6 +10,9 @@ import "."
 Window {
     id: win
     objectName: "deviceWindow"
+    // The controls follow a right-to-left interface; the device picture inside never mirrors.
+    LayoutMirroring.enabled: Studio.rightToLeft
+    LayoutMirroring.childrenInherit: true
     property real deviceWidth: 320
     property real deviceHeight: 640
     property real zoom: 1

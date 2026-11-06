@@ -10,6 +10,10 @@ import "NativeProfiles.js" as NativeProfiles
 // cameras sit where they are on the device.
 Item {
     id: frame
+    // The device is drawn as it is, whatever direction the interface runs: buttons, cameras and the
+    // live screen keep their sides, and pointer positions map onto the screen unmirrored.
+    LayoutMirroring.enabled: false
+    LayoutMirroring.childrenInherit: true
     property var profile: ({})
     property size sourceSize: Qt.size(0,0)
     property bool framed: true

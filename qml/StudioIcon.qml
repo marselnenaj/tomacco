@@ -7,6 +7,10 @@ Canvas {
     id: icon
     property string name: ""
     property color color: Theme.muted
+    // Icons that point along the reading direction turn around in a right-to-left layout;
+    // playback and other symbols keep their shape.
+    readonly property bool directional: name==="back" || name==="chevronRight" || name==="external" || name==="stepIn" || name==="stepOut"
+    transform: Scale { origin.x: icon.width/2; xScale: icon.directional && icon.LayoutMirroring.enabled ? -1 : 1 }
     implicitWidth: Theme.iconSize
     implicitHeight: Theme.iconSize
     // In the item's own units: Canvas applies the screen's scale itself, and a

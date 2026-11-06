@@ -40,7 +40,7 @@ StudioScrollView {
                     required property string modelData
                     Layout.fillWidth: true
                     Label { wrapMode:Text.WrapAnywhere; text: modelData; color: Theme.muted; font.family: Theme.mono; font.pixelSize: Theme.fontSmall; Layout.fillWidth: true }
-                    Label { text: view.report.metrics[modelData]===null ? qsTr("not available") : Number(view.report.metrics[modelData]).toLocaleString(Qt.locale(Studio.uiLanguage),"f",2); color: Theme.text }
+                    Label { text: view.report.metrics[modelData]===null ? qsTr("not available") : Number(view.report.metrics[modelData]).toLocaleString(Qt.locale(Studio.uiLocale),"f",2); color: Theme.text }
                 }
             }
         }

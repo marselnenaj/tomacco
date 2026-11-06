@@ -28,3 +28,6 @@ pc-bios/
 meson-*/
 /*.png
 build-container/
+
+# Working notes of agent sessions (i18n progress and checkpoints), not part of the project.
+.scratch/

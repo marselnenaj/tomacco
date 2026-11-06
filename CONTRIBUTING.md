@@ -80,9 +80,11 @@ Tests that need a toolchain, an engine or a device skip and say what they need.
   own restore image. See [docs/legal.md](docs/legal.md).
 - A claim in the documentation states what was measured or run. An accepted
   request is not a result.
-- A new user-visible string goes through `qsTr` in English with its translation in
-  every `i18n/tomacco_*.ts` file (German, French, Spanish and Italian); `tests/python/test_i18n.py`
-  checks that none is missing.
+- A new user-visible string goes through `qsTr` in English. Run `python3 tools/i18n_catalog.py sync`
+  so every `i18n/tomacco_*.ts` catalog carries it, translate it in every language `i18n/COVERAGE.md`
+  lists as complete, and refresh the report with `report --write i18n/COVERAGE.md`;
+  `tests/python/test_i18n.py` checks that none is missing. See the Translations section of
+  [docs/building.md](docs/building.md).
 - Engine patches go in `integrations/ios-emulator` and are listed in order in
   `tools/build_ios_paravirt.py`.
 

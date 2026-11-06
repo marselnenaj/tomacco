@@ -9,6 +9,10 @@ import "ColorNames.js" as ColorNames
 ApplicationWindow {
     id: root
     objectName: "studioWindow"
+    // Arabic, Hebrew, Persian and Urdu run right to left: the layout mirrors with them. The device
+    // picture, code, logs, paths and addresses opt out where they are drawn (LayoutMirroring.enabled: false).
+    LayoutMirroring.enabled: Studio.rightToLeft
+    LayoutMirroring.childrenInherit: true
     width: 1380; height: 970
     // The desktop floor, unless the screen itself is smaller: on a phone the
     // window may be as narrow as the display, and the workspace lays itself
@@ -72,7 +76,7 @@ ApplicationWindow {
 
     function toast(message) { notice=message; toastTimer.restart() }
     // Display sizes are written with a decimal comma (assets/models.json).
-    function inches(text) { return Studio.uiLanguage!=="en" ? String(text) : String(text).replace(/(\d),(\d)/g,"$1.$2") }
+    function inches(text) { return String(text).replace(/(\d),(\d)/g,"$1"+Studio.decimalPoint+"$2") }
     function showWorkspace(tab, projectPath, file, line) {
         if(projectPath) workspace.openProject(projectPath)
         if(file) workspace.revealFile(file,line || 1)
@@ -223,7 +227,7 @@ ApplicationWindow {
                 StudioTextField {
                     id: address; objectName: "addressField"
                     Layout.fillWidth: true; implicitWidth: Theme.px(120)
-                    text: "tomacco://demo"; placeholderText: "http://localhost:5173"
+                    text: "tomacco://demo"; placeholderText: "http://localhost:5173"; machine: true
                     font.family: Theme.mono; font.pixelSize: Theme.fontSmall
                     onAccepted: root.openUrl(text)
                 }
