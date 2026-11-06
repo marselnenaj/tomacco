@@ -527,7 +527,29 @@ Rectangle {
                     Keys.onSpacePressed: if(currentItem)currentItem.clicked()
                     Accessible.role: Accessible.List; Accessible.name: qsTr("Jobs")
                     Text { anchors.centerIn: parent; width: parent.width-Theme.gapXl; visible: jobList.count===0; text: panel.jobFilter==="running"?qsTr("Nothing running."):qsTr("No failed job."); color: Theme.muted; font.pixelSize: Theme.fontSmall; wrapMode: Text.WordWrap; horizontalAlignment: Text.AlignHCenter }
-                    delegate: ItemDelegate {
+                    // The phone draws each job as a Bogen "Mobile / Row"; the desktop keeps its compact row.
+                    delegate: panel.phone ? phoneJobRow : desktopJobRow
+                    Component {
+                      id: phoneJobRow
+                      MobileRow {
+                        id: mobileJob
+                        required property var modelData
+                        objectName: "jobRow-"+modelData.id
+                        width: ListView.view ? ListView.view.width : implicitWidth
+                        readonly property string project: panel.jobProject(modelData)
+                        readonly property string tone: ({queued:"busy",running:"busy",succeeded:"ok",failed:"failed",timed_out:"failed"})[modelData.state] || "idle"
+                        title: modelData.label
+                        detail: panel.jobStateLabel(modelData)+" · "+panel.jobDuration(modelData)+(project?"\n"+project:"")
+                        meta: ""
+                        dot: tone==="ok"?Theme.success:tone==="failed"?Theme.danger:tone==="busy"?Theme.warning:Theme.faint
+                        highlighted: panel.selectedJob===modelData.id
+                        Accessible.name: modelData.label+", "+panel.jobStateLabel(modelData)+", "+panel.jobDuration(modelData)+(project?", "+project:"")
+                        onClicked: panel.selectJob(modelData)
+                      }
+                    }
+                    Component {
+                    id: desktopJobRow
+                    ItemDelegate {
                         id: jobRow
                         required property var modelData
                         objectName: "jobRow-"+modelData.id
@@ -553,6 +575,7 @@ Rectangle {
                         Accessible.name: modelData.label+", "+panel.jobStateLabel(modelData)+", "+panel.jobDuration(modelData)+(project?", "+project:"")
                         onClicked: panel.selectJob(modelData)
                     }
+                    }
                     ScrollBar.vertical: StudioScrollBar {}
                   }
                 }
@@ -562,9 +585,9 @@ Rectangle {
                     visible: !panel.phone || !!panel.selectedJob
                     Layout.fillWidth: true; Layout.fillHeight: true; spacing: 0
                     RowLayout {
-                        Layout.fillWidth: true; Layout.preferredHeight: Theme.barHeight; Layout.leftMargin: panel.phone?Theme.gapXs:Theme.gapMd; Layout.rightMargin: Theme.gapSm; spacing: Theme.gapXs
+                        Layout.fillWidth: true; Layout.preferredHeight: panel.phone?Math.max(Theme.barHeight,Theme.mobileTouch):Theme.barHeight; Layout.leftMargin: panel.phone?Theme.gapXs:Theme.gapMd; Layout.rightMargin: Theme.gapSm; spacing: Theme.gapXs
                         // Back to the list on a phone; the job stays selected for the strip and the log poll stops with it.
-                        StudioButton { objectName: "jobBack"; visible: panel.phone; iconName: "back"; quiet: true; text: qsTr("All jobs"); displayText: ""; tip: text; onClicked: panel.selectedJob="" }
+                        StudioButton { objectName: "jobBack"; Layout.preferredHeight: Theme.mobileTouch; Layout.preferredWidth: Theme.mobileTouch; visible: panel.phone; iconName: "back"; quiet: true; text: qsTr("All jobs"); displayText: ""; tip: text; onClicked: panel.selectedJob="" }
                         Text { Layout.fillWidth: true; text: panel.activeJob.label || ""; color: Theme.text; font.pixelSize: Theme.fontBody; font.weight: Font.Medium; elide: Text.ElideRight }
                         StudioButton { text: "Hot Reload"; quiet: true; iconName: "refresh"; visible: panel.activeJob.state==="running" && panel.activeJob.interactive===true && ["ready","session"].indexOf(panel.activeJob.phase)>=0; onClicked: panel.request("job.send",{job_id:panel.selectedJob,command:"reload"}) }
                         StudioButton { text: "Details"; quiet: true; enabled: panel.selectedJob.length>0; onClicked: { panel.request("job.get",{job_id:panel.selectedJob}); panel.currentIndex=3 } }

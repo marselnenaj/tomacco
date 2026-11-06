@@ -4389,6 +4389,43 @@ for line in sys.stdin:
         workspace->setProperty("status",QString());workspace->setProperty("failed",false);
         QVERIFY2(qmlErrors.isEmpty(),qPrintable(qmlErrors.join('\n')));
     }
+    void jobs_on_a_phone_are_rows_that_open_the_job_and_go_back() {
+        // Below 600 logical px the job list is phone rows (Bogen "Mobile / Row", 56 px or more,
+        // nothing cut at the side); a tap opens the job full width, "All jobs" goes back.
+        open("jobs");
+        const double now=QDateTime::currentSecsSinceEpoch();
+        const QVariantMap failed{{"id","phone-failed"},{"label","Build Android · debug, a long label that has to wrap on a phone"},{"state","failed"},{"created",now-900},{"updated",now-780},{"plan",QVariantMap{{"exclusive",directory.filePath("project")}}},{"log_path","/nonexistent/phone-failed.log"}};
+        const QVariantMap done{{"id","phone-done"},{"label","Install app"},{"state","succeeded"},{"created",now-4000},{"updated",now-3990},{"plan",QVariantMap{{"exclusive",""}}}};
+        for(int width:{360,393,412}) {
+            window->resize(width,852);QTest::qWait(60);
+            QTRY_VERIFY(workspace->property("phone").toBool());
+            // The window polls job.list; these fixture jobs are set again after each resize.
+            workspace->setProperty("jobs",QVariantList{failed,done});
+            QTRY_VERIFY(item("jobRow-phone-failed") && item("jobRow-phone-failed")->isVisible());
+            auto *row=item("jobRow-phone-failed");
+            QVERIFY2(visualItem(row,"rowTitle"),"phone rows are MobileRow");
+            QVERIFY(row->height()>=56);
+            QCOMPARE(row->property("project").toString(),QString("project"));
+            const auto r=row->mapRectToScene(QRectF(0,0,row->width(),row->height()));
+            QVERIFY2(r.left()>=-0.5 && r.right()<=width+0.5,qPrintable(QString("%1: %2..%3").arg(width).arg(r.left()).arg(r.right())));
+            auto *title=visualItem(row,"rowTitle");QVERIFY(title->property("lineCount").toInt()>=1);
+            QTest::mouseClick(window,Qt::LeftButton,Qt::NoModifier,r.center().toPoint());
+            QTRY_COMPARE(workspace->property("selectedJob").toString(),QString("phone-failed"));
+            QTRY_VERIFY(!item("jobListColumn")->isVisible());
+            auto *back=item("jobBack");QVERIFY(back && back->isVisible());
+            QVERIFY(back->height()>=40);
+            QTest::mouseClick(window,Qt::LeftButton,Qt::NoModifier,back->mapToScene(QPointF(back->width()/2,back->height()/2)).toPoint());
+            QTRY_VERIFY(item("jobListColumn")->isVisible());
+            workspace->setProperty("selectedJob",QString());
+        }
+        // Back to a desktop width: the compact desktop rows again.
+        window->resize(1380,970);QTest::qWait(60);
+        QTRY_VERIFY(!workspace->property("phone").toBool());
+        workspace->setProperty("jobs",QVariantList{failed,done});
+        QTRY_VERIFY(item("jobRow-phone-failed") && !visualItem(item("jobRow-phone-failed"),"rowTitle"));
+        workspace->setProperty("selectedJob",QString());workspace->setProperty("activeJob",QVariantMap{});workspace->setProperty("jobs",QVariantList{});
+        QVERIFY2(qmlErrors.isEmpty(),qPrintable(qmlErrors.join('\n')));
+    }
     void a_job_that_ends_in_the_background_is_notified() {
         // A job that ran a while and ends while no window of the app is active becomes a desktop
         // notification (here only the signal: the offscreen test platform sends none); clicking it
