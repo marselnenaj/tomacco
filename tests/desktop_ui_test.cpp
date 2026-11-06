@@ -3807,7 +3807,7 @@ for line in sys.stdin:
         auto *picker=object("languagePicker");QVERIFY(picker);
         // The picker lists the registry's complete languages: System, English, then by English name.
         const auto codes=picker->property("codes").toStringList();
-        QCOMPARE(codes.mid(0,2),QStringList{"system","en"});
+        QCOMPARE(codes.mid(0,2),(QStringList{"system","en"}));
         const int german=codes.indexOf("de");QVERIFY(german>1);
         QCOMPARE(label("nav-files"),QString("Files"));
         QTRY_COMPARE(picker->property("currentIndex").toInt(),1);
