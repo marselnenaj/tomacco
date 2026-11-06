@@ -1,0 +1,23 @@
+# Hermes Agent configuration, as hermes setup writes it, with a server of the
+# person's own, a comment inside the block and a blank line between entries.
+model:
+  default: anthropic/claude-sonnet-4
+terminal:
+  backend: local
+mcp_servers:
+  # The filesystem server from the MCP docs.
+  filesystem:
+    command: "npx"
+    args: ["-y", "@modelcontextprotocol/server-filesystem", "/home/user/projects"]
+    env:
+      LOG_LEVEL: info
+
+  linear:
+    url: https://mcp.linear.app/mcp
+    auth: oauth
+    tools:
+      include: [find_issues, get_issue]
+skills:
+  disabled: []
+  external_dirs:
+    - ~/.agents/skills

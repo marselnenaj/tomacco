@@ -1,0 +1,55 @@
+{
+  "checked_at": "2026-11-06T13:30:00+01:00",
+  "branch": "feat/agent-clients",
+  "base": "bdd708c40719e755ad6b71a5c6969aa2797d20a5",
+  "implemented": [
+    "native/agent_clients.rs: client registry (ClientId, resolve/inspect/connect/remove, skill targets), JSON adapters (Gemini CLI, Cursor, VS Code, Zed, OpenCode v1/v2, Grok CLI array, omp with $schema and disabledServers), text-level YAML adapter for Hermes config.yaml, CLI adapters (Claude Code, Codex, OpenCode 2 `mcp add --global`), ownership check (tomaccoctl serving mcp), disabled/conflict/manual/unknown/outdated states, backups under ~/.local/share/tomacco/agent-backups, atomic write, read-back check with rollback, JSONC read-only detection, opencode --version probe with timeout, per-client tool-name rules",
+    "native/setup.rs: `tomaccoctl setup [--tools MODE] [--opencode-config v1|v2]` and `tomaccoctl setup agents [status|remove] [--yes] [--json] [--client ID]`; status exits 1 when a present client needs a hand; --json routes questions to stderr",
+    "native/main.rs help, docs/tomaccoctl.1, native/mcp_tools.rs Mode::name",
+    "skills linked for Claude Code, Codex, ~/.agents (made for Grok CLI), OpenCode (~/.config/opencode/skills), Hermes (~/.hermes/skills), omp (<agent>/skills)",
+    "docs/agent-clients.md (matrix, verdicts, OpenCode/Hermes/Grok notes, offline MCP check, cleanup), docs/agents.md connect section, docs/README.md row, README/faq/getting-started client lists, CHANGELOG entry, SKILL.md note on client tool-name prefixes and fresh screenshots after actions/rotation",
+    "tests/fixtures/agent-clients/*: opencode v1 JSON, opencode v2 JSONC, hermes config with comments/blank lines, hermes with anchors+merge key, grok user-settings with disabled server, omp mcp.json with disabledServers"
+  ],
+  "tested": {
+    "rust_unit": "cargo test --locked (TMPDIR set): 677 passed, 0 failed; agent_clients: 16 tests (ids, tool-name rules distinct and <=64 for all 274 operations, environment variables incl. HERMES_HOME/PI_CONFIG_DIR/OMP_PROFILE/PI_CODING_AGENT_DIR, JSON idempotence/preservation/mode/backup, unicode+space paths, JSONC/link/malformed -> manual, OpenCode v1/v2/unknown/forced/JSONC/tools env, OpenCode stand-in CLI argv, Grok array/label slug/disabled/removal, omp schema/disabledServers, backup rollback, Hermes YAML insert/update/remove/conflict/disabled, YAML refusals (anchor, merge, inline, marker, tab, duplicate, irregular indent, list document), 4-space indent, CRLF, quoting, skill links/taken/unlink, snippets/commands); setup: option parsing; help/man flag parity",
+    "clippy_fmt": "cargo fmt --check OK; cargo clippy --locked --all-targets -D warnings OK",
+    "python_integration": "tests/python/test_agent_clients.py: 8 tests with stand-in claude/codex/opencode executables (argv recorded, PATH contains only stand-ins), fixture files, scratch HOME: empty home untouched; all ten clients connected/idempotent/removed; OpenCode v1 and unknown->--opencode-config; disabled/conflict/anchors left alone with byte-identical files; home with spaces+unicode; skill links incl. taken entry; --tools set/outdated/update; protocol: the written entry for Gemini CLI, Grok CLI (grouped via env), omp, OpenCode (from JSONC), Hermes (from YAML) started as that client would, initialize with the client's name, tools/list (274 full / <=31 grouped with every operation in enums), names distinct and plain under each verified rule, agent.policy read-only call shows channel=mcp and the client name, invalid_argument isError result with remedy, unknown tool isError, schema tool, resources/read docs, prompts/list, notifications/cancelled, clean exit 0",
+    "docs": "tests.python.test_docs_links, test_docs_consistency, test_agent_skill, test_docs_reference: 26 OK (SKILL.md 1655/1800 words)"
+  },
+  "commits": [],
+  "upstream_versions": {
+    "opencode": {"url": "https://github.com/anomalyco/opencode", "package": "@opencode/cli 2.2.5", "commit": "3ec9b3b0a6936ac38360004870024028c1cc0c71", "date": "2026-11-06", "files": ["packages/schema/src/mcp.ts", "packages/schema/src/config/mcp.ts", "packages/core/src/v1/config/mcp.ts", "packages/cli/src/commands/handlers/mcp/add.ts", "packages/core/src/tool/runtime.ts", "packages/core/src/tool/mcp.ts"], "docs": ["https://opencode.ai/v2/docs/mcp-servers/", "https://opencode.ai/v2/docs/config/", "https://opencode.ai/v2/docs/skills/", "https://opencode.ai/docs/mcp-servers/ (v1)"]},
+    "grok-cli": {"url": "https://github.com/superagent-ai/grok-cli", "package": "grok-dev 1.1.7 (bin grok)", "commit": "fb97af83f06dca873281d60168430f06c8de6324", "date": "2026-05-15", "files": ["src/utils/settings.ts", "src/mcp/runtime.ts", "src/mcp/validate.ts", "src/utils/skills.ts", "src/ui/mcp-modal.tsx", "README.md"], "note": "README still says .grok/settings.json mcpServers; the loader reads ~/.grok/user-settings.json mcp.servers (array). Community CLI, not xAI's app; xAI tool-name regex not documented (docs.x.ai function-calling read)"},
+    "hermes-agent": {"url": "https://github.com/NousResearch/hermes-agent", "commit": "90d6b98fd86d20981ee06ddd5b7d93e4320f26a4", "date": "2026-11-06", "files": ["hermes_cli/subcommands/mcp.py", "hermes_cli/mcp_config.py", "tools/mcp_tool_schema.py", "tools/mcp_tool_config.py", "tools/skills_tool.py", "hermes_constants.py", "hermes_cli/config.py"], "docs": ["https://hermes-agent.nousresearch.com/docs/user-guide/features/mcp", "https://hermes-agent.nousresearch.com/docs/user-guide/features/skills", "https://hermes-agent.nousresearch.com/docs/user-guide/configuration"]},
+    "omp": {"url": "https://github.com/can1357/oh-my-pi", "package": "@oh-my-pi/pi-coding-agent 18.17.0 (bin omp)", "commit": "b47e53b25efdda4e19fd13cc1f88c8eb8f7972d8", "date": "2026-11-06", "files": ["docs/mcp-config.md", "docs/mcp-runtime-lifecycle.md", "docs/skills.md", "docs/context-files.md", "docs/environment-variables.md", "docs/settings.md", "docs/cli-reference.md", "packages/coding-agent/src/mcp/config-writer.ts", "packages/coding-agent/src/discovery/builtin.ts", "packages/coding-agent/src/discovery/helpers.ts", "packages/coding-agent/src/config/mcp-schema.json"], "note": "omp.sh docs are the oh-my-pi docs; no `omp mcp add` CLI, only /mcp add in the TUI; getAgentDir source (pi-utils) not inspected, profile/env rules taken from docs"}
+  },
+  "supported_scopes": {
+    "all": "user scope only; project-scope files (.grok/settings.json has no MCP; .omp/mcp.json; project opencode.json) are not written",
+    "opencode": "global ~/.config/opencode/opencode.json(c) or .opencode/ variants, XDG_CONFIG_HOME honoured",
+    "hermes": "$HERMES_HOME/config.yaml, default ~/.hermes (+HERMES_DATA_DIR_SUFFIX); active_profile noted, not followed",
+    "omp": "$PI_CODING_AGENT_DIR (default profile) or ~/<PI_CONFIG_DIR|.omp>/agent, profile ~/.omp/profiles/<OMP_PROFILE|PI_PROFILE>/agent",
+    "grok-cli": "~/.grok/user-settings.json only"
+  },
+  "unverified": [
+    "No real client execution: grok, opencode, hermes, omp, claude, codex were not installed or run; stand-ins and fixtures only (as instructed: no installs, no model calls)",
+    "Whether the xAI API accepts dotted function names (hence grouped default for Grok CLI)",
+    "Claude Code, Codex, Gemini CLI, Cursor, VS Code, Zed tool-name rules not read (tool_name None)",
+    "OpenCode 2 behaviour with a leftover v1 entry under mcp (reported as conflict, not migrated)",
+    "omp getAgentDir implementation (docs only); Hermes skill discovery of a symlinked skill dir (os.scandir follows links; not executed)",
+    "GitHub raw rate limits prevented reading hermes_cli/mcp_startup.py; not needed for the adapter"
+  ],
+  "remaining": [
+    "Run the real clients once available in an isolated HOME (status mode) and record results in docs/agent-clients.md 'Checked' column",
+    "Desktop onboarding sheet still copies a generic mcpServers JSON; a per-client picker would need new translatable strings (none added in this lane)",
+    "tomaccoctl uninstall does not remove agent entries (documented; `setup agents remove` does)"
+  ],
+  "next_step": "Commit on feat/agent-clients; root integrates and runs ctest control-plane with the new test",
+  "cross_lane_notes": [
+    "No API operations or assets/operations.json changes; operation count stays 274 so no docs/reference regeneration; no catalog count race",
+    "docs/agent-clients.md states 274 operations in prose (test_docs_consistency checks counts) - rebase conflicts possible if the core lane changes the count",
+    "SKILL.md: +38 words (1655/1800); test_agent_skill passes; the i18n lane is not affected (no QML/.ts strings added)",
+    "install.rs AGENT_SKILL_LINKS unchanged (installer still links .claude/.codex/.agents); setup adds the other four skill links; uninstall unchanged",
+    "native/mcp_tools.rs: added Mode::name (additive)"
+  ],
+  "i18n_strings": []
+}

@@ -7,6 +7,16 @@ operations and their JSON results.
 ## Unreleased
 
 ### Added
+- **Agent clients.** `tomaccoctl setup` also connects Grok CLI (`~/.grok/user-settings.json`),
+  Hermes Agent (`config.yaml`, edited as text within `mcp_servers`) and omp (`~/.omp/agent/mcp.json`),
+  and OpenCode in its version 1 and version 2 layouts, through `opencode mcp add --global` where
+  OpenCode 2 is on PATH. `tomaccoctl setup agents` connects the agents alone, `setup agents status`
+  reports each one (connected, off, outdated, conflict, manual, unknown) without changes and
+  `setup agents remove` takes Tomacco's entries and skill links out again; `--json`, `--client`,
+  `--tools` and `--opencode-config` refine them. Files are backed up, written atomically and read
+  back; an entry the person switched off or that is not Tomacco's is left alone. The agent skill is
+  also linked for OpenCode, Hermes Agent, omp and Grok CLI. [Agent clients](docs/agent-clients.md)
+  has the matrix and what was checked.
 - **Named QA environments.** Save theme, font size, animations, airplane mode, app language,
   emulator GPS and TalkBack as a versioned preset, plan it for one named Android device, apply
   exactly that plan and restore the previous values from a restore point. Unsupported, unverified

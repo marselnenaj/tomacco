@@ -1,0 +1,9 @@
+# A config.yaml with an anchor and a merge key inside mcp_servers: setup
+# does not rewrite it and shows the block to paste instead.
+defaults: &stdio
+  idle_timeout_seconds: 900
+mcp_servers:
+  playwright:
+    <<: *stdio
+    command: npx
+    args: ["-y", "@playwright/mcp@latest", "--headless"]
