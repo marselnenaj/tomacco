@@ -49,7 +49,7 @@ review list, not an error count.
 | sk | Slovenčina (Slovak) | ltr | 3 (slovak) | 0/1758 | 1758 | 0 | 0 | 0/6 | untranslated |
 | sl | Slovenščina (Slovenian) | ltr | 4 (slovenian) | 0/1758 | 1758 | 0 | 0 | 0/6 | untranslated |
 | sr | Српски (Serbian) | ltr | 3 (russian) | 0/1758 | 1758 | 0 | 0 | 0/6 | untranslated |
-| sv | Svenska (Swedish) | ltr | 2 (english) | 0/1758 | 1758 | 0 | 0 | 0/6 | untranslated |
+| sv | Svenska (Swedish) | ltr | 2 (english) | 1758/1758 | 0 | 1 | 0 | 6/6 | complete |
 | sw | Kiswahili (Swahili) | ltr | 2 (english) | 0/1758 | 1758 | 0 | 0 | 0/6 | untranslated |
 | ta | தமிழ் (Tamil) | ltr | 2 (english) | 0/1758 | 1758 | 0 | 0 | 0/6 | untranslated |
 | th | ไทย (Thai) | ltr | 1 (universal) | 0/1758 | 1758 | 0 | 0 | 0/6 | untranslated |
@@ -61,6 +61,6 @@ review list, not an error count.
 | zh-CN | 简体中文 (Chinese (Simplified)) | ltr | 1 (universal) | 1758/1758 | 0 | 1 | 0 | 6/6 | complete |
 | zh-TW | 繁體中文 (Chinese (Traditional)) | ltr | 1 (universal) | 1758/1758 | 0 | 1 | 0 | 6/6 | complete |
 
-Complete: 14 of 50 translated languages: ar, de, es, es-MX, fr, it, ja, nl, pl, pt, pt-BR, ru, zh-CN, zh-TW
+Complete: 15 of 50 translated languages: ar, de, es, es-MX, fr, it, ja, nl, pl, pt, pt-BR, ru, sv, zh-CN, zh-TW
 
-Not complete: bg, bn, ca, cs, da, el, et, fa, fi, fil, ga, he, hi, hr, hu, id, is, ko, lt, lv, ms, no, ro, si, sk, sl, sr, sv, sw, ta, th, tr, uk, ur, uz, vi
+Not complete: bg, bn, ca, cs, da, el, et, fa, fi, fil, ga, he, hi, hr, hu, id, is, ko, lt, lv, ms, no, ro, si, sk, sl, sr, sw, ta, th, tr, uk, ur, uz, vi

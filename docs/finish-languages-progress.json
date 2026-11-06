@@ -1,9 +1,9 @@
 {
-  "updated_at": "2026-11-06T16:38:10+00:00",
+  "updated_at": "2026-11-06T16:44:55+00:00",
   "model": "claude-opus-5-5",
   "branch": "finish/omarchy-languages",
   "base_head": "0f465cb8caf0871ef49513dbd0bb4fa10a9748b8",
-  "current_head": "8fb7467e370baf072beab0de58ce0c08c92572a5",
+  "current_head": "f39bbc8b899da40b32ede20aaed24c542ce7ce15",
   "current_ui_head": "0f465cb (companion integration/finish-tomacco has no newer commit yet; uncommitted changes there are not imported)",
   "source_digest": "8698f5478352",
   "source_count": 1758,
@@ -21,6 +21,7 @@
     "pt",
     "pt-BR",
     "ru",
+    "sv",
     "zh-CN",
     "zh-TW"
   ],
@@ -52,7 +53,6 @@
     "sk",
     "sl",
     "sr",
-    "sv",
     "sw",
     "ta",
     "th",
@@ -468,14 +468,16 @@
       "registry_complete": false
     },
     "sv": {
-      "finished": 0,
-      "unfinished": 1758,
+      "finished": 1758,
+      "unfinished": 0,
       "stale": 0,
       "problems": [],
-      "suspicious": [],
-      "menu_entry": "0/6",
-      "status": "untranslated",
-      "registry_complete": false
+      "suspicious": [
+        "NativeWorkspace: 'iPhone via USB'"
+      ],
+      "menu_entry": "6/6",
+      "status": "complete",
+      "registry_complete": true
     },
     "sw": {
       "finished": 0,
@@ -583,6 +585,7 @@
     }
   },
   "commits": [
+    "f39bbc8 i18n: complete Polish (1758/1758, menu entry, registry complete)",
     "8fb7467 i18n: reconcile 13 complete catalogs with the merged sources (1758 texts), translate operation titles for GPX playback and device.resolve, re-index vetted Polish material"
   ],
   "tests": {
@@ -616,7 +619,6 @@
     "sk": 1758,
     "sl": 1758,
     "sr": 1758,
-    "sv": 1758,
     "sw": 1758,
     "ta": 1758,
     "th": 1758,

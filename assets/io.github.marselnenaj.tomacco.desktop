@@ -16,6 +16,7 @@ GenericName[es_MX]=Entorno de desarrollo móvil
 GenericName[ar]=بيئة تطوير الجوال
 GenericName[nl]=Mobiele ontwikkelomgeving
 GenericName[pl]=Środowisko programowania mobilnego
+GenericName[sv]=Mobil utvecklingsmiljö
 Comment=Build, run and test native Android and iOS apps
 Comment[de]=Native Android- und iOS-Apps bauen, starten und testen
 Comment[fr]=Compiler, lancer et tester des apps Android et iOS natives
@@ -31,6 +32,7 @@ Comment[es_MX]=Compila, ejecuta y prueba apps nativas de Android e iOS
 Comment[ar]=ابنِ تطبيقات Android وiOS الأصلية وشغّلها واختبرها
 Comment[nl]=Native Android- en iOS-apps bouwen, uitvoeren en testen
 Comment[pl]=Kompiluj, uruchamiaj i testuj natywne aplikacje na Androida i iOS
+Comment[sv]=Bygg, kör och testa inbyggda Android- och iOS-appar
 Exec=tomacco
 Icon=io.github.marselnenaj.tomacco
 Terminal=false
@@ -50,6 +52,7 @@ Keywords[es_MX]=Android;iPhone;iOS;Swift;Kotlin;Flutter;Emulador;MCP;Agente;Celu
 Keywords[ar]=Android;iPhone;iOS;Swift;Kotlin;Flutter;محاكي;MCP;وكيل;هاتف;
 Keywords[nl]=Android;iPhone;iOS;Swift;Kotlin;Flutter;Emulator;MCP;Agent;Smartphone;
 Keywords[pl]=Android;iPhone;iOS;Swift;Kotlin;Flutter;Emulator;MCP;Agent;Smartfon;
+Keywords[sv]=Android;iPhone;iOS;Swift;Kotlin;Flutter;Emulator;MCP;Agent;Smarttelefon;
 StartupNotify=true
 StartupWMClass=io.github.marselnenaj.tomacco
 Actions=Project;Devices;Jobs;
@@ -70,6 +73,7 @@ Name[es_MX]=Proyecto
 Name[ar]=المشروع
 Name[nl]=Project
 Name[pl]=Projekt
+Name[sv]=Projekt
 Exec=tomacco --workspace project
 
 [Desktop Action Devices]
@@ -88,6 +92,7 @@ Name[es_MX]=Dispositivos
 Name[ar]=الأجهزة
 Name[nl]=Apparaten
 Name[pl]=Urządzenia
+Name[sv]=Enheter
 Exec=tomacco --workspace devices
 
 [Desktop Action Jobs]
@@ -106,4 +111,5 @@ Name[es_MX]=Compilaciones y tareas
 Name[ar]=البناءات والمهام
 Name[nl]=Builds en taken
 Name[pl]=Kompilacje i zadania
+Name[sv]=Byggen och jobb
 Exec=tomacco --workspace jobs
