@@ -1,9 +1,9 @@
 {
-  "updated_at": "2026-11-06T17:03:09+00:00",
+  "updated_at": "2026-11-06T17:28:25+00:00",
   "model": "claude-opus-5-5",
   "branch": "finish/omarchy-languages",
   "base_head": "0f465cb8caf0871ef49513dbd0bb4fa10a9748b8",
-  "current_head": "5075ad00836a320ad8387e5018383fb0d1a75606",
+  "current_head": "b269094254c9ca4209209375b6e258a649c5fa81",
   "current_ui_head": "912ce5cc682e9b4435d0bd0131542a4f2ddde38e (companion integration/finish-tomacco, merged into this branch as 9449dd4; companion has not yet published a final-source-ready flag)",
   "source_digest": "3390181968e6",
   "source_count": 1800,
@@ -24,6 +24,7 @@
     "pt-BR",
     "ru",
     "sv",
+    "uk",
     "zh-CN",
     "zh-TW"
   ],
@@ -57,7 +58,6 @@
     "ta",
     "th",
     "tr",
-    "uk",
     "ur",
     "uz",
     "vi"
@@ -525,14 +525,16 @@
       "registry_complete": false
     },
     "uk": {
-      "finished": 0,
-      "unfinished": 1800,
+      "finished": 1800,
+      "unfinished": 0,
       "stale": 0,
       "problems": [],
-      "suspicious": [],
-      "menu_entry": "0/6",
-      "status": "untranslated",
-      "registry_complete": false
+      "suspicious": [
+        "AndroidDevices: 'the Android SDK'"
+      ],
+      "menu_entry": "6/6",
+      "status": "complete",
+      "registry_complete": true
     },
     "ur": {
       "finished": 0,
@@ -590,6 +592,7 @@
     }
   },
   "commits": [
+    "b269094 i18n: complete no (all current source texts, menu entry, registry complete)",
     "5075ad0 i18n: translate the 48 texts from the merged agent-client picker for all 16 complete catalogs",
     "9449dd4 Merge companion integration/finish-tomacco 912ce5c (agent client picker, phone jobs UI) into language branch",
     "ba3b64d i18n: complete da (all current source texts, menu entry, registry complete)",
@@ -634,7 +637,6 @@
     "ta": 1800,
     "th": 1800,
     "tr": 1800,
-    "uk": 1800,
     "ur": 1800,
     "uz": 1800,
     "vi": 1800
