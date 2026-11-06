@@ -21,7 +21,7 @@
     </message>
     <message>
         <source>Copy MCP configuration</source>
-        <translation>复制 MCP 配置</translation>
+        <translation type="vanished">复制 MCP 配置</translation>
     </message>
     <message>
         <source>Connect your agent.</source>
@@ -37,11 +37,11 @@
     </message>
     <message>
         <source>1  Copy the configuration.</source>
-        <translation>1  复制配置。</translation>
+        <translation type="vanished">1  复制配置。</translation>
     </message>
     <message>
         <source>2  Paste it into your agent&apos;s MCP settings.</source>
-        <translation>2  粘贴到智能体的 MCP 设置中。</translation>
+        <translation type="vanished">2  粘贴到智能体的 MCP 设置中。</translation>
     </message>
     <message>
         <source>3  Ask it to run your app.</source>
@@ -122,6 +122,22 @@
     <message>
         <source>Clear the notifications</source>
         <translation>清除通知</translation>
+    </message>
+    <message>
+        <source>1  Pick your agent.</source>
+        <translation>1  选择你的智能体。</translation>
+    </message>
+    <message>
+        <source>2  Connect it, or copy its own setting.</source>
+        <translation>2  连接它，或复制它自己的设置。</translation>
+    </message>
+    <message>
+        <source>Connect your agent</source>
+        <translation>连接你的智能体</translation>
+    </message>
+    <message>
+        <source>Copy entry for another MCP client</source>
+        <translation>复制用于其他 MCP 客户端的条目</translation>
     </message>
 </context>
 <context>
@@ -4005,6 +4021,10 @@ SSH 使用你现有的密钥和已知的主机身份。</translation>
         <source>Your turn</source>
         <translation>轮到你了</translation>
     </message>
+    <message>
+        <source>Claude Code Codex Gemini Cursor VS Code Zed OpenCode Grok Hermes omp MCP</source>
+        <translation>Claude Code Codex Gemini Cursor VS Code Zed OpenCode Grok Hermes omp MCP 智能体 连接</translation>
+    </message>
 </context>
 <context>
     <name>Operations</name>
@@ -5544,7 +5564,7 @@ SSH 使用你现有的密钥和已知的主机身份。</translation>
     </message>
     <message>
         <source>Copy MCP configuration</source>
-        <translation>复制 MCP 配置</translation>
+        <translation type="vanished">复制 MCP 配置</translation>
     </message>
     <message>
         <source>Copy path</source>
@@ -6010,6 +6030,14 @@ SSH 使用你现有的密钥和已知的主机身份。</translation>
         <source>All jobs</source>
         <translation>所有任务</translation>
     </message>
+    <message>
+        <source>Agent</source>
+        <translation>智能体</translation>
+    </message>
+    <message>
+        <source>Connect your coding agent</source>
+        <translation>连接你的编程智能体</translation>
+    </message>
 </context>
 <context>
     <name>main</name>
@@ -6356,7 +6384,7 @@ Licensed under the GNU General Public License, version 2 or later.</source>
     </message>
     <message>
         <source>Copied</source>
-        <translation>已复制</translation>
+        <translation type="vanished">已复制</translation>
     </message>
     <message>
         <source>Connect your coding agent</source>
@@ -6368,7 +6396,7 @@ Licensed under the GNU General Public License, version 2 or later.</source>
     </message>
     <message>
         <source>The MCP configuration is on the clipboard. Paste it into your agent&apos;s MCP settings.</source>
-        <translation>MCP 配置已在剪贴板中。请将其粘贴到智能体的 MCP 设置中。</translation>
+        <translation type="vanished">MCP 配置已在剪贴板中。请将其粘贴到智能体的 MCP 设置中。</translation>
     </message>
 </context>
 <context>
@@ -7219,6 +7247,187 @@ Licensed under the GNU General Public License, version 2 or later.</source>
         <source>More</source>
         <comment>navigation</comment>
         <translation>更多</translation>
+    </message>
+</context>
+<context>
+    <name>AgentClientDialog</name>
+    <message>
+        <source>Connect your coding agent</source>
+        <translation>连接你的编程智能体</translation>
+    </message>
+    <message>
+        <source>Done</source>
+        <translation>完成</translation>
+    </message>
+    <message>
+        <source>Pick your agent. Tomacco shows whether it is connected and the exact setting it reads.</source>
+        <translation>选择你的智能体。Tomacco 会显示它是否已连接，以及它读取的确切设置。</translation>
+    </message>
+</context>
+<context>
+    <name>AgentClientPicker</name>
+    <message>
+        <source>%1 is not installed here. Install it first, or copy the text for another computer.</source>
+        <translation>此处未安装 %1。请先安装，或为另一台计算机复制文本。</translation>
+    </message>
+    <message>
+        <source>%1 starts Tomacco when it needs it. Nothing to do.</source>
+        <translation>%1 会在需要时启动 Tomacco。无需操作。</translation>
+    </message>
+    <message>
+        <source>Add it by hand</source>
+        <comment>agent client</comment>
+        <translation>手动添加</translation>
+    </message>
+    <message>
+        <source>Add this to %1:</source>
+        <translation>将以下内容添加到 %1：</translation>
+    </message>
+    <message>
+        <source>Another entry is in the way</source>
+        <comment>agent client</comment>
+        <translation>有其他条目冲突</translation>
+    </message>
+    <message>
+        <source>Check again</source>
+        <translation>重新检查</translation>
+    </message>
+    <message>
+        <source>Connect</source>
+        <translation>连接</translation>
+    </message>
+    <message>
+        <source>Connected</source>
+        <comment>agent client</comment>
+        <translation>已连接</translation>
+    </message>
+    <message>
+        <source>Connected.</source>
+        <translation>已连接。</translation>
+    </message>
+    <message>
+        <source>Connected. The previous file is saved as %1.</source>
+        <translation>已连接。原文件已保存为 %1。</translation>
+    </message>
+    <message>
+        <source>Connecting…</source>
+        <translation>正在连接…</translation>
+    </message>
+    <message>
+        <source>Copied</source>
+        <translation>已复制</translation>
+    </message>
+    <message>
+        <source>Copy command</source>
+        <translation>复制命令</translation>
+    </message>
+    <message>
+        <source>Copy text</source>
+        <translation>复制文本</translation>
+    </message>
+    <message>
+        <source>Left unchanged</source>
+        <comment>agent client</comment>
+        <translation>保持不变</translation>
+    </message>
+    <message>
+        <source>Looking for coding agents…</source>
+        <translation>正在查找编程智能体…</translation>
+    </message>
+    <message>
+        <source>Needs an update</source>
+        <comment>agent client</comment>
+        <translation>需要更新</translation>
+    </message>
+    <message>
+        <source>Not connected</source>
+        <comment>agent client</comment>
+        <translation>未连接</translation>
+    </message>
+    <message>
+        <source>Not found on this computer</source>
+        <comment>agent client</comment>
+        <translation>在此计算机上未找到</translation>
+    </message>
+    <message>
+        <source>Or run this in a terminal:</source>
+        <translation>或在终端中运行：</translation>
+    </message>
+    <message>
+        <source>Remove Tomacco</source>
+        <translation>移除 Tomacco</translation>
+    </message>
+    <message>
+        <source>Removed</source>
+        <comment>agent client</comment>
+        <translation>已移除</translation>
+    </message>
+    <message>
+        <source>Removes only the entry setup added; the rest of the file stays.</source>
+        <translation>只移除设置程序添加的条目；文件其余部分保持不变。</translation>
+    </message>
+    <message>
+        <source>Setup adds Tomacco to %1&apos;s settings and keeps a backup of the file.</source>
+        <translation>设置程序会将 Tomacco 添加到 %1 的设置中，并保留该文件的备份。</translation>
+    </message>
+    <message>
+        <source>Setup did not report on this agent.</source>
+        <translation>设置程序未报告此智能体的情况。</translation>
+    </message>
+    <message>
+        <source>Setup failed</source>
+        <comment>agent client</comment>
+        <translation>设置失败</translation>
+    </message>
+    <message>
+        <source>Setup failed.</source>
+        <translation>设置失败。</translation>
+    </message>
+    <message>
+        <source>Something else in %1&apos;s settings uses the name. Setup leaves it alone; add Tomacco by hand under another name.</source>
+        <translation>%1 的设置中有其他项使用了该名称。设置程序不会改动它；请用其他名称手动添加 Tomacco。</translation>
+    </message>
+    <message>
+        <source>The agent list could not be requested.</source>
+        <translation>无法请求智能体列表。</translation>
+    </message>
+    <message>
+        <source>This file is not one Tomacco rewrites. Add the text below yourself.</source>
+        <translation>Tomacco 不会改写此文件。请自行添加下方文本。</translation>
+    </message>
+    <message>
+        <source>This version of tomaccoctl cannot list coding agents.</source>
+        <translation>此版本的 tomaccoctl 无法列出编程智能体。</translation>
+    </message>
+    <message>
+        <source>Tomacco could not tell which settings layout %1 reads. Add the text below yourself, or run setup in a terminal with the version.</source>
+        <translation>Tomacco 无法判断 %1 读取哪种设置格式。请自行添加下方文本，或在终端中指定版本运行设置。</translation>
+    </message>
+    <message>
+        <source>Tomacco&apos;s entry is switched off in %1. Setup leaves your choice alone; switch it on there.</source>
+        <translation>Tomacco 的条目在 %1 中已关闭。设置程序尊重你的选择；请在那里将其打开。</translation>
+    </message>
+    <message>
+        <source>Tomacco&apos;s entry points to another program or older settings. Update rewrites only that entry and keeps a backup.</source>
+        <translation>Tomacco 的条目指向其他程序或旧设置。更新只会改写该条目并保留备份。</translation>
+    </message>
+    <message>
+        <source>Tomacco&apos;s entry was removed; the rest of the file is unchanged.</source>
+        <translation>已移除 Tomacco 的条目；文件其余部分未变。</translation>
+    </message>
+    <message>
+        <source>Turned off in its settings</source>
+        <comment>agent client</comment>
+        <translation>在其设置中已关闭</translation>
+    </message>
+    <message>
+        <source>Update entry</source>
+        <translation>更新条目</translation>
+    </message>
+    <message>
+        <source>Version unclear</source>
+        <comment>agent client</comment>
+        <translation>版本不明</translation>
     </message>
 </context>
 </TS>

@@ -21,7 +21,7 @@
     </message>
     <message>
         <source>Copy MCP configuration</source>
-        <translation>複製 MCP 設定</translation>
+        <translation type="vanished">複製 MCP 設定</translation>
     </message>
     <message>
         <source>Connect your agent.</source>
@@ -37,11 +37,11 @@
     </message>
     <message>
         <source>1  Copy the configuration.</source>
-        <translation>1  複製設定。</translation>
+        <translation type="vanished">1  複製設定。</translation>
     </message>
     <message>
         <source>2  Paste it into your agent&apos;s MCP settings.</source>
-        <translation>2  貼上到智慧代理的 MCP 設定中。</translation>
+        <translation type="vanished">2  貼上到智慧代理的 MCP 設定中。</translation>
     </message>
     <message>
         <source>3  Ask it to run your app.</source>
@@ -122,6 +122,22 @@
     <message>
         <source>Clear the notifications</source>
         <translation>清除通知</translation>
+    </message>
+    <message>
+        <source>1  Pick your agent.</source>
+        <translation>1  選擇你的智慧代理。</translation>
+    </message>
+    <message>
+        <source>2  Connect it, or copy its own setting.</source>
+        <translation>2  連線它，或複製它自己的設定。</translation>
+    </message>
+    <message>
+        <source>Connect your agent</source>
+        <translation>連線你的智慧代理</translation>
+    </message>
+    <message>
+        <source>Copy entry for another MCP client</source>
+        <translation>複製用於其他 MCP 用戶端的項目</translation>
     </message>
 </context>
 <context>
@@ -4005,6 +4021,10 @@ SSH 使用你現有的金鑰和已知的主機身份。</translation>
         <source>Your turn</source>
         <translation>輪到你了</translation>
     </message>
+    <message>
+        <source>Claude Code Codex Gemini Cursor VS Code Zed OpenCode Grok Hermes omp MCP</source>
+        <translation>Claude Code Codex Gemini Cursor VS Code Zed OpenCode Grok Hermes omp MCP 智慧代理 連線</translation>
+    </message>
 </context>
 <context>
     <name>Operations</name>
@@ -5544,7 +5564,7 @@ SSH 使用你現有的金鑰和已知的主機身份。</translation>
     </message>
     <message>
         <source>Copy MCP configuration</source>
-        <translation>複製 MCP 設定</translation>
+        <translation type="vanished">複製 MCP 設定</translation>
     </message>
     <message>
         <source>Copy path</source>
@@ -6010,6 +6030,14 @@ SSH 使用你現有的金鑰和已知的主機身份。</translation>
         <source>All jobs</source>
         <translation>所有任務</translation>
     </message>
+    <message>
+        <source>Agent</source>
+        <translation>智慧代理</translation>
+    </message>
+    <message>
+        <source>Connect your coding agent</source>
+        <translation>連線你的程式設計智慧代理</translation>
+    </message>
 </context>
 <context>
     <name>main</name>
@@ -6356,7 +6384,7 @@ Licensed under the GNU General Public License, version 2 or later.</source>
     </message>
     <message>
         <source>Copied</source>
-        <translation>已複製</translation>
+        <translation type="vanished">已複製</translation>
     </message>
     <message>
         <source>Connect your coding agent</source>
@@ -6368,7 +6396,7 @@ Licensed under the GNU General Public License, version 2 or later.</source>
     </message>
     <message>
         <source>The MCP configuration is on the clipboard. Paste it into your agent&apos;s MCP settings.</source>
-        <translation>MCP 設定已在剪貼簿中。請將其貼上到智慧代理的 MCP 設定中。</translation>
+        <translation type="vanished">MCP 設定已在剪貼簿中。請將其貼上到智慧代理的 MCP 設定中。</translation>
     </message>
 </context>
 <context>
@@ -7219,6 +7247,187 @@ Licensed under the GNU General Public License, version 2 or later.</source>
         <source>More</source>
         <comment>navigation</comment>
         <translation>更多</translation>
+    </message>
+</context>
+<context>
+    <name>AgentClientDialog</name>
+    <message>
+        <source>Connect your coding agent</source>
+        <translation>連線你的程式設計智慧代理</translation>
+    </message>
+    <message>
+        <source>Done</source>
+        <translation>完成</translation>
+    </message>
+    <message>
+        <source>Pick your agent. Tomacco shows whether it is connected and the exact setting it reads.</source>
+        <translation>選擇你的智慧代理。Tomacco 會顯示它是否已連線，以及它讀取的確切設定。</translation>
+    </message>
+</context>
+<context>
+    <name>AgentClientPicker</name>
+    <message>
+        <source>%1 is not installed here. Install it first, or copy the text for another computer.</source>
+        <translation>這裡未安裝 %1。請先安裝，或為另一台電腦複製文字。</translation>
+    </message>
+    <message>
+        <source>%1 starts Tomacco when it needs it. Nothing to do.</source>
+        <translation>%1 會在需要時啟動 Tomacco。不需要操作。</translation>
+    </message>
+    <message>
+        <source>Add it by hand</source>
+        <comment>agent client</comment>
+        <translation>手動新增</translation>
+    </message>
+    <message>
+        <source>Add this to %1:</source>
+        <translation>將下列內容新增至 %1：</translation>
+    </message>
+    <message>
+        <source>Another entry is in the way</source>
+        <comment>agent client</comment>
+        <translation>有其他項目衝突</translation>
+    </message>
+    <message>
+        <source>Check again</source>
+        <translation>重新檢查</translation>
+    </message>
+    <message>
+        <source>Connect</source>
+        <translation>連線</translation>
+    </message>
+    <message>
+        <source>Connected</source>
+        <comment>agent client</comment>
+        <translation>已連線</translation>
+    </message>
+    <message>
+        <source>Connected.</source>
+        <translation>已連線。</translation>
+    </message>
+    <message>
+        <source>Connected. The previous file is saved as %1.</source>
+        <translation>已連線。先前的檔案已儲存為 %1。</translation>
+    </message>
+    <message>
+        <source>Connecting…</source>
+        <translation>正在連線…</translation>
+    </message>
+    <message>
+        <source>Copied</source>
+        <translation>已複製</translation>
+    </message>
+    <message>
+        <source>Copy command</source>
+        <translation>複製指令</translation>
+    </message>
+    <message>
+        <source>Copy text</source>
+        <translation>複製文字</translation>
+    </message>
+    <message>
+        <source>Left unchanged</source>
+        <comment>agent client</comment>
+        <translation>保持不變</translation>
+    </message>
+    <message>
+        <source>Looking for coding agents…</source>
+        <translation>正在尋找程式設計智慧代理…</translation>
+    </message>
+    <message>
+        <source>Needs an update</source>
+        <comment>agent client</comment>
+        <translation>需要更新</translation>
+    </message>
+    <message>
+        <source>Not connected</source>
+        <comment>agent client</comment>
+        <translation>未連線</translation>
+    </message>
+    <message>
+        <source>Not found on this computer</source>
+        <comment>agent client</comment>
+        <translation>在這台電腦上找不到</translation>
+    </message>
+    <message>
+        <source>Or run this in a terminal:</source>
+        <translation>或在終端機中執行：</translation>
+    </message>
+    <message>
+        <source>Remove Tomacco</source>
+        <translation>移除 Tomacco</translation>
+    </message>
+    <message>
+        <source>Removed</source>
+        <comment>agent client</comment>
+        <translation>已移除</translation>
+    </message>
+    <message>
+        <source>Removes only the entry setup added; the rest of the file stays.</source>
+        <translation>只移除設定程序新增的項目；檔案其餘部分保持不變。</translation>
+    </message>
+    <message>
+        <source>Setup adds Tomacco to %1&apos;s settings and keeps a backup of the file.</source>
+        <translation>設定程序會將 Tomacco 新增至 %1 的設定，並保留檔案的備份。</translation>
+    </message>
+    <message>
+        <source>Setup did not report on this agent.</source>
+        <translation>設定程序未回報此智慧代理的狀況。</translation>
+    </message>
+    <message>
+        <source>Setup failed</source>
+        <comment>agent client</comment>
+        <translation>設定失敗</translation>
+    </message>
+    <message>
+        <source>Setup failed.</source>
+        <translation>設定失敗。</translation>
+    </message>
+    <message>
+        <source>Something else in %1&apos;s settings uses the name. Setup leaves it alone; add Tomacco by hand under another name.</source>
+        <translation>%1 的設定中有其他項目使用了這個名稱。設定程序不會更動它；請以其他名稱手動新增 Tomacco。</translation>
+    </message>
+    <message>
+        <source>The agent list could not be requested.</source>
+        <translation>無法要求智慧代理清單。</translation>
+    </message>
+    <message>
+        <source>This file is not one Tomacco rewrites. Add the text below yourself.</source>
+        <translation>Tomacco 不會改寫這個檔案。請自行新增下方文字。</translation>
+    </message>
+    <message>
+        <source>This version of tomaccoctl cannot list coding agents.</source>
+        <translation>此版本的 tomaccoctl 無法列出程式設計智慧代理。</translation>
+    </message>
+    <message>
+        <source>Tomacco could not tell which settings layout %1 reads. Add the text below yourself, or run setup in a terminal with the version.</source>
+        <translation>Tomacco 無法判斷 %1 讀取哪種設定格式。請自行新增下方文字，或在終端機中指定版本執行設定。</translation>
+    </message>
+    <message>
+        <source>Tomacco&apos;s entry is switched off in %1. Setup leaves your choice alone; switch it on there.</source>
+        <translation>Tomacco 的項目在 %1 中已關閉。設定程序尊重你的選擇；請在那裡將它開啟。</translation>
+    </message>
+    <message>
+        <source>Tomacco&apos;s entry points to another program or older settings. Update rewrites only that entry and keeps a backup.</source>
+        <translation>Tomacco 的項目指向其他程式或舊設定。更新只會改寫該項目並保留備份。</translation>
+    </message>
+    <message>
+        <source>Tomacco&apos;s entry was removed; the rest of the file is unchanged.</source>
+        <translation>已移除 Tomacco 的項目；檔案其餘部分未變。</translation>
+    </message>
+    <message>
+        <source>Turned off in its settings</source>
+        <comment>agent client</comment>
+        <translation>已在其設定中關閉</translation>
+    </message>
+    <message>
+        <source>Update entry</source>
+        <translation>更新項目</translation>
+    </message>
+    <message>
+        <source>Version unclear</source>
+        <comment>agent client</comment>
+        <translation>版本不明</translation>
     </message>
 </context>
 </TS>

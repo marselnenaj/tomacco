@@ -21,7 +21,7 @@
     </message>
     <message>
         <source>Copy MCP configuration</source>
-        <translation>MCP 設定をコピー</translation>
+        <translation type="vanished">MCP 設定をコピー</translation>
     </message>
     <message>
         <source>Connect your agent.</source>
@@ -37,11 +37,11 @@
     </message>
     <message>
         <source>1  Copy the configuration.</source>
-        <translation>1  設定をコピーします。</translation>
+        <translation type="vanished">1  設定をコピーします。</translation>
     </message>
     <message>
         <source>2  Paste it into your agent&apos;s MCP settings.</source>
-        <translation>2  エージェントの MCP 設定に貼り付けます。</translation>
+        <translation type="vanished">2  エージェントの MCP 設定に貼り付けます。</translation>
     </message>
     <message>
         <source>3  Ask it to run your app.</source>
@@ -122,6 +122,22 @@
     <message>
         <source>Clear the notifications</source>
         <translation>通知を消去</translation>
+    </message>
+    <message>
+        <source>1  Pick your agent.</source>
+        <translation>1  エージェントを選びます。</translation>
+    </message>
+    <message>
+        <source>2  Connect it, or copy its own setting.</source>
+        <translation>2  接続するか、そのエージェント用の設定をコピーします。</translation>
+    </message>
+    <message>
+        <source>Connect your agent</source>
+        <translation>エージェントを接続</translation>
+    </message>
+    <message>
+        <source>Copy entry for another MCP client</source>
+        <translation>ほかの MCP クライアント用のエントリーをコピー</translation>
     </message>
 </context>
 <context>
@@ -4005,6 +4021,10 @@ SSH は既存の鍵と既知のホスト ID を使用します。</translation>
         <source>Your turn</source>
         <translation>あなたの番です</translation>
     </message>
+    <message>
+        <source>Claude Code Codex Gemini Cursor VS Code Zed OpenCode Grok Hermes omp MCP</source>
+        <translation>Claude Code Codex Gemini Cursor VS Code Zed OpenCode Grok Hermes omp MCP エージェント 接続</translation>
+    </message>
 </context>
 <context>
     <name>Operations</name>
@@ -5544,7 +5564,7 @@ SSH は既存の鍵と既知のホスト ID を使用します。</translation>
     </message>
     <message>
         <source>Copy MCP configuration</source>
-        <translation>MCP 設定をコピー</translation>
+        <translation type="vanished">MCP 設定をコピー</translation>
     </message>
     <message>
         <source>Copy path</source>
@@ -6010,6 +6030,14 @@ SSH は既存の鍵と既知のホスト ID を使用します。</translation>
         <source>All jobs</source>
         <translation>すべてのジョブ</translation>
     </message>
+    <message>
+        <source>Agent</source>
+        <translation>エージェント</translation>
+    </message>
+    <message>
+        <source>Connect your coding agent</source>
+        <translation>コーディングエージェントを接続</translation>
+    </message>
 </context>
 <context>
     <name>main</name>
@@ -6356,7 +6384,7 @@ GNU General Public License バージョン 2 以降の下で公開されてい�
     </message>
     <message>
         <source>Copied</source>
-        <translation>コピーしました</translation>
+        <translation type="vanished">コピーしました</translation>
     </message>
     <message>
         <source>Connect your coding agent</source>
@@ -6368,7 +6396,7 @@ GNU General Public License バージョン 2 以降の下で公開されてい�
     </message>
     <message>
         <source>The MCP configuration is on the clipboard. Paste it into your agent&apos;s MCP settings.</source>
-        <translation>MCP 設定はクリップボードにあります。エージェントの MCP 設定に貼り付けてください。</translation>
+        <translation type="vanished">MCP 設定はクリップボードにあります。エージェントの MCP 設定に貼り付けてください。</translation>
     </message>
 </context>
 <context>
@@ -7219,6 +7247,187 @@ GNU General Public License バージョン 2 以降の下で公開されてい�
         <source>More</source>
         <comment>navigation</comment>
         <translation>その他</translation>
+    </message>
+</context>
+<context>
+    <name>AgentClientDialog</name>
+    <message>
+        <source>Connect your coding agent</source>
+        <translation>コーディングエージェントを接続</translation>
+    </message>
+    <message>
+        <source>Done</source>
+        <translation>完了</translation>
+    </message>
+    <message>
+        <source>Pick your agent. Tomacco shows whether it is connected and the exact setting it reads.</source>
+        <translation>エージェントを選んでください。接続されているかどうかと、読み取る設定を正確に表示します。</translation>
+    </message>
+</context>
+<context>
+    <name>AgentClientPicker</name>
+    <message>
+        <source>%1 is not installed here. Install it first, or copy the text for another computer.</source>
+        <translation>%1 はこのコンピューターにインストールされていません。先にインストールするか、別のコンピューター用にテキストをコピーしてください。</translation>
+    </message>
+    <message>
+        <source>%1 starts Tomacco when it needs it. Nothing to do.</source>
+        <translation>%1 は必要なときに Tomacco を起動します。操作は不要です。</translation>
+    </message>
+    <message>
+        <source>Add it by hand</source>
+        <comment>agent client</comment>
+        <translation>手動で追加</translation>
+    </message>
+    <message>
+        <source>Add this to %1:</source>
+        <translation>%1 に次を追加してください:</translation>
+    </message>
+    <message>
+        <source>Another entry is in the way</source>
+        <comment>agent client</comment>
+        <translation>別のエントリーが競合しています</translation>
+    </message>
+    <message>
+        <source>Check again</source>
+        <translation>再確認</translation>
+    </message>
+    <message>
+        <source>Connect</source>
+        <translation>接続</translation>
+    </message>
+    <message>
+        <source>Connected</source>
+        <comment>agent client</comment>
+        <translation>接続済み</translation>
+    </message>
+    <message>
+        <source>Connected.</source>
+        <translation>接続しました。</translation>
+    </message>
+    <message>
+        <source>Connected. The previous file is saved as %1.</source>
+        <translation>接続しました。以前のファイルは %1 として保存されています。</translation>
+    </message>
+    <message>
+        <source>Connecting…</source>
+        <translation>接続しています…</translation>
+    </message>
+    <message>
+        <source>Copied</source>
+        <translation>コピーしました</translation>
+    </message>
+    <message>
+        <source>Copy command</source>
+        <translation>コマンドをコピー</translation>
+    </message>
+    <message>
+        <source>Copy text</source>
+        <translation>テキストをコピー</translation>
+    </message>
+    <message>
+        <source>Left unchanged</source>
+        <comment>agent client</comment>
+        <translation>変更なし</translation>
+    </message>
+    <message>
+        <source>Looking for coding agents…</source>
+        <translation>コーディングエージェントを探しています…</translation>
+    </message>
+    <message>
+        <source>Needs an update</source>
+        <comment>agent client</comment>
+        <translation>更新が必要</translation>
+    </message>
+    <message>
+        <source>Not connected</source>
+        <comment>agent client</comment>
+        <translation>未接続</translation>
+    </message>
+    <message>
+        <source>Not found on this computer</source>
+        <comment>agent client</comment>
+        <translation>このコンピューターにはありません</translation>
+    </message>
+    <message>
+        <source>Or run this in a terminal:</source>
+        <translation>またはターミナルで次を実行します:</translation>
+    </message>
+    <message>
+        <source>Remove Tomacco</source>
+        <translation>Tomacco を削除</translation>
+    </message>
+    <message>
+        <source>Removed</source>
+        <comment>agent client</comment>
+        <translation>削除済み</translation>
+    </message>
+    <message>
+        <source>Removes only the entry setup added; the rest of the file stays.</source>
+        <translation>セットアップが追加したエントリーだけを削除し、ファイルの他の部分はそのままです。</translation>
+    </message>
+    <message>
+        <source>Setup adds Tomacco to %1&apos;s settings and keeps a backup of the file.</source>
+        <translation>セットアップは %1 の設定に Tomacco を追加し、ファイルのバックアップを保持します。</translation>
+    </message>
+    <message>
+        <source>Setup did not report on this agent.</source>
+        <translation>セットアップからこのエージェントについての報告がありませんでした。</translation>
+    </message>
+    <message>
+        <source>Setup failed</source>
+        <comment>agent client</comment>
+        <translation>セットアップ失敗</translation>
+    </message>
+    <message>
+        <source>Setup failed.</source>
+        <translation>セットアップに失敗しました。</translation>
+    </message>
+    <message>
+        <source>Something else in %1&apos;s settings uses the name. Setup leaves it alone; add Tomacco by hand under another name.</source>
+        <translation>%1 の設定で別の項目がその名前を使っています。セットアップはそれに触れません。別の名前で Tomacco を手動で追加してください。</translation>
+    </message>
+    <message>
+        <source>The agent list could not be requested.</source>
+        <translation>エージェントの一覧を取得できませんでした。</translation>
+    </message>
+    <message>
+        <source>This file is not one Tomacco rewrites. Add the text below yourself.</source>
+        <translation>このファイルは Tomacco が書き換える対象ではありません。下のテキストをご自身で追加してください。</translation>
+    </message>
+    <message>
+        <source>This version of tomaccoctl cannot list coding agents.</source>
+        <translation>このバージョンの tomaccoctl はコーディングエージェントを一覧表示できません。</translation>
+    </message>
+    <message>
+        <source>Tomacco could not tell which settings layout %1 reads. Add the text below yourself, or run setup in a terminal with the version.</source>
+        <translation>%1 が読み取る設定形式を Tomacco が判別できませんでした。下のテキストをご自身で追加するか、バージョンを指定してターミナルでセットアップを実行してください。</translation>
+    </message>
+    <message>
+        <source>Tomacco&apos;s entry is switched off in %1. Setup leaves your choice alone; switch it on there.</source>
+        <translation>%1 で Tomacco のエントリーがオフになっています。セットアップはその選択を尊重します。そちらでオンにしてください。</translation>
+    </message>
+    <message>
+        <source>Tomacco&apos;s entry points to another program or older settings. Update rewrites only that entry and keeps a backup.</source>
+        <translation>Tomacco のエントリーが別のプログラムまたは古い設定を指しています。更新ではそのエントリーだけを書き換え、バックアップを保持します。</translation>
+    </message>
+    <message>
+        <source>Tomacco&apos;s entry was removed; the rest of the file is unchanged.</source>
+        <translation>Tomacco のエントリーを削除しました。ファイルの他の部分は変更されていません。</translation>
+    </message>
+    <message>
+        <source>Turned off in its settings</source>
+        <comment>agent client</comment>
+        <translation>設定でオフ</translation>
+    </message>
+    <message>
+        <source>Update entry</source>
+        <translation>エントリーを更新</translation>
+    </message>
+    <message>
+        <source>Version unclear</source>
+        <comment>agent client</comment>
+        <translation>バージョン不明</translation>
     </message>
 </context>
 </TS>

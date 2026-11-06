@@ -21,7 +21,7 @@
     </message>
     <message>
         <source>Copy MCP configuration</source>
-        <translation>نسخ إعدادات MCP</translation>
+        <translation type="vanished">نسخ إعدادات MCP</translation>
     </message>
     <message>
         <source>Connect your agent.</source>
@@ -37,11 +37,11 @@
     </message>
     <message>
         <source>1  Copy the configuration.</source>
-        <translation>1  انسخ الإعدادات.</translation>
+        <translation type="vanished">1  انسخ الإعدادات.</translation>
     </message>
     <message>
         <source>2  Paste it into your agent&apos;s MCP settings.</source>
-        <translation>2  الصقها في إعدادات MCP الخاصة بوكيلك.</translation>
+        <translation type="vanished">2  الصقها في إعدادات MCP الخاصة بوكيلك.</translation>
     </message>
     <message>
         <source>3  Ask it to run your app.</source>
@@ -122,6 +122,22 @@
     <message>
         <source>Clear the notifications</source>
         <translation>مسح الإشعارات</translation>
+    </message>
+    <message>
+        <source>1  Pick your agent.</source>
+        <translation>1  اختر وكيلك.</translation>
+    </message>
+    <message>
+        <source>2  Connect it, or copy its own setting.</source>
+        <translation>2  صِله أو انسخ إعداده الخاص.</translation>
+    </message>
+    <message>
+        <source>Connect your agent</source>
+        <translation>صِل وكيلك</translation>
+    </message>
+    <message>
+        <source>Copy entry for another MCP client</source>
+        <translation>نسخ الإدخال لعميل MCP آخر</translation>
     </message>
 </context>
 <context>
@@ -4050,6 +4066,10 @@ SSH uses your existing keys and the known host identity.</source>
         <source>Your turn</source>
         <translation>دورك</translation>
     </message>
+    <message>
+        <source>Claude Code Codex Gemini Cursor VS Code Zed OpenCode Grok Hermes omp MCP</source>
+        <translation>Claude Code Codex Gemini Cursor VS Code Zed OpenCode Grok Hermes omp MCP وكيل اتصال</translation>
+    </message>
 </context>
 <context>
     <name>Operations</name>
@@ -5589,7 +5609,7 @@ SSH uses your existing keys and the known host identity.</source>
     </message>
     <message>
         <source>Copy MCP configuration</source>
-        <translation>نسخ إعدادات MCP</translation>
+        <translation type="vanished">نسخ إعدادات MCP</translation>
     </message>
     <message>
         <source>Copy path</source>
@@ -6060,6 +6080,14 @@ SSH uses your existing keys and the known host identity.</source>
         <source>All jobs</source>
         <translation>كل المهام</translation>
     </message>
+    <message>
+        <source>Agent</source>
+        <translation>الوكيل</translation>
+    </message>
+    <message>
+        <source>Connect your coding agent</source>
+        <translation>صِل وكيل البرمجة الخاص بك</translation>
+    </message>
 </context>
 <context>
     <name>main</name>
@@ -6406,7 +6434,7 @@ Licensed under the GNU General Public License, version 2 or later.</source>
     </message>
     <message>
         <source>Copied</source>
-        <translation>تم النسخ</translation>
+        <translation type="vanished">تم النسخ</translation>
     </message>
     <message>
         <source>Connect your coding agent</source>
@@ -6418,7 +6446,7 @@ Licensed under the GNU General Public License, version 2 or later.</source>
     </message>
     <message>
         <source>The MCP configuration is on the clipboard. Paste it into your agent&apos;s MCP settings.</source>
-        <translation>إعدادات MCP في الحافظة. الصقها في إعدادات MCP الخاصة بوكيلك.</translation>
+        <translation type="vanished">إعدادات MCP في الحافظة. الصقها في إعدادات MCP الخاصة بوكيلك.</translation>
     </message>
 </context>
 <context>
@@ -7274,6 +7302,187 @@ Licensed under the GNU General Public License, version 2 or later.</source>
         <source>More</source>
         <comment>navigation</comment>
         <translation>المزيد</translation>
+    </message>
+</context>
+<context>
+    <name>AgentClientDialog</name>
+    <message>
+        <source>Connect your coding agent</source>
+        <translation>صِل وكيل البرمجة الخاص بك</translation>
+    </message>
+    <message>
+        <source>Done</source>
+        <translation>تم</translation>
+    </message>
+    <message>
+        <source>Pick your agent. Tomacco shows whether it is connected and the exact setting it reads.</source>
+        <translation>اختر وكيلك. يعرض Tomacco ما إذا كان متصلًا والإعداد الدقيق الذي يقرؤه.</translation>
+    </message>
+</context>
+<context>
+    <name>AgentClientPicker</name>
+    <message>
+        <source>%1 is not installed here. Install it first, or copy the text for another computer.</source>
+        <translation>%1 غير مثبّت هنا. ثبّته أولًا أو انسخ النص لحاسوب آخر.</translation>
+    </message>
+    <message>
+        <source>%1 starts Tomacco when it needs it. Nothing to do.</source>
+        <translation>يشغّل %1 برنامج Tomacco عند الحاجة. لا شيء مطلوب منك.</translation>
+    </message>
+    <message>
+        <source>Add it by hand</source>
+        <comment>agent client</comment>
+        <translation>أضفه يدويًا</translation>
+    </message>
+    <message>
+        <source>Add this to %1:</source>
+        <translation>أضف هذا إلى %1:</translation>
+    </message>
+    <message>
+        <source>Another entry is in the way</source>
+        <comment>agent client</comment>
+        <translation>إدخال آخر يعترض الطريق</translation>
+    </message>
+    <message>
+        <source>Check again</source>
+        <translation>تحقّق مجددًا</translation>
+    </message>
+    <message>
+        <source>Connect</source>
+        <translation>اتصال</translation>
+    </message>
+    <message>
+        <source>Connected</source>
+        <comment>agent client</comment>
+        <translation>متصل</translation>
+    </message>
+    <message>
+        <source>Connected.</source>
+        <translation>متصل.</translation>
+    </message>
+    <message>
+        <source>Connected. The previous file is saved as %1.</source>
+        <translation>متصل. حُفظ الملف السابق باسم %1.</translation>
+    </message>
+    <message>
+        <source>Connecting…</source>
+        <translation>جارٍ الاتصال…</translation>
+    </message>
+    <message>
+        <source>Copied</source>
+        <translation>نُسخ</translation>
+    </message>
+    <message>
+        <source>Copy command</source>
+        <translation>نسخ الأمر</translation>
+    </message>
+    <message>
+        <source>Copy text</source>
+        <translation>نسخ النص</translation>
+    </message>
+    <message>
+        <source>Left unchanged</source>
+        <comment>agent client</comment>
+        <translation>تُرك دون تغيير</translation>
+    </message>
+    <message>
+        <source>Looking for coding agents…</source>
+        <translation>جارٍ البحث عن وكلاء البرمجة…</translation>
+    </message>
+    <message>
+        <source>Needs an update</source>
+        <comment>agent client</comment>
+        <translation>يحتاج إلى تحديث</translation>
+    </message>
+    <message>
+        <source>Not connected</source>
+        <comment>agent client</comment>
+        <translation>غير متصل</translation>
+    </message>
+    <message>
+        <source>Not found on this computer</source>
+        <comment>agent client</comment>
+        <translation>غير موجود على هذا الحاسوب</translation>
+    </message>
+    <message>
+        <source>Or run this in a terminal:</source>
+        <translation>أو شغّل هذا في طرفية:</translation>
+    </message>
+    <message>
+        <source>Remove Tomacco</source>
+        <translation>إزالة Tomacco</translation>
+    </message>
+    <message>
+        <source>Removed</source>
+        <comment>agent client</comment>
+        <translation>أُزيل</translation>
+    </message>
+    <message>
+        <source>Removes only the entry setup added; the rest of the file stays.</source>
+        <translation>يُزيل فقط الإدخال الذي أضافه الإعداد؛ ويبقى باقي الملف.</translation>
+    </message>
+    <message>
+        <source>Setup adds Tomacco to %1&apos;s settings and keeps a backup of the file.</source>
+        <translation>يضيف الإعداد Tomacco إلى إعدادات %1 ويحتفظ بنسخة احتياطية من الملف.</translation>
+    </message>
+    <message>
+        <source>Setup did not report on this agent.</source>
+        <translation>لم يُبلِغ الإعداد عن هذا الوكيل.</translation>
+    </message>
+    <message>
+        <source>Setup failed</source>
+        <comment>agent client</comment>
+        <translation>فشل الإعداد</translation>
+    </message>
+    <message>
+        <source>Setup failed.</source>
+        <translation>فشل الإعداد.</translation>
+    </message>
+    <message>
+        <source>Something else in %1&apos;s settings uses the name. Setup leaves it alone; add Tomacco by hand under another name.</source>
+        <translation>شيء آخر في إعدادات %1 يستخدم هذا الاسم. لا يلمسه الإعداد؛ أضف Tomacco يدويًا باسم آخر.</translation>
+    </message>
+    <message>
+        <source>The agent list could not be requested.</source>
+        <translation>تعذّر طلب قائمة الوكلاء.</translation>
+    </message>
+    <message>
+        <source>This file is not one Tomacco rewrites. Add the text below yourself.</source>
+        <translation>لا يعيد Tomacco كتابة هذا الملف. أضف النص أدناه بنفسك.</translation>
+    </message>
+    <message>
+        <source>This version of tomaccoctl cannot list coding agents.</source>
+        <translation>لا يستطيع هذا الإصدار من tomaccoctl سرد وكلاء البرمجة.</translation>
+    </message>
+    <message>
+        <source>Tomacco could not tell which settings layout %1 reads. Add the text below yourself, or run setup in a terminal with the version.</source>
+        <translation>تعذّر على Tomacco معرفة تنسيق الإعدادات الذي يقرؤه %1. أضف النص أدناه بنفسك، أو شغّل الإعداد في طرفية مع الإصدار.</translation>
+    </message>
+    <message>
+        <source>Tomacco&apos;s entry is switched off in %1. Setup leaves your choice alone; switch it on there.</source>
+        <translation>إدخال Tomacco معطّل في %1. يحترم الإعداد اختيارك؛ فعّله هناك.</translation>
+    </message>
+    <message>
+        <source>Tomacco&apos;s entry points to another program or older settings. Update rewrites only that entry and keeps a backup.</source>
+        <translation>يشير إدخال Tomacco إلى برنامج آخر أو إلى إعدادات أقدم. يعيد التحديث كتابة هذا الإدخال فقط ويحتفظ بنسخة احتياطية.</translation>
+    </message>
+    <message>
+        <source>Tomacco&apos;s entry was removed; the rest of the file is unchanged.</source>
+        <translation>أُزيل إدخال Tomacco؛ وباقي الملف دون تغيير.</translation>
+    </message>
+    <message>
+        <source>Turned off in its settings</source>
+        <comment>agent client</comment>
+        <translation>معطّل في إعداداته</translation>
+    </message>
+    <message>
+        <source>Update entry</source>
+        <translation>تحديث الإدخال</translation>
+    </message>
+    <message>
+        <source>Version unclear</source>
+        <comment>agent client</comment>
+        <translation>الإصدار غير واضح</translation>
     </message>
 </context>
 </TS>

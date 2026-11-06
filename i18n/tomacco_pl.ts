@@ -21,7 +21,7 @@
     </message>
     <message>
         <source>Copy MCP configuration</source>
-        <translation>Kopiuj konfigurację MCP</translation>
+        <translation type="vanished">Kopiuj konfigurację MCP</translation>
     </message>
     <message>
         <source>Connect your agent.</source>
@@ -37,11 +37,11 @@
     </message>
     <message>
         <source>1  Copy the configuration.</source>
-        <translation>1  Skopiuj konfigurację.</translation>
+        <translation type="vanished">1  Skopiuj konfigurację.</translation>
     </message>
     <message>
         <source>2  Paste it into your agent&apos;s MCP settings.</source>
-        <translation>2  Wklej ją do ustawień MCP swojego agenta.</translation>
+        <translation type="vanished">2  Wklej ją do ustawień MCP swojego agenta.</translation>
     </message>
     <message>
         <source>3  Ask it to run your app.</source>
@@ -122,6 +122,22 @@
     <message>
         <source>Clear the notifications</source>
         <translation>Wyczyść powiadomienia</translation>
+    </message>
+    <message>
+        <source>1  Pick your agent.</source>
+        <translation>1  Wybierz swojego agenta.</translation>
+    </message>
+    <message>
+        <source>2  Connect it, or copy its own setting.</source>
+        <translation>2  Połącz go lub skopiuj jego własne ustawienie.</translation>
+    </message>
+    <message>
+        <source>Connect your agent</source>
+        <translation>Połącz swojego agenta</translation>
+    </message>
+    <message>
+        <source>Copy entry for another MCP client</source>
+        <translation>Kopiuj wpis dla innego klienta MCP</translation>
     </message>
 </context>
 <context>
@@ -4015,6 +4031,10 @@ SSH używa twoich istniejących kluczy i znanej tożsamości hosta.</translation
         <source>Your turn</source>
         <translation>Twoja kolej</translation>
     </message>
+    <message>
+        <source>Claude Code Codex Gemini Cursor VS Code Zed OpenCode Grok Hermes omp MCP</source>
+        <translation>Claude Code Codex Gemini Cursor VS Code Zed OpenCode Grok Hermes omp MCP agent połącz</translation>
+    </message>
 </context>
 <context>
     <name>Operations</name>
@@ -5554,7 +5574,7 @@ SSH używa twoich istniejących kluczy i znanej tożsamości hosta.</translation
     </message>
     <message>
         <source>Copy MCP configuration</source>
-        <translation>Kopiuj konfigurację MCP</translation>
+        <translation type="vanished">Kopiuj konfigurację MCP</translation>
     </message>
     <message>
         <source>Copy path</source>
@@ -6022,6 +6042,14 @@ SSH używa twoich istniejących kluczy i znanej tożsamości hosta.</translation
         <source>All jobs</source>
         <translation>Wszystkie zadania</translation>
     </message>
+    <message>
+        <source>Agent</source>
+        <translation>Agent</translation>
+    </message>
+    <message>
+        <source>Connect your coding agent</source>
+        <translation>Połącz swojego agenta programistycznego</translation>
+    </message>
 </context>
 <context>
     <name>main</name>
@@ -6368,7 +6396,7 @@ Na licencji GNU General Public License w wersji 2 lub nowszej.</translation>
     </message>
     <message>
         <source>Copied</source>
-        <translation>Skopiowano</translation>
+        <translation type="vanished">Skopiowano</translation>
     </message>
     <message>
         <source>Connect your coding agent</source>
@@ -6380,7 +6408,7 @@ Na licencji GNU General Public License w wersji 2 lub nowszej.</translation>
     </message>
     <message>
         <source>The MCP configuration is on the clipboard. Paste it into your agent&apos;s MCP settings.</source>
-        <translation>Konfiguracja MCP jest w schowku. Wklej ją do ustawień MCP swojego agenta.</translation>
+        <translation type="vanished">Konfiguracja MCP jest w schowku. Wklej ją do ustawień MCP swojego agenta.</translation>
     </message>
 </context>
 <context>
@@ -7233,6 +7261,187 @@ Na licencji GNU General Public License w wersji 2 lub nowszej.</translation>
         <source>More</source>
         <comment>navigation</comment>
         <translation>Więcej</translation>
+    </message>
+</context>
+<context>
+    <name>AgentClientDialog</name>
+    <message>
+        <source>Connect your coding agent</source>
+        <translation>Połącz swojego agenta programistycznego</translation>
+    </message>
+    <message>
+        <source>Done</source>
+        <translation>Gotowe</translation>
+    </message>
+    <message>
+        <source>Pick your agent. Tomacco shows whether it is connected and the exact setting it reads.</source>
+        <translation>Wybierz swojego agenta. Tomacco pokazuje, czy jest połączony, i dokładnie które ustawienie odczytuje.</translation>
+    </message>
+</context>
+<context>
+    <name>AgentClientPicker</name>
+    <message>
+        <source>%1 is not installed here. Install it first, or copy the text for another computer.</source>
+        <translation>%1 nie jest tu zainstalowany. Najpierw go zainstaluj lub skopiuj tekst dla innego komputera.</translation>
+    </message>
+    <message>
+        <source>%1 starts Tomacco when it needs it. Nothing to do.</source>
+        <translation>%1 uruchamia Tomacco, gdy jest potrzebne. Nie musisz nic robić.</translation>
+    </message>
+    <message>
+        <source>Add it by hand</source>
+        <comment>agent client</comment>
+        <translation>Dodaj ręcznie</translation>
+    </message>
+    <message>
+        <source>Add this to %1:</source>
+        <translation>Dodaj to do %1:</translation>
+    </message>
+    <message>
+        <source>Another entry is in the way</source>
+        <comment>agent client</comment>
+        <translation>Przeszkadza inny wpis</translation>
+    </message>
+    <message>
+        <source>Check again</source>
+        <translation>Sprawdź ponownie</translation>
+    </message>
+    <message>
+        <source>Connect</source>
+        <translation>Połącz</translation>
+    </message>
+    <message>
+        <source>Connected</source>
+        <comment>agent client</comment>
+        <translation>Połączony</translation>
+    </message>
+    <message>
+        <source>Connected.</source>
+        <translation>Połączono.</translation>
+    </message>
+    <message>
+        <source>Connected. The previous file is saved as %1.</source>
+        <translation>Połączono. Poprzedni plik zapisano jako %1.</translation>
+    </message>
+    <message>
+        <source>Connecting…</source>
+        <translation>Łączenie…</translation>
+    </message>
+    <message>
+        <source>Copied</source>
+        <translation>Skopiowano</translation>
+    </message>
+    <message>
+        <source>Copy command</source>
+        <translation>Kopiuj polecenie</translation>
+    </message>
+    <message>
+        <source>Copy text</source>
+        <translation>Kopiuj tekst</translation>
+    </message>
+    <message>
+        <source>Left unchanged</source>
+        <comment>agent client</comment>
+        <translation>Pozostawiono bez zmian</translation>
+    </message>
+    <message>
+        <source>Looking for coding agents…</source>
+        <translation>Wyszukiwanie agentów programistycznych…</translation>
+    </message>
+    <message>
+        <source>Needs an update</source>
+        <comment>agent client</comment>
+        <translation>Wymaga aktualizacji</translation>
+    </message>
+    <message>
+        <source>Not connected</source>
+        <comment>agent client</comment>
+        <translation>Niepołączony</translation>
+    </message>
+    <message>
+        <source>Not found on this computer</source>
+        <comment>agent client</comment>
+        <translation>Nie znaleziono na tym komputerze</translation>
+    </message>
+    <message>
+        <source>Or run this in a terminal:</source>
+        <translation>Albo uruchom to w terminalu:</translation>
+    </message>
+    <message>
+        <source>Remove Tomacco</source>
+        <translation>Usuń Tomacco</translation>
+    </message>
+    <message>
+        <source>Removed</source>
+        <comment>agent client</comment>
+        <translation>Usunięto</translation>
+    </message>
+    <message>
+        <source>Removes only the entry setup added; the rest of the file stays.</source>
+        <translation>Usuwa tylko wpis dodany przez konfigurację; reszta pliku pozostaje.</translation>
+    </message>
+    <message>
+        <source>Setup adds Tomacco to %1&apos;s settings and keeps a backup of the file.</source>
+        <translation>Konfiguracja dodaje Tomacco do ustawień %1 i zachowuje kopię zapasową pliku.</translation>
+    </message>
+    <message>
+        <source>Setup did not report on this agent.</source>
+        <translation>Konfiguracja nie zgłosiła nic o tym agencie.</translation>
+    </message>
+    <message>
+        <source>Setup failed</source>
+        <comment>agent client</comment>
+        <translation>Konfiguracja nie powiodła się</translation>
+    </message>
+    <message>
+        <source>Setup failed.</source>
+        <translation>Konfiguracja nie powiodła się.</translation>
+    </message>
+    <message>
+        <source>Something else in %1&apos;s settings uses the name. Setup leaves it alone; add Tomacco by hand under another name.</source>
+        <translation>Coś innego w ustawieniach %1 używa tej nazwy. Konfiguracja tego nie rusza; dodaj Tomacco ręcznie pod inną nazwą.</translation>
+    </message>
+    <message>
+        <source>The agent list could not be requested.</source>
+        <translation>Nie udało się pobrać listy agentów.</translation>
+    </message>
+    <message>
+        <source>This file is not one Tomacco rewrites. Add the text below yourself.</source>
+        <translation>Tomacco nie przepisuje tego pliku. Dodaj poniższy tekst samodzielnie.</translation>
+    </message>
+    <message>
+        <source>This version of tomaccoctl cannot list coding agents.</source>
+        <translation>Ta wersja tomaccoctl nie potrafi wyświetlić agentów programistycznych.</translation>
+    </message>
+    <message>
+        <source>Tomacco could not tell which settings layout %1 reads. Add the text below yourself, or run setup in a terminal with the version.</source>
+        <translation>Tomacco nie rozpoznało, jaki format ustawień odczytuje %1. Dodaj poniższy tekst samodzielnie lub uruchom konfigurację w terminalu z podaniem wersji.</translation>
+    </message>
+    <message>
+        <source>Tomacco&apos;s entry is switched off in %1. Setup leaves your choice alone; switch it on there.</source>
+        <translation>Wpis Tomacco jest wyłączony w %1. Konfiguracja szanuje twój wybór; włącz go tam.</translation>
+    </message>
+    <message>
+        <source>Tomacco&apos;s entry points to another program or older settings. Update rewrites only that entry and keeps a backup.</source>
+        <translation>Wpis Tomacco wskazuje na inny program lub starsze ustawienia. Aktualizacja przepisuje tylko ten wpis i zachowuje kopię zapasową.</translation>
+    </message>
+    <message>
+        <source>Tomacco&apos;s entry was removed; the rest of the file is unchanged.</source>
+        <translation>Wpis Tomacco został usunięty; reszta pliku jest bez zmian.</translation>
+    </message>
+    <message>
+        <source>Turned off in its settings</source>
+        <comment>agent client</comment>
+        <translation>Wyłączony w swoich ustawieniach</translation>
+    </message>
+    <message>
+        <source>Update entry</source>
+        <translation>Zaktualizuj wpis</translation>
+    </message>
+    <message>
+        <source>Version unclear</source>
+        <comment>agent client</comment>
+        <translation>Wersja niejasna</translation>
     </message>
 </context>
 </TS>

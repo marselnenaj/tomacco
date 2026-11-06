@@ -21,7 +21,7 @@
     </message>
     <message>
         <source>Copy MCP configuration</source>
-        <translation>MCP-configuratie kopiëren</translation>
+        <translation type="vanished">MCP-configuratie kopiëren</translation>
     </message>
     <message>
         <source>Connect your agent.</source>
@@ -37,11 +37,11 @@
     </message>
     <message>
         <source>1  Copy the configuration.</source>
-        <translation>1  Kopieer de configuratie.</translation>
+        <translation type="vanished">1  Kopieer de configuratie.</translation>
     </message>
     <message>
         <source>2  Paste it into your agent&apos;s MCP settings.</source>
-        <translation>2  Plak die in de MCP-instellingen van je agent.</translation>
+        <translation type="vanished">2  Plak die in de MCP-instellingen van je agent.</translation>
     </message>
     <message>
         <source>3  Ask it to run your app.</source>
@@ -122,6 +122,22 @@
     <message>
         <source>Clear the notifications</source>
         <translation>De meldingen wissen</translation>
+    </message>
+    <message>
+        <source>1  Pick your agent.</source>
+        <translation>1  Kies je agent.</translation>
+    </message>
+    <message>
+        <source>2  Connect it, or copy its own setting.</source>
+        <translation>2  Verbind hem of kopieer zijn eigen instelling.</translation>
+    </message>
+    <message>
+        <source>Connect your agent</source>
+        <translation>Verbind je agent</translation>
+    </message>
+    <message>
+        <source>Copy entry for another MCP client</source>
+        <translation>Vermelding kopiëren voor een andere MCP-client</translation>
     </message>
 </context>
 <context>
@@ -4014,6 +4030,10 @@ SSH gebruikt je bestaande sleutels en de bekende hostidentiteit.</translation>
         <source>Your turn</source>
         <translation>Jouw beurt</translation>
     </message>
+    <message>
+        <source>Claude Code Codex Gemini Cursor VS Code Zed OpenCode Grok Hermes omp MCP</source>
+        <translation>Claude Code Codex Gemini Cursor VS Code Zed OpenCode Grok Hermes omp MCP agent verbinden</translation>
+    </message>
 </context>
 <context>
     <name>Operations</name>
@@ -5553,7 +5573,7 @@ SSH gebruikt je bestaande sleutels en de bekende hostidentiteit.</translation>
     </message>
     <message>
         <source>Copy MCP configuration</source>
-        <translation>MCP-configuratie kopiëren</translation>
+        <translation type="vanished">MCP-configuratie kopiëren</translation>
     </message>
     <message>
         <source>Copy path</source>
@@ -6020,6 +6040,14 @@ SSH gebruikt je bestaande sleutels en de bekende hostidentiteit.</translation>
         <source>All jobs</source>
         <translation>Alle taken</translation>
     </message>
+    <message>
+        <source>Agent</source>
+        <translation>Agent</translation>
+    </message>
+    <message>
+        <source>Connect your coding agent</source>
+        <translation>Verbind je codeeragent</translation>
+    </message>
 </context>
 <context>
     <name>main</name>
@@ -6366,7 +6394,7 @@ Gelicentieerd onder de GNU General Public License, versie 2 of later.</translati
     </message>
     <message>
         <source>Copied</source>
-        <translation>Gekopieerd</translation>
+        <translation type="vanished">Gekopieerd</translation>
     </message>
     <message>
         <source>Connect your coding agent</source>
@@ -6378,7 +6406,7 @@ Gelicentieerd onder de GNU General Public License, versie 2 of later.</translati
     </message>
     <message>
         <source>The MCP configuration is on the clipboard. Paste it into your agent&apos;s MCP settings.</source>
-        <translation>De MCP-configuratie staat op het klembord. Plak die in de MCP-instellingen van je agent.</translation>
+        <translation type="vanished">De MCP-configuratie staat op het klembord. Plak die in de MCP-instellingen van je agent.</translation>
     </message>
 </context>
 <context>
@@ -7230,6 +7258,187 @@ Gelicentieerd onder de GNU General Public License, versie 2 of later.</translati
         <source>More</source>
         <comment>navigation</comment>
         <translation>Meer</translation>
+    </message>
+</context>
+<context>
+    <name>AgentClientDialog</name>
+    <message>
+        <source>Connect your coding agent</source>
+        <translation>Verbind je codeeragent</translation>
+    </message>
+    <message>
+        <source>Done</source>
+        <translation>Klaar</translation>
+    </message>
+    <message>
+        <source>Pick your agent. Tomacco shows whether it is connected and the exact setting it reads.</source>
+        <translation>Kies je agent. Tomacco laat zien of hij verbonden is en welke instelling hij precies leest.</translation>
+    </message>
+</context>
+<context>
+    <name>AgentClientPicker</name>
+    <message>
+        <source>%1 is not installed here. Install it first, or copy the text for another computer.</source>
+        <translation>%1 is hier niet geïnstalleerd. Installeer het eerst of kopieer de tekst voor een andere computer.</translation>
+    </message>
+    <message>
+        <source>%1 starts Tomacco when it needs it. Nothing to do.</source>
+        <translation>%1 start Tomacco wanneer het nodig is. Niets te doen.</translation>
+    </message>
+    <message>
+        <source>Add it by hand</source>
+        <comment>agent client</comment>
+        <translation>Handmatig toevoegen</translation>
+    </message>
+    <message>
+        <source>Add this to %1:</source>
+        <translation>Voeg dit toe aan %1:</translation>
+    </message>
+    <message>
+        <source>Another entry is in the way</source>
+        <comment>agent client</comment>
+        <translation>Een andere vermelding zit in de weg</translation>
+    </message>
+    <message>
+        <source>Check again</source>
+        <translation>Opnieuw controleren</translation>
+    </message>
+    <message>
+        <source>Connect</source>
+        <translation>Verbinden</translation>
+    </message>
+    <message>
+        <source>Connected</source>
+        <comment>agent client</comment>
+        <translation>Verbonden</translation>
+    </message>
+    <message>
+        <source>Connected.</source>
+        <translation>Verbonden.</translation>
+    </message>
+    <message>
+        <source>Connected. The previous file is saved as %1.</source>
+        <translation>Verbonden. Het vorige bestand is bewaard als %1.</translation>
+    </message>
+    <message>
+        <source>Connecting…</source>
+        <translation>Verbinden…</translation>
+    </message>
+    <message>
+        <source>Copied</source>
+        <translation>Gekopieerd</translation>
+    </message>
+    <message>
+        <source>Copy command</source>
+        <translation>Opdracht kopiëren</translation>
+    </message>
+    <message>
+        <source>Copy text</source>
+        <translation>Tekst kopiëren</translation>
+    </message>
+    <message>
+        <source>Left unchanged</source>
+        <comment>agent client</comment>
+        <translation>Ongewijzigd gelaten</translation>
+    </message>
+    <message>
+        <source>Looking for coding agents…</source>
+        <translation>Codeeragents zoeken…</translation>
+    </message>
+    <message>
+        <source>Needs an update</source>
+        <comment>agent client</comment>
+        <translation>Update nodig</translation>
+    </message>
+    <message>
+        <source>Not connected</source>
+        <comment>agent client</comment>
+        <translation>Niet verbonden</translation>
+    </message>
+    <message>
+        <source>Not found on this computer</source>
+        <comment>agent client</comment>
+        <translation>Niet gevonden op deze computer</translation>
+    </message>
+    <message>
+        <source>Or run this in a terminal:</source>
+        <translation>Of voer dit uit in een terminal:</translation>
+    </message>
+    <message>
+        <source>Remove Tomacco</source>
+        <translation>Tomacco verwijderen</translation>
+    </message>
+    <message>
+        <source>Removed</source>
+        <comment>agent client</comment>
+        <translation>Verwijderd</translation>
+    </message>
+    <message>
+        <source>Removes only the entry setup added; the rest of the file stays.</source>
+        <translation>Verwijdert alleen de vermelding die de installatie toevoegde; de rest van het bestand blijft.</translation>
+    </message>
+    <message>
+        <source>Setup adds Tomacco to %1&apos;s settings and keeps a backup of the file.</source>
+        <translation>De installatie voegt Tomacco toe aan de instellingen van %1 en bewaart een back-up van het bestand.</translation>
+    </message>
+    <message>
+        <source>Setup did not report on this agent.</source>
+        <translation>De installatie meldde niets over deze agent.</translation>
+    </message>
+    <message>
+        <source>Setup failed</source>
+        <comment>agent client</comment>
+        <translation>Installatie mislukt</translation>
+    </message>
+    <message>
+        <source>Setup failed.</source>
+        <translation>Installatie mislukt.</translation>
+    </message>
+    <message>
+        <source>Something else in %1&apos;s settings uses the name. Setup leaves it alone; add Tomacco by hand under another name.</source>
+        <translation>Iets anders in de instellingen van %1 gebruikt die naam. De installatie laat het met rust; voeg Tomacco handmatig toe onder een andere naam.</translation>
+    </message>
+    <message>
+        <source>The agent list could not be requested.</source>
+        <translation>De lijst met agents kon niet worden opgevraagd.</translation>
+    </message>
+    <message>
+        <source>This file is not one Tomacco rewrites. Add the text below yourself.</source>
+        <translation>Tomacco herschrijft dit bestand niet. Voeg de tekst hieronder zelf toe.</translation>
+    </message>
+    <message>
+        <source>This version of tomaccoctl cannot list coding agents.</source>
+        <translation>Deze versie van tomaccoctl kan geen codeeragents weergeven.</translation>
+    </message>
+    <message>
+        <source>Tomacco could not tell which settings layout %1 reads. Add the text below yourself, or run setup in a terminal with the version.</source>
+        <translation>Tomacco kon niet bepalen welke instellingenindeling %1 leest. Voeg de tekst hieronder zelf toe of voer de installatie met de versie uit in een terminal.</translation>
+    </message>
+    <message>
+        <source>Tomacco&apos;s entry is switched off in %1. Setup leaves your choice alone; switch it on there.</source>
+        <translation>De vermelding van Tomacco staat uit in %1. De installatie respecteert je keuze; zet hem daar aan.</translation>
+    </message>
+    <message>
+        <source>Tomacco&apos;s entry points to another program or older settings. Update rewrites only that entry and keeps a backup.</source>
+        <translation>De vermelding van Tomacco wijst naar een ander programma of oudere instellingen. Bijwerken herschrijft alleen die vermelding en maakt een back-up.</translation>
+    </message>
+    <message>
+        <source>Tomacco&apos;s entry was removed; the rest of the file is unchanged.</source>
+        <translation>De vermelding van Tomacco is verwijderd; de rest van het bestand is ongewijzigd.</translation>
+    </message>
+    <message>
+        <source>Turned off in its settings</source>
+        <comment>agent client</comment>
+        <translation>Uitgeschakeld in zijn instellingen</translation>
+    </message>
+    <message>
+        <source>Update entry</source>
+        <translation>Vermelding bijwerken</translation>
+    </message>
+    <message>
+        <source>Version unclear</source>
+        <comment>agent client</comment>
+        <translation>Versie onduidelijk</translation>
     </message>
 </context>
 </TS>

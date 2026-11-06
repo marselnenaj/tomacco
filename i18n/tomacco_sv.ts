@@ -21,7 +21,7 @@
     </message>
     <message>
         <source>Copy MCP configuration</source>
-        <translation>Kopiera MCP-konfiguration</translation>
+        <translation type="vanished">Kopiera MCP-konfiguration</translation>
     </message>
     <message>
         <source>Connect your agent.</source>
@@ -37,11 +37,11 @@
     </message>
     <message>
         <source>1  Copy the configuration.</source>
-        <translation>1  Kopiera konfigurationen.</translation>
+        <translation type="vanished">1  Kopiera konfigurationen.</translation>
     </message>
     <message>
         <source>2  Paste it into your agent&apos;s MCP settings.</source>
-        <translation>2  Klistra in den i agentens MCP-inställningar.</translation>
+        <translation type="vanished">2  Klistra in den i agentens MCP-inställningar.</translation>
     </message>
     <message>
         <source>3  Ask it to run your app.</source>
@@ -122,6 +122,22 @@
     <message>
         <source>Clear the notifications</source>
         <translation>Rensa aviseringarna</translation>
+    </message>
+    <message>
+        <source>1  Pick your agent.</source>
+        <translation>1  Välj din agent.</translation>
+    </message>
+    <message>
+        <source>2  Connect it, or copy its own setting.</source>
+        <translation>2  Anslut den eller kopiera dess egen inställning.</translation>
+    </message>
+    <message>
+        <source>Connect your agent</source>
+        <translation>Anslut din agent</translation>
+    </message>
+    <message>
+        <source>Copy entry for another MCP client</source>
+        <translation>Kopiera posten för en annan MCP-klient</translation>
     </message>
 </context>
 <context>
@@ -4006,6 +4022,10 @@ SSH använder dina befintliga nycklar och den kända värdidentiteten.</translat
         <source>Your turn</source>
         <translation>Din tur</translation>
     </message>
+    <message>
+        <source>Claude Code Codex Gemini Cursor VS Code Zed OpenCode Grok Hermes omp MCP</source>
+        <translation>Claude Code Codex Gemini Cursor VS Code Zed OpenCode Grok Hermes omp MCP agent anslut</translation>
+    </message>
 </context>
 <context>
     <name>Operations</name>
@@ -5545,7 +5565,7 @@ SSH använder dina befintliga nycklar och den kända värdidentiteten.</translat
     </message>
     <message>
         <source>Copy MCP configuration</source>
-        <translation>Kopiera MCP-konfiguration</translation>
+        <translation type="vanished">Kopiera MCP-konfiguration</translation>
     </message>
     <message>
         <source>Copy path</source>
@@ -6012,6 +6032,14 @@ SSH använder dina befintliga nycklar och den kända värdidentiteten.</translat
         <source>All jobs</source>
         <translation>Alla jobb</translation>
     </message>
+    <message>
+        <source>Agent</source>
+        <translation>Agent</translation>
+    </message>
+    <message>
+        <source>Connect your coding agent</source>
+        <translation>Anslut din kodagent</translation>
+    </message>
 </context>
 <context>
     <name>main</name>
@@ -6358,7 +6386,7 @@ Licensierat under GNU General Public License, version 2 eller senare.</translati
     </message>
     <message>
         <source>Copied</source>
-        <translation>Kopierat</translation>
+        <translation type="vanished">Kopierat</translation>
     </message>
     <message>
         <source>Connect your coding agent</source>
@@ -6370,7 +6398,7 @@ Licensierat under GNU General Public License, version 2 eller senare.</translati
     </message>
     <message>
         <source>The MCP configuration is on the clipboard. Paste it into your agent&apos;s MCP settings.</source>
-        <translation>MCP-konfigurationen finns i urklipp. Klistra in den i agentens MCP-inställningar.</translation>
+        <translation type="vanished">MCP-konfigurationen finns i urklipp. Klistra in den i agentens MCP-inställningar.</translation>
     </message>
 </context>
 <context>
@@ -7222,6 +7250,187 @@ Licensierat under GNU General Public License, version 2 eller senare.</translati
         <source>More</source>
         <comment>navigation</comment>
         <translation>Mer</translation>
+    </message>
+</context>
+<context>
+    <name>AgentClientDialog</name>
+    <message>
+        <source>Connect your coding agent</source>
+        <translation>Anslut din kodagent</translation>
+    </message>
+    <message>
+        <source>Done</source>
+        <translation>Klar</translation>
+    </message>
+    <message>
+        <source>Pick your agent. Tomacco shows whether it is connected and the exact setting it reads.</source>
+        <translation>Välj din agent. Tomacco visar om den är ansluten och exakt vilken inställning den läser.</translation>
+    </message>
+</context>
+<context>
+    <name>AgentClientPicker</name>
+    <message>
+        <source>%1 is not installed here. Install it first, or copy the text for another computer.</source>
+        <translation>%1 är inte installerat här. Installera det först eller kopiera texten för en annan dator.</translation>
+    </message>
+    <message>
+        <source>%1 starts Tomacco when it needs it. Nothing to do.</source>
+        <translation>%1 startar Tomacco när det behövs. Inget att göra.</translation>
+    </message>
+    <message>
+        <source>Add it by hand</source>
+        <comment>agent client</comment>
+        <translation>Lägg till för hand</translation>
+    </message>
+    <message>
+        <source>Add this to %1:</source>
+        <translation>Lägg till detta i %1:</translation>
+    </message>
+    <message>
+        <source>Another entry is in the way</source>
+        <comment>agent client</comment>
+        <translation>En annan post är i vägen</translation>
+    </message>
+    <message>
+        <source>Check again</source>
+        <translation>Kontrollera igen</translation>
+    </message>
+    <message>
+        <source>Connect</source>
+        <translation>Anslut</translation>
+    </message>
+    <message>
+        <source>Connected</source>
+        <comment>agent client</comment>
+        <translation>Ansluten</translation>
+    </message>
+    <message>
+        <source>Connected.</source>
+        <translation>Ansluten.</translation>
+    </message>
+    <message>
+        <source>Connected. The previous file is saved as %1.</source>
+        <translation>Ansluten. Den tidigare filen har sparats som %1.</translation>
+    </message>
+    <message>
+        <source>Connecting…</source>
+        <translation>Ansluter…</translation>
+    </message>
+    <message>
+        <source>Copied</source>
+        <translation>Kopierat</translation>
+    </message>
+    <message>
+        <source>Copy command</source>
+        <translation>Kopiera kommando</translation>
+    </message>
+    <message>
+        <source>Copy text</source>
+        <translation>Kopiera text</translation>
+    </message>
+    <message>
+        <source>Left unchanged</source>
+        <comment>agent client</comment>
+        <translation>Lämnad oförändrad</translation>
+    </message>
+    <message>
+        <source>Looking for coding agents…</source>
+        <translation>Letar efter kodagenter…</translation>
+    </message>
+    <message>
+        <source>Needs an update</source>
+        <comment>agent client</comment>
+        <translation>Behöver uppdateras</translation>
+    </message>
+    <message>
+        <source>Not connected</source>
+        <comment>agent client</comment>
+        <translation>Inte ansluten</translation>
+    </message>
+    <message>
+        <source>Not found on this computer</source>
+        <comment>agent client</comment>
+        <translation>Hittades inte på den här datorn</translation>
+    </message>
+    <message>
+        <source>Or run this in a terminal:</source>
+        <translation>Eller kör detta i en terminal:</translation>
+    </message>
+    <message>
+        <source>Remove Tomacco</source>
+        <translation>Ta bort Tomacco</translation>
+    </message>
+    <message>
+        <source>Removed</source>
+        <comment>agent client</comment>
+        <translation>Borttagen</translation>
+    </message>
+    <message>
+        <source>Removes only the entry setup added; the rest of the file stays.</source>
+        <translation>Tar bara bort posten som konfigurationen lade till; resten av filen finns kvar.</translation>
+    </message>
+    <message>
+        <source>Setup adds Tomacco to %1&apos;s settings and keeps a backup of the file.</source>
+        <translation>Konfigurationen lägger till Tomacco i inställningarna för %1 och sparar en säkerhetskopia av filen.</translation>
+    </message>
+    <message>
+        <source>Setup did not report on this agent.</source>
+        <translation>Konfigurationen rapporterade inget om den här agenten.</translation>
+    </message>
+    <message>
+        <source>Setup failed</source>
+        <comment>agent client</comment>
+        <translation>Konfigurationen misslyckades</translation>
+    </message>
+    <message>
+        <source>Setup failed.</source>
+        <translation>Konfigurationen misslyckades.</translation>
+    </message>
+    <message>
+        <source>Something else in %1&apos;s settings uses the name. Setup leaves it alone; add Tomacco by hand under another name.</source>
+        <translation>Något annat i inställningarna för %1 använder namnet. Konfigurationen låter det vara; lägg till Tomacco för hand under ett annat namn.</translation>
+    </message>
+    <message>
+        <source>The agent list could not be requested.</source>
+        <translation>Agentlistan kunde inte begäras.</translation>
+    </message>
+    <message>
+        <source>This file is not one Tomacco rewrites. Add the text below yourself.</source>
+        <translation>Den här filen skriver Tomacco inte om. Lägg till texten nedan själv.</translation>
+    </message>
+    <message>
+        <source>This version of tomaccoctl cannot list coding agents.</source>
+        <translation>Den här versionen av tomaccoctl kan inte lista kodagenter.</translation>
+    </message>
+    <message>
+        <source>Tomacco could not tell which settings layout %1 reads. Add the text below yourself, or run setup in a terminal with the version.</source>
+        <translation>Tomacco kunde inte avgöra vilket inställningsformat %1 läser. Lägg till texten nedan själv eller kör konfigurationen i en terminal med versionen.</translation>
+    </message>
+    <message>
+        <source>Tomacco&apos;s entry is switched off in %1. Setup leaves your choice alone; switch it on there.</source>
+        <translation>Tomaccos post är avstängd i %1. Konfigurationen respekterar ditt val; slå på den där.</translation>
+    </message>
+    <message>
+        <source>Tomacco&apos;s entry points to another program or older settings. Update rewrites only that entry and keeps a backup.</source>
+        <translation>Tomaccos post pekar på ett annat program eller äldre inställningar. Uppdateringen skriver bara om den posten och sparar en säkerhetskopia.</translation>
+    </message>
+    <message>
+        <source>Tomacco&apos;s entry was removed; the rest of the file is unchanged.</source>
+        <translation>Tomaccos post har tagits bort; resten av filen är oförändrad.</translation>
+    </message>
+    <message>
+        <source>Turned off in its settings</source>
+        <comment>agent client</comment>
+        <translation>Avstängd i sina inställningar</translation>
+    </message>
+    <message>
+        <source>Update entry</source>
+        <translation>Uppdatera post</translation>
+    </message>
+    <message>
+        <source>Version unclear</source>
+        <comment>agent client</comment>
+        <translation>Oklar version</translation>
     </message>
 </context>
 </TS>

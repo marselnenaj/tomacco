@@ -20,10 +20,6 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>Copy MCP configuration</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
         <source>Connect your agent.</source>
         <translation type="unfinished"></translation>
     </message>
@@ -33,14 +29,6 @@
     </message>
     <message>
         <source>Copied</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>1  Copy the configuration.</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>2  Paste it into your agent&apos;s MCP settings.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
@@ -121,6 +109,22 @@
     </message>
     <message>
         <source>Clear the notifications</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>1  Pick your agent.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>2  Connect it, or copy its own setting.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Connect your agent</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Copy entry for another MCP client</source>
         <translation type="unfinished"></translation>
     </message>
 </context>
@@ -4014,6 +4018,10 @@ SSH uses your existing keys and the known host identity.</source>
         <source>Your turn</source>
         <translation type="unfinished"></translation>
     </message>
+    <message>
+        <source>Claude Code Codex Gemini Cursor VS Code Zed OpenCode Grok Hermes omp MCP</source>
+        <translation type="unfinished"></translation>
+    </message>
 </context>
 <context>
     <name>Operations</name>
@@ -5552,10 +5560,6 @@ SSH uses your existing keys and the known host identity.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>Copy MCP configuration</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
         <source>Copy path</source>
         <translation type="unfinished"></translation>
     </message>
@@ -6022,6 +6026,14 @@ SSH uses your existing keys and the known host identity.</source>
         <source>All jobs</source>
         <translation type="unfinished"></translation>
     </message>
+    <message>
+        <source>Agent</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Connect your coding agent</source>
+        <translation type="unfinished"></translation>
+    </message>
 </context>
 <context>
     <name>main</name>
@@ -6361,19 +6373,11 @@ Licensed under the GNU General Public License, version 2 or later.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>Copied</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
         <source>Connect your coding agent</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Skip</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>The MCP configuration is on the clipboard. Paste it into your agent&apos;s MCP settings.</source>
         <translation type="unfinished"></translation>
     </message>
 </context>
@@ -7227,6 +7231,187 @@ Licensed under the GNU General Public License, version 2 or later.</source>
     <message>
         <source>More</source>
         <comment>navigation</comment>
+        <translation type="unfinished"></translation>
+    </message>
+</context>
+<context>
+    <name>AgentClientDialog</name>
+    <message>
+        <source>Connect your coding agent</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Done</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Pick your agent. Tomacco shows whether it is connected and the exact setting it reads.</source>
+        <translation type="unfinished"></translation>
+    </message>
+</context>
+<context>
+    <name>AgentClientPicker</name>
+    <message>
+        <source>%1 is not installed here. Install it first, or copy the text for another computer.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>%1 starts Tomacco when it needs it. Nothing to do.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Add it by hand</source>
+        <comment>agent client</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Add this to %1:</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Another entry is in the way</source>
+        <comment>agent client</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Check again</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Connect</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Connected</source>
+        <comment>agent client</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Connected.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Connected. The previous file is saved as %1.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Connecting…</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Copied</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Copy command</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Copy text</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Left unchanged</source>
+        <comment>agent client</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Looking for coding agents…</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Needs an update</source>
+        <comment>agent client</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Not connected</source>
+        <comment>agent client</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Not found on this computer</source>
+        <comment>agent client</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Or run this in a terminal:</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Remove Tomacco</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Removed</source>
+        <comment>agent client</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Removes only the entry setup added; the rest of the file stays.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Setup adds Tomacco to %1&apos;s settings and keeps a backup of the file.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Setup did not report on this agent.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Setup failed</source>
+        <comment>agent client</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Setup failed.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Something else in %1&apos;s settings uses the name. Setup leaves it alone; add Tomacco by hand under another name.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>The agent list could not be requested.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>This file is not one Tomacco rewrites. Add the text below yourself.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>This version of tomaccoctl cannot list coding agents.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Tomacco could not tell which settings layout %1 reads. Add the text below yourself, or run setup in a terminal with the version.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Tomacco&apos;s entry is switched off in %1. Setup leaves your choice alone; switch it on there.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Tomacco&apos;s entry points to another program or older settings. Update rewrites only that entry and keeps a backup.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Tomacco&apos;s entry was removed; the rest of the file is unchanged.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Turned off in its settings</source>
+        <comment>agent client</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Update entry</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Version unclear</source>
+        <comment>agent client</comment>
         <translation type="unfinished"></translation>
     </message>
 </context>
