@@ -146,6 +146,8 @@ Rectangle {
     signal profilesChanged()
     signal runtimeRequested(string platform, string device)
     signal iosSetupRequested()
+    // Connect a coding agent: Main.qml opens the agent picker.
+    signal connectAgentRequested()
     function chooseDevicePlatform(value) {
         selectedPlatform=value
         if(!devices.some(x=>x.id===selectedDevice && x.platform===value)) {
@@ -668,7 +670,7 @@ Rectangle {
                         }
                     }
                     Rectangle { Layout.fillWidth: true; Layout.preferredHeight: 1; color: Theme.subtle }
-                    StudioButton { text: qsTr("Copy MCP configuration"); displayText: panel.width<Theme.px(760)?"MCP":text; tip: text; iconName: "copy"; quiet: true; Layout.fillWidth: true; Layout.margins: Theme.gapSm; onClicked: Studio.copy(JSON.stringify({mcpServers:{"tomacco":{command:Agent.cliPath,args:["mcp"]}}},null,2)) }
+                    StudioButton { objectName: "toolsConnectAgent"; text: qsTr("Connect your coding agent"); displayText: panel.width<Theme.px(760)?qsTr("Agent"):text; tip: text; iconName: "plus"; quiet: true; Layout.fillWidth: true; Layout.margins: Theme.gapSm; onClicked: panel.connectAgentRequested() }
                 }
                 Rectangle { Layout.fillHeight: true; Layout.preferredWidth: 1; color: Theme.subtle }
                 ColumnLayout {

@@ -398,3 +398,42 @@ void Control::complete(int id,const QVariant &result,const QString &error) {
     socket->flush(); socket->disconnectFromServer();
     m_clients.remove(id);m_ids.remove(id);
 }
+
+bool Control::agentClients(const QString &action,const QString &client) {
+    static const QRegularExpression id(QStringLiteral("^[a-z0-9][a-z0-9-]{0,39}$"));
+    if(!QStringList{"status","setup","remove"}.contains(action) || (!client.isEmpty() && !id.match(client).hasMatch()))
+        return false;
+    QStringList arguments{"setup","agents"};
+    if(action!="setup") arguments<<action;
+    // Setup and remove are the person's explicit choice in the window; status
+    // only reads. Each one names the client it is for.
+    if(action!="status") arguments<<"--yes";
+    arguments<<"--json";
+    if(!client.isEmpty()) arguments<<"--client"<<client;
+    auto *process=new QProcess(this);
+    auto done=std::make_shared<bool>(false);
+    auto finish=[this,process,action,client,done](const QString &failure) {
+        if(*done)return;
+        *done=true;
+        QJsonParseError error;
+        const auto object=QJsonDocument::fromJson(process->readAllStandardOutput(),&error).object();
+        QString message=failure;
+        if(message.isEmpty() && (error.error!=QJsonParseError::NoError || object.isEmpty())) {
+            const QString detail=QString::fromUtf8(process->readAllStandardError()).trimmed().left(2000);
+            message=detail.isEmpty()?tr("Invalid response from the control plane"):tr("The control program failed: %1").arg(detail);
+        }
+        emit agentClientsFinished(action,client,object.toVariantMap(),message);
+        process->deleteLater();
+    };
+    connect(process,qOverload<int,QProcess::ExitStatus>(&QProcess::finished),this,[finish](int,QProcess::ExitStatus status){ finish(status==QProcess::NormalExit?QString():tr("The control program ended unexpectedly")); });
+    connect(process,&QProcess::errorOccurred,this,[finish,process](QProcess::ProcessError error){
+        if(error==QProcess::FailedToStart)
+            finish(tr("tomaccoctl could not be started (%1). Reinstall Tomacco or run install.py again.").arg(process->errorString()));
+    });
+    QTimer::singleShot(30000,process,[process]{ process->kill(); });
+    process->setWorkingDirectory(QFileInfo(m_cli).absolutePath());
+    process->setProcessEnvironment(personEnvironment());
+    process->start(m_cli,arguments);
+    process->closeWriteChannel();
+    return true;
+}

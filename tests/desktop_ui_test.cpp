@@ -4612,12 +4612,34 @@ for line in sys.stdin:
         const auto steps=sheet->property("steps").toStringList();
         QCOMPARE(item("onboardingReady")->isVisible(),steps.isEmpty());
         for(const auto &step:steps)QVERIFY2(!step.contains("tomaccoctl setup --yes") && !step.contains("pacman"),qPrintable(step));
-        // Connect copies the MCP configuration.
-        QGuiApplication::clipboard()->clear();
+        // Connect opens the agent picker: every client setup knows, from the real
+        // `tomaccoctl setup agents status --json` in this test's own HOME, each
+        // with its own text. Nothing is written by looking.
         clickItem("onboardingConnect");
+        auto *agents=object("agentClientDialog");QVERIFY(agents);
+        QTRY_VERIFY(agents->property("visible").toBool());
+        auto *picker=item("agentClientPicker");QVERIFY(picker);
+        QTRY_VERIFY_WITH_TIMEOUT(picker->property("clients").toList().size()>=10,patient(30000));
+        QCOMPARE(picker->property("error").toString(),QString());
+        QStringList ids;for(const auto &c:picker->property("clients").toList())ids<<c.toMap().value("id").toString();
+        for(const char *id:{"claude-code","codex","gemini-cli","cursor","vscode","zed","opencode","grok-cli","hermes","omp"})
+            QVERIFY2(ids.contains(QString::fromLatin1(id)),id);
+        QGuiApplication::clipboard()->clear();
+        clickItem("agentClient-claude-code");QTRY_COMPARE(picker->property("selected").toString(),QString("claude-code"));
+        clickItem("agentClientCopy");
+        QTRY_VERIFY(QGuiApplication::clipboard()->text().startsWith("claude mcp add"));
+        QVERIFY(QGuiApplication::clipboard()->text().contains(control->cliPath()));
+        clickItem("agentClient-gemini-cli");
+        QTRY_COMPARE(picker->property("selected").toString(),QString("gemini-cli"));
+        {   // Connect is offered only where setup would add or update Tomacco's own entry.
+            const auto current=picker->property("current").toMap();
+            const bool offer=current.value("found").toBool() && QStringList{"absent","not_connected","outdated"}.contains(current.value("state").toString());
+            QCOMPARE(item("agentClientSetUp")->isVisible(),offer);
+        }
+        clickItem("agentClientCopy");
         QTRY_VERIFY(QGuiApplication::clipboard()->text().contains("\"mcpServers\""));
         QVERIFY(QGuiApplication::clipboard()->text().contains(control->cliPath()));
-        QVERIFY(item("onboardingCopied")->isVisible());
+        clickItem("agentClientDialogClose");QTRY_VERIFY(!agents->property("visible").toBool());
         clickItem("onboardingSkip");QTRY_VERIFY(!sheet->property("visible").toBool());
         // Not again by itself, nor as a new version's sheet.
         QVERIFY(QMetaObject::invokeMethod(view,"startupSheets",Q_ARG(QVariant,true)));QTest::qWait(50);

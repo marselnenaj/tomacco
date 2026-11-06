@@ -737,7 +737,8 @@ Rectangle {
         {id:"screenshot",title:qsTr("Save and copy a device screenshot"),detail:qsTr("Command"),icon:"camera",key:qsTr("Ctrl")+"+Shift+S",run:()=>view.capture()},
         {id:"shortcuts",title:qsTr("Keyboard shortcuts"),detail:qsTr("Command"),icon:"keyboard",key:"F1",run:()=>shortcutsDialog.open()},
         {id:"about",title:qsTr("About Tomacco"),detail:qsTr("Command"),icon:"info",key:"",run:()=>about.open()},
-        {id:"onboarding",title:qsTr("Get started"),detail:qsTr("Command"),search:qsTr("Connect your coding agent"),icon:"agent",key:"",run:()=>onboarding.open()}
+        {id:"onboarding",title:qsTr("Get started"),detail:qsTr("Command"),search:qsTr("Connect your coding agent"),icon:"agent",key:"",run:()=>onboarding.open()},
+        {id:"connectAgent",title:qsTr("Connect your coding agent"),detail:qsTr("Command"),search:qsTr("Claude Code Codex Gemini Cursor VS Code Zed OpenCode Grok Hermes omp MCP"),icon:"agent",key:"",run:()=>view.connectAgent()}
     ].concat(layoutNames.map(name=>({id:"layout:"+name,title:qsTr("Use window layout %1").arg(name),detail:qsTr("Window layouts"),search:name,icon:"window",key:"",run:()=>view.applyLayout(name)})))
      .concat(recentProjects.map(p=>({id:"recent:"+p.path,title:qsTr("Open recent project %1").arg(p.name),detail:p.path,search:p.name,icon:"files",key:"",run:()=>workspace.openProject(p.path)})))
     function navigate(section) { if(section==="runtime")workspace.close();else workspace.showTab(section) }
@@ -1176,6 +1177,7 @@ Rectangle {
                         workspace:view.workspace
                         notifications:notifications
                         onNotificationChosen:entry=>view.openNotification(entry)
+                        onConnectAgentRequested:view.connectAgent()
                         sessionLog:view.sessionLogPath
                         stateLabel:view.deviceStateLabel;stateTone:view.deviceTone
                         deviceName:view.deviceName;deviceMetrics:view.deviceMetrics
@@ -1347,7 +1349,10 @@ Rectangle {
     }
     FileDialog {id:settingsExport;title:qsTr("Export settings");fileMode:FileDialog.SaveFile;defaultSuffix:"json";nameFilters:[qsTr("Tomacco settings (*.json)")];onAccepted:view.exportSettingsTo(decodeURIComponent(selectedFile.toString().replace(/^file:\/\//,"")))}
     FileDialog {id:settingsImport;title:qsTr("Import settings");nameFilters:[qsTr("Tomacco settings (*.json)")];onAccepted:view.importSettingsFrom(decodeURIComponent(selectedFile.toString().replace(/^file:\/\//,"")))}
-    OnboardingSheet {id:onboarding;anchors.centerIn:parent;width:Math.min(view.width-Theme.gapXxxl,Theme.px(560));height:Math.min(view.height-Theme.gapLg,implicitHeight)}
+    OnboardingSheet {id:onboarding;anchors.centerIn:parent;width:Math.min(view.width-Theme.gapXxxl,Theme.px(560));height:Math.min(view.height-Theme.gapLg,implicitHeight);onConnectRequested:view.connectAgent()}
+    AgentClientDialog {id:agentClients;anchors.centerIn:parent;width:Math.min(view.width-Theme.gapLg,Theme.px(860));height:Math.min(view.height-Theme.gapLg,Math.max(implicitHeight,Theme.px(420)))}
+    // Connect a coding agent: one picker for every entry point.
+    function connectAgent(){agentClients.open()}
     StudioDialog {
         id:whatsNew;objectName:"whatsNewSheet";title:qsTr("What's new in %1").arg(Qt.application.version);anchors.centerIn:parent;width:Math.min(view.width-Theme.gapXxxl,Theme.px(620));height:Math.min(view.height-Theme.gapLg,implicitHeight);modal:true;standardButtons:Dialog.Close
         property string highlights:""
