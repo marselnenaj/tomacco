@@ -25,6 +25,11 @@ Rectangle {
     implicitHeight: itemHeight
     color: Theme.surface
     function openMore() { more.open() }
+    function displayLabel(entry) {
+        if(entry.id==="project")return qsTranslate("NativeWorkspace","Project")
+        if(entry.id==="jobs")return qsTranslate("Workspace","Jobs")
+        return entry.label
+    }
     Rectangle { width: parent.width; height: 1; color: Theme.subtle }
     RowLayout {
         anchors.fill: parent; spacing: 0
@@ -40,7 +45,7 @@ Rectangle {
                 Column {
                     anchors.centerIn: parent; spacing: Theme.gapXs; width: parent.width-Theme.gapSm
                     StudioIcon { name: item.modelData.icon; color: item.active ? Theme.text : Theme.muted; anchors.horizontalCenter: parent.horizontalCenter }
-                    Text { width: parent.width; horizontalAlignment: Text.AlignHCenter; text: item.modelData.label; color: item.active ? Theme.text : Theme.muted; font.pixelSize: Theme.fontSmall; font.weight: item.active ? Font.DemiBold : Font.Normal; elide: Text.ElideRight }
+                    Text { objectName:"mobileNavLabel-"+item.modelData.id; width: parent.width; horizontalAlignment: Text.AlignHCenter; text: nav.displayLabel(item.modelData); color: item.active ? Theme.text : Theme.muted; font.pixelSize: Theme.fontSmall; font.weight: item.active ? Font.DemiBold : Font.Normal; wrapMode:Text.Wrap; maximumLineCount:2 }
                 }
                 TapHandler { onTapped: item.modelData.id==="more" ? more.open() : nav.navigate(item.modelData.id) }
                 Accessible.role: Accessible.Button

@@ -98,7 +98,13 @@ private slots:
                 if(child->property("text").isValid() && !child->property("text").toString().isEmpty()){labelled=true;QVERIFY2(child->width()<=entry->width()+0.5,qPrintable(id));}
             }
             QVERIFY2(labelled,qPrintable(id));
+            auto *caption=item("mobileNavLabel-"+id);QVERIFY2(caption,qPrintable(id));
+            QVERIFY2(!caption->property("truncated").toBool(),qPrintable(id+": "+caption->property("text").toString()));
+            const auto captionBounds=caption->mapRectToScene(caption->boundingRect());
+            QVERIFY2(captionBounds.top()>=bounds.top()-0.5 && captionBounds.bottom()<=bounds.bottom()+0.5,qPrintable(id));
         }
+        QCOMPARE(item("mobileNavLabel-jobs")->property("text").toString(),QString("Jobs"));
+        QCOMPARE(item("mobileNavLabel-project")->property("text").toString(),QString("Project"));
         // The desktop rail's other sections are not in the bar: they sit behind More.
         QVERIFY(!item("mobileNav-debug"));QVERIFY(!item("mobileNav-release"));
     }
