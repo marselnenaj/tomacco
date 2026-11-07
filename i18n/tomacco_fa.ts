@@ -7750,4 +7750,19 @@ Licensed under the GNU General Public License, version 2 or later.</source>
         <translation>بازگشت</translation>
     </message>
 </context>
+<context>
+    <name>ProjectFolderDialog</name>
+    <message>
+        <source>Home folder</source>
+        <translation>پوشهٔ خانه</translation>
+    </message>
+    <message>
+        <source>No folders here</source>
+        <translation>اینجا پوشه‌ای نیست</translation>
+    </message>
+    <message>
+        <source>Parent folder</source>
+        <translation>پوشهٔ بالاتر</translation>
+    </message>
+</context>
 </TS>

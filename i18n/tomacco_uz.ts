@@ -7762,4 +7762,19 @@ GNU General Public License, 2-versiya yoki undan keyingi versiya asosida litsenz
         <translation>Orqaga</translation>
     </message>
 </context>
+<context>
+    <name>ProjectFolderDialog</name>
+    <message>
+        <source>Home folder</source>
+        <translation>Uy jildi</translation>
+    </message>
+    <message>
+        <source>No folders here</source>
+        <translation>Bu yerda jildlar yoʻq</translation>
+    </message>
+    <message>
+        <source>Parent folder</source>
+        <translation>Yuqori jild</translation>
+    </message>
+</context>
 </TS>

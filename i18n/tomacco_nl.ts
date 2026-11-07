@@ -7794,4 +7794,19 @@ Gelicentieerd onder de GNU General Public License, versie 2 of later.</translati
         <translation>Terug</translation>
     </message>
 </context>
+<context>
+    <name>ProjectFolderDialog</name>
+    <message>
+        <source>Home folder</source>
+        <translation>Thuismap</translation>
+    </message>
+    <message>
+        <source>No folders here</source>
+        <translation>Hier staan geen mappen</translation>
+    </message>
+    <message>
+        <source>Parent folder</source>
+        <translation>Bovenliggende map</translation>
+    </message>
+</context>
 </TS>

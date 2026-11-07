@@ -1263,7 +1263,15 @@ Rectangle {
         }
     }
     CommandPalette {id:commandPalette;workspace:view.workspace;navigation:view.navigation;commands:view.commands;onNavigate:section=>view.navigate(section)}
-    FolderDialog {id:projectFolder;title:qsTr("Open project");onAccepted:workspace.openProject(decodeURIComponent(selectedFolder.toString().replace(/^file:\/\//,"")))}
+    // The project chooser of every entry point (Workspace opens it as projectChooser): a
+    // sheet over the free area on a phone, above the keyboard when it is open.
+    property alias projectChooser: projectFolder
+    ProjectFolderDialog {
+        id:projectFolder;objectName:"projectFolderDialog";defaultTitle:qsTr("Open project");currentProject:view.projectPath;sheet:view.phone
+        insetLeft:view.phone?view.insetLeft:0;insetTop:view.phone?view.insetTop:0;insetRight:view.phone?view.insetRight:0
+        insetBottom:view.phone?Math.max(view.insetBottom,view.keyboardInset):0
+        onChosen:path=>workspace.openProject(path)
+    }
     // The settings' search: a section shows when every word typed appears in
     // its title, its options or its explanations.
     property string settingsQuery: ""

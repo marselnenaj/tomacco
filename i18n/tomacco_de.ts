@@ -7794,4 +7794,19 @@ Lizenziert unter der GNU General Public License, Version 2 oder neuer.</translat
         <translation>Zurück</translation>
     </message>
 </context>
+<context>
+    <name>ProjectFolderDialog</name>
+    <message>
+        <source>Home folder</source>
+        <translation>Persönlicher Ordner</translation>
+    </message>
+    <message>
+        <source>No folders here</source>
+        <translation>Hier sind keine Ordner</translation>
+    </message>
+    <message>
+        <source>Parent folder</source>
+        <translation>Übergeordneter Ordner</translation>
+    </message>
+</context>
 </TS>

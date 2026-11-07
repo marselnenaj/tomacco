@@ -1,5 +1,6 @@
 #include "backend.h"
 #include <QClipboard>
+#include <QCollator>
 #include <QDateTime>
 #ifdef TOMACCO_HAVE_DBUS
 #include <QDBusConnection>
@@ -598,6 +599,47 @@ QString Backend::projectFolder(const QString &path) const {
     const QFileInfo folder(path);
     if(path.isEmpty() || !folder.isDir() || folder.suffix().compare(QLatin1String("app"),Qt::CaseInsensitive)==0) return {};
     return folder.canonicalFilePath();
+}
+QString Backend::resolveFolderPath(const QString &typed,const QString &base) const {
+    QString path=typed.trimmed();
+    path.remove(QLatin1Char('\n'));path.remove(QLatin1Char('\r'));
+    if(path.startsWith(QLatin1String("file:"),Qt::CaseInsensitive)) {
+        const QUrl url(path);
+        path=url.isLocalFile()?url.toLocalFile():QString();
+    }
+    const QString home=QDir::homePath();
+    const QString start=base.trimmed().isEmpty()?home:base.trimmed();
+    if(path==QLatin1String("~"))path=home;
+    else if(path.startsWith(QLatin1String("~/")))path=home+path.mid(1);
+    if(path.isEmpty())path=start;
+    if(QDir::isRelativePath(path))path=start+QLatin1Char('/')+path;
+    return QDir::cleanPath(path);
+}
+QVariantMap Backend::folderListing(const QString &typed,const QString &base,bool hidden) const {
+    const QString path=resolveFolderPath(typed,base);
+    const QFileInfo info(path);
+    QString error;
+    if(!info.exists())error=QStringLiteral("missing");
+    else if(!info.isDir())error=QStringLiteral("not-folder");
+    QVariantList folders;
+    if(error.isEmpty()) {
+        QDir directory(path);
+        if(!info.isReadable() || !info.isExecutable() || !directory.isReadable())error=QStringLiteral("unreadable");
+        QDir::Filters filters=QDir::Dirs|QDir::NoDotAndDotDot;
+        if(hidden)filters|=QDir::Hidden;
+        auto entries=directory.entryInfoList(filters,QDir::NoSort);
+        QCollator collator;collator.setNumericMode(true);collator.setCaseSensitivity(Qt::CaseInsensitive);
+        std::stable_sort(entries.begin(),entries.end(),[&](const QFileInfo &a,const QFileInfo &b){
+            const int order=collator.compare(a.fileName(),b.fileName());
+            return order?order<0:a.fileName()<b.fileName();
+        });
+        const QString prefix=path==QLatin1String("/")?path:path+QLatin1Char('/');
+        for(const auto &entry:entries)
+            folders.append(QVariantMap{{"name",entry.fileName()},{"path",prefix+entry.fileName()},{"link",entry.isSymLink()},
+                {"target",entry.isSymLink()?entry.canonicalFilePath():QString()}});
+    }
+    return {{"path",path},{"parent",path==QLatin1String("/")?QString():QDir::cleanPath(path+QLatin1String("/.."))},
+        {"home",QDir::homePath()},{"error",error},{"folders",folders}};
 }
 QString Backend::qtVersion() const { return QString::fromLatin1(qVersion()); }
 QUrl Backend::sourceUrl() const {

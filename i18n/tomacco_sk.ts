@@ -7774,4 +7774,19 @@ Licencované pod GNU General Public License, verzia 2 alebo novšia.</translatio
         <translation>Späť</translation>
     </message>
 </context>
+<context>
+    <name>ProjectFolderDialog</name>
+    <message>
+        <source>Home folder</source>
+        <translation>Domovský priečinok</translation>
+    </message>
+    <message>
+        <source>No folders here</source>
+        <translation>Nie sú tu žiadne priečinky</translation>
+    </message>
+    <message>
+        <source>Parent folder</source>
+        <translation>Nadradený priečinok</translation>
+    </message>
+</context>
 </TS>

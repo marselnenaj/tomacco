@@ -7806,4 +7806,19 @@ Licensed under the GNU General Public License, version 2 or later.</source>
         <translation>Назад</translation>
     </message>
 </context>
+<context>
+    <name>ProjectFolderDialog</name>
+    <message>
+        <source>Home folder</source>
+        <translation>Домашняя папка</translation>
+    </message>
+    <message>
+        <source>No folders here</source>
+        <translation>Здесь нет папок</translation>
+    </message>
+    <message>
+        <source>Parent folder</source>
+        <translation>Родительская папка</translation>
+    </message>
+</context>
 </TS>

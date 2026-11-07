@@ -203,6 +203,24 @@ whose tip (with its shortcut) becomes the description. The desktop UI test check
 these names with Qt's accessibility switched on; the desktop has not yet been
 tried with a screen reader such as Orca.
 
+### Choosing a project folder
+
+**Open project** (Ctrl+O), **Choose folder** on the project page and in **Files**, and
+**Open folder** in the phone's project list all open the same chooser, Tomacco's own
+dialog in its colours, language and interface size (Qt's stock folder dialog stayed
+600×400 at every interface size, so at 175 % long names and the path were cut off).
+It starts in the folder that holds the open project, with that project marked. The
+location at the top shows the whole path, wrapped, and takes a typed or pasted path,
+`~/…` or a `file://` address: Enter shows that folder, **Open** or Ctrl+Enter opens
+it as the project. Folder names wrap instead of being cut off, a symbolic link names
+the folder it leads to (and opens that project), and **Hidden** (*Versteckte*) also
+lists folders whose names start with a dot. The keyboard: Ctrl+L goes to the location,
+Tab to the list, ↑ ↓ move, Enter or → opens a folder, Backspace, ← or Alt+↑ goes up,
+and Esc or **Cancel** closes the chooser without changing the open project. On a
+short window the chooser scrolls above its buttons; on a phone it is a sheet over the
+whole screen with 48 px targets. The other file choosers (settings, profiles, apps,
+web builds) are still Qt's own.
+
 Screenshots of the live device, from the camera button, the palette, Ctrl+Shift+S or
 the device window's rail (Ctrl+Shift+S there too), are saved in `~/Pictures/Tomacco`
 (or the configured Pictures directory) and put on the clipboard as an image.

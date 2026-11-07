@@ -7786,4 +7786,19 @@ Licensierat under GNU General Public License, version 2 eller senare.</translati
         <translation>Bakåt</translation>
     </message>
 </context>
+<context>
+    <name>ProjectFolderDialog</name>
+    <message>
+        <source>Home folder</source>
+        <translation>Hemmapp</translation>
+    </message>
+    <message>
+        <source>No folders here</source>
+        <translation>Inga mappar här</translation>
+    </message>
+    <message>
+        <source>Parent folder</source>
+        <translation>Överordnad mapp</translation>
+    </message>
+</context>
 </TS>

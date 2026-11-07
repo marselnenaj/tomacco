@@ -7762,4 +7762,19 @@ GNU General Public License, අනුවාදය 2 හෝ පසු අනු�
         <translation>ආපසු</translation>
     </message>
 </context>
+<context>
+    <name>ProjectFolderDialog</name>
+    <message>
+        <source>Home folder</source>
+        <translation>නිවෙස් ෆෝල්ඩරය</translation>
+    </message>
+    <message>
+        <source>No folders here</source>
+        <translation>මෙහි ෆෝල්ඩර නැත</translation>
+    </message>
+    <message>
+        <source>Parent folder</source>
+        <translation>ඉහළ ෆෝල්ඩරය</translation>
+    </message>
+</context>
 </TS>

@@ -7762,4 +7762,19 @@ Licensed under the GNU General Public License, version 2 or later.</source>
         <translation>Πίσω</translation>
     </message>
 </context>
+<context>
+    <name>ProjectFolderDialog</name>
+    <message>
+        <source>Home folder</source>
+        <translation>Προσωπικός φάκελος</translation>
+    </message>
+    <message>
+        <source>No folders here</source>
+        <translation>Δεν υπάρχουν φάκελοι εδώ</translation>
+    </message>
+    <message>
+        <source>Parent folder</source>
+        <translation>Γονικός φάκελος</translation>
+    </message>
+</context>
 </TS>

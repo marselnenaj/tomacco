@@ -7750,4 +7750,19 @@ A GNU General Public License 2-es vagy későbbi verziója alatt licencelve.</tr
         <translation>Vissza</translation>
     </message>
 </context>
+<context>
+    <name>ProjectFolderDialog</name>
+    <message>
+        <source>Home folder</source>
+        <translation>Saját mappa</translation>
+    </message>
+    <message>
+        <source>No folders here</source>
+        <translation>Itt nincsenek mappák</translation>
+    </message>
+    <message>
+        <source>Parent folder</source>
+        <translation>Szülőmappa</translation>
+    </message>
+</context>
 </TS>

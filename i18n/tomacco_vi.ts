@@ -7750,4 +7750,19 @@ Licensed under the GNU General Public License, version 2 or later.</source>
         <translation>Quay lại</translation>
     </message>
 </context>
+<context>
+    <name>ProjectFolderDialog</name>
+    <message>
+        <source>Home folder</source>
+        <translation>Thư mục nhà</translation>
+    </message>
+    <message>
+        <source>No folders here</source>
+        <translation>Không có thư mục nào ở đây</translation>
+    </message>
+    <message>
+        <source>Parent folder</source>
+        <translation>Thư mục cha</translation>
+    </message>
+</context>
 </TS>

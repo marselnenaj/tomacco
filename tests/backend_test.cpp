@@ -93,6 +93,46 @@ private slots:
         QVERIFY(backend.projectFolder(root.filePath("missing")).isEmpty());
         QVERIFY(backend.projectFolder(QString()).isEmpty());
     }
+    void theProjectChooserListsFoldersAndResolvesTypedPaths() {
+        QTemporaryDir root; QVERIFY(root.isValid());
+        const QString base=root.filePath(QString::fromUtf8("Projekte mit Leerzeichen · 日本語"));
+        for(const auto &name:{QStringLiteral("app10"),QStringLiteral("App9"),QStringLiteral("app1"),QString::fromUtf8("Überlänge العربية"),QStringLiteral(".hidden")})QVERIFY(QDir().mkpath(base+"/"+name));
+        write(base+"/notes.txt","a file");
+        QVERIFY(QFile::link(base+"/app1",base+"/link to app1"));
+        QVERIFY(QFile::link(base+"/gone",base+"/broken link"));
+        Backend backend(QString(),nullptr,false);
+        // Typed and pasted forms of one folder; symbolic links stay in the path.
+        QCOMPARE(backend.resolveFolderPath(base+"/"),base);
+        QCOMPARE(backend.resolveFolderPath("  "+base+"/app1/../app10\n"),base+"/app10");
+        QCOMPARE(backend.resolveFolderPath(QUrl::fromLocalFile(base).toString(QUrl::FullyEncoded)),base);
+        QCOMPARE(backend.resolveFolderPath("app9",base),base+"/app9");
+        QCOMPARE(backend.resolveFolderPath(QString(),base),base);
+        QCOMPARE(backend.resolveFolderPath("~"),QDir::homePath());
+        QCOMPARE(backend.resolveFolderPath("~/x"),QDir::cleanPath(QDir::homePath()+"/x"));
+        QCOMPARE(backend.resolveFolderPath(base+"/link to app1"),base+"/link to app1");
+        QVERIFY(backend.resolveFolderPath("https://example.invalid/a").startsWith(QDir::homePath()));
+        // Folders only, in reading order (numbers as numbers, case ignored); hidden ones when asked;
+        // a link names its target, a broken link and a file are left out.
+        auto listing=backend.folderListing(base);
+        QCOMPARE(listing.value("path").toString(),base);
+        QCOMPARE(listing.value("parent").toString(),QDir::cleanPath(root.path()));
+        QCOMPARE(listing.value("error").toString(),QString());
+        QStringList names;QVariantMap link;
+        for(const auto &entry:listing.value("folders").toList()){const auto folder=entry.toMap();names<<folder.value("name").toString();if(folder.value("link").toBool())link=folder;
+            QCOMPARE(folder.value("path").toString(),base+"/"+folder.value("name").toString());}
+        QCOMPARE(names,(QStringList{"app1","App9","app10","link to app1",QString::fromUtf8("Überlänge العربية")}));
+        QCOMPARE(link.value("target").toString(),QFileInfo(base+"/app1").canonicalFilePath());
+        QVERIFY(backend.folderListing(base,{},true).value("folders").toList().size()==6);
+        // What cannot be listed says why.
+        QCOMPARE(backend.folderListing(base+"/missing").value("error").toString(),QString("missing"));
+        QCOMPARE(backend.folderListing(base+"/notes.txt").value("error").toString(),QString("not-folder"));
+        QVERIFY(QFile::setPermissions(base+"/app10",QFile::WriteOwner));
+        const auto restore=qScopeGuard([&]{QFile::setPermissions(base+"/app10",QFile::ReadOwner|QFile::WriteOwner|QFile::ExeOwner);});
+        if(!QFileInfo(base+"/app10").isReadable())QCOMPARE(backend.folderListing(base+"/app10").value("error").toString(),QString("unreadable"));
+        QCOMPARE(backend.folderListing("/").value("parent").toString(),QString());
+        // Choosing goes through projectFolder: a link opens its target, an app bundle is no project.
+        QCOMPARE(backend.projectFolder(backend.resolveFolderPath("link to app1",base)),QFileInfo(base+"/app1").canonicalFilePath());
+    }
     void onlyJobLogFilesOpenAsJobLogs() {
         QTemporaryDir root; QVERIFY(root.isValid());
         QVERIFY(QDir(root.path()).mkpath("jobs"));

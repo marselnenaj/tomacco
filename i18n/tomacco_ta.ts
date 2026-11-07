@@ -7762,4 +7762,19 @@ GNU General Public License, பதிப்பு 2 அல்லது அதற
         <translation>பின்செல்</translation>
     </message>
 </context>
+<context>
+    <name>ProjectFolderDialog</name>
+    <message>
+        <source>Home folder</source>
+        <translation>முகப்புக் கோப்புறை</translation>
+    </message>
+    <message>
+        <source>No folders here</source>
+        <translation>இங்கே கோப்புறைகள் இல்லை</translation>
+    </message>
+    <message>
+        <source>Parent folder</source>
+        <translation>மேல் கோப்புறை</translation>
+    </message>
+</context>
 </TS>

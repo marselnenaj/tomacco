@@ -7794,4 +7794,19 @@ Con licencia GNU General Public License, versión 2 o posterior.</translation>
         <translation>Atrás</translation>
     </message>
 </context>
+<context>
+    <name>ProjectFolderDialog</name>
+    <message>
+        <source>Home folder</source>
+        <translation>Carpeta personal</translation>
+    </message>
+    <message>
+        <source>No folders here</source>
+        <translation>No hay carpetas aquí</translation>
+    </message>
+    <message>
+        <source>Parent folder</source>
+        <translation>Carpeta superior</translation>
+    </message>
+</context>
 </TS>

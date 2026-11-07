@@ -7774,4 +7774,19 @@ Licencijuota pagal GNU General Public License 2 ar vėlesnę versiją.</translat
         <translation>Atgal</translation>
     </message>
 </context>
+<context>
+    <name>ProjectFolderDialog</name>
+    <message>
+        <source>Home folder</source>
+        <translation>Namų aplankas</translation>
+    </message>
+    <message>
+        <source>No folders here</source>
+        <translation>Čia aplankų nėra</translation>
+    </message>
+    <message>
+        <source>Parent folder</source>
+        <translation>Tėvinis aplankas</translation>
+    </message>
+</context>
 </TS>

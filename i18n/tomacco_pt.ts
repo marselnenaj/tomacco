@@ -7794,4 +7794,19 @@ Licenciado sob a GNU General Public License, versão 2 ou posterior.</translatio
         <translation>Voltar</translation>
     </message>
 </context>
+<context>
+    <name>ProjectFolderDialog</name>
+    <message>
+        <source>Home folder</source>
+        <translation>Pasta pessoal</translation>
+    </message>
+    <message>
+        <source>No folders here</source>
+        <translation>Não há pastas aqui</translation>
+    </message>
+    <message>
+        <source>Parent folder</source>
+        <translation>Pasta superior</translation>
+    </message>
+</context>
 </TS>

@@ -413,6 +413,87 @@ private slots:
         noErrors();
     }
 
+    void project_chooser_is_a_phone_sheet_with_touch_targets_data() {
+        QTest::addColumn<int>("width");QTest::addColumn<int>("percent");
+        QTest::newRow("360-100")<<360<<100;QTest::newRow("360-150")<<360<<150;QTest::newRow("393-125")<<393<<125;
+        QTest::newRow("393-175")<<393<<175;QTest::newRow("412-150")<<412<<150;QTest::newRow("412-200")<<412<<200;
+    }
+    void project_chooser_is_a_phone_sheet_with_touch_targets() {
+        // The project list's Open folder opens the app's project chooser as a sheet over the
+        // phone (Qt's FolderDialog fallback was a fixed 600x400 window, wider than the phone).
+        QFETCH(int,width);QFETCH(int,percent);
+        const auto original=directory.filePath("project");
+        const auto projectPath=[&]{return mapOf(workspace->property("project")).value("path").toString();};
+        auto *dialog=window->findChild<QObject *>("projectFolderDialog");QVERIFY(dialog);
+        const auto restore=qScopeGuard([&]{
+            QMetaObject::invokeMethod(dialog,"close");workspace->setProperty("projectList",false);
+            if(projectPath()!=original){QMetaObject::invokeMethod(workspace,"openProject",Q_ARG(QVariant,original));QTRY_COMPARE_WITH_TIMEOUT(projectPath(),original,10000);}
+            for(const auto &folder:backend->recentProjects())if(folder!=QFileInfo(original).canonicalFilePath())backend->forgetProject(folder);
+        });
+        QTemporaryDir root;QVERIFY(root.isValid());
+        const QString base=root.filePath(QString::fromUtf8("Projekte mit Leerzeichen · フォルダー")),project=base+"/Flutter App",link=base+QString::fromUtf8("/Verknüpfung zum Projekt");
+        const QStringList names{QString::fromUtf8("Ein sehr langer Projektordner für die Übersetzungsprüfung der Anwendung"),QString::fromUtf8("تطبيق الهاتف المحمول التجريبي الطويل جدا"),
+            QString::fromUtf8("とても長い日本語のプロジェクトフォルダー名の確認用"),"Flutter App"};
+        for(const auto &name:names)QVERIFY(QDir().mkpath(base+"/"+name));
+        {QFile pubspec(project+"/pubspec.yaml");QVERIFY(pubspec.open(QIODevice::WriteOnly));pubspec.write("name: phone_chooser_app\nversion: 1.0.0\ndependencies:\n  flutter:\n    sdk: flutter\n");}
+        QVERIFY(QFile::link(project,link));
+        const auto canonicalProject=QFileInfo(project).canonicalFilePath();
+        setSize(width,852,percent);workspace->setProperty("projectList",true);showTab("project");
+        QTRY_VERIFY(shown("projectPhoneOpenFolder"));
+        tap("projectPhoneOpenFolder");
+        QTRY_VERIFY(dialog->property("opened").toBool());
+        QCOMPARE(dialog->property("title").toString(),QString("Choose project"));
+        QVERIFY(dialog->property("sheet").toBool());
+        const QRectF box(dialog->property("x").toReal(),dialog->property("y").toReal(),dialog->property("width").toReal(),dialog->property("height").toReal());
+        QVERIFY2(qAbs(box.width()-window->width())<1 && box.left()>=-0.5 && box.bottom()<=window->height()+0.5,qPrintable(QString("sheet %1,%2 %3x%4").arg(box.x()).arg(box.y()).arg(box.width()).arg(box.height())));
+        // A typed path (the same field takes a pasted one) shows that folder.
+        auto *location=shown("projectFolderDialogLocation");QVERIFY(location);
+        tap(location);QTRY_VERIFY(location->hasActiveFocus());
+        QTest::keyClick(window,Qt::Key_A,Qt::ControlModifier);
+        {QInputMethodEvent event;event.setCommitString(base);QCoreApplication::sendEvent(QGuiApplication::focusObject(),&event);}
+        QTest::keyClick(window,Qt::Key_Return);
+        const auto listed=[&]{return mapOf(dialog->property("listing")).value("path").toString();};
+        QTRY_COMPARE(listed(),base);
+        QCOMPARE(location->property("text").toString(),base);
+        QCOMPARE(location->property("font").value<QFont>().pixelSize(),px(16));
+        // Touch targets inside the screen; the icon buttons keep their names.
+        for(const auto &name:{"projectFolderDialogParent","projectFolderDialogHome"}){auto *b=shown(name);QVERIFY2(b,name);touchTarget(b,b->property("displayText").toString().isEmpty());QVERIFY(insideWidth(b));QVERIFY(!b->property("text").toString().isEmpty());}
+        touchTarget(shown("projectFolderDialogHidden"));QVERIFY(insideWidth(shown("projectFolderDialogHidden")));
+        for(const auto &name:{"projectFolderDialog-button-0","projectFolderDialog-button-1"}){auto *b=shown(name);QVERIFY2(b,name);touchTarget(b);QVERIFY(insideWidth(b));QVERIFY(sceneRect(b).bottom()<=window->height()+0.5);}
+        auto *list=shown("projectFolderDialogFolders");QVERIFY(list);QVERIFY(list->height()>=2*px(48)-0.5);
+        const auto folders=mapOf(dialog->property("listing")).value("folders").toList();
+        QCOMPARE(folders.size(),names.size()+1);
+        const auto rowOf=[&](const QString &name)->QQuickItem *{
+            int index=-1;for(int i=0;i<folders.size();++i)if(folders[i].toMap().value("name").toString()==name)index=i;
+            if(index<0)return nullptr;
+            QMetaObject::invokeMethod(list,"positionViewAtIndex",Q_ARG(int,index),Q_ARG(int,4));QTest::qWait(40);
+            return shown(QString("projectFolderDialogFolder-%1").arg(index));
+        };
+        for(const auto &entry:folders) {
+            const auto name=entry.toMap().value("name").toString();
+            auto *row=rowOf(name);QVERIFY2(row,qPrintable(name));touchTarget(row);QVERIFY(insideWidth(row));
+            auto *label=find(row,"projectFolderName",true);QVERIFY(label);
+            QCOMPARE(label->property("text").toString(),name);
+            QVERIFY2(!label->property("truncated").toBool() && label->property("contentWidth").toReal()<=label->width()+1 && insideWidth(label),qPrintable(name));
+        }
+        list->setProperty("contentY",0);
+        capture("project-chooser");
+        // Tap a folder, then Cancel: the open project stays.
+        tap(rowOf("Flutter App"));QTRY_COMPARE(listed(),project);
+        tap("projectFolderDialog-button-1");QTRY_VERIFY(!dialog->property("visible").toBool());
+        QTest::qWait(100);QCOMPARE(projectPath(),original);
+        // Again from the list; the link shows its target and Open opens the project it leads to.
+        tap("projectPhoneOpenFolder");QTRY_VERIFY(dialog->property("opened").toBool());
+        QVERIFY(QMetaObject::invokeMethod(dialog,"go",Q_ARG(QVariant,base)));QTRY_COMPARE(listed(),base);
+        auto *linkRow=rowOf(QFileInfo(link).fileName());QVERIFY(linkRow);
+        QCOMPARE(find(linkRow,"projectFolderLink",true)->property("text").toString(),QString::fromUtf8("→ ")+canonicalProject);
+        tap(linkRow);QTRY_COMPARE(listed(),link);
+        QTRY_VERIFY(shown("projectFolderDialog-button-0") && shown("projectFolderDialog-button-0")->isEnabled());
+        tap("projectFolderDialog-button-0");QTRY_VERIFY(!dialog->property("visible").toBool());
+        QTRY_COMPARE_WITH_TIMEOUT(QFileInfo(projectPath()).canonicalFilePath(),canonicalProject,10000);
+        noErrors();
+    }
+
     void settings_sheet_and_agent_clients_data() {
         QTest::addColumn<int>("width");QTest::addColumn<int>("percent");
         QTest::newRow("393-100")<<393<<100;QTest::newRow("360-175")<<360<<175;QTest::newRow("412-200")<<412<<200;

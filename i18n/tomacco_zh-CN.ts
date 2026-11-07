@@ -7782,4 +7782,19 @@ Licensed under the GNU General Public License, version 2 or later.</source>
         <translation>返回</translation>
     </message>
 </context>
+<context>
+    <name>ProjectFolderDialog</name>
+    <message>
+        <source>Home folder</source>
+        <translation>主文件夹</translation>
+    </message>
+    <message>
+        <source>No folders here</source>
+        <translation>这里没有文件夹</translation>
+    </message>
+    <message>
+        <source>Parent folder</source>
+        <translation>上级文件夹</translation>
+    </message>
+</context>
 </TS>

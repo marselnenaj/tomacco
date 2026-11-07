@@ -1,0 +1,133 @@
+{
+ "$comment": "Project folder chooser at enlarged UI scale: root cause, fix, tests and evidence. Screenshots, probe JSON and test logs stay in .scratch/ of this worktree (git-ignored); paths below are absolute so root can open them. The agent's tools could not display PNGs: they were checked by size and colour count (.scratch/evidence/png-stats.json), not viewed.",
+ "date": "2026-11-07",
+ "model": "claude-opus-5-5",
+ "user_report": "wieso ist eigtl das explorer fenster wenn ich projekt auswählen will so broken",
+ "worktree": "/home/maslos/Work/tomacco-project-picker-fix-20261107",
+ "branch": "fix/project-picker-scaling",
+ "base": "39935232845346f3c72d03c91471ba8b07cb806a",
+ "commits": {
+  "fix": "14740e643c3c132691f4400d7a5b6079a000a5f3",
+  "record": "the commit that adds this file (final HEAD)"
+ },
+ "root_cause": [
+  "Both project entry points used QtQuick.Dialogs FolderDialog (qml/NativeWorkspace.qml projectFolder, qml/Workspace.qml projectFolder). The installed wrapper forces QT_QPA_PLATFORMTHEME=generic and QT_QUICK_CONTROLS_STYLE=Basic, so no native dialog exists and Qt's Quick fallback (quickimpl FolderDialog.qml) is used.",
+  "That fallback is a separate window with a hardcoded 600x400 background, 16 px icons and one-line delegate labels without width-aware wrapping or elision.",
+  "Backend::applyInterfaceFont applies the interface scale to QGuiApplication's font (13 px x 175 % = 23 px, 26 px at 200 %), which the stock dialog inherits. Text grows, the window does not: long folder names and the breadcrumb/path are cut off; on a phone-width window the 600 px chooser is wider than the screen."
+ ],
+ "pre_fix_reproduction": {
+  "how": "Temporary slot in tests/desktop_ui_test.cpp (not committed): the real app (Main.qml, Backend, Control, isolated), Ctrl+O exactly as a person presses it, synthetic Unicode/space/symlink folders, offscreen software Qt, Basic/generic. Measures the chooser window and every visible text.",
+  "head": "3993523 (base)",
+  "results": [
+   {"main_window": "1750x1331", "ui_scale": 100, "app_font_px": 13, "chooser_window": "600x400", "overflowing_texts": 0},
+   {"main_window": "1750x1331", "ui_scale": 175, "app_font_px": 23, "chooser_window": "600x400", "overflowing_texts": 2, "cut": ["Ein sehr langer Projektordner für die Übersetzungsprüfung der Anwendung", "とても長い日本語のプロジェクトフォルダー名の確認用"]},
+   {"main_window": "1750x1331", "ui_scale": 200, "app_font_px": 26, "chooser_window": "600x400", "overflowing_texts": 2},
+   {"main_window": "900x800 (requested 900x700)", "ui_scale": 175, "app_font_px": 23, "chooser_window": "600x400", "overflowing_texts": 2},
+   {"main_window": "393x852", "ui_scale": 200, "app_font_px": 26, "chooser_window": "600x400 (wider than the 393 px window)", "overflowing_texts": 2}
+  ],
+  "note": "The overflow counter does not see the crowded breadcrumb; the screenshots show it.",
+  "json": "/home/maslos/Work/tomacco-project-picker-fix-20261107/.scratch/evidence/before/prefix-probe.json",
+  "screenshots": "/home/maslos/Work/tomacco-project-picker-fix-20261107/.scratch/evidence/before/prefix-{1750x1331,900x700,393x852}-{100,175,200}-{chooser,main}.png (chooser = the 600x400 dialog window, main = the app window behind it)",
+  "log": "/home/maslos/Work/tomacco-project-picker-fix-20261107/.scratch/test-logs/prefix-probe.log"
+ },
+ "implementation": {
+  "choice": "One shared app component, qml/ProjectFolderDialog.qml (a StudioDialog, so the app's theme, accent, focus ring and button box), with one instance in NativeWorkspace exposed as projectChooser; Main passes it to Workspace, whose chooseProjectFolder() opens it with Workspace's existing title. Folders are read by two small Backend invokables. No Qt private/quickimpl internals, system Qt files, platform theme, GTK/portal settings, global font or user zoom were touched; the 175 % font stays.",
+  "why_not_stock": "FolderDialog's public API has no size, font or delegate control for the Quick fallback; a native dialog would need a different platform theme, which the wrapper deliberately forces to generic. A QtWidgets QFileDialog would add a widget application and still not follow the app's scale, theme or phone layout.",
+  "backend": {
+   "resolveFolderPath(typed, base)": "absolute, cleaned (not symlink-resolved) path from typed/pasted text: ~ and ~/..., file: URLs (percent-decoded), paths relative to the shown folder, pasted line breaks dropped, empty = current folder",
+   "folderListing(typed, base, hidden)": "{path, parent, home, error (missing|not-folder|unreadable), folders[{name, path, link, target}]}; folders only, QCollator numeric + case-insensitive order, dot-folders only with hidden, broken links and files left out, a symlink keeps its own path and names its canonical target",
+   "choosing": "Open/Ctrl+Enter go through the existing Backend::projectFolder (canonical path, .app bundles refused), the same rule as a dropped folder; recent projects therefore stay canonical"
+  },
+  "behaviour": [
+   "Desktop: centred, min(window - 2 x 24 px scaled, 760 px scaled) x min(window - 2 x 24 px scaled, 640 px scaled); all lengths and fonts follow Theme (13 px body x scale).",
+   "Phone (NativeWorkspace.phone, width < 600 logical px): full-width sheet inside SafeArea and above the on-screen keyboard (NativeWorkspace insets), mobile type, 48 px x scale targets; parent/home become icon buttons (accessible names, tooltips) when the dialog is narrower than 440 px x scale.",
+   "Location: a wrapping, editable mono field that shows the whole path (up to three lines, fewer on short dialogs, scrolls beyond); left-to-right also in RTL; Enter shows the typed folder, Ctrl+Enter/Open chooses it; Open is disabled unless the location is a project-capable folder.",
+   "List: every name wraps (WrapAtWordBoundaryOrAnywhere), symlink rows show '→ target', the open project's folder is marked and current on open, the folder just left is current after going up; 'No folders here' or '<path> cannot be read.' when empty/unreadable.",
+   "Short windows: the body scrolls above the fixed Open/Cancel footer and the list always keeps two rows.",
+   "Keyboard: focus starts in the list; Ctrl+L location; Tab order location, parent, home, Hidden, list, Open, Cancel; Up/Down, Enter or Right opens a folder, Backspace/Left/Alt+Up goes up (mirrored in RTL); Esc or Cancel closes without changing the project; reopening always starts beside the open project."
+  ]
+ },
+ "entry_points": {
+  "NativeWorkspace": ["Ctrl+O", "title bar Open project", "start screen project step/secondary", "phone project button without a project", "command palette Open project"],
+  "Workspace": ["project page Choose folder", "phone project list Open folder (projectPhoneOpenFolder)", "Files empty state Choose folder (chooseProjectFolder)"],
+  "titles": "Open project (NativeWorkspace) and Choose project (Workspace), both existing translated texts"
+ },
+ "other_dialogs": {
+  "changed": "none; the fix changes no app-wide behaviour (global font, platform theme and style untouched)",
+  "measured_at_175": {
+   "Choose a web build (Main FolderDialog)": "600x400",
+   "Import settings (FileDialog)": "600x497",
+   "Export settings (FileDialog, save)": "600x542",
+   "Install app on device (FileDialog)": "600x497",
+   "Import device profiles (FileDialog)": "600x497"
+  },
+  "finding": "These remaining stock Qt Quick fallback choosers (also IosResearch bundle/app FolderDialogs, Debug/Demo/Environment/Profile/Test FileDialogs, Workspace install/screenshot FileDialogs) have the same pre-existing fixed-width + scaled-font problem; it is not new or hidden, and not fixed here (they need name filters/save names, a file variant of this component).",
+  "evidence": "/home/maslos/Work/tomacco-project-picker-fix-20261107/.scratch/evidence/other/other-dialogs.json and other-*-175.png"
+ },
+ "touched_paths": [
+  "qml/ProjectFolderDialog.qml (new)", "qml/NativeWorkspace.qml", "qml/Workspace.qml", "qml/Main.qml", "CMakeLists.txt (resource list)",
+  "src/backend.h", "src/backend.cpp",
+  "tests/desktop_ui_test.cpp", "tests/phone_routes_test.cpp", "tests/backend_test.cpp",
+  "i18n/tomacco_*.ts (50 catalogs, +1 context with 3 messages each)", "i18n/COVERAGE.md",
+  "docs/desktop.md", "docs/mobile-native.md", "docs/project-picker-fix-progress.json"
+ ],
+ "languages": {
+  "before": {"texts": 1878, "digest": "d64e05550744", "sources_listing_sha256": "039a3b494a44bc725a0c2ed567507a1924904823e4354b24c1c7b2878f34888b", "catalogs_concat_sha256": "8d195cd65ea21b95ffac9c451a78550901bd5bb27e9dc43a2c7f9cff4a5620a9", "complete": "50/50"},
+  "after": {"texts": 1881, "digest": "59e96e41cc94", "sources_listing_sha256": "d3ac3c7e8e6ce7052a78dfe501677190982f083ce3ffe0851d4717d232441220", "catalogs_concat_sha256": "1813064afcc861792f6d6d3d6bf37c4d118c9f928ce2c77087a5aadd0fed1621", "complete": "50/50"},
+  "hash_definitions": "sources_listing_sha256 = sha256 of `python3 tools/i18n_catalog.py sources` output (matches the previous record's 039a3b… for the base); catalogs_concat_sha256 = sha256 of the sorted i18n/*.ts files concatenated (computed here for base and after; it is not the definition behind the earlier records' catalogs_sha256)",
+  "new_texts": {"context": "ProjectFolderDialog", "sources": ["Home folder", "No folders here", "Parent folder"], "indexes_after": [1878, 1879, 1880], "plurals": 0, "placeholders": 0},
+  "reused_with_identical_meaning": [
+   "Workspace: Type the folder of a Swift, Kotlin or Flutter project (location placeholder/accessible name)",
+   "FileWorkspace: Hidden (show dot-folders; zh-CN/zh-TW read 'hidden files', the same toggle)",
+   "Backend: %1 cannot be read. (missing, non-folder or unreadable location)",
+   "NativeWorkspace: Open project; Workspace: Choose project (titles, unchanged contexts)",
+   "StudioDialog: Open, Cancel (standard buttons, unchanged)"
+  ],
+  "removed_texts": 0,
+  "workflow": "tools/i18n_catalog.py sync (3 unfinished per catalog) -> apply CODE FILE for all 50 (150 applied, 0 rejected, 0 unfinished; generic es and es-MX included) -> report --write i18n/COVERAGE.md (only the counts/digest changed: no new suspicious or problem entries). The apply script is .scratch/picker_translations.py, its inputs .scratch/picker-i18n/*.tsv. tomacco_en.ts (plurals only) unchanged.",
+  "phoneuse_integration_overlap": "No shared keys: PhoneUse adds 8 operation titles in other contexts; this branch adds only the new ProjectFolderDialog context (appended at the end of each catalog). Both branches change all 50 .ts files and i18n/COVERAGE.md, so expect textual conflicts there: resolve by taking one side, running `tools/i18n_catalog.py sync`, re-applying the other side's translations (here: .scratch/picker-i18n/*.tsv after regenerating the indexes with `sources --context ProjectFolderDialog`), then `report --write i18n/COVERAGE.md`. Expected combined count 1878 + 3 + 8 = 1889; compute the digest after the merge."
+ },
+ "tests": {
+  "environment": "Every Qt test via .scratch/run_qt.sh: fresh private HOME/XDG_*/TOMACCO_HOME under /tmp, TMPDIR=/tmp, ANDROID_HOME pointing nowhere, PATH = traps + /usr/bin with adb/fastboot/ssh/scp/emulator/avdmanager/sdkmanager/xtool/idevice*/iproxy/scrcpy/go-ios/ios/usbmuxd/tailscale and agent CLIs trapped (exit 97, logged), QT_QPA_PLATFORM=offscreen, QT_QUICK_BACKEND=software, Basic, generic, TOMACCO_UPDATES=off; QTWEBENGINE_DISABLE_SANDBOX unset, no --no-sandbox. Synthetic folders only, no user project, no device, no network.",
+  "build": "build/ (Ninja, Debug, BUILD_TESTING=ON) configured with CARGO_EXECUTABLE=/usr/bin/true: the 120 s sandbox command limit cannot fit the release tomaccoctl build (codegen-units=1, thin LTO; 145 s on an idle host), so build/cargo/release/tomaccoctl is a reflink copy of /home/maslos/Work/tomacco-finish-integration/build/tomaccoctl (sha256 69e3837f15728057534a6bc4b32d16af4446399fe137a684f097573fc1d4d97c), built 2026-11-06 16:21 from the same Rust inputs (last change to native/, Cargo.*, build.rs or the CLI's assets: 548cd39 at 16:18; none since, none on this branch). Not the installed CLI. rust-core was not run here.",
+  "new": {
+   "desktop-ui project_chooser_fits_and_shows_whole_names_at_every_interface_size": "15 rows: 100/125/150/175/200 % x 1750x1331 (Ctrl+O), 1380x970 (Workspace chooseProjectFolder) and 900x640 narrow (a phone sheet at 175/200 %). Opens the real chooser, checks: no separate chooser window, dialog inside the window and grown with the scale, fonts = 13 px (desktop) or 16 px (sheet) x scale, location = whole path and wrapped, parent/home/Hidden/Open/Cancel inside the dialog, at full width, named, not overlapping, touch-sized on a sheet, list reachable and at least two rows (body scrolled to its end), every row: whole name (not truncated, contentWidth <= width), inside the list, row height, symlink target text; Cancel leaves the project.",
+   "desktop-ui project_chooser_navigates_chooses_and_cancels": "175 % 1750x1331 and 200 % 1280x720: Ctrl+O focus in list, typed Unicode/space path, files and dot-folders hidden, app9 before app10, Hidden toggle by click, Tab into the list, Down/Return/Backspace (folder left is current), Alt+Up, Home, Parent, click a row, Cancel (project unchanged), reopen beside the open project, Esc, missing path message whole and Open disabled (Ctrl+Enter ignored), pasted percent-encoded file:// URL + Ctrl+Enter opens it, symlink row names its target, location keeps the link path, Open button opens the target project (canonical, first in recent projects).",
+   "desktop-ui project_chooser_reads_in_german_arabic_and_japanese": "de, ar (RTL), ja at 175 %: title, Parent folder/Home folder translated (not English), Hidden/placeholder from their source contexts, full layout check, RTL: buttons start at the right, path still left-aligned.",
+   "phone-routes project_chooser_is_a_phone_sheet_with_touch_targets": "360/100, 360/150, 393/125, 393/175, 412/150, 412/200: tap the phone project list's Open folder, full-width sheet, typed path, 16 px x scale, 48 px x scale targets (icon buttons also wide), rows and names whole and inside the screen, tap row + Cancel (project unchanged), symlink row, tap Open opens the target project.",
+   "backend theProjectChooserListsFoldersAndResolvesTypedPaths": "typed/pasted/relative/~ paths, URL decoding, line breaks, link path kept, order, hidden, link target, broken link and file excluded, missing/not-folder/unreadable, root parent, projectFolder of a link"
+  },
+  "red_before_fix": "With the base qml/NativeWorkspace.qml, Workspace.qml and Main.qml restored (same test binary): desktop 175-1750x1331, 200-900x640-narrow, navigates 175 and phone 393-175 all FAIL ('dialog' returned FALSE: no app chooser exists; Ctrl+O opens Qt's 600x400 fallback window measured above). Logs: .scratch/test-logs/red-desktop.log, red-phone.log.",
+  "results": [
+   {"command": ".scratch/run_qt.sh final-desktop test-desktop-ui project_chooser_fits_and_shows_whole_names_at_every_interface_size project_chooser_navigates_chooses_and_cancels project_chooser_reads_in_german_arabic_and_japanese", "result": "22 passed, 0 failed"},
+   {"command": ".scratch/run_qt.sh final-phone test-phone-routes project_chooser_is_a_phone_sheet_with_touch_targets", "result": "8 passed, 0 failed"},
+   {"command": ".scratch/run_qt_chunks.sh test-desktop-ui 2 (whole suite, two contiguous halves, 86 functions)", "result": "69 + 64 passed, 0 failed"},
+   {"command": ".scratch/run_qt_chunks.sh test-phone-routes 2 (whole suite)", "result": "20 + 15 passed, 0 failed"},
+   {"command": ".scratch/run_qt_chunks.sh test-desktop-ui 8 (first attempt)", "result": "4 failures, none from this change: files_remain_usable_when_interface_size_changes_in_place and update_banner_offers_a_new_version_once_and_later_puts_it_away pass alone (load under 8 parallel processes); pending_guest_detach_is_reported_expires_and_does_not_keep_polling and a_job_that_ends_in_the_background_is_notified fail identically alone on the base QML too (they depend on earlier tests); all pass in the ordered halves above"},
+   {"command": ".scratch/run_qt.sh comp-* for test-backend, test-studio-button, test-mobile-nav, test-mobile-row, test-agent-client-picker, test-handoff-banner, test-environment-panel, test-demo-workspace, test-nativeview", "result": "18, 9, 10, 8, 6, 14, 16, 21, 8 passed; 0 failed"},
+   {"command": "build/tomacco --smoke-test <synthetic project> (isolated, offscreen, traps)", "result": "exit 0, all preview checks pass, no QML errors"},
+   {"command": "TMPDIR=/tmp python3 .scratch/run_py_tests.py test_i18n test_docs_consistency test_mobile_parity test_docs_links test_docs_reference test_build_site_docs test_release_files test_install test_build_source_release (after the docs change)", "result": "9 modules, 151 tests, 0 failed, 3 skipped (test_i18n: no usable node binary; test_install x2: needs a debug build of tomaccoctl)"},
+   {"command": "same runner, earlier, with test_product included", "result": "10 modules, 262 tests, 0 failed, 3 skipped"},
+   {"command": "PYTHONPATH=.:tools:tests/python TMPDIR=/tmp python3 -m unittest test_i18n", "result": "18 tests OK"}
+  ],
+  "logs": "/home/maslos/Work/tomacco-project-picker-fix-20261107/.scratch/test-logs/"
+ },
+ "screenshots_after": {
+  "directory": "/home/maslos/Work/tomacco-project-picker-fix-20261107/.scratch/evidence/after/",
+  "desktop": "project-chooser-{100,125,150,175,200}-1750x1331.png (Ctrl+O), -1380x970-workspace.png (Workspace entry, title Choose project), -900x640.png (narrow; a phone sheet at 175/200 %): the whole app window with the open chooser on the synthetic folder 'Projekte mit Leerzeichen · ünïcödé · フォルダー'",
+  "selected": "project-chooser-selected-175.png (1750x1331) and -200.png (1280x720): inside 'Flutter App' just before Cancel",
+  "languages": "project-chooser-175-{de,ar,ja}.png (1380x970, 175 %)",
+  "phone": "phone-project-chooser-{360-100,360-150,393-125,393-175,412-150,412-200}.png (width-scale, 852 px tall)",
+  "stats": "/home/maslos/Work/tomacco-project-picker-fix-20261107/.scratch/evidence/png-stats.json"
+ },
+ "limitations": [
+  "Offscreen software rendering in an isolated session, not the user's Hyprland compositor or their live window; the user's exact original symptom was not confirmed beyond the reproduced scaling defect.",
+  "The other stock file/folder dialogs (see other_dialogs) still use Qt's fixed-width fallback at large interface sizes.",
+  "The chooser lists folders only and has no bookmarks/places sidebar or recent-folders list; the location field (typed or pasted path, ~/) covers other places. Very large folders are listed synchronously.",
+  "Hidden folders are hidden by default; Hidden shows them for the current chooser session only (not persisted).",
+  "No screen reader (Orca) run; accessible names and roles are checked by the tests.",
+  "tomaccoctl was not rebuilt (see tests.build); root's combined host and ARM64 checks remain to be run after integration.",
+  "No physical device, Pixel, ADB, SSH or network was used."
+ ],
+ "not_done_on_purpose": "No change to the global font, interface scale, platform theme, Qt style, system Qt files, Qt private QML, GTK/portal settings, installed binaries/wrappers or user preferences; no push, release or install."
+}

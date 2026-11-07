@@ -7762,4 +7762,19 @@ Licensed under the GNU General Public License, version 2 or later.</source>
         <translation>חזרה</translation>
     </message>
 </context>
+<context>
+    <name>ProjectFolderDialog</name>
+    <message>
+        <source>Home folder</source>
+        <translation>תיקיית הבית</translation>
+    </message>
+    <message>
+        <source>No folders here</source>
+        <translation>אין כאן תיקיות</translation>
+    </message>
+    <message>
+        <source>Parent folder</source>
+        <translation>תיקיית האב</translation>
+    </message>
+</context>
 </TS>

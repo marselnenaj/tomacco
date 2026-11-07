@@ -7786,4 +7786,19 @@ Licenseret under GNU General Public License, version 2 eller nyere.</translation
         <translation>Tilbage</translation>
     </message>
 </context>
+<context>
+    <name>ProjectFolderDialog</name>
+    <message>
+        <source>Home folder</source>
+        <translation>Hjemmemappe</translation>
+    </message>
+    <message>
+        <source>No folders here</source>
+        <translation>Ingen mapper her</translation>
+    </message>
+    <message>
+        <source>Parent folder</source>
+        <translation>Overordnet mappe</translation>
+    </message>
+</context>
 </TS>
