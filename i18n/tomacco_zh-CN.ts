@@ -638,7 +638,7 @@ The model determines the display and frame. Android comes from the chosen system
     </message>
     <message>
         <source>Pinned</source>
-        <translation type="unfinished"></translation>
+        <translation>已置顶</translation>
     </message>
 </context>
 <context>
@@ -1390,42 +1390,42 @@ The model determines the display and frame. Android comes from the chosen system
     </message>
     <message>
         <source>Copy path</source>
-        <translation type="unfinished"></translation>
+        <translation>复制路径</translation>
     </message>
     <message>
         <source>Files</source>
-        <translation type="unfinished"></translation>
+        <translation>文件</translation>
     </message>
     <message>
         <source>Loading files…</source>
-        <translation type="unfinished"></translation>
+        <translation>正在加载文件…</translation>
     </message>
     <message>
         <source>No matches for “%1”.</source>
-        <translation type="unfinished"></translation>
+        <translation>没有与“%1”匹配的结果。</translation>
     </message>
     <message>
         <source>Open</source>
         <comment>folder</comment>
-        <translation type="unfinished"></translation>
+        <translation>已打开</translation>
     </message>
     <message>
         <source>Path copied</source>
-        <translation type="unfinished"></translation>
+        <translation>路径已复制</translation>
     </message>
     <message>
         <source>Save</source>
-        <translation type="unfinished"></translation>
+        <translation>保存</translation>
     </message>
     <message numerus="yes">
         <source>Search results for “%1” · %n match(es)</source>
-        <translation type="unfinished">
-            <numerusform></numerusform>
+        <translation>
+            <numerusform>“%1”的搜索结果 · %n 个匹配项</numerusform>
         </translation>
     </message>
     <message>
         <source>Show all files</source>
-        <translation type="unfinished"></translation>
+        <translation>显示所有文件</translation>
     </message>
 </context>
 <context>
@@ -4070,59 +4070,59 @@ SSH 使用你现有的密钥和已知的主机身份。</translation>
     </message>
     <message>
         <source>Agent policy</source>
-        <translation type="unfinished"></translation>
+        <translation>智能体策略</translation>
     </message>
     <message>
         <source>Agents and system</source>
-        <translation type="unfinished"></translation>
+        <translation>智能体与系统</translation>
     </message>
     <message>
         <source>Android SDK, JDK and executables, updates and parallel jobs</source>
-        <translation type="unfinished"></translation>
+        <translation>Android SDK、JDK 和可执行文件、更新及并行任务</translation>
     </message>
     <message>
         <source>Bug report bundle</source>
-        <translation type="unfinished"></translation>
+        <translation>错误报告包</translation>
     </message>
     <message>
         <source>Clean up old jobs and reports</source>
-        <translation type="unfinished"></translation>
+        <translation>清理旧任务和报告</translation>
     </message>
     <message>
         <source>Diagnostics</source>
-        <translation type="unfinished"></translation>
+        <translation>诊断</translation>
     </message>
     <message>
         <source>Lists old jobs, logs and reports; removes them only after you confirm</source>
-        <translation type="unfinished"></translation>
+        <translation>列出旧任务、日志和报告；仅在你确认后才会删除</translation>
     </message>
     <message>
         <source>Mac hosts</source>
-        <translation type="unfinished"></translation>
+        <translation>Mac 主机</translation>
     </message>
     <message>
         <source>SDK &amp; tool paths</source>
-        <translation type="unfinished"></translation>
+        <translation>SDK 和工具路径</translation>
     </message>
     <message>
         <source>SSH Macs for iOS builds, each set up explicitly</source>
-        <translation type="unfinished"></translation>
+        <translation>用于 iOS 构建的 SSH Mac，每台均需单独设置</translation>
     </message>
     <message>
         <source>Setup state and the exact setting for each client</source>
-        <translation type="unfinished"></translation>
+        <translation>设置状态以及每个客户端的确切设置</translation>
     </message>
     <message>
         <source>Storage</source>
-        <translation type="unfinished"></translation>
+        <translation>存储空间</translation>
     </message>
     <message>
         <source>What an agent may run and where it asks first</source>
-        <translation type="unfinished"></translation>
+        <translation>智能体可以运行什么，以及何时先询问</translation>
     </message>
     <message>
         <source>Writes one .tar.gz on this computer; nothing is sent</source>
-        <translation type="unfinished"></translation>
+        <translation>在这台电脑上写入一个 .tar.gz；不会发送任何内容</translation>
     </message>
 </context>
 <context>
@@ -6139,217 +6139,217 @@ SSH 使用你现有的密钥和已知的主机身份。</translation>
     </message>
     <message>
         <source>All devices</source>
-        <translation type="unfinished"></translation>
+        <translation>所有设备</translation>
     </message>
     <message>
         <source>All tools</source>
-        <translation type="unfinished"></translation>
+        <translation>所有工具</translation>
     </message>
     <message>
         <source>Android emulator</source>
-        <translation type="unfinished"></translation>
+        <translation>Android 模拟器</translation>
     </message>
     <message>
         <source>Android phone</source>
-        <translation type="unfinished"></translation>
+        <translation>Android 手机</translation>
     </message>
     <message>
         <source>Application ID</source>
-        <translation type="unfinished"></translation>
+        <translation>应用 ID</translation>
     </message>
     <message>
         <source>Back</source>
-        <translation type="unfinished"></translation>
+        <translation>返回</translation>
     </message>
     <message>
         <source>Build host</source>
-        <translation type="unfinished"></translation>
+        <translation>构建主机</translation>
     </message>
     <message>
         <source>Build only</source>
-        <translation type="unfinished"></translation>
+        <translation>仅构建</translation>
     </message>
     <message>
         <source>Collapsed</source>
-        <translation type="unfinished"></translation>
+        <translation>已折叠</translation>
     </message>
     <message>
         <source>Connect the phone to install apps, read its log or take a screenshot.</source>
-        <translation type="unfinished"></translation>
+        <translation>连接手机后即可安装应用、查看其日志或截图。</translation>
     </message>
     <message>
         <source>Connected</source>
-        <translation type="unfinished"></translation>
+        <translation>已连接</translation>
     </message>
     <message>
         <source>Create an app from a template</source>
-        <translation type="unfinished"></translation>
+        <translation>从模板创建应用</translation>
     </message>
     <message>
         <source>Device</source>
-        <translation type="unfinished"></translation>
+        <translation>设备</translation>
     </message>
     <message>
         <source>Display</source>
-        <translation type="unfinished"></translation>
+        <translation>屏幕</translation>
     </message>
     <message>
         <source>Duplicate, rename or wipe this emulator</source>
-        <translation type="unfinished"></translation>
+        <translation>复制、重命名或擦除此模拟器</translation>
     </message>
     <message>
         <source>Expanded</source>
-        <translation type="unfinished"></translation>
+        <translation>已展开</translation>
     </message>
     <message>
         <source>External profile</source>
-        <translation type="unfinished"></translation>
+        <translation>外部配置文件</translation>
     </message>
     <message>
         <source>Give this device a nickname</source>
-        <translation type="unfinished"></translation>
+        <translation>为此设备设置昵称</translation>
     </message>
     <message>
         <source>Graphics: %1</source>
-        <translation type="unfinished"></translation>
+        <translation>图形：%1</translation>
     </message>
     <message>
         <source>Import Xcode project</source>
-        <translation type="unfinished"></translation>
+        <translation>导入 Xcode 项目</translation>
     </message>
     <message>
         <source>Kind</source>
-        <translation type="unfinished"></translation>
+        <translation>类型</translation>
     </message>
     <message>
         <source>Mac hosts</source>
-        <translation type="unfinished"></translation>
+        <translation>Mac 主机</translation>
     </message>
     <message>
         <source>Manage</source>
-        <translation type="unfinished"></translation>
+        <translation>管理</translation>
     </message>
     <message>
         <source>More</source>
         <comment>projects</comment>
-        <translation type="unfinished"></translation>
+        <translation>更多选项</translation>
     </message>
     <message>
         <source>More build options</source>
-        <translation type="unfinished"></translation>
+        <translation>更多构建选项</translation>
     </message>
     <message>
         <source>Nickname</source>
-        <translation type="unfinished"></translation>
+        <translation>昵称</translation>
     </message>
     <message>
         <source>No longer listed. Find devices again, or go back to the list.</source>
-        <translation type="unfinished"></translation>
+        <translation>已不在列表中。请重新查找设备，或返回列表。</translation>
     </message>
     <message>
         <source>No project matches “%1”.</source>
-        <translation type="unfinished"></translation>
+        <translation>没有与“%1”匹配的项目。</translation>
     </message>
     <message>
         <source>Not authorized: allow USB debugging on the phone</source>
-        <translation type="unfinished"></translation>
+        <translation>未授权：请在手机上允许 USB 调试</translation>
     </message>
     <message>
         <source>Off</source>
-        <translation type="unfinished"></translation>
+        <translation>已关机</translation>
     </message>
     <message>
         <source>Open</source>
         <comment>project</comment>
-        <translation type="unfinished"></translation>
+        <translation>已打开</translation>
     </message>
     <message>
         <source>Open by path</source>
-        <translation type="unfinished"></translation>
+        <translation>按路径打开</translation>
     </message>
     <message>
         <source>Open folder</source>
-        <translation type="unfinished"></translation>
+        <translation>打开文件夹</translation>
     </message>
     <message>
         <source>Performance</source>
-        <translation type="unfinished"></translation>
+        <translation>性能</translation>
     </message>
     <message>
         <source>Pin</source>
-        <translation type="unfinished"></translation>
+        <translation>置顶</translation>
     </message>
     <message>
         <source>Pin this device to the top</source>
-        <translation type="unfinished"></translation>
+        <translation>将此设备置顶</translation>
     </message>
     <message>
         <source>Projects</source>
-        <translation type="unfinished"></translation>
+        <translation>项目</translation>
     </message>
     <message>
         <source>Reads an .xcodeproj and writes the Tomacco configuration</source>
-        <translation type="unfinished"></translation>
+        <translation>读取 .xcodeproj 并写入 Tomacco 配置</translation>
     </message>
     <message>
         <source>Recent</source>
-        <translation type="unfinished"></translation>
+        <translation>最近</translation>
     </message>
     <message>
         <source>Recent jobs</source>
-        <translation type="unfinished"></translation>
+        <translation>最近的任务</translation>
     </message>
     <message>
         <source>Saved workspaces</source>
-        <translation type="unfinished"></translation>
+        <translation>已保存的工作区</translation>
     </message>
     <message>
         <source>Search projects and workspaces</source>
-        <translation type="unfinished"></translation>
+        <translation>搜索项目和工作区</translation>
     </message>
     <message>
         <source>Set graphics, memory and CPU</source>
-        <translation type="unfinished"></translation>
+        <translation>设置图形、内存和 CPU</translation>
     </message>
     <message>
         <source>Start</source>
-        <translation type="unfinished"></translation>
+        <translation>启动</translation>
     </message>
     <message>
         <source>Start the emulator to install apps, read its log or take a screenshot.</source>
-        <translation type="unfinished"></translation>
+        <translation>启动模拟器后即可安装应用、查看其日志或截图。</translation>
     </message>
     <message>
         <source>Starting…</source>
-        <translation type="unfinished"></translation>
+        <translation>正在启动…</translation>
     </message>
     <message>
         <source>State</source>
-        <translation type="unfinished"></translation>
+        <translation>状态</translation>
     </message>
     <message>
         <source>Switch project</source>
-        <translation type="unfinished"></translation>
+        <translation>切换项目</translation>
     </message>
     <message>
         <source>Target</source>
-        <translation type="unfinished"></translation>
+        <translation>目标</translation>
     </message>
     <message>
         <source>Type the folder of a Swift, Kotlin or Flutter project</source>
-        <translation type="unfinished"></translation>
+        <translation>输入 Swift、Kotlin 或 Flutter 项目的文件夹</translation>
     </message>
     <message>
         <source>Unpin</source>
-        <translation type="unfinished"></translation>
+        <translation>取消置顶</translation>
     </message>
     <message>
         <source>Unpin this device</source>
-        <translation type="unfinished"></translation>
+        <translation>取消置顶此设备</translation>
     </message>
     <message>
         <source>iOS builds need a Mac host you set up yourself. Tomacco never chooses or searches for one.</source>
-        <translation type="unfinished"></translation>
+        <translation>iOS 构建需要你自行设置的 Mac 主机。Tomacco 从不自行选择或搜索主机。</translation>
     </message>
 </context>
 <context>
@@ -7747,7 +7747,7 @@ Licensed under the GNU General Public License, version 2 or later.</source>
     <name>MobileTopBar</name>
     <message>
         <source>Back</source>
-        <translation type="unfinished"></translation>
+        <translation>返回</translation>
     </message>
 </context>
 </TS>

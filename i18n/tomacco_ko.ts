@@ -618,7 +618,7 @@ The model determines the display and frame. Android comes from the chosen system
     </message>
     <message>
         <source>Pinned</source>
-        <translation type="unfinished"></translation>
+        <translation>고정됨</translation>
     </message>
 </context>
 <context>
@@ -1370,42 +1370,42 @@ The model determines the display and frame. Android comes from the chosen system
     </message>
     <message>
         <source>Copy path</source>
-        <translation type="unfinished"></translation>
+        <translation>경로 복사</translation>
     </message>
     <message>
         <source>Files</source>
-        <translation type="unfinished"></translation>
+        <translation>파일</translation>
     </message>
     <message>
         <source>Loading files…</source>
-        <translation type="unfinished"></translation>
+        <translation>파일 불러오는 중…</translation>
     </message>
     <message>
         <source>No matches for “%1”.</source>
-        <translation type="unfinished"></translation>
+        <translation>“%1”과(와) 일치하는 항목이 없습니다.</translation>
     </message>
     <message>
         <source>Open</source>
         <comment>folder</comment>
-        <translation type="unfinished"></translation>
+        <translation>열림</translation>
     </message>
     <message>
         <source>Path copied</source>
-        <translation type="unfinished"></translation>
+        <translation>경로 복사됨</translation>
     </message>
     <message>
         <source>Save</source>
-        <translation type="unfinished"></translation>
+        <translation>저장</translation>
     </message>
     <message numerus="yes">
         <source>Search results for “%1” · %n match(es)</source>
-        <translation type="unfinished">
-            <numerusform></numerusform>
+        <translation>
+            <numerusform>“%1” 검색 결과 · %n개 일치</numerusform>
         </translation>
     </message>
     <message>
         <source>Show all files</source>
-        <translation type="unfinished"></translation>
+        <translation>모든 파일 보기</translation>
     </message>
 </context>
 <context>
@@ -4050,59 +4050,59 @@ SSH는 기존 키와 알려진 호스트 ID를 사용합니다.</translation>
     </message>
     <message>
         <source>Agent policy</source>
-        <translation type="unfinished"></translation>
+        <translation>에이전트 정책</translation>
     </message>
     <message>
         <source>Agents and system</source>
-        <translation type="unfinished"></translation>
+        <translation>에이전트 및 시스템</translation>
     </message>
     <message>
         <source>Android SDK, JDK and executables, updates and parallel jobs</source>
-        <translation type="unfinished"></translation>
+        <translation>Android SDK, JDK 및 실행 파일, 업데이트 및 병렬 작업</translation>
     </message>
     <message>
         <source>Bug report bundle</source>
-        <translation type="unfinished"></translation>
+        <translation>버그 보고서 번들</translation>
     </message>
     <message>
         <source>Clean up old jobs and reports</source>
-        <translation type="unfinished"></translation>
+        <translation>오래된 작업 및 보고서 정리</translation>
     </message>
     <message>
         <source>Diagnostics</source>
-        <translation type="unfinished"></translation>
+        <translation>진단</translation>
     </message>
     <message>
         <source>Lists old jobs, logs and reports; removes them only after you confirm</source>
-        <translation type="unfinished"></translation>
+        <translation>오래된 작업, 로그 및 보고서를 나열하며, 확인한 후에만 삭제합니다</translation>
     </message>
     <message>
         <source>Mac hosts</source>
-        <translation type="unfinished"></translation>
+        <translation>Mac 호스트</translation>
     </message>
     <message>
         <source>SDK &amp; tool paths</source>
-        <translation type="unfinished"></translation>
+        <translation>SDK 및 도구 경로</translation>
     </message>
     <message>
         <source>SSH Macs for iOS builds, each set up explicitly</source>
-        <translation type="unfinished"></translation>
+        <translation>iOS 빌드용 SSH Mac, 각각 명시적으로 설정</translation>
     </message>
     <message>
         <source>Setup state and the exact setting for each client</source>
-        <translation type="unfinished"></translation>
+        <translation>설정 상태 및 클라이언트별 정확한 설정</translation>
     </message>
     <message>
         <source>Storage</source>
-        <translation type="unfinished"></translation>
+        <translation>저장 공간</translation>
     </message>
     <message>
         <source>What an agent may run and where it asks first</source>
-        <translation type="unfinished"></translation>
+        <translation>에이전트가 실행할 수 있는 항목과 먼저 묻는 경우</translation>
     </message>
     <message>
         <source>Writes one .tar.gz on this computer; nothing is sent</source>
-        <translation type="unfinished"></translation>
+        <translation>이 컴퓨터에 .tar.gz 파일 하나를 씁니다. 아무것도 전송되지 않습니다</translation>
     </message>
 </context>
 <context>
@@ -6115,217 +6115,217 @@ SSH는 기존 키와 알려진 호스트 ID를 사용합니다.</translation>
     </message>
     <message>
         <source>All devices</source>
-        <translation type="unfinished"></translation>
+        <translation>모든 기기</translation>
     </message>
     <message>
         <source>All tools</source>
-        <translation type="unfinished"></translation>
+        <translation>모든 도구</translation>
     </message>
     <message>
         <source>Android emulator</source>
-        <translation type="unfinished"></translation>
+        <translation>Android 에뮬레이터</translation>
     </message>
     <message>
         <source>Android phone</source>
-        <translation type="unfinished"></translation>
+        <translation>Android 휴대전화</translation>
     </message>
     <message>
         <source>Application ID</source>
-        <translation type="unfinished"></translation>
+        <translation>애플리케이션 ID</translation>
     </message>
     <message>
         <source>Back</source>
-        <translation type="unfinished"></translation>
+        <translation>뒤로</translation>
     </message>
     <message>
         <source>Build host</source>
-        <translation type="unfinished"></translation>
+        <translation>빌드 호스트</translation>
     </message>
     <message>
         <source>Build only</source>
-        <translation type="unfinished"></translation>
+        <translation>빌드만</translation>
     </message>
     <message>
         <source>Collapsed</source>
-        <translation type="unfinished"></translation>
+        <translation>접힘</translation>
     </message>
     <message>
         <source>Connect the phone to install apps, read its log or take a screenshot.</source>
-        <translation type="unfinished"></translation>
+        <translation>휴대전화를 연결하면 앱을 설치하고, 로그를 읽거나, 스크린샷을 찍을 수 있습니다.</translation>
     </message>
     <message>
         <source>Connected</source>
-        <translation type="unfinished"></translation>
+        <translation>연결됨</translation>
     </message>
     <message>
         <source>Create an app from a template</source>
-        <translation type="unfinished"></translation>
+        <translation>템플릿으로 앱 만들기</translation>
     </message>
     <message>
         <source>Device</source>
-        <translation type="unfinished"></translation>
+        <translation>기기</translation>
     </message>
     <message>
         <source>Display</source>
-        <translation type="unfinished"></translation>
+        <translation>디스플레이</translation>
     </message>
     <message>
         <source>Duplicate, rename or wipe this emulator</source>
-        <translation type="unfinished"></translation>
+        <translation>이 에뮬레이터 복제, 이름 바꾸기 또는 초기화</translation>
     </message>
     <message>
         <source>Expanded</source>
-        <translation type="unfinished"></translation>
+        <translation>펼쳐짐</translation>
     </message>
     <message>
         <source>External profile</source>
-        <translation type="unfinished"></translation>
+        <translation>외부 프로필</translation>
     </message>
     <message>
         <source>Give this device a nickname</source>
-        <translation type="unfinished"></translation>
+        <translation>이 기기에 별명 지정</translation>
     </message>
     <message>
         <source>Graphics: %1</source>
-        <translation type="unfinished"></translation>
+        <translation>그래픽: %1</translation>
     </message>
     <message>
         <source>Import Xcode project</source>
-        <translation type="unfinished"></translation>
+        <translation>Xcode 프로젝트 가져오기</translation>
     </message>
     <message>
         <source>Kind</source>
-        <translation type="unfinished"></translation>
+        <translation>종류</translation>
     </message>
     <message>
         <source>Mac hosts</source>
-        <translation type="unfinished"></translation>
+        <translation>Mac 호스트</translation>
     </message>
     <message>
         <source>Manage</source>
-        <translation type="unfinished"></translation>
+        <translation>관리</translation>
     </message>
     <message>
         <source>More</source>
         <comment>projects</comment>
-        <translation type="unfinished"></translation>
+        <translation>기타 옵션</translation>
     </message>
     <message>
         <source>More build options</source>
-        <translation type="unfinished"></translation>
+        <translation>추가 빌드 옵션</translation>
     </message>
     <message>
         <source>Nickname</source>
-        <translation type="unfinished"></translation>
+        <translation>별명</translation>
     </message>
     <message>
         <source>No longer listed. Find devices again, or go back to the list.</source>
-        <translation type="unfinished"></translation>
+        <translation>더 이상 목록에 없습니다. 기기를 다시 찾거나 목록으로 돌아가세요.</translation>
     </message>
     <message>
         <source>No project matches “%1”.</source>
-        <translation type="unfinished"></translation>
+        <translation>“%1”과(와) 일치하는 프로젝트가 없습니다.</translation>
     </message>
     <message>
         <source>Not authorized: allow USB debugging on the phone</source>
-        <translation type="unfinished"></translation>
+        <translation>승인되지 않음: 휴대전화에서 USB 디버깅을 허용하세요</translation>
     </message>
     <message>
         <source>Off</source>
-        <translation type="unfinished"></translation>
+        <translation>끔</translation>
     </message>
     <message>
         <source>Open</source>
         <comment>project</comment>
-        <translation type="unfinished"></translation>
+        <translation>열려 있음</translation>
     </message>
     <message>
         <source>Open by path</source>
-        <translation type="unfinished"></translation>
+        <translation>경로로 열기</translation>
     </message>
     <message>
         <source>Open folder</source>
-        <translation type="unfinished"></translation>
+        <translation>폴더 열기</translation>
     </message>
     <message>
         <source>Performance</source>
-        <translation type="unfinished"></translation>
+        <translation>성능</translation>
     </message>
     <message>
         <source>Pin</source>
-        <translation type="unfinished"></translation>
+        <translation>고정</translation>
     </message>
     <message>
         <source>Pin this device to the top</source>
-        <translation type="unfinished"></translation>
+        <translation>이 기기를 맨 위에 고정</translation>
     </message>
     <message>
         <source>Projects</source>
-        <translation type="unfinished"></translation>
+        <translation>프로젝트</translation>
     </message>
     <message>
         <source>Reads an .xcodeproj and writes the Tomacco configuration</source>
-        <translation type="unfinished"></translation>
+        <translation>.xcodeproj를 읽고 Tomacco 구성을 씁니다</translation>
     </message>
     <message>
         <source>Recent</source>
-        <translation type="unfinished"></translation>
+        <translation>최근</translation>
     </message>
     <message>
         <source>Recent jobs</source>
-        <translation type="unfinished"></translation>
+        <translation>최근 작업</translation>
     </message>
     <message>
         <source>Saved workspaces</source>
-        <translation type="unfinished"></translation>
+        <translation>저장된 작업 공간</translation>
     </message>
     <message>
         <source>Search projects and workspaces</source>
-        <translation type="unfinished"></translation>
+        <translation>프로젝트 및 작업 공간 검색</translation>
     </message>
     <message>
         <source>Set graphics, memory and CPU</source>
-        <translation type="unfinished"></translation>
+        <translation>그래픽, 메모리, CPU 설정</translation>
     </message>
     <message>
         <source>Start</source>
-        <translation type="unfinished"></translation>
+        <translation>시작</translation>
     </message>
     <message>
         <source>Start the emulator to install apps, read its log or take a screenshot.</source>
-        <translation type="unfinished"></translation>
+        <translation>에뮬레이터를 시작하면 앱을 설치하고, 로그를 읽거나, 스크린샷을 찍을 수 있습니다.</translation>
     </message>
     <message>
         <source>Starting…</source>
-        <translation type="unfinished"></translation>
+        <translation>시작 중…</translation>
     </message>
     <message>
         <source>State</source>
-        <translation type="unfinished"></translation>
+        <translation>상태</translation>
     </message>
     <message>
         <source>Switch project</source>
-        <translation type="unfinished"></translation>
+        <translation>프로젝트 전환</translation>
     </message>
     <message>
         <source>Target</source>
-        <translation type="unfinished"></translation>
+        <translation>대상</translation>
     </message>
     <message>
         <source>Type the folder of a Swift, Kotlin or Flutter project</source>
-        <translation type="unfinished"></translation>
+        <translation>Swift, Kotlin 또는 Flutter 프로젝트의 폴더를 입력하세요</translation>
     </message>
     <message>
         <source>Unpin</source>
-        <translation type="unfinished"></translation>
+        <translation>고정 해제</translation>
     </message>
     <message>
         <source>Unpin this device</source>
-        <translation type="unfinished"></translation>
+        <translation>이 기기 고정 해제</translation>
     </message>
     <message>
         <source>iOS builds need a Mac host you set up yourself. Tomacco never chooses or searches for one.</source>
-        <translation type="unfinished"></translation>
+        <translation>iOS 빌드에는 직접 설정한 Mac 호스트가 필요합니다. Tomacco는 호스트를 임의로 선택하거나 검색하지 않습니다.</translation>
     </message>
 </context>
 <context>
@@ -7715,7 +7715,7 @@ GNU General Public License 버전 2 또는 그 이후 버전에 따라 라이선
     <name>MobileTopBar</name>
     <message>
         <source>Back</source>
-        <translation type="unfinished"></translation>
+        <translation>뒤로</translation>
     </message>
 </context>
 </TS>

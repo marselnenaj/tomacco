@@ -630,7 +630,7 @@ Modellen bestemmer skærm og ramme. Android kommer fra det valgte systembillede;
     </message>
     <message>
         <source>Pinned</source>
-        <translation type="unfinished"></translation>
+        <translation>Fastgjort</translation>
     </message>
 </context>
 <context>
@@ -1382,43 +1382,43 @@ Modellen bestemmer skærm og ramme. Android kommer fra det valgte systembillede;
     </message>
     <message>
         <source>Copy path</source>
-        <translation type="unfinished"></translation>
+        <translation>Kopiér sti</translation>
     </message>
     <message>
         <source>Files</source>
-        <translation type="unfinished"></translation>
+        <translation>Filer</translation>
     </message>
     <message>
         <source>Loading files…</source>
-        <translation type="unfinished"></translation>
+        <translation>Indlæser filer…</translation>
     </message>
     <message>
         <source>No matches for “%1”.</source>
-        <translation type="unfinished"></translation>
+        <translation>Ingen resultater for „%1“.</translation>
     </message>
     <message>
         <source>Open</source>
         <comment>folder</comment>
-        <translation type="unfinished"></translation>
+        <translation>Åben</translation>
     </message>
     <message>
         <source>Path copied</source>
-        <translation type="unfinished"></translation>
+        <translation>Sti kopieret</translation>
     </message>
     <message>
         <source>Save</source>
-        <translation type="unfinished"></translation>
+        <translation>Gem</translation>
     </message>
     <message numerus="yes">
         <source>Search results for “%1” · %n match(es)</source>
-        <translation type="unfinished">
-            <numerusform></numerusform>
-            <numerusform></numerusform>
+        <translation>
+            <numerusform>Søgeresultater for „%1“ · %n fund</numerusform>
+            <numerusform>Søgeresultater for „%1“ · %n fund</numerusform>
         </translation>
     </message>
     <message>
         <source>Show all files</source>
-        <translation type="unfinished"></translation>
+        <translation>Vis alle filer</translation>
     </message>
 </context>
 <context>
@@ -4072,59 +4072,59 @@ SSH bruger dine eksisterende nøgler og den kendte værtsidentitet.</translation
     </message>
     <message>
         <source>Agent policy</source>
-        <translation type="unfinished"></translation>
+        <translation>Agentpolitik</translation>
     </message>
     <message>
         <source>Agents and system</source>
-        <translation type="unfinished"></translation>
+        <translation>Agenter og system</translation>
     </message>
     <message>
         <source>Android SDK, JDK and executables, updates and parallel jobs</source>
-        <translation type="unfinished"></translation>
+        <translation>Android SDK, JDK og programmer, opdateringer og parallelle job</translation>
     </message>
     <message>
         <source>Bug report bundle</source>
-        <translation type="unfinished"></translation>
+        <translation>Fejlrapportpakke</translation>
     </message>
     <message>
         <source>Clean up old jobs and reports</source>
-        <translation type="unfinished"></translation>
+        <translation>Ryd op i gamle job og rapporter</translation>
     </message>
     <message>
         <source>Diagnostics</source>
-        <translation type="unfinished"></translation>
+        <translation>Diagnosticering</translation>
     </message>
     <message>
         <source>Lists old jobs, logs and reports; removes them only after you confirm</source>
-        <translation type="unfinished"></translation>
+        <translation>Viser gamle job, logfiler og rapporter; fjerner dem først, når du bekræfter</translation>
     </message>
     <message>
         <source>Mac hosts</source>
-        <translation type="unfinished"></translation>
+        <translation>Mac-værter</translation>
     </message>
     <message>
         <source>SDK &amp; tool paths</source>
-        <translation type="unfinished"></translation>
+        <translation>SDK- og værktøjsstier</translation>
     </message>
     <message>
         <source>SSH Macs for iOS builds, each set up explicitly</source>
-        <translation type="unfinished"></translation>
+        <translation>SSH-Macs til iOS-builds, hver især sat op eksplicit</translation>
     </message>
     <message>
         <source>Setup state and the exact setting for each client</source>
-        <translation type="unfinished"></translation>
+        <translation>Opsætningsstatus og den præcise indstilling for hver klient</translation>
     </message>
     <message>
         <source>Storage</source>
-        <translation type="unfinished"></translation>
+        <translation>Lagerplads</translation>
     </message>
     <message>
         <source>What an agent may run and where it asks first</source>
-        <translation type="unfinished"></translation>
+        <translation>Hvad en agent må køre, og hvornår den spørger først</translation>
     </message>
     <message>
         <source>Writes one .tar.gz on this computer; nothing is sent</source>
-        <translation type="unfinished"></translation>
+        <translation>Skriver én .tar.gz på denne computer; intet sendes</translation>
     </message>
 </context>
 <context>
@@ -6142,217 +6142,217 @@ SSH bruger dine eksisterende nøgler og den kendte værtsidentitet.</translation
     </message>
     <message>
         <source>All devices</source>
-        <translation type="unfinished"></translation>
+        <translation>Alle enheder</translation>
     </message>
     <message>
         <source>All tools</source>
-        <translation type="unfinished"></translation>
+        <translation>Alle værktøjer</translation>
     </message>
     <message>
         <source>Android emulator</source>
-        <translation type="unfinished"></translation>
+        <translation>Android-emulator</translation>
     </message>
     <message>
         <source>Android phone</source>
-        <translation type="unfinished"></translation>
+        <translation>Android-telefon</translation>
     </message>
     <message>
         <source>Application ID</source>
-        <translation type="unfinished"></translation>
+        <translation>App-id</translation>
     </message>
     <message>
         <source>Back</source>
-        <translation type="unfinished"></translation>
+        <translation>Tilbage</translation>
     </message>
     <message>
         <source>Build host</source>
-        <translation type="unfinished"></translation>
+        <translation>Build-vært</translation>
     </message>
     <message>
         <source>Build only</source>
-        <translation type="unfinished"></translation>
+        <translation>Kun byg</translation>
     </message>
     <message>
         <source>Collapsed</source>
-        <translation type="unfinished"></translation>
+        <translation>Foldet sammen</translation>
     </message>
     <message>
         <source>Connect the phone to install apps, read its log or take a screenshot.</source>
-        <translation type="unfinished"></translation>
+        <translation>Tilslut telefonen for at installere apps, læse dens log eller tage et skærmbillede.</translation>
     </message>
     <message>
         <source>Connected</source>
-        <translation type="unfinished"></translation>
+        <translation>Forbundet</translation>
     </message>
     <message>
         <source>Create an app from a template</source>
-        <translation type="unfinished"></translation>
+        <translation>Opret en app ud fra en skabelon</translation>
     </message>
     <message>
         <source>Device</source>
-        <translation type="unfinished"></translation>
+        <translation>Enhed</translation>
     </message>
     <message>
         <source>Display</source>
-        <translation type="unfinished"></translation>
+        <translation>Skærm</translation>
     </message>
     <message>
         <source>Duplicate, rename or wipe this emulator</source>
-        <translation type="unfinished"></translation>
+        <translation>Duplikér, omdøb eller ryd denne emulator</translation>
     </message>
     <message>
         <source>Expanded</source>
-        <translation type="unfinished"></translation>
+        <translation>Foldet ud</translation>
     </message>
     <message>
         <source>External profile</source>
-        <translation type="unfinished"></translation>
+        <translation>Ekstern profil</translation>
     </message>
     <message>
         <source>Give this device a nickname</source>
-        <translation type="unfinished"></translation>
+        <translation>Giv denne enhed et kaldenavn</translation>
     </message>
     <message>
         <source>Graphics: %1</source>
-        <translation type="unfinished"></translation>
+        <translation>Grafik: %1</translation>
     </message>
     <message>
         <source>Import Xcode project</source>
-        <translation type="unfinished"></translation>
+        <translation>Importér Xcode-projekt</translation>
     </message>
     <message>
         <source>Kind</source>
-        <translation type="unfinished"></translation>
+        <translation>Type</translation>
     </message>
     <message>
         <source>Mac hosts</source>
-        <translation type="unfinished"></translation>
+        <translation>Mac-værter</translation>
     </message>
     <message>
         <source>Manage</source>
-        <translation type="unfinished"></translation>
+        <translation>Administrér</translation>
     </message>
     <message>
         <source>More</source>
         <comment>projects</comment>
-        <translation type="unfinished"></translation>
+        <translation>Flere muligheder</translation>
     </message>
     <message>
         <source>More build options</source>
-        <translation type="unfinished"></translation>
+        <translation>Flere build-indstillinger</translation>
     </message>
     <message>
         <source>Nickname</source>
-        <translation type="unfinished"></translation>
+        <translation>Kaldenavn</translation>
     </message>
     <message>
         <source>No longer listed. Find devices again, or go back to the list.</source>
-        <translation type="unfinished"></translation>
+        <translation>Ikke længere på listen. Find enheder igen, eller gå tilbage til listen.</translation>
     </message>
     <message>
         <source>No project matches “%1”.</source>
-        <translation type="unfinished"></translation>
+        <translation>Intet projekt matcher „%1“.</translation>
     </message>
     <message>
         <source>Not authorized: allow USB debugging on the phone</source>
-        <translation type="unfinished"></translation>
+        <translation>Ikke godkendt: tillad USB-fejlfinding på telefonen</translation>
     </message>
     <message>
         <source>Off</source>
-        <translation type="unfinished"></translation>
+        <translation>Fra</translation>
     </message>
     <message>
         <source>Open</source>
         <comment>project</comment>
-        <translation type="unfinished"></translation>
+        <translation>Åbent</translation>
     </message>
     <message>
         <source>Open by path</source>
-        <translation type="unfinished"></translation>
+        <translation>Åbn via sti</translation>
     </message>
     <message>
         <source>Open folder</source>
-        <translation type="unfinished"></translation>
+        <translation>Åbn mappe</translation>
     </message>
     <message>
         <source>Performance</source>
-        <translation type="unfinished"></translation>
+        <translation>Ydeevne</translation>
     </message>
     <message>
         <source>Pin</source>
-        <translation type="unfinished"></translation>
+        <translation>Fastgør</translation>
     </message>
     <message>
         <source>Pin this device to the top</source>
-        <translation type="unfinished"></translation>
+        <translation>Fastgør denne enhed øverst</translation>
     </message>
     <message>
         <source>Projects</source>
-        <translation type="unfinished"></translation>
+        <translation>Projekter</translation>
     </message>
     <message>
         <source>Reads an .xcodeproj and writes the Tomacco configuration</source>
-        <translation type="unfinished"></translation>
+        <translation>Læser et .xcodeproj og skriver Tomacco-konfigurationen</translation>
     </message>
     <message>
         <source>Recent</source>
-        <translation type="unfinished"></translation>
+        <translation>Seneste</translation>
     </message>
     <message>
         <source>Recent jobs</source>
-        <translation type="unfinished"></translation>
+        <translation>Seneste job</translation>
     </message>
     <message>
         <source>Saved workspaces</source>
-        <translation type="unfinished"></translation>
+        <translation>Gemte arbejdsområder</translation>
     </message>
     <message>
         <source>Search projects and workspaces</source>
-        <translation type="unfinished"></translation>
+        <translation>Søg i projekter og arbejdsområder</translation>
     </message>
     <message>
         <source>Set graphics, memory and CPU</source>
-        <translation type="unfinished"></translation>
+        <translation>Indstil grafik, hukommelse og CPU</translation>
     </message>
     <message>
         <source>Start</source>
-        <translation type="unfinished"></translation>
+        <translation>Start</translation>
     </message>
     <message>
         <source>Start the emulator to install apps, read its log or take a screenshot.</source>
-        <translation type="unfinished"></translation>
+        <translation>Start emulatoren for at installere apps, læse dens log eller tage et skærmbillede.</translation>
     </message>
     <message>
         <source>Starting…</source>
-        <translation type="unfinished"></translation>
+        <translation>Starter…</translation>
     </message>
     <message>
         <source>State</source>
-        <translation type="unfinished"></translation>
+        <translation>Tilstand</translation>
     </message>
     <message>
         <source>Switch project</source>
-        <translation type="unfinished"></translation>
+        <translation>Skift projekt</translation>
     </message>
     <message>
         <source>Target</source>
-        <translation type="unfinished"></translation>
+        <translation>Mål</translation>
     </message>
     <message>
         <source>Type the folder of a Swift, Kotlin or Flutter project</source>
-        <translation type="unfinished"></translation>
+        <translation>Skriv mappen for et Swift-, Kotlin- eller Flutter-projekt</translation>
     </message>
     <message>
         <source>Unpin</source>
-        <translation type="unfinished"></translation>
+        <translation>Frigør</translation>
     </message>
     <message>
         <source>Unpin this device</source>
-        <translation type="unfinished"></translation>
+        <translation>Frigør denne enhed</translation>
     </message>
     <message>
         <source>iOS builds need a Mac host you set up yourself. Tomacco never chooses or searches for one.</source>
-        <translation type="unfinished"></translation>
+        <translation>iOS-builds kræver en Mac-vært, som du selv sætter op. Tomacco vælger eller søger aldrig selv efter en.</translation>
     </message>
 </context>
 <context>
@@ -7751,7 +7751,7 @@ Licenseret under GNU General Public License, version 2 eller nyere.</translation
     <name>MobileTopBar</name>
     <message>
         <source>Back</source>
-        <translation type="unfinished"></translation>
+        <translation>Tilbage</translation>
     </message>
 </context>
 </TS>

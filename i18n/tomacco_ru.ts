@@ -638,7 +638,7 @@ The model determines the display and frame. Android comes from the chosen system
     </message>
     <message>
         <source>Pinned</source>
-        <translation type="unfinished"></translation>
+        <translation>Закреплён</translation>
     </message>
 </context>
 <context>
@@ -1390,44 +1390,44 @@ The model determines the display and frame. Android comes from the chosen system
     </message>
     <message>
         <source>Copy path</source>
-        <translation type="unfinished"></translation>
+        <translation>Скопировать путь</translation>
     </message>
     <message>
         <source>Files</source>
-        <translation type="unfinished"></translation>
+        <translation>Файлы</translation>
     </message>
     <message>
         <source>Loading files…</source>
-        <translation type="unfinished"></translation>
+        <translation>Загрузка файлов…</translation>
     </message>
     <message>
         <source>No matches for “%1”.</source>
-        <translation type="unfinished"></translation>
+        <translation>Нет совпадений для «%1».</translation>
     </message>
     <message>
         <source>Open</source>
         <comment>folder</comment>
-        <translation type="unfinished"></translation>
+        <translation>Открыта</translation>
     </message>
     <message>
         <source>Path copied</source>
-        <translation type="unfinished"></translation>
+        <translation>Путь скопирован</translation>
     </message>
     <message>
         <source>Save</source>
-        <translation type="unfinished"></translation>
+        <translation>Сохранить</translation>
     </message>
     <message numerus="yes">
         <source>Search results for “%1” · %n match(es)</source>
-        <translation type="unfinished">
-            <numerusform></numerusform>
-            <numerusform></numerusform>
-            <numerusform></numerusform>
+        <translation>
+            <numerusform>Результаты по запросу «%1» · %n совпадение</numerusform>
+            <numerusform>Результаты по запросу «%1» · %n совпадения</numerusform>
+            <numerusform>Результаты по запросу «%1» · %n совпадений</numerusform>
         </translation>
     </message>
     <message>
         <source>Show all files</source>
-        <translation type="unfinished"></translation>
+        <translation>Показать все файлы</translation>
     </message>
 </context>
 <context>
@@ -4090,59 +4090,59 @@ SSH использует ваши существующие ключи и изв�
     </message>
     <message>
         <source>Agent policy</source>
-        <translation type="unfinished"></translation>
+        <translation>Политика агента</translation>
     </message>
     <message>
         <source>Agents and system</source>
-        <translation type="unfinished"></translation>
+        <translation>Агенты и система</translation>
     </message>
     <message>
         <source>Android SDK, JDK and executables, updates and parallel jobs</source>
-        <translation type="unfinished"></translation>
+        <translation>Android SDK, JDK и исполняемые файлы, обновления и параллельные задания</translation>
     </message>
     <message>
         <source>Bug report bundle</source>
-        <translation type="unfinished"></translation>
+        <translation>Пакет отчёта об ошибке</translation>
     </message>
     <message>
         <source>Clean up old jobs and reports</source>
-        <translation type="unfinished"></translation>
+        <translation>Очистить старые задания и отчёты</translation>
     </message>
     <message>
         <source>Diagnostics</source>
-        <translation type="unfinished"></translation>
+        <translation>Диагностика</translation>
     </message>
     <message>
         <source>Lists old jobs, logs and reports; removes them only after you confirm</source>
-        <translation type="unfinished"></translation>
+        <translation>Показывает старые задания, журналы и отчёты; удаляет их только после вашего подтверждения</translation>
     </message>
     <message>
         <source>Mac hosts</source>
-        <translation type="unfinished"></translation>
+        <translation>Хосты Mac</translation>
     </message>
     <message>
         <source>SDK &amp; tool paths</source>
-        <translation type="unfinished"></translation>
+        <translation>Пути к SDK и инструментам</translation>
     </message>
     <message>
         <source>SSH Macs for iOS builds, each set up explicitly</source>
-        <translation type="unfinished"></translation>
+        <translation>Mac по SSH для сборок iOS, каждый настраивается явно</translation>
     </message>
     <message>
         <source>Setup state and the exact setting for each client</source>
-        <translation type="unfinished"></translation>
+        <translation>Состояние настройки и точный параметр для каждого клиента</translation>
     </message>
     <message>
         <source>Storage</source>
-        <translation type="unfinished"></translation>
+        <translation>Хранилище</translation>
     </message>
     <message>
         <source>What an agent may run and where it asks first</source>
-        <translation type="unfinished"></translation>
+        <translation>Что агенту разрешено запускать и когда он сначала спрашивает</translation>
     </message>
     <message>
         <source>Writes one .tar.gz on this computer; nothing is sent</source>
-        <translation type="unfinished"></translation>
+        <translation>Записывает один файл .tar.gz на этом компьютере; ничего не отправляется</translation>
     </message>
 </context>
 <context>
@@ -6161,217 +6161,217 @@ SSH использует ваши существующие ключи и изв�
     </message>
     <message>
         <source>All devices</source>
-        <translation type="unfinished"></translation>
+        <translation>Все устройства</translation>
     </message>
     <message>
         <source>All tools</source>
-        <translation type="unfinished"></translation>
+        <translation>Все инструменты</translation>
     </message>
     <message>
         <source>Android emulator</source>
-        <translation type="unfinished"></translation>
+        <translation>Эмулятор Android</translation>
     </message>
     <message>
         <source>Android phone</source>
-        <translation type="unfinished"></translation>
+        <translation>Телефон Android</translation>
     </message>
     <message>
         <source>Application ID</source>
-        <translation type="unfinished"></translation>
+        <translation>ID приложения</translation>
     </message>
     <message>
         <source>Back</source>
-        <translation type="unfinished"></translation>
+        <translation>Назад</translation>
     </message>
     <message>
         <source>Build host</source>
-        <translation type="unfinished"></translation>
+        <translation>Хост сборки</translation>
     </message>
     <message>
         <source>Build only</source>
-        <translation type="unfinished"></translation>
+        <translation>Только собрать</translation>
     </message>
     <message>
         <source>Collapsed</source>
-        <translation type="unfinished"></translation>
+        <translation>Свёрнуто</translation>
     </message>
     <message>
         <source>Connect the phone to install apps, read its log or take a screenshot.</source>
-        <translation type="unfinished"></translation>
+        <translation>Подключите телефон, чтобы устанавливать приложения, читать его журнал или делать снимки экрана.</translation>
     </message>
     <message>
         <source>Connected</source>
-        <translation type="unfinished"></translation>
+        <translation>Подключено</translation>
     </message>
     <message>
         <source>Create an app from a template</source>
-        <translation type="unfinished"></translation>
+        <translation>Создать приложение из шаблона</translation>
     </message>
     <message>
         <source>Device</source>
-        <translation type="unfinished"></translation>
+        <translation>Устройство</translation>
     </message>
     <message>
         <source>Display</source>
-        <translation type="unfinished"></translation>
+        <translation>Экран</translation>
     </message>
     <message>
         <source>Duplicate, rename or wipe this emulator</source>
-        <translation type="unfinished"></translation>
+        <translation>Дублировать, переименовать или стереть этот эмулятор</translation>
     </message>
     <message>
         <source>Expanded</source>
-        <translation type="unfinished"></translation>
+        <translation>Развёрнуто</translation>
     </message>
     <message>
         <source>External profile</source>
-        <translation type="unfinished"></translation>
+        <translation>Внешний профиль</translation>
     </message>
     <message>
         <source>Give this device a nickname</source>
-        <translation type="unfinished"></translation>
+        <translation>Дать этому устройству псевдоним</translation>
     </message>
     <message>
         <source>Graphics: %1</source>
-        <translation type="unfinished"></translation>
+        <translation>Графика: %1</translation>
     </message>
     <message>
         <source>Import Xcode project</source>
-        <translation type="unfinished"></translation>
+        <translation>Импортировать проект Xcode</translation>
     </message>
     <message>
         <source>Kind</source>
-        <translation type="unfinished"></translation>
+        <translation>Тип</translation>
     </message>
     <message>
         <source>Mac hosts</source>
-        <translation type="unfinished"></translation>
+        <translation>Хосты Mac</translation>
     </message>
     <message>
         <source>Manage</source>
-        <translation type="unfinished"></translation>
+        <translation>Управление</translation>
     </message>
     <message>
         <source>More</source>
         <comment>projects</comment>
-        <translation type="unfinished"></translation>
+        <translation>Другие варианты</translation>
     </message>
     <message>
         <source>More build options</source>
-        <translation type="unfinished"></translation>
+        <translation>Дополнительные параметры сборки</translation>
     </message>
     <message>
         <source>Nickname</source>
-        <translation type="unfinished"></translation>
+        <translation>Псевдоним</translation>
     </message>
     <message>
         <source>No longer listed. Find devices again, or go back to the list.</source>
-        <translation type="unfinished"></translation>
+        <translation>Больше нет в списке. Найдите устройства снова или вернитесь к списку.</translation>
     </message>
     <message>
         <source>No project matches “%1”.</source>
-        <translation type="unfinished"></translation>
+        <translation>Нет проектов, соответствующих «%1».</translation>
     </message>
     <message>
         <source>Not authorized: allow USB debugging on the phone</source>
-        <translation type="unfinished"></translation>
+        <translation>Не авторизовано: разрешите отладку по USB на телефоне</translation>
     </message>
     <message>
         <source>Off</source>
-        <translation type="unfinished"></translation>
+        <translation>Выключено</translation>
     </message>
     <message>
         <source>Open</source>
         <comment>project</comment>
-        <translation type="unfinished"></translation>
+        <translation>Открыт</translation>
     </message>
     <message>
         <source>Open by path</source>
-        <translation type="unfinished"></translation>
+        <translation>Открыть по пути</translation>
     </message>
     <message>
         <source>Open folder</source>
-        <translation type="unfinished"></translation>
+        <translation>Открыть папку</translation>
     </message>
     <message>
         <source>Performance</source>
-        <translation type="unfinished"></translation>
+        <translation>Производительность</translation>
     </message>
     <message>
         <source>Pin</source>
-        <translation type="unfinished"></translation>
+        <translation>Закрепить</translation>
     </message>
     <message>
         <source>Pin this device to the top</source>
-        <translation type="unfinished"></translation>
+        <translation>Закрепить это устройство вверху</translation>
     </message>
     <message>
         <source>Projects</source>
-        <translation type="unfinished"></translation>
+        <translation>Проекты</translation>
     </message>
     <message>
         <source>Reads an .xcodeproj and writes the Tomacco configuration</source>
-        <translation type="unfinished"></translation>
+        <translation>Читает .xcodeproj и записывает конфигурацию Tomacco</translation>
     </message>
     <message>
         <source>Recent</source>
-        <translation type="unfinished"></translation>
+        <translation>Недавние</translation>
     </message>
     <message>
         <source>Recent jobs</source>
-        <translation type="unfinished"></translation>
+        <translation>Недавние задания</translation>
     </message>
     <message>
         <source>Saved workspaces</source>
-        <translation type="unfinished"></translation>
+        <translation>Сохранённые рабочие области</translation>
     </message>
     <message>
         <source>Search projects and workspaces</source>
-        <translation type="unfinished"></translation>
+        <translation>Поиск проектов и рабочих областей</translation>
     </message>
     <message>
         <source>Set graphics, memory and CPU</source>
-        <translation type="unfinished"></translation>
+        <translation>Настроить графику, память и CPU</translation>
     </message>
     <message>
         <source>Start</source>
-        <translation type="unfinished"></translation>
+        <translation>Запустить</translation>
     </message>
     <message>
         <source>Start the emulator to install apps, read its log or take a screenshot.</source>
-        <translation type="unfinished"></translation>
+        <translation>Запустите эмулятор, чтобы устанавливать приложения, читать его журнал или делать снимки экрана.</translation>
     </message>
     <message>
         <source>Starting…</source>
-        <translation type="unfinished"></translation>
+        <translation>Запуск…</translation>
     </message>
     <message>
         <source>State</source>
-        <translation type="unfinished"></translation>
+        <translation>Состояние</translation>
     </message>
     <message>
         <source>Switch project</source>
-        <translation type="unfinished"></translation>
+        <translation>Сменить проект</translation>
     </message>
     <message>
         <source>Target</source>
-        <translation type="unfinished"></translation>
+        <translation>Цель</translation>
     </message>
     <message>
         <source>Type the folder of a Swift, Kotlin or Flutter project</source>
-        <translation type="unfinished"></translation>
+        <translation>Введите папку проекта Swift, Kotlin или Flutter</translation>
     </message>
     <message>
         <source>Unpin</source>
-        <translation type="unfinished"></translation>
+        <translation>Открепить</translation>
     </message>
     <message>
         <source>Unpin this device</source>
-        <translation type="unfinished"></translation>
+        <translation>Открепить это устройство</translation>
     </message>
     <message>
         <source>iOS builds need a Mac host you set up yourself. Tomacco never chooses or searches for one.</source>
-        <translation type="unfinished"></translation>
+        <translation>Для сборок iOS нужен хост Mac, который вы настраиваете сами. Tomacco никогда не выбирает и не ищет его самостоятельно.</translation>
     </message>
 </context>
 <context>
@@ -7771,7 +7771,7 @@ Licensed under the GNU General Public License, version 2 or later.</source>
     <name>MobileTopBar</name>
     <message>
         <source>Back</source>
-        <translation type="unfinished"></translation>
+        <translation>Назад</translation>
     </message>
 </context>
 </TS>

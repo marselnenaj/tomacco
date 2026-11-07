@@ -618,7 +618,7 @@ The model determines the display and frame. Android comes from the chosen system
     </message>
     <message>
         <source>Pinned</source>
-        <translation type="unfinished"></translation>
+        <translation>سنجاق‌شده</translation>
     </message>
 </context>
 <context>
@@ -1370,42 +1370,42 @@ The model determines the display and frame. Android comes from the chosen system
     </message>
     <message>
         <source>Copy path</source>
-        <translation type="unfinished"></translation>
+        <translation>کپی مسیر</translation>
     </message>
     <message>
         <source>Files</source>
-        <translation type="unfinished"></translation>
+        <translation>فایل‌ها</translation>
     </message>
     <message>
         <source>Loading files…</source>
-        <translation type="unfinished"></translation>
+        <translation>در حال بارگذاری فایل‌ها…</translation>
     </message>
     <message>
         <source>No matches for “%1”.</source>
-        <translation type="unfinished"></translation>
+        <translation>هیچ موردی با «%1» مطابقت ندارد.</translation>
     </message>
     <message>
         <source>Open</source>
         <comment>folder</comment>
-        <translation type="unfinished"></translation>
+        <translation>باز</translation>
     </message>
     <message>
         <source>Path copied</source>
-        <translation type="unfinished"></translation>
+        <translation>مسیر کپی شد</translation>
     </message>
     <message>
         <source>Save</source>
-        <translation type="unfinished"></translation>
+        <translation>ذخیره</translation>
     </message>
     <message numerus="yes">
         <source>Search results for “%1” · %n match(es)</source>
-        <translation type="unfinished">
-            <numerusform></numerusform>
+        <translation>
+            <numerusform>نتایج جستجو برای «%1» · %n مورد منطبق</numerusform>
         </translation>
     </message>
     <message>
         <source>Show all files</source>
-        <translation type="unfinished"></translation>
+        <translation>نمایش همهٔ فایل‌ها</translation>
     </message>
 </context>
 <context>
@@ -4050,59 +4050,59 @@ SSH از کلیدهای موجود شما و هویت شناخته‌شدهٔ م
     </message>
     <message>
         <source>Agent policy</source>
-        <translation type="unfinished"></translation>
+        <translation>سیاست ایجنت</translation>
     </message>
     <message>
         <source>Agents and system</source>
-        <translation type="unfinished"></translation>
+        <translation>ایجنت‌ها و سیستم</translation>
     </message>
     <message>
         <source>Android SDK, JDK and executables, updates and parallel jobs</source>
-        <translation type="unfinished"></translation>
+        <translation>Android SDK، JDK و فایل‌های اجرایی، به‌روزرسانی‌ها و کارهای موازی</translation>
     </message>
     <message>
         <source>Bug report bundle</source>
-        <translation type="unfinished"></translation>
+        <translation>بستهٔ گزارش اشکال</translation>
     </message>
     <message>
         <source>Clean up old jobs and reports</source>
-        <translation type="unfinished"></translation>
+        <translation>پاک‌سازی کارها و گزارش‌های قدیمی</translation>
     </message>
     <message>
         <source>Diagnostics</source>
-        <translation type="unfinished"></translation>
+        <translation>عیب‌یابی</translation>
     </message>
     <message>
         <source>Lists old jobs, logs and reports; removes them only after you confirm</source>
-        <translation type="unfinished"></translation>
+        <translation>کارها، لاگ‌ها و گزارش‌های قدیمی را فهرست می‌کند؛ فقط پس از تأیید شما آن‌ها را حذف می‌کند</translation>
     </message>
     <message>
         <source>Mac hosts</source>
-        <translation type="unfinished"></translation>
+        <translation>میزبان‌های Mac</translation>
     </message>
     <message>
         <source>SDK &amp; tool paths</source>
-        <translation type="unfinished"></translation>
+        <translation>مسیرهای SDK و ابزار</translation>
     </message>
     <message>
         <source>SSH Macs for iOS builds, each set up explicitly</source>
-        <translation type="unfinished"></translation>
+        <translation>Macهای متصل با SSH برای ساخت iOS، هرکدام به‌طور صریح راه‌اندازی‌شده</translation>
     </message>
     <message>
         <source>Setup state and the exact setting for each client</source>
-        <translation type="unfinished"></translation>
+        <translation>وضعیت راه‌اندازی و تنظیم دقیق برای هر کلاینت</translation>
     </message>
     <message>
         <source>Storage</source>
-        <translation type="unfinished"></translation>
+        <translation>فضای ذخیره‌سازی</translation>
     </message>
     <message>
         <source>What an agent may run and where it asks first</source>
-        <translation type="unfinished"></translation>
+        <translation>اینکه ایجنت چه چیزهایی را می‌تواند اجرا کند و چه زمانی اول می‌پرسد</translation>
     </message>
     <message>
         <source>Writes one .tar.gz on this computer; nothing is sent</source>
-        <translation type="unfinished"></translation>
+        <translation>یک فایل .tar.gz روی همین رایانه می‌نویسد؛ چیزی ارسال نمی‌شود</translation>
     </message>
 </context>
 <context>
@@ -6115,217 +6115,217 @@ SSH از کلیدهای موجود شما و هویت شناخته‌شدهٔ م
     </message>
     <message>
         <source>All devices</source>
-        <translation type="unfinished"></translation>
+        <translation>همهٔ دستگاه‌ها</translation>
     </message>
     <message>
         <source>All tools</source>
-        <translation type="unfinished"></translation>
+        <translation>همهٔ ابزارها</translation>
     </message>
     <message>
         <source>Android emulator</source>
-        <translation type="unfinished"></translation>
+        <translation>امولاتور Android</translation>
     </message>
     <message>
         <source>Android phone</source>
-        <translation type="unfinished"></translation>
+        <translation>گوشی Android</translation>
     </message>
     <message>
         <source>Application ID</source>
-        <translation type="unfinished"></translation>
+        <translation>شناسهٔ برنامه</translation>
     </message>
     <message>
         <source>Back</source>
-        <translation type="unfinished"></translation>
+        <translation>بازگشت</translation>
     </message>
     <message>
         <source>Build host</source>
-        <translation type="unfinished"></translation>
+        <translation>میزبان ساخت</translation>
     </message>
     <message>
         <source>Build only</source>
-        <translation type="unfinished"></translation>
+        <translation>فقط ساخت</translation>
     </message>
     <message>
         <source>Collapsed</source>
-        <translation type="unfinished"></translation>
+        <translation>جمع‌شده</translation>
     </message>
     <message>
         <source>Connect the phone to install apps, read its log or take a screenshot.</source>
-        <translation type="unfinished"></translation>
+        <translation>گوشی را وصل کنید تا برنامه نصب کنید، لاگ آن را بخوانید یا از صفحه عکس بگیرید.</translation>
     </message>
     <message>
         <source>Connected</source>
-        <translation type="unfinished"></translation>
+        <translation>متصل</translation>
     </message>
     <message>
         <source>Create an app from a template</source>
-        <translation type="unfinished"></translation>
+        <translation>ساخت برنامه از الگو</translation>
     </message>
     <message>
         <source>Device</source>
-        <translation type="unfinished"></translation>
+        <translation>دستگاه</translation>
     </message>
     <message>
         <source>Display</source>
-        <translation type="unfinished"></translation>
+        <translation>نمایشگر</translation>
     </message>
     <message>
         <source>Duplicate, rename or wipe this emulator</source>
-        <translation type="unfinished"></translation>
+        <translation>تکثیر، تغییر نام یا پاک‌سازی این امولاتور</translation>
     </message>
     <message>
         <source>Expanded</source>
-        <translation type="unfinished"></translation>
+        <translation>بازشده</translation>
     </message>
     <message>
         <source>External profile</source>
-        <translation type="unfinished"></translation>
+        <translation>پروفایل خارجی</translation>
     </message>
     <message>
         <source>Give this device a nickname</source>
-        <translation type="unfinished"></translation>
+        <translation>به این دستگاه یک نام مستعار بدهید</translation>
     </message>
     <message>
         <source>Graphics: %1</source>
-        <translation type="unfinished"></translation>
+        <translation>گرافیک: %1</translation>
     </message>
     <message>
         <source>Import Xcode project</source>
-        <translation type="unfinished"></translation>
+        <translation>وارد کردن پروژهٔ Xcode</translation>
     </message>
     <message>
         <source>Kind</source>
-        <translation type="unfinished"></translation>
+        <translation>نوع</translation>
     </message>
     <message>
         <source>Mac hosts</source>
-        <translation type="unfinished"></translation>
+        <translation>میزبان‌های Mac</translation>
     </message>
     <message>
         <source>Manage</source>
-        <translation type="unfinished"></translation>
+        <translation>مدیریت</translation>
     </message>
     <message>
         <source>More</source>
         <comment>projects</comment>
-        <translation type="unfinished"></translation>
+        <translation>گزینه‌های بیشتر</translation>
     </message>
     <message>
         <source>More build options</source>
-        <translation type="unfinished"></translation>
+        <translation>گزینه‌های بیشتر ساخت</translation>
     </message>
     <message>
         <source>Nickname</source>
-        <translation type="unfinished"></translation>
+        <translation>نام مستعار</translation>
     </message>
     <message>
         <source>No longer listed. Find devices again, or go back to the list.</source>
-        <translation type="unfinished"></translation>
+        <translation>دیگر در فهرست نیست. دوباره دستگاه‌ها را پیدا کنید یا به فهرست برگردید.</translation>
     </message>
     <message>
         <source>No project matches “%1”.</source>
-        <translation type="unfinished"></translation>
+        <translation>هیچ پروژه‌ای با «%1» مطابقت ندارد.</translation>
     </message>
     <message>
         <source>Not authorized: allow USB debugging on the phone</source>
-        <translation type="unfinished"></translation>
+        <translation>مجاز نیست: اشکال‌زدایی USB را روی گوشی مجاز کنید</translation>
     </message>
     <message>
         <source>Off</source>
-        <translation type="unfinished"></translation>
+        <translation>خاموش</translation>
     </message>
     <message>
         <source>Open</source>
         <comment>project</comment>
-        <translation type="unfinished"></translation>
+        <translation>باز</translation>
     </message>
     <message>
         <source>Open by path</source>
-        <translation type="unfinished"></translation>
+        <translation>باز کردن با مسیر</translation>
     </message>
     <message>
         <source>Open folder</source>
-        <translation type="unfinished"></translation>
+        <translation>باز کردن پوشه</translation>
     </message>
     <message>
         <source>Performance</source>
-        <translation type="unfinished"></translation>
+        <translation>کارایی</translation>
     </message>
     <message>
         <source>Pin</source>
-        <translation type="unfinished"></translation>
+        <translation>سنجاق کردن</translation>
     </message>
     <message>
         <source>Pin this device to the top</source>
-        <translation type="unfinished"></translation>
+        <translation>سنجاق کردن این دستگاه به بالا</translation>
     </message>
     <message>
         <source>Projects</source>
-        <translation type="unfinished"></translation>
+        <translation>پروژه‌ها</translation>
     </message>
     <message>
         <source>Reads an .xcodeproj and writes the Tomacco configuration</source>
-        <translation type="unfinished"></translation>
+        <translation>یک .xcodeproj را می‌خواند و پیکربندی Tomacco را می‌نویسد</translation>
     </message>
     <message>
         <source>Recent</source>
-        <translation type="unfinished"></translation>
+        <translation>اخیر</translation>
     </message>
     <message>
         <source>Recent jobs</source>
-        <translation type="unfinished"></translation>
+        <translation>کارهای اخیر</translation>
     </message>
     <message>
         <source>Saved workspaces</source>
-        <translation type="unfinished"></translation>
+        <translation>فضاهای کار ذخیره‌شده</translation>
     </message>
     <message>
         <source>Search projects and workspaces</source>
-        <translation type="unfinished"></translation>
+        <translation>جستجوی پروژه‌ها و فضاهای کار</translation>
     </message>
     <message>
         <source>Set graphics, memory and CPU</source>
-        <translation type="unfinished"></translation>
+        <translation>تنظیم گرافیک، حافظه و CPU</translation>
     </message>
     <message>
         <source>Start</source>
-        <translation type="unfinished"></translation>
+        <translation>شروع</translation>
     </message>
     <message>
         <source>Start the emulator to install apps, read its log or take a screenshot.</source>
-        <translation type="unfinished"></translation>
+        <translation>امولاتور را شروع کنید تا برنامه نصب کنید، لاگ آن را بخوانید یا از صفحه عکس بگیرید.</translation>
     </message>
     <message>
         <source>Starting…</source>
-        <translation type="unfinished"></translation>
+        <translation>در حال شروع…</translation>
     </message>
     <message>
         <source>State</source>
-        <translation type="unfinished"></translation>
+        <translation>وضعیت</translation>
     </message>
     <message>
         <source>Switch project</source>
-        <translation type="unfinished"></translation>
+        <translation>تعویض پروژه</translation>
     </message>
     <message>
         <source>Target</source>
-        <translation type="unfinished"></translation>
+        <translation>مقصد</translation>
     </message>
     <message>
         <source>Type the folder of a Swift, Kotlin or Flutter project</source>
-        <translation type="unfinished"></translation>
+        <translation>پوشهٔ یک پروژهٔ Swift، Kotlin یا Flutter را وارد کنید</translation>
     </message>
     <message>
         <source>Unpin</source>
-        <translation type="unfinished"></translation>
+        <translation>برداشتن سنجاق</translation>
     </message>
     <message>
         <source>Unpin this device</source>
-        <translation type="unfinished"></translation>
+        <translation>برداشتن سنجاق این دستگاه</translation>
     </message>
     <message>
         <source>iOS builds need a Mac host you set up yourself. Tomacco never chooses or searches for one.</source>
-        <translation type="unfinished"></translation>
+        <translation>ساخت‌های iOS به میزبان Macی نیاز دارند که خودتان راه‌اندازی می‌کنید. Tomacco هرگز خودش میزبانی انتخاب یا جستجو نمی‌کند.</translation>
     </message>
 </context>
 <context>
@@ -7715,7 +7715,7 @@ Licensed under the GNU General Public License, version 2 or later.</source>
     <name>MobileTopBar</name>
     <message>
         <source>Back</source>
-        <translation type="unfinished"></translation>
+        <translation>بازگشت</translation>
     </message>
 </context>
 </TS>

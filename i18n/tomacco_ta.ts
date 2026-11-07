@@ -618,7 +618,7 @@ The model determines the display and frame. Android comes from the chosen system
     </message>
     <message>
         <source>Pinned</source>
-        <translation type="unfinished"></translation>
+        <translation>பின் செய்யப்பட்டது</translation>
     </message>
 </context>
 <context>
@@ -1370,43 +1370,43 @@ The model determines the display and frame. Android comes from the chosen system
     </message>
     <message>
         <source>Copy path</source>
-        <translation type="unfinished"></translation>
+        <translation>பாதையை நகலெடு</translation>
     </message>
     <message>
         <source>Files</source>
-        <translation type="unfinished"></translation>
+        <translation>கோப்புகள்</translation>
     </message>
     <message>
         <source>Loading files…</source>
-        <translation type="unfinished"></translation>
+        <translation>கோப்புகளை ஏற்றுகிறது…</translation>
     </message>
     <message>
         <source>No matches for “%1”.</source>
-        <translation type="unfinished"></translation>
+        <translation>“%1” உடன் பொருந்துவது எதுவும் இல்லை.</translation>
     </message>
     <message>
         <source>Open</source>
         <comment>folder</comment>
-        <translation type="unfinished"></translation>
+        <translation>திறந்துள்ளது</translation>
     </message>
     <message>
         <source>Path copied</source>
-        <translation type="unfinished"></translation>
+        <translation>பாதை நகலெடுக்கப்பட்டது</translation>
     </message>
     <message>
         <source>Save</source>
-        <translation type="unfinished"></translation>
+        <translation>சேமி</translation>
     </message>
     <message numerus="yes">
         <source>Search results for “%1” · %n match(es)</source>
-        <translation type="unfinished">
-            <numerusform></numerusform>
-            <numerusform></numerusform>
+        <translation>
+            <numerusform>“%1” க்கான தேடல் முடிவுகள் · %n பொருத்தம்</numerusform>
+            <numerusform>“%1” க்கான தேடல் முடிவுகள் · %n பொருத்தங்கள்</numerusform>
         </translation>
     </message>
     <message>
         <source>Show all files</source>
-        <translation type="unfinished"></translation>
+        <translation>எல்லாக் கோப்புகளையும் காட்டு</translation>
     </message>
 </context>
 <context>
@@ -4060,59 +4060,59 @@ SSH உங்கள் தற்போதுள்ள விசைகளைய�
     </message>
     <message>
         <source>Agent policy</source>
-        <translation type="unfinished"></translation>
+        <translation>முகவர் கொள்கை</translation>
     </message>
     <message>
         <source>Agents and system</source>
-        <translation type="unfinished"></translation>
+        <translation>முகவர்கள் &amp; அமைப்பு</translation>
     </message>
     <message>
         <source>Android SDK, JDK and executables, updates and parallel jobs</source>
-        <translation type="unfinished"></translation>
+        <translation>Android SDK, JDK மற்றும் இயக்கக்கூடிய கோப்புகள், புதுப்பிப்புகள் மற்றும் இணையான பணிகள்</translation>
     </message>
     <message>
         <source>Bug report bundle</source>
-        <translation type="unfinished"></translation>
+        <translation>பிழை அறிக்கைத் தொகுப்பு</translation>
     </message>
     <message>
         <source>Clean up old jobs and reports</source>
-        <translation type="unfinished"></translation>
+        <translation>பழைய பணிகள் மற்றும் அறிக்கைகளை சுத்தம் செய்</translation>
     </message>
     <message>
         <source>Diagnostics</source>
-        <translation type="unfinished"></translation>
+        <translation>கண்டறிதல்</translation>
     </message>
     <message>
         <source>Lists old jobs, logs and reports; removes them only after you confirm</source>
-        <translation type="unfinished"></translation>
+        <translation>பழைய பணிகள், பதிவுகள் மற்றும் அறிக்கைகளைப் பட்டியலிடும்; நீங்கள் உறுதிப்படுத்திய பின்னரே அவற்றை நீக்கும்</translation>
     </message>
     <message>
         <source>Mac hosts</source>
-        <translation type="unfinished"></translation>
+        <translation>Mac ஹோஸ்ட்கள்</translation>
     </message>
     <message>
         <source>SDK &amp; tool paths</source>
-        <translation type="unfinished"></translation>
+        <translation>SDK &amp; கருவிப் பாதைகள்</translation>
     </message>
     <message>
         <source>SSH Macs for iOS builds, each set up explicitly</source>
-        <translation type="unfinished"></translation>
+        <translation>iOS உருவாக்கங்களுக்கான SSH Mac-கள், ஒவ்வொன்றும் வெளிப்படையாக அமைக்கப்பட்டது</translation>
     </message>
     <message>
         <source>Setup state and the exact setting for each client</source>
-        <translation type="unfinished"></translation>
+        <translation>அமைவு நிலை மற்றும் ஒவ்வொரு கிளையன்ட்டுக்குமான சரியான அமைப்பு</translation>
     </message>
     <message>
         <source>Storage</source>
-        <translation type="unfinished"></translation>
+        <translation>சேமிப்பகம்</translation>
     </message>
     <message>
         <source>What an agent may run and where it asks first</source>
-        <translation type="unfinished"></translation>
+        <translation>முகவர் எதை இயக்கலாம், எப்போது முதலில் கேட்கும்</translation>
     </message>
     <message>
         <source>Writes one .tar.gz on this computer; nothing is sent</source>
-        <translation type="unfinished"></translation>
+        <translation>இந்தக் கணினியில் ஒரு .tar.gz-ஐ எழுதும்; எதுவும் அனுப்பப்படாது</translation>
     </message>
 </context>
 <context>
@@ -6126,217 +6126,217 @@ SSH உங்கள் தற்போதுள்ள விசைகளைய�
     </message>
     <message>
         <source>All devices</source>
-        <translation type="unfinished"></translation>
+        <translation>எல்லாச் சாதனங்களும்</translation>
     </message>
     <message>
         <source>All tools</source>
-        <translation type="unfinished"></translation>
+        <translation>எல்லாக் கருவிகளும்</translation>
     </message>
     <message>
         <source>Android emulator</source>
-        <translation type="unfinished"></translation>
+        <translation>Android எமுலேட்டர்</translation>
     </message>
     <message>
         <source>Android phone</source>
-        <translation type="unfinished"></translation>
+        <translation>Android தொலைபேசி</translation>
     </message>
     <message>
         <source>Application ID</source>
-        <translation type="unfinished"></translation>
+        <translation>செயலி ID</translation>
     </message>
     <message>
         <source>Back</source>
-        <translation type="unfinished"></translation>
+        <translation>பின்செல்</translation>
     </message>
     <message>
         <source>Build host</source>
-        <translation type="unfinished"></translation>
+        <translation>உருவாக்க ஹோஸ்ட்</translation>
     </message>
     <message>
         <source>Build only</source>
-        <translation type="unfinished"></translation>
+        <translation>உருவாக்க மட்டும்</translation>
     </message>
     <message>
         <source>Collapsed</source>
-        <translation type="unfinished"></translation>
+        <translation>சுருக்கப்பட்டது</translation>
     </message>
     <message>
         <source>Connect the phone to install apps, read its log or take a screenshot.</source>
-        <translation type="unfinished"></translation>
+        <translation>செயலிகளை நிறுவ, அதன் பதிவைப் படிக்க அல்லது திரைப்பிடிப்பு எடுக்க தொலைபேசியை இணைக்கவும்.</translation>
     </message>
     <message>
         <source>Connected</source>
-        <translation type="unfinished"></translation>
+        <translation>இணைக்கப்பட்டது</translation>
     </message>
     <message>
         <source>Create an app from a template</source>
-        <translation type="unfinished"></translation>
+        <translation>வார்ப்புருவிலிருந்து செயலியை உருவாக்கு</translation>
     </message>
     <message>
         <source>Device</source>
-        <translation type="unfinished"></translation>
+        <translation>சாதனம்</translation>
     </message>
     <message>
         <source>Display</source>
-        <translation type="unfinished"></translation>
+        <translation>காட்சி</translation>
     </message>
     <message>
         <source>Duplicate, rename or wipe this emulator</source>
-        <translation type="unfinished"></translation>
+        <translation>இந்த எமுலேட்டரை நகல் எடு, மறுபெயரிடு அல்லது அழி</translation>
     </message>
     <message>
         <source>Expanded</source>
-        <translation type="unfinished"></translation>
+        <translation>விரிக்கப்பட்டது</translation>
     </message>
     <message>
         <source>External profile</source>
-        <translation type="unfinished"></translation>
+        <translation>வெளிச் சுயவிவரம்</translation>
     </message>
     <message>
         <source>Give this device a nickname</source>
-        <translation type="unfinished"></translation>
+        <translation>இந்தச் சாதனத்திற்கு ஒரு புனைப்பெயர் கொடு</translation>
     </message>
     <message>
         <source>Graphics: %1</source>
-        <translation type="unfinished"></translation>
+        <translation>கிராபிக்ஸ்: %1</translation>
     </message>
     <message>
         <source>Import Xcode project</source>
-        <translation type="unfinished"></translation>
+        <translation>Xcode திட்டத்தை இறக்குமதி செய்</translation>
     </message>
     <message>
         <source>Kind</source>
-        <translation type="unfinished"></translation>
+        <translation>வகை</translation>
     </message>
     <message>
         <source>Mac hosts</source>
-        <translation type="unfinished"></translation>
+        <translation>Mac ஹோஸ்ட்கள்</translation>
     </message>
     <message>
         <source>Manage</source>
-        <translation type="unfinished"></translation>
+        <translation>நிர்வகி</translation>
     </message>
     <message>
         <source>More</source>
         <comment>projects</comment>
-        <translation type="unfinished"></translation>
+        <translation>மேலும் விருப்பங்கள்</translation>
     </message>
     <message>
         <source>More build options</source>
-        <translation type="unfinished"></translation>
+        <translation>மேலும் உருவாக்க விருப்பங்கள்</translation>
     </message>
     <message>
         <source>Nickname</source>
-        <translation type="unfinished"></translation>
+        <translation>புனைப்பெயர்</translation>
     </message>
     <message>
         <source>No longer listed. Find devices again, or go back to the list.</source>
-        <translation type="unfinished"></translation>
+        <translation>இனி பட்டியலில் இல்லை. சாதனங்களை மீண்டும் தேடவும், அல்லது பட்டியலுக்குத் திரும்பவும்.</translation>
     </message>
     <message>
         <source>No project matches “%1”.</source>
-        <translation type="unfinished"></translation>
+        <translation>“%1” உடன் எந்தத் திட்டமும் பொருந்தவில்லை.</translation>
     </message>
     <message>
         <source>Not authorized: allow USB debugging on the phone</source>
-        <translation type="unfinished"></translation>
+        <translation>அங்கீகரிக்கப்படவில்லை: தொலைபேசியில் USB பிழைத்திருத்தத்தை அனுமதிக்கவும்</translation>
     </message>
     <message>
         <source>Off</source>
-        <translation type="unfinished"></translation>
+        <translation>அணைக்கப்பட்டது</translation>
     </message>
     <message>
         <source>Open</source>
         <comment>project</comment>
-        <translation type="unfinished"></translation>
+        <translation>திறந்துள்ளது</translation>
     </message>
     <message>
         <source>Open by path</source>
-        <translation type="unfinished"></translation>
+        <translation>பாதை மூலம் திற</translation>
     </message>
     <message>
         <source>Open folder</source>
-        <translation type="unfinished"></translation>
+        <translation>கோப்புறையைத் திற</translation>
     </message>
     <message>
         <source>Performance</source>
-        <translation type="unfinished"></translation>
+        <translation>செயல்திறன்</translation>
     </message>
     <message>
         <source>Pin</source>
-        <translation type="unfinished"></translation>
+        <translation>பின் செய்</translation>
     </message>
     <message>
         <source>Pin this device to the top</source>
-        <translation type="unfinished"></translation>
+        <translation>இந்தச் சாதனத்தை மேலே பின் செய்</translation>
     </message>
     <message>
         <source>Projects</source>
-        <translation type="unfinished"></translation>
+        <translation>திட்டங்கள்</translation>
     </message>
     <message>
         <source>Reads an .xcodeproj and writes the Tomacco configuration</source>
-        <translation type="unfinished"></translation>
+        <translation>ஒரு .xcodeproj-ஐப் படித்து Tomacco உள்ளமைவை எழுதும்</translation>
     </message>
     <message>
         <source>Recent</source>
-        <translation type="unfinished"></translation>
+        <translation>சமீபத்தியவை</translation>
     </message>
     <message>
         <source>Recent jobs</source>
-        <translation type="unfinished"></translation>
+        <translation>சமீபத்திய பணிகள்</translation>
     </message>
     <message>
         <source>Saved workspaces</source>
-        <translation type="unfinished"></translation>
+        <translation>சேமித்த பணியிடங்கள்</translation>
     </message>
     <message>
         <source>Search projects and workspaces</source>
-        <translation type="unfinished"></translation>
+        <translation>திட்டங்களையும் பணியிடங்களையும் தேடு</translation>
     </message>
     <message>
         <source>Set graphics, memory and CPU</source>
-        <translation type="unfinished"></translation>
+        <translation>கிராபிக்ஸ், நினைவகம் மற்றும் CPU-வை அமை</translation>
     </message>
     <message>
         <source>Start</source>
-        <translation type="unfinished"></translation>
+        <translation>தொடங்கு</translation>
     </message>
     <message>
         <source>Start the emulator to install apps, read its log or take a screenshot.</source>
-        <translation type="unfinished"></translation>
+        <translation>செயலிகளை நிறுவ, அதன் பதிவைப் படிக்க அல்லது திரைப்பிடிப்பு எடுக்க எமுலேட்டரைத் தொடங்கவும்.</translation>
     </message>
     <message>
         <source>Starting…</source>
-        <translation type="unfinished"></translation>
+        <translation>தொடங்குகிறது…</translation>
     </message>
     <message>
         <source>State</source>
-        <translation type="unfinished"></translation>
+        <translation>நிலை</translation>
     </message>
     <message>
         <source>Switch project</source>
-        <translation type="unfinished"></translation>
+        <translation>திட்டத்தை மாற்று</translation>
     </message>
     <message>
         <source>Target</source>
-        <translation type="unfinished"></translation>
+        <translation>இலக்கு</translation>
     </message>
     <message>
         <source>Type the folder of a Swift, Kotlin or Flutter project</source>
-        <translation type="unfinished"></translation>
+        <translation>Swift, Kotlin அல்லது Flutter திட்டத்தின் கோப்புறையை உள்ளிடவும்</translation>
     </message>
     <message>
         <source>Unpin</source>
-        <translation type="unfinished"></translation>
+        <translation>பின்னை நீக்கு</translation>
     </message>
     <message>
         <source>Unpin this device</source>
-        <translation type="unfinished"></translation>
+        <translation>இந்தச் சாதனத்தின் பின்னை நீக்கு</translation>
     </message>
     <message>
         <source>iOS builds need a Mac host you set up yourself. Tomacco never chooses or searches for one.</source>
-        <translation type="unfinished"></translation>
+        <translation>iOS உருவாக்கங்களுக்கு நீங்களே அமைக்கும் Mac ஹோஸ்ட் தேவை. Tomacco ஒருபோதும் தானாக ஹோஸ்டைத் தேர்வு செய்யவோ தேடவோ செய்யாது.</translation>
     </message>
 </context>
 <context>
@@ -7727,7 +7727,7 @@ GNU General Public License, பதிப்பு 2 அல்லது அதற
     <name>MobileTopBar</name>
     <message>
         <source>Back</source>
-        <translation type="unfinished"></translation>
+        <translation>பின்செல்</translation>
     </message>
 </context>
 </TS>

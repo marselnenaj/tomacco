@@ -68,7 +68,6 @@ Keywords[id]=Android;iPhone;iOS;Swift;Kotlin;Flutter;Emulator;MCP;Agen;Ponsel;
 StartupNotify=true
 StartupWMClass=io.github.marselnenaj.tomacco
 Actions=Project;Devices;Jobs;
-
 GenericName[cs]=Prostředí pro mobilní vývoj
 GenericName[sk]=Prostredie pre mobilný vývoj
 GenericName[sl]=Okolje za mobilni razvoj
@@ -162,6 +161,7 @@ Comment[tr]=Yerel Android ve iOS uygulamalarını derleyin, çalıştırın ve t
 Keywords[ms]=Android;iPhone;iOS;Swift;Kotlin;Flutter;Emulator;MCP;Ejen;Telefon pintar;
 Keywords[fil]=Android;iPhone;iOS;Swift;Kotlin;Flutter;Emulator;MCP;Agent;Smartphone;Telepono;
 Keywords[tr]=Android;iPhone;iOS;Swift;Kotlin;Flutter;Emülatör;MCP;Ajan;Akıllı telefon;
+
 [Desktop Action Project]
 Name=Project
 Name[de]=Projekt
@@ -184,7 +184,6 @@ Name[nb_NO]=Prosjekt
 Name[uk]=Проєкт
 Name[id]=Proyek
 Exec=tomacco --workspace project
-
 Name[cs]=Projekt
 Name[sk]=Projekt
 Name[sl]=Projekt
@@ -216,6 +215,7 @@ Name[vi]=Dự án
 Name[ms]=Projek
 Name[fil]=Proyekto
 Name[tr]=Proje
+
 [Desktop Action Devices]
 Name=Devices
 Name[de]=Geräte
@@ -238,7 +238,6 @@ Name[nb_NO]=Enheter
 Name[uk]=Пристрої
 Name[id]=Perangkat
 Exec=tomacco --workspace devices
-
 Name[cs]=Zařízení
 Name[sk]=Zariadenia
 Name[sl]=Naprave
@@ -270,6 +269,7 @@ Name[vi]=Thiết bị
 Name[ms]=Peranti
 Name[fil]=Mga device
 Name[tr]=Cihazlar
+
 [Desktop Action Jobs]
 Name=Builds and jobs
 Name[de]=Builds und Aufträge

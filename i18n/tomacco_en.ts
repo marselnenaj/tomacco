@@ -132,4 +132,14 @@
         </translation>
     </message>
 </context>
+<context>
+    <name>FileWorkspace</name>
+    <message numerus="yes">
+        <source>Search results for “%1” · %n match(es)</source>
+        <translation>
+            <numerusform>Search results for “%1” · %n match</numerusform>
+            <numerusform>Search results for “%1” · %n matches</numerusform>
+        </translation>
+    </message>
+</context>
 </TS>
