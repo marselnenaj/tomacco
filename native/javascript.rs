@@ -423,18 +423,23 @@ mod tests {
         let dir = tempfile::tempdir().unwrap();
         let port = free_port();
         let marker = dir.path().join("then");
-        // A server that listens and exits after accepting a connection made
-        // once the follow-up commands ran. It checks only after an accept, so
-        // it cannot exit before the follow-up's own connection arrives.
+        // A server that listens and exits once the follow-up command has
+        // connected and said so. Every other connection is served and the
+        // server keeps listening: serve_worker's own readiness probe, which
+        // the server may accept only after the follow-up started, and any
+        // stray connection from a parallel test that took this freed port.
+        // Exiting on whatever connection came after the marker instead let
+        // a late probe end the server before the follow-up connected.
+        // Bounded: no follow-up within 20 s fails the test, it never hangs.
         let server = format!(
-            "import socket,os,time\ns=socket.socket();s.setsockopt(socket.SOL_SOCKET,socket.SO_REUSEADDR,1);time.sleep(0.3);s.bind(('127.0.0.1',{port}));s.listen()\nwhile True:\n  c,_=s.accept();done=os.path.exists({marker:?});c.close()\n  if done: break\n"
+            "import socket,time\ns=socket.socket();s.setsockopt(socket.SOL_SOCKET,socket.SO_REUSEADDR,1);time.sleep(0.3);s.bind(('127.0.0.1',{port}));s.listen();s.settimeout(20)\nwhile True:\n  c,_=s.accept();c.settimeout(5)\n  try: done=c.makefile('rb').read(16)==b'then'\n  except OSError: done=False\n  c.close()\n  if done: break\n"
         );
         let spec = json!({
             "serve": ["python3", "-c", server],
             "cwd": dir.path(),
             "port": port,
             "wait": 20,
-            "then": [["sh", "-c", format!("touch '{}'; python3 -c \"import socket;socket.create_connection(('127.0.0.1',{port}))\"", marker.display())]],
+            "then": [["sh", "-c", format!("touch '{}'; python3 -c \"import socket;c=socket.create_connection(('127.0.0.1',{port}));c.sendall(b'then');c.close()\"", marker.display())]],
         });
         serve_worker(&spec.to_string()).unwrap();
         assert!(marker.exists());
