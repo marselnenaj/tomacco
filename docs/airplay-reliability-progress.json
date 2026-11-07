@@ -1,0 +1,102 @@
+{
+  "$comment": "AirPlay audio delay and mouse-gesture reliability lane. Code, source and fixture evidence only: no iPhone, Pixel, Mac, Bluetooth adapter, BlueZ, audio device, network host, running receiver or installed tomaccoctl was touched. Not a hardware, latency, packaging or release qualification. The physical AirPlay audio/swipe issues stay open until measured on a released device.",
+  "date": "2026-11-07",
+  "model": "claude-opus-5-5; Claude Bash sandbox enabled; every command ran in the Harness bubblewrap workspace sandbox (120 s per call); no sandbox disabled, no browser launched",
+  "workspace": "/home/maslos/Work/tomacco-airplay-reliability-20261107",
+  "branch": "fix/airplay-reliability",
+  "base": "4117650a6dd04c59ab4d82d94f02724fb9f432c1",
+  "tested_commit": "a8f10f674433533c85c67c3f798c6f980831a434",
+  "tested_commit_scope": "native/runtime/airplay.rs, native/runtime/bluetooth.rs, tests/airplay_audio_backlog_integration.py (new), tests/airplay_receiver_isolated_integration.py (new), CHANGELOG.md, docs/iphone.md. The final HEAD adds only this record (docs-only, no build input).",
+  "already_present_not_reimplemented": [
+    "ff75d92 (ancestor of base): AirPlay frame-edge swipes and wheel drags in src/nativeview.cpp / qml (beginTouch/moveTouch/endTouch/cancelTouch, hover suppressed during wheel). Unchanged.",
+    "Absolute pointer report 4, nudged repeats, SETTLE/HOLD/PACE timings (555ad8c). Unchanged.",
+    "H.264 Annex-B cutting, IDR first-slice flag, replay cache. Unchanged."
+  ],
+  "traced_paths": {
+    "audio": "UxPlay 1.73.7 (installed ~/.local/bin/uxplay; source /home/maslos/Work/iphone-linux/vendor/UxPlay df67c21, read only). renderers/audio_renderer.c: pipeline 'appsrc ! queue ! avdec_aac ! audioconvert ! audioresample quality=10 ! volume ! level ! <-as> sync=<video_sync>'. With -vsync no, AAC (mirror) buffers get no PTS and the sink has sync=false. lib/raop_buffer.c: with resends active a missing packet holds dequeue until it arrives or the 256-entry buffer overruns (DELAY up to ~255 frames), then releases the backlog at once. audio_renderer_flush() is empty.",
+    "video": "renderers/video_renderer.c: with -vrtp the pipeline is 'appsrc ! queue ! h264parse ! rtph264pay <Tomacco pipeline>' and the sync flag (static, default false) is only set for UxPlay's own sinks, so -vrtp video is untimestamped whether or not -vsync is given. Tomacco decodes it independently (src/nativeview.cpp, newest-frame-only presentation). Exact A/V lip sync is therefore absent by design: the Annex-B TCP hop drops sender PTS.",
+    "input": "src/nativeview.cpp sends hover/down/move/up/cancel per mouse event over one control-socket request each, coalescing only the newest queued move/hover. native/runtime.rs worker -> coordination::worker_input (admission) -> runtime/airplay.rs input -> bluetooth.rs Hid::point (BlueZ GATT notification on report 4). Listening = the phone's StartNotify on the pointer report."
+  },
+  "defects": [
+    {
+      "id": "audio_backlog_kept_for_the_whole_mirror",
+      "root_cause": "-vsync no makes UxPlay's mirror audio sink unsynchronised (sync=false, no timestamps): it never drops or skips. Audio that arrives late in a burst (Wi-Fi stall, RTP resend wait in raop_buffer) is played in full afterwards, the sink's ring buffer and upstream queues hold the excess, and the added delay stays until the mirror ends. Sender/sink clock drift accumulates the same way.",
+      "evidence": "Offline fixture tests/airplay_audio_backlog_integration.py builds UxPlay's own AAC pipeline string (AAC-LC caps 1210, same avdec_aac path as mirror AAC-ELD) and replaces only the device element by a real-time 200 ms ring-buffer model (pulsesink default buffer-time; blocking like a full ring). Legacy plain sink: a 1.2 s stall adds 1190.0 ms and a 2.4 s stall 2390.1 ms of delay until the end of the run (exit 1). The delay equals the stall: it never recovers.",
+      "fix": "UxPlay gets -as 'queue max-size-buffers=0 max-size-bytes=0 max-size-time=100000000 leaky=downstream ! autoaudiosink' (UxPlay still appends sync=false; default sink unchanged). The queue never blocks upstream and drops its oldest audio beyond 100 ms. If $UXPLAYRC, ~/.uxplayrc or ~/.config/uxplayrc sets 'as'/'-as', Tomacco passes no -as (argv would otherwise override the person's sink) and runtime.state audio_backlog_ms is null; otherwise 100.",
+      "fixture_result_after": "1.2 s stall: +330.8 ms; 2.4 s stall: +323.5 ms (ring 200 + queue 100 + about one frame; bound asserted 369.7 ms); 0.86 s / 2.07 s of stale stalled audio dropped. Jitter up to 60 ms: 4.992 of 4.992 s played, latency 63.9 -> 64.9 ms, identical to legacy (no loss, no added base latency). Production string parses with the real autoaudiosink (NULL state only, no device opened): sink sync=false, queue max-size-time 100000000.",
+      "not_claimed": "No end-to-end or iPhone latency was measured. Steady-state latency is unchanged by design (the queue is empty without a backlog); the fix bounds growth, it does not reduce the sink's own ~200 ms buffer, the phone's encoding delay or the network. Whether this mechanism is the cause of the user's reported delay is unproven until a hardware trace."
+    },
+    {
+      "id": "button_stays_held_after_bluetooth_listening_loss",
+      "root_cause": "An up/cancel arriving while the phone was not listening returned early (bluetooth_not_paired / delivered:false) without clearing `held`; hover reported with `self.held`. After the phone listened again (BLE reconnect, re-subscription), every plain mouse hover was sent with the button down, i.e. dragged on the phone. A reconnect between two inputs was invisible because only the boolean listening flag was read.",
+      "fix": "bluetooth.rs counts StartNotify per characteristic (Notify{on, starts}); Hid::subscriptions(). Airplay forgets held button and pointer position whenever the phone is not listening or its subscription count changed, so the next press moves and settles first. A hover never carries a button and does not move a finger that is down (delivered:false), matching coordination Kind::Pointer 'cannot press anything'.",
+      "tests": ["a_button_held_when_the_phone_stopped_listening_is_not_held_after_it_listens_again", "after_a_reconnect_a_press_moves_and_settles_first", "a_hover_never_carries_a_button", "bluetooth::each_subscription_of_the_phone_is_counted"]
+    },
+    {
+      "id": "final_hover_dropped",
+      "root_cause": "A hover within PACE (8 ms) of the previous report returned delivered:true without sending. The last position of a quick mouse movement was often lost; the desktop hides its own cursor while the phone listens, so the visible phone pointer stayed short of where a click would then land.",
+      "fix": "Hovers are paced by report()'s existing sleep instead of dropped; the desktop already keeps only the newest pending hover, so no backlog builds.",
+      "tests": ["the_last_of_quick_mouse_moves_reaches_the_phone"]
+    },
+    {
+      "id": "drag_release_and_cancel_position",
+      "root_cause": "A release at a point the last move did not reach sent move + button-up in one report; the documented iOS behaviour for presses (a button change lands where the pointer was before the report, SETTLE) means the drag can end short. A cancel let go at the cancel's coordinates, i.e. moved the held finger before lifting.",
+      "fix": "release() first reports the end point with the button held when it differs, then lets go there (one extra 8 ms report, same end state if iOS applies both at once). cancel lets go where the pointer is. Swipes already end on their last step and gain no report.",
+      "tests": ["a_drag_ends_where_the_mouse_let_go_and_a_cancel_lifts_in_place"],
+      "not_claimed": "iOS release-position behaviour is inferred from the measured press behaviour, not measured here."
+    },
+    {
+      "id": "input_advertised_without_bluetooth",
+      "root_cause": "capabilities() always advertised live_touch, 12 keys, text and fill even when BlueZ could not serve the HID device (bluetooth.status unavailable), though every input then fails.",
+      "fix": "Without a served HID: live_touch/text/fill/exact_scroll false, max_contacts 0, keys [], note naming runtime.state bluetooth.error. With a served HID the capabilities are as before, the note says input needs pairing/listening (runtime.state bluetooth.listening).",
+      "tests": ["without_bluetooth_no_input_is_advertised"]
+    }
+  ],
+  "observed_not_changed": [
+    "The 'Control needs Bluetooth' error carries the generic airplay_runtime remedy about ports/firewall (pre-existing; an error-code/remedy change was out of scope).",
+    "Each pointer event is one control-socket connection plus a coordination admission transaction; not measured as a defect here, coordination contracts left untouched.",
+    "UxPlay's resend wait and empty audio flush remain upstream behaviour; with the fix their backlog is dropped beyond 100 ms instead of kept. A short gap/discontinuity at a stall is expected and audible; nothing is muted.",
+    "UxPlay -al (advertised latency) and pulsesink buffer-time are unchanged: no measurement supports changing them."
+  ],
+  "user_facing_text": "No QML/C++/i18n strings changed; the 51 catalogs are untouched (1889 source keys, digest 5d7260fd1b72; tests/python test_i18n passed). Changed English texts are agent-facing JSON (capability note) and docs (CHANGELOG.md, docs/iphone.md).",
+  "validation": {
+    "environment": "PATH=$HOME/.cargo/bin:$PATH CARGO_TARGET_DIR=$PWD/target, cargo 1.99.1 / rustc 1.99.1, GStreamer 1.28.8 + PyGObject. The bwrap sandbox mounts /run/user/1000 read-only, so test runs use XDG_RUNTIME_DIR=/tmp/xrt (mode 0700) for core::socket_tempdir; first run without it: 6 unrelated socket tests failed with EROFS at native/core.rs:409, all pass with it.",
+    "commands": [
+      {"cmd": "cargo test --offline --locked --bin tomaccoctl -- runtime::airplay runtime::bluetooth", "result": "12 passed (4 before the change)"},
+      {"cmd": "XDG_RUNTIME_DIR=/tmp/xrt cargo test --offline --locked", "result": "729 passed; integration binary 2 passed (rust-core CTest equivalent)"},
+      {"cmd": "python3 qa/airplay/mutate.py <name> (each fix reverted alone, file restored afterwards)", "result": "7/7 caught: stuck_button (2 tests fail), hover_carries_button (1), hover_dropped (2), release_moves (1), cancel_moves (1), capabilities (1), audio_queue (1)"},
+      {"cmd": "python3 -I tests/airplay_audio_backlog_integration.py", "result": "exit 0; stall +330.8 ms, long_stall +323.5 ms, jitter lossless"},
+      {"cmd": "python3 -I tests/airplay_audio_backlog_integration.py --legacy", "result": "exit 1 (expected): stall +1190.0 ms, long_stall +2390.1 ms"},
+      {"cmd": "python3 -I tests/airplay_receiver_isolated_integration.py", "result": "exit 0: source-built runtime.start airplay with fake uxplay, isolated HOME/XDG/TOMACCO_HOME/TMPDIR, D-Bus addresses pointing nowhere; uxplay argv has the -as queue, -vsync no, -vrtp tcpclientsink unchanged; status connected; bluetooth unavailable; input_capabilities live_touch false, keys []; hover delivered false; down answers 'Control needs Bluetooth'; with UXPLAYRC 'as pipewiresink' no -as and audio_backlog_ms null; 22 transport/host traps (adb, ssh, bluetoothctl, idevice*, hyprctl, tomacco, pactl, ...) called 0 times; no process left running"},
+      {"cmd": "cargo clippy --offline --locked --bin tomaccoctl --all-targets", "result": "no warnings in the changed files (4 pre-existing elsewhere)"},
+      {"cmd": "rustfmt --edition 2024 --check native/runtime/airplay.rs native/runtime/bluetooth.rs", "result": "clean"},
+      {"cmd": "cd tests/python && TOMACCOCTL=../../target/debug/tomaccoctl python3 -m unittest test_docs_consistency test_docs_links test_docs_reference test_agent_skill test_i18n test_agent_runtime test_device_coordination", "result": "64 passed (44 + 20), 0 skipped with TOMACCOCTL set"}
+    ],
+    "not_run": "C++/QML CTest suites (desktop-ui, native-display, ...) and ARM64/container builds: no C++, QML or build input changed. Root integration/packaging runs the whole product CTest.",
+    "evidence_files": {
+      "qa/airplay/audio-fixed.json": "2a22c5b2e2a2acb54ef5e1d87875dac7180a5bffc331f6a21bee925cad575756",
+      "qa/airplay/audio-legacy.json": "9e6a7f6d0a4464be4c1f176faa703a90ecefa17962758433904864a61f45dfc7",
+      "qa/airplay/receiver-isolated.out": "5c2dbcb4c44a91c23fe33e1a29371d334e440ce0fa09f0b8a8a8b353f91e239c",
+      "qa/airplay/rust-core.log": "51e68a2b44c5a18d7b430c5f4429debb985bd020c96e692028408a20a23096da",
+      "qa/airplay/mutations-final-1.log": "8c0ca781d6e257f6d0e085a7757f7c0636d1fac968de9aafc01cabecd8f460a7",
+      "qa/airplay/mutations-final-2.log": "cdc17e6d5428231cf00db6fe8cd787062410b3dc906addd9f6422d48e736aaf4",
+      "$comment": "qa/ is git-ignored and stays in this workspace"
+    }
+  },
+  "hardware_qualification_plan": {
+    "preconditions": "Integrated build installed by root; Pixel/iPhone released to this work; the user's own live iPhone runtime is not reused or stopped. No UxPlay startup file with 'as' (it disables the bound by design); for diagnostics an UXPLAYRC containing only 'd' is fine.",
+    "checks": [
+      "Receiver: runtime.state audio_backlog_ms == 100; `ps -o args` of the uxplay child shows the -as queue; uxplay.log shows no GStreamer audio error.",
+      "A/V offset: play a flash+click sync video on the iPhone while mirroring; film the desktop screen and record the desktop speaker with one 240 fps camera; measure click-vs-flash at 1, 10 and 30 min. Compare with the pre-change installed build on the same network.",
+      "Stall recovery: during playback cause a Wi-Fi stall (walk out of range or briefly block the AP), then measure again within 10 s; pass: the offset returns to within ~0.35 s of the pre-stall value instead of growing by the stall length. Read-only `pactl -f json list sink-inputs` (sink_usec, buffer_usec) before/after.",
+      "Swipes (paired, AssistiveTouch on): 20 vertical scrolls in Settings, 20 Home-screen page swipes, 20 fast flicks, 20 slow drags released away from the last move; record the phone screen: each must move content once, with no tap at the start and no short end.",
+      "Reconnect: start a drag, turn the phone's Bluetooth off before releasing, release, turn Bluetooth on, wait for bluetooth.listening true, hover across icons: no drag/scroll may happen; then a click must land where the pointer shows. bluetooth.log records the reconnect.",
+      "Pointer accuracy: move fast then stop over 10 small targets and click; the phone pointer must sit on the target before the click and the tap must hit it.",
+      "Regression: tap, keyboard text, Home (Command-H), volume keys, wheel scrolling and frame-edge swipes as before; a session without Bluetooth shows input_capabilities live_touch false."
+    ]
+  },
+  "final_source_ready": true,
+  "final_source_ready_meaning": "Source, tests and docs are committed and ready for root integration/packaging. It does not mean the physical AirPlay audio delay or swipe issues are solved: physical_issues_solved stays false until the hardware plan passes on a released device.",
+  "physical_issues_solved": false,
+  "preserved": "Receiver startup/ownership, mirroring detection, window opening, project chooser, runtime reservations/idempotency/approval contracts, other transports, keyboard, wheel scrolling, live gestures and all i18n catalogs. No push, tag, release, installed binary, global config, device, Bluetooth or network access."
+}
