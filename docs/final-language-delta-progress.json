@@ -1,0 +1,1258 @@
+{
+ "$comment": "Final 78-entry language delta (Claude Opus 5.5) on integration/finish-tomacco. The catalogs, i18n/COVERAGE.md and the tests win over this record.",
+ "date": "2026-11-07",
+ "model": "claude-opus-5-5",
+ "branch": "integration/finish-tomacco",
+ "base": {
+  "catalog_sync": "c16323a",
+  "parent": "220babf (MobileNav caption fix by root; reuses existing keys, source digest unchanged)"
+ },
+ "commits": {
+  "reconciliation": "f59294a",
+  "progress_record": "the commit that adds this file (its child of f59294a)"
+ },
+ "final_source_count": 1878,
+ "final_source_digest": "d64e05550744",
+ "final_delta": {
+  "contextual_entries": 78,
+  "unique_source_strings": 75,
+  "inventory": "/home/maslos/Work/tomacco-finish-20261107/final-source-inventory.json",
+  "indices": [
+   151,
+   333,
+   334,
+   335,
+   336,
+   337,
+   338,
+   339,
+   340,
+   341,
+   989,
+   990,
+   991,
+   992,
+   993,
+   994,
+   995,
+   996,
+   997,
+   998,
+   999,
+   1000,
+   1001,
+   1002,
+   1499,
+   1500,
+   1501,
+   1502,
+   1503,
+   1504,
+   1505,
+   1506,
+   1507,
+   1508,
+   1509,
+   1510,
+   1511,
+   1512,
+   1513,
+   1514,
+   1515,
+   1516,
+   1517,
+   1518,
+   1519,
+   1520,
+   1521,
+   1522,
+   1523,
+   1524,
+   1525,
+   1526,
+   1527,
+   1528,
+   1529,
+   1530,
+   1531,
+   1532,
+   1533,
+   1534,
+   1535,
+   1536,
+   1537,
+   1538,
+   1539,
+   1540,
+   1541,
+   1542,
+   1543,
+   1544,
+   1545,
+   1546,
+   1547,
+   1548,
+   1549,
+   1550,
+   1551,
+   1877
+  ]
+ },
+ "catalogs": 50,
+ "complete": [
+  "ar",
+  "bg",
+  "bn",
+  "ca",
+  "cs",
+  "da",
+  "de",
+  "el",
+  "es",
+  "es-MX",
+  "et",
+  "fa",
+  "fi",
+  "fil",
+  "fr",
+  "ga",
+  "he",
+  "hi",
+  "hr",
+  "hu",
+  "id",
+  "is",
+  "it",
+  "ja",
+  "ko",
+  "lt",
+  "lv",
+  "ms",
+  "nl",
+  "no",
+  "pl",
+  "pt",
+  "pt-BR",
+  "ro",
+  "ru",
+  "si",
+  "sk",
+  "sl",
+  "sr",
+  "sv",
+  "sw",
+  "ta",
+  "th",
+  "tr",
+  "uk",
+  "ur",
+  "uz",
+  "vi",
+  "zh-CN",
+  "zh-TW"
+ ],
+ "incomplete": [],
+ "english_plural": {
+  "file": "i18n/tomacco_en.ts",
+  "context": "FileWorkspace",
+  "source": "Search results for “%1” · %n match(es)",
+  "forms": [
+   "Search results for “%1” · %n match",
+   "Search results for “%1” · %n matches"
+  ],
+  "plural_entries": 21,
+  "test": "test_i18n.PluralRuleTests.test_english_plural_forms_exist_for_every_plural OK"
+ },
+ "menu_registry_agreement": {
+  "menu_entries": "6/6 for all 50 languages (assets/io.github.marselnenaj.tomacco.desktop; desktop-file-validate OK)",
+  "menu_fix": "The language-package merges left blank lines inside .desktop groups, so the coverage report showed 2/6 for 33 languages that had all 6 keys. Regrouped (blank lines only between groups); no key or value changed.",
+  "registry": "i18n/languages.json: 51 entries, all complete=true; check-registry in_step=true; coverage complete list equals registry"
+ },
+ "translation_notes": [
+  "Open/project = state of the currently open project row; Open/folder = state of an expanded folder row; both are adjectives (gender-agreeing where the language needs it), not the verb.",
+  "Back (Workspace, MobileTopBar) reuses each language's vetted navigation Back from Main; no 'rear' sense anywhere.",
+  "Off/Connected/Starting reuse the vetted AndroidDevices device-state wording where the meaning is identical.",
+  "Plural forms follow lrelease numerus families; Irish uses 'torthaí: %n' in all three slots (initial mutations after numerals cannot be expressed per Qt slot); Filipino, Uzbek, Bengali, Hindi keep the numeral-invariant noun.",
+  "Greek uses the ano teleia, Arabic/Persian/Urdu the Arabic semicolon and comma; quotes follow each catalog's existing style.",
+  "Layout-driven wording: ja 'Switch project' = プロジェクト切替, si 'Switch project' = ව්‍යාපෘති මාරුව and si 'Start' = අරඹන්න, chosen because the longer forms overflowed or elided at 360 px / 200 %."
+ ],
+ "languages": {
+  "ar": {
+   "finished": 1878,
+   "unfinished": 0,
+   "missing": 0,
+   "stale": 0,
+   "problems": [],
+   "plural_forms": "6 (arabic)",
+   "direction": "rtl",
+   "menu_entry": "6/6",
+   "registry_complete": true,
+   "status": "complete",
+   "final_delta_finished": 78,
+   "previously_finished_changed_or_lost": 0,
+   "suspicious_baseline_review": [
+    "AndroidDevices: 'the Android SDK'"
+   ],
+   "glyphs_uncovered": [],
+   "layout_probe_findings": []
+  },
+  "bg": {
+   "finished": 1878,
+   "unfinished": 0,
+   "missing": 0,
+   "stale": 0,
+   "problems": [],
+   "plural_forms": "2 (english)",
+   "direction": "ltr",
+   "menu_entry": "6/6",
+   "registry_complete": true,
+   "status": "complete",
+   "final_delta_finished": 78,
+   "previously_finished_changed_or_lost": 0,
+   "suspicious_baseline_review": [
+    "AndroidDevices: 'the Android SDK'",
+    "NativeWorkspace: 'Claude Code Codex Gemini Cursor VS Code Zed OpenCode Grok He'"
+   ],
+   "glyphs_uncovered": [],
+   "layout_probe_findings": [
+    "elided:text:Още опции за компилиране"
+   ]
+  },
+  "bn": {
+   "finished": 1878,
+   "unfinished": 0,
+   "missing": 0,
+   "stale": 0,
+   "problems": [],
+   "plural_forms": "2 (english)",
+   "direction": "ltr",
+   "menu_entry": "6/6",
+   "registry_complete": true,
+   "status": "complete",
+   "final_delta_finished": 78,
+   "previously_finished_changed_or_lost": 0,
+   "suspicious_baseline_review": [
+    "AndroidDevices: 'the Android SDK'",
+    "Main: 'xtool sdk install /path/to/Xcode.xip\\nxtool setup'",
+    "NativeWorkspace: 'Claude Code Codex Gemini Cursor VS Code Zed OpenCode Grok He'"
+   ],
+   "glyphs_uncovered": [],
+   "layout_probe_findings": []
+  },
+  "ca": {
+   "finished": 1878,
+   "unfinished": 0,
+   "missing": 0,
+   "stale": 0,
+   "problems": [],
+   "plural_forms": "2 (english)",
+   "direction": "ltr",
+   "menu_entry": "6/6",
+   "registry_complete": true,
+   "status": "complete",
+   "final_delta_finished": 78,
+   "previously_finished_changed_or_lost": 0,
+   "suspicious_baseline_review": [
+    "NativeWorkspace: 'Claude Code Codex Gemini Cursor VS Code Zed OpenCode Grok He'"
+   ],
+   "glyphs_uncovered": [],
+   "layout_probe_findings": [
+    "elided:text:Més opcions de compilació"
+   ]
+  },
+  "cs": {
+   "finished": 1878,
+   "unfinished": 0,
+   "missing": 0,
+   "stale": 0,
+   "problems": [],
+   "plural_forms": "3 (slovak)",
+   "direction": "ltr",
+   "menu_entry": "6/6",
+   "registry_complete": true,
+   "status": "complete",
+   "final_delta_finished": 78,
+   "previously_finished_changed_or_lost": 0,
+   "suspicious_baseline_review": [
+    "NativeWorkspace: 'Claude Code Codex Gemini Cursor VS Code Zed OpenCode Grok He'"
+   ],
+   "glyphs_uncovered": [],
+   "layout_probe_findings": [
+    "elided:text:Další možnosti sestavení"
+   ]
+  },
+  "da": {
+   "finished": 1878,
+   "unfinished": 0,
+   "missing": 0,
+   "stale": 0,
+   "problems": [],
+   "plural_forms": "2 (english)",
+   "direction": "ltr",
+   "menu_entry": "6/6",
+   "registry_complete": true,
+   "status": "complete",
+   "final_delta_finished": 78,
+   "previously_finished_changed_or_lost": 0,
+   "suspicious_baseline_review": [
+    "NativeWorkspace: 'iPhone via USB'",
+    "Operations: 'Start build / test'"
+   ],
+   "glyphs_uncovered": [],
+   "layout_probe_findings": [
+    "elided:text:Flere build-indstillinger"
+   ]
+  },
+  "de": {
+   "finished": 1878,
+   "unfinished": 0,
+   "missing": 0,
+   "stale": 0,
+   "problems": [],
+   "plural_forms": "2 (english)",
+   "direction": "ltr",
+   "menu_entry": "6/6",
+   "registry_complete": true,
+   "status": "complete",
+   "final_delta_finished": 78,
+   "previously_finished_changed_or_lost": 0,
+   "suspicious_baseline_review": [
+    "DemoWorkspace: 'Videos (*.mp4 *.mov *.mkv *.webm)'"
+   ],
+   "glyphs_uncovered": [],
+   "layout_probe_findings": [
+    "elided:text:Weitere Build-Optionen"
+   ]
+  },
+  "el": {
+   "finished": 1878,
+   "unfinished": 0,
+   "missing": 0,
+   "stale": 0,
+   "problems": [],
+   "plural_forms": "2 (english)",
+   "direction": "ltr",
+   "menu_entry": "6/6",
+   "registry_complete": true,
+   "status": "complete",
+   "final_delta_finished": 78,
+   "previously_finished_changed_or_lost": 0,
+   "suspicious_baseline_review": [
+    "NativeWorkspace: 'Claude Code Codex Gemini Cursor VS Code Zed OpenCode Grok He'"
+   ],
+   "glyphs_uncovered": [],
+   "layout_probe_findings": [
+    "elided:text:Περισσότερες επιλογές μεταγλώττισης"
+   ]
+  },
+  "es": {
+   "finished": 1878,
+   "unfinished": 0,
+   "missing": 0,
+   "stale": 0,
+   "problems": [],
+   "plural_forms": "2 (english)",
+   "direction": "ltr",
+   "menu_entry": "6/6",
+   "registry_complete": true,
+   "status": "complete",
+   "final_delta_finished": 78,
+   "previously_finished_changed_or_lost": 0,
+   "suspicious_baseline_review": [],
+   "glyphs_uncovered": [],
+   "layout_probe_findings": [
+    "elided:text:Más opciones de compilación"
+   ]
+  },
+  "es-MX": {
+   "finished": 1878,
+   "unfinished": 0,
+   "missing": 0,
+   "stale": 0,
+   "problems": [],
+   "plural_forms": "2 (english)",
+   "direction": "ltr",
+   "menu_entry": "6/6",
+   "registry_complete": true,
+   "status": "complete",
+   "final_delta_finished": 78,
+   "previously_finished_changed_or_lost": 0,
+   "suspicious_baseline_review": [
+    "DemoWorkspace: 'Videos (*.mp4 *.mov *.mkv *.webm)'"
+   ],
+   "glyphs_uncovered": [],
+   "layout_probe_findings": [
+    "elided:text:Más opciones de compilación"
+   ]
+  },
+  "et": {
+   "finished": 1878,
+   "unfinished": 0,
+   "missing": 0,
+   "stale": 0,
+   "problems": [],
+   "plural_forms": "2 (english)",
+   "direction": "ltr",
+   "menu_entry": "6/6",
+   "registry_complete": true,
+   "status": "complete",
+   "final_delta_finished": 78,
+   "previously_finished_changed_or_lost": 0,
+   "suspicious_baseline_review": [
+    "Main: 'xtool sdk install /path/to/Xcode.xip\\nxtool setup'",
+    "NativeWorkspace: 'Claude Code Codex Gemini Cursor VS Code Zed OpenCode Grok He'"
+   ],
+   "glyphs_uncovered": [],
+   "layout_probe_findings": [
+    "elided:text:Rohkem ehitusvalikuid"
+   ]
+  },
+  "fa": {
+   "finished": 1878,
+   "unfinished": 0,
+   "missing": 0,
+   "stale": 0,
+   "problems": [],
+   "plural_forms": "1 (universal)",
+   "direction": "rtl",
+   "menu_entry": "6/6",
+   "registry_complete": true,
+   "status": "complete",
+   "final_delta_finished": 78,
+   "previously_finished_changed_or_lost": 0,
+   "suspicious_baseline_review": [
+    "AndroidDevices: 'the Android SDK'",
+    "Main: 'xtool sdk install /path/to/Xcode.xip\\nxtool setup'",
+    "NativeWorkspace: 'Claude Code Codex Gemini Cursor VS Code Zed OpenCode Grok He'"
+   ],
+   "glyphs_uncovered": [],
+   "layout_probe_findings": [
+    "elided:text:گزینه‌های بیشتر ساخت"
+   ]
+  },
+  "fi": {
+   "finished": 1878,
+   "unfinished": 0,
+   "missing": 0,
+   "stale": 0,
+   "problems": [],
+   "plural_forms": "2 (english)",
+   "direction": "ltr",
+   "menu_entry": "6/6",
+   "registry_complete": true,
+   "status": "complete",
+   "final_delta_finished": 78,
+   "previously_finished_changed_or_lost": 0,
+   "suspicious_baseline_review": [
+    "Main: 'xtool sdk install /path/to/Xcode.xip\\nxtool setup'",
+    "NativeWorkspace: 'Claude Code Codex Gemini Cursor VS Code Zed OpenCode Grok He'"
+   ],
+   "glyphs_uncovered": [],
+   "layout_probe_findings": [
+    "elided:text:Lisää käännösasetuksia"
+   ]
+  },
+  "fil": {
+   "finished": 1878,
+   "unfinished": 0,
+   "missing": 0,
+   "stale": 0,
+   "problems": [],
+   "plural_forms": "3 (tagalog)",
+   "direction": "ltr",
+   "menu_entry": "6/6",
+   "registry_complete": true,
+   "status": "complete",
+   "final_delta_finished": 78,
+   "previously_finished_changed_or_lost": 0,
+   "suspicious_baseline_review": [
+    "Main: 'Tomacco · Web inspector'",
+    "NativeWorkspace: 'Full screen · web preview'",
+    "NativeWorkspace: 'Claude Code Codex Gemini Cursor VS Code Zed OpenCode Grok He'",
+    "EnvironmentPanel: 'QA environment (*.json)'"
+   ],
+   "glyphs_uncovered": [],
+   "layout_probe_findings": [
+    "elided:text:Iba pang opsyon sa build"
+   ]
+  },
+  "fr": {
+   "finished": 1878,
+   "unfinished": 0,
+   "missing": 0,
+   "stale": 0,
+   "problems": [],
+   "plural_forms": "2 (french)",
+   "direction": "ltr",
+   "menu_entry": "6/6",
+   "registry_complete": true,
+   "status": "complete",
+   "final_delta_finished": 78,
+   "previously_finished_changed_or_lost": 0,
+   "suspicious_baseline_review": [],
+   "glyphs_uncovered": [],
+   "layout_probe_findings": [
+    "elided:text:Plus d'options de compilation"
+   ]
+  },
+  "ga": {
+   "finished": 1878,
+   "unfinished": 0,
+   "missing": 0,
+   "stale": 0,
+   "problems": [],
+   "plural_forms": "3 (irish)",
+   "direction": "ltr",
+   "menu_entry": "6/6",
+   "registry_complete": true,
+   "status": "complete",
+   "final_delta_finished": 78,
+   "previously_finished_changed_or_lost": 0,
+   "suspicious_baseline_review": [
+    "NativeWorkspace: 'Claude Code Codex Gemini Cursor VS Code Zed OpenCode Grok He'"
+   ],
+   "glyphs_uncovered": [],
+   "layout_probe_findings": [
+    "elided:text:Tuilleadh roghanna tógála"
+   ]
+  },
+  "he": {
+   "finished": 1878,
+   "unfinished": 0,
+   "missing": 0,
+   "stale": 0,
+   "problems": [],
+   "plural_forms": "2 (english)",
+   "direction": "rtl",
+   "menu_entry": "6/6",
+   "registry_complete": true,
+   "status": "complete",
+   "final_delta_finished": 78,
+   "previously_finished_changed_or_lost": 0,
+   "suspicious_baseline_review": [
+    "Main: 'xtool sdk install /path/to/Xcode.xip\\nxtool setup'",
+    "NativeWorkspace: 'Claude Code Codex Gemini Cursor VS Code Zed OpenCode Grok He'"
+   ],
+   "glyphs_uncovered": [],
+   "layout_probe_findings": [
+    "elided:text:אפשרויות בנייה נוספות"
+   ]
+  },
+  "hi": {
+   "finished": 1878,
+   "unfinished": 0,
+   "missing": 0,
+   "stale": 0,
+   "problems": [],
+   "plural_forms": "2 (english)",
+   "direction": "ltr",
+   "menu_entry": "6/6",
+   "registry_complete": true,
+   "status": "complete",
+   "final_delta_finished": 78,
+   "previously_finished_changed_or_lost": 0,
+   "suspicious_baseline_review": [
+    "AndroidDevices: 'the Android SDK'",
+    "Main: 'xtool sdk install /path/to/Xcode.xip\\nxtool setup'",
+    "NativeWorkspace: 'Claude Code Codex Gemini Cursor VS Code Zed OpenCode Grok He'"
+   ],
+   "glyphs_uncovered": [],
+   "layout_probe_findings": []
+  },
+  "hr": {
+   "finished": 1878,
+   "unfinished": 0,
+   "missing": 0,
+   "stale": 0,
+   "problems": [],
+   "plural_forms": "3 (russian)",
+   "direction": "ltr",
+   "menu_entry": "6/6",
+   "registry_complete": true,
+   "status": "complete",
+   "final_delta_finished": 78,
+   "previously_finished_changed_or_lost": 0,
+   "suspicious_baseline_review": [
+    "NativeWorkspace: 'Claude Code Codex Gemini Cursor VS Code Zed OpenCode Grok He'"
+   ],
+   "glyphs_uncovered": [],
+   "layout_probe_findings": [
+    "elided:text:Više mogućnosti izgradnje"
+   ]
+  },
+  "hu": {
+   "finished": 1878,
+   "unfinished": 0,
+   "missing": 0,
+   "stale": 0,
+   "problems": [],
+   "plural_forms": "1 (universal)",
+   "direction": "ltr",
+   "menu_entry": "6/6",
+   "registry_complete": true,
+   "status": "complete",
+   "final_delta_finished": 78,
+   "previously_finished_changed_or_lost": 0,
+   "suspicious_baseline_review": [
+    "Main: 'xtool sdk install /path/to/Xcode.xip\\nxtool setup'",
+    "NativeWorkspace: 'Claude Code Codex Gemini Cursor VS Code Zed OpenCode Grok He'"
+   ],
+   "glyphs_uncovered": [],
+   "layout_probe_findings": [
+    "elided:text:További buildbeállítások"
+   ]
+  },
+  "id": {
+   "finished": 1878,
+   "unfinished": 0,
+   "missing": 0,
+   "stale": 0,
+   "problems": [],
+   "plural_forms": "1 (universal)",
+   "direction": "ltr",
+   "menu_entry": "6/6",
+   "registry_complete": true,
+   "status": "complete",
+   "final_delta_finished": 78,
+   "previously_finished_changed_or_lost": 0,
+   "suspicious_baseline_review": [],
+   "glyphs_uncovered": [],
+   "layout_probe_findings": [
+    "elided:text:Opsi build lainnya"
+   ]
+  },
+  "is": {
+   "finished": 1878,
+   "unfinished": 0,
+   "missing": 0,
+   "stale": 0,
+   "problems": [],
+   "plural_forms": "2 (icelandic)",
+   "direction": "ltr",
+   "menu_entry": "6/6",
+   "registry_complete": true,
+   "status": "complete",
+   "final_delta_finished": 78,
+   "previously_finished_changed_or_lost": 0,
+   "suspicious_baseline_review": [
+    "Main: 'xtool sdk install /path/to/Xcode.xip\\nxtool setup'",
+    "NativeWorkspace: 'Claude Code Codex Gemini Cursor VS Code Zed OpenCode Grok He'"
+   ],
+   "glyphs_uncovered": [],
+   "layout_probe_findings": [
+    "elided:text:Fleiri smíðavalkostir"
+   ]
+  },
+  "it": {
+   "finished": 1878,
+   "unfinished": 0,
+   "missing": 0,
+   "stale": 0,
+   "problems": [],
+   "plural_forms": "2 (english)",
+   "direction": "ltr",
+   "menu_entry": "6/6",
+   "registry_complete": true,
+   "status": "complete",
+   "final_delta_finished": 78,
+   "previously_finished_changed_or_lost": 0,
+   "suspicious_baseline_review": [
+    "NativeWorkspace: 'iPhone via USB'"
+   ],
+   "glyphs_uncovered": [],
+   "layout_probe_findings": [
+    "elided:text:Altre opzioni di build"
+   ]
+  },
+  "ja": {
+   "finished": 1878,
+   "unfinished": 0,
+   "missing": 0,
+   "stale": 0,
+   "problems": [],
+   "plural_forms": "1 (universal)",
+   "direction": "ltr",
+   "menu_entry": "6/6",
+   "registry_complete": true,
+   "status": "complete",
+   "final_delta_finished": 78,
+   "previously_finished_changed_or_lost": 0,
+   "suspicious_baseline_review": [
+    "AndroidDevices: 'the Android SDK'"
+   ],
+   "glyphs_uncovered": [],
+   "layout_probe_findings": [
+    "elided:text:その他のビルドオプション"
+   ]
+  },
+  "ko": {
+   "finished": 1878,
+   "unfinished": 0,
+   "missing": 0,
+   "stale": 0,
+   "problems": [],
+   "plural_forms": "1 (universal)",
+   "direction": "ltr",
+   "menu_entry": "6/6",
+   "registry_complete": true,
+   "status": "complete",
+   "final_delta_finished": 78,
+   "previously_finished_changed_or_lost": 0,
+   "suspicious_baseline_review": [
+    "AndroidDevices: 'the Android SDK'"
+   ],
+   "glyphs_uncovered": [],
+   "layout_probe_findings": []
+  },
+  "lt": {
+   "finished": 1878,
+   "unfinished": 0,
+   "missing": 0,
+   "stale": 0,
+   "problems": [],
+   "plural_forms": "3 (lithuanian)",
+   "direction": "ltr",
+   "menu_entry": "6/6",
+   "registry_complete": true,
+   "status": "complete",
+   "final_delta_finished": 78,
+   "previously_finished_changed_or_lost": 0,
+   "suspicious_baseline_review": [
+    "Main: 'xtool sdk install /path/to/Xcode.xip\\nxtool setup'",
+    "NativeWorkspace: 'Claude Code Codex Gemini Cursor VS Code Zed OpenCode Grok He'"
+   ],
+   "glyphs_uncovered": [],
+   "layout_probe_findings": [
+    "elided:text:Daugiau kompiliavimo parinkčių"
+   ]
+  },
+  "lv": {
+   "finished": 1878,
+   "unfinished": 0,
+   "missing": 0,
+   "stale": 0,
+   "problems": [],
+   "plural_forms": "3 (latvian)",
+   "direction": "ltr",
+   "menu_entry": "6/6",
+   "registry_complete": true,
+   "status": "complete",
+   "final_delta_finished": 78,
+   "previously_finished_changed_or_lost": 0,
+   "suspicious_baseline_review": [
+    "Main: 'xtool sdk install /path/to/Xcode.xip\\nxtool setup'",
+    "NativeWorkspace: 'Claude Code Codex Gemini Cursor VS Code Zed OpenCode Grok He'",
+    "DemoWorkspace: 'MP4 video (*.mp4)'"
+   ],
+   "glyphs_uncovered": [],
+   "layout_probe_findings": [
+    "elided:text:Citas būvēšanas opcijas"
+   ]
+  },
+  "ms": {
+   "finished": 1878,
+   "unfinished": 0,
+   "missing": 0,
+   "stale": 0,
+   "problems": [],
+   "plural_forms": "1 (universal)",
+   "direction": "ltr",
+   "menu_entry": "6/6",
+   "registry_complete": true,
+   "status": "complete",
+   "final_delta_finished": 78,
+   "previously_finished_changed_or_lost": 0,
+   "suspicious_baseline_review": [
+    "NativeWorkspace: 'Claude Code Codex Gemini Cursor VS Code Zed OpenCode Grok He'"
+   ],
+   "glyphs_uncovered": [],
+   "layout_probe_findings": [
+    "elided:text:Lagi pilihan binaan"
+   ]
+  },
+  "nl": {
+   "finished": 1878,
+   "unfinished": 0,
+   "missing": 0,
+   "stale": 0,
+   "problems": [],
+   "plural_forms": "2 (english)",
+   "direction": "ltr",
+   "menu_entry": "6/6",
+   "registry_complete": true,
+   "status": "complete",
+   "final_delta_finished": 78,
+   "previously_finished_changed_or_lost": 0,
+   "suspicious_baseline_review": [
+    "NativeWorkspace: 'iPhone via USB'"
+   ],
+   "glyphs_uncovered": [],
+   "layout_probe_findings": []
+  },
+  "no": {
+   "finished": 1878,
+   "unfinished": 0,
+   "missing": 0,
+   "stale": 0,
+   "problems": [],
+   "plural_forms": "2 (english)",
+   "direction": "ltr",
+   "menu_entry": "6/6",
+   "registry_complete": true,
+   "status": "complete",
+   "final_delta_finished": 78,
+   "previously_finished_changed_or_lost": 0,
+   "suspicious_baseline_review": [
+    "NativeWorkspace: 'iPhone via USB'"
+   ],
+   "glyphs_uncovered": [],
+   "layout_probe_findings": [
+    "elided:text:Flere byggalternativer"
+   ]
+  },
+  "pl": {
+   "finished": 1878,
+   "unfinished": 0,
+   "missing": 0,
+   "stale": 0,
+   "problems": [],
+   "plural_forms": "3 (polish)",
+   "direction": "ltr",
+   "menu_entry": "6/6",
+   "registry_complete": true,
+   "status": "complete",
+   "final_delta_finished": 78,
+   "previously_finished_changed_or_lost": 0,
+   "suspicious_baseline_review": [],
+   "glyphs_uncovered": [],
+   "layout_probe_findings": [
+    "elided:text:Więcej opcji kompilacji"
+   ]
+  },
+  "pt": {
+   "finished": 1878,
+   "unfinished": 0,
+   "missing": 0,
+   "stale": 0,
+   "problems": [],
+   "plural_forms": "2 (english)",
+   "direction": "ltr",
+   "menu_entry": "6/6",
+   "registry_complete": true,
+   "status": "complete",
+   "final_delta_finished": 78,
+   "previously_finished_changed_or_lost": 0,
+   "suspicious_baseline_review": [],
+   "glyphs_uncovered": [],
+   "layout_probe_findings": [
+    "elided:text:Mais opções de compilação"
+   ]
+  },
+  "pt-BR": {
+   "finished": 1878,
+   "unfinished": 0,
+   "missing": 0,
+   "stale": 0,
+   "problems": [],
+   "plural_forms": "2 (french)",
+   "direction": "ltr",
+   "menu_entry": "6/6",
+   "registry_complete": true,
+   "status": "complete",
+   "final_delta_finished": 78,
+   "previously_finished_changed_or_lost": 0,
+   "suspicious_baseline_review": [],
+   "glyphs_uncovered": [],
+   "layout_probe_findings": [
+    "elided:text:Mais opções de compilação"
+   ]
+  },
+  "ro": {
+   "finished": 1878,
+   "unfinished": 0,
+   "missing": 0,
+   "stale": 0,
+   "problems": [],
+   "plural_forms": "3 (romanian)",
+   "direction": "ltr",
+   "menu_entry": "6/6",
+   "registry_complete": true,
+   "status": "complete",
+   "final_delta_finished": 78,
+   "previously_finished_changed_or_lost": 0,
+   "suspicious_baseline_review": [
+    "NativeWorkspace: 'Claude Code Codex Gemini Cursor VS Code Zed OpenCode Grok He'"
+   ],
+   "glyphs_uncovered": [],
+   "layout_probe_findings": [
+    "elided:text:Mai multe opțiuni de compilare"
+   ]
+  },
+  "ru": {
+   "finished": 1878,
+   "unfinished": 0,
+   "missing": 0,
+   "stale": 0,
+   "problems": [],
+   "plural_forms": "3 (russian)",
+   "direction": "ltr",
+   "menu_entry": "6/6",
+   "registry_complete": true,
+   "status": "complete",
+   "final_delta_finished": 78,
+   "previously_finished_changed_or_lost": 0,
+   "suspicious_baseline_review": [
+    "AndroidDevices: 'the Android SDK'"
+   ],
+   "glyphs_uncovered": [],
+   "layout_probe_findings": [
+    "elided:text:Дополнительные параметры сборки"
+   ]
+  },
+  "si": {
+   "finished": 1878,
+   "unfinished": 0,
+   "missing": 0,
+   "stale": 0,
+   "problems": [],
+   "plural_forms": "2 (english)",
+   "direction": "ltr",
+   "menu_entry": "6/6",
+   "registry_complete": true,
+   "status": "complete",
+   "final_delta_finished": 78,
+   "previously_finished_changed_or_lost": 0,
+   "suspicious_baseline_review": [
+    "AndroidDevices: 'the Android SDK'"
+   ],
+   "glyphs_uncovered": [],
+   "layout_probe_findings": [
+    "elided:text:තවත් ගොඩනැගීමේ විකල්ප",
+    "overflow:ගොනු විවෘත කරන්න",
+    "overflow:මාර්ගය පිටපත් කරන්න"
+   ]
+  },
+  "sk": {
+   "finished": 1878,
+   "unfinished": 0,
+   "missing": 0,
+   "stale": 0,
+   "problems": [],
+   "plural_forms": "3 (slovak)",
+   "direction": "ltr",
+   "menu_entry": "6/6",
+   "registry_complete": true,
+   "status": "complete",
+   "final_delta_finished": 78,
+   "previously_finished_changed_or_lost": 0,
+   "suspicious_baseline_review": [
+    "NativeWorkspace: 'Claude Code Codex Gemini Cursor VS Code Zed OpenCode Grok He'"
+   ],
+   "glyphs_uncovered": [],
+   "layout_probe_findings": [
+    "elided:text:Ďalšie možnosti zostavenia"
+   ]
+  },
+  "sl": {
+   "finished": 1878,
+   "unfinished": 0,
+   "missing": 0,
+   "stale": 0,
+   "problems": [],
+   "plural_forms": "4 (slovenian)",
+   "direction": "ltr",
+   "menu_entry": "6/6",
+   "registry_complete": true,
+   "status": "complete",
+   "final_delta_finished": 78,
+   "previously_finished_changed_or_lost": 0,
+   "suspicious_baseline_review": [
+    "NativeWorkspace: 'Claude Code Codex Gemini Cursor VS Code Zed OpenCode Grok He'"
+   ],
+   "glyphs_uncovered": [],
+   "layout_probe_findings": [
+    "elided:text:Več možnosti gradnje"
+   ]
+  },
+  "sr": {
+   "finished": 1878,
+   "unfinished": 0,
+   "missing": 0,
+   "stale": 0,
+   "problems": [],
+   "plural_forms": "3 (russian)",
+   "direction": "ltr",
+   "menu_entry": "6/6",
+   "registry_complete": true,
+   "status": "complete",
+   "final_delta_finished": 78,
+   "previously_finished_changed_or_lost": 0,
+   "suspicious_baseline_review": [
+    "AndroidDevices: 'the Android SDK'",
+    "NativeWorkspace: 'Claude Code Codex Gemini Cursor VS Code Zed OpenCode Grok He'"
+   ],
+   "glyphs_uncovered": [],
+   "layout_probe_findings": [
+    "elided:text:Још опција за изградњу"
+   ]
+  },
+  "sv": {
+   "finished": 1878,
+   "unfinished": 0,
+   "missing": 0,
+   "stale": 0,
+   "problems": [],
+   "plural_forms": "2 (english)",
+   "direction": "ltr",
+   "menu_entry": "6/6",
+   "registry_complete": true,
+   "status": "complete",
+   "final_delta_finished": 78,
+   "previously_finished_changed_or_lost": 0,
+   "suspicious_baseline_review": [
+    "NativeWorkspace: 'iPhone via USB'"
+   ],
+   "glyphs_uncovered": [],
+   "layout_probe_findings": [
+    "elided:text:Fler byggalternativ"
+   ]
+  },
+  "sw": {
+   "finished": 1878,
+   "unfinished": 0,
+   "missing": 0,
+   "stale": 0,
+   "problems": [],
+   "plural_forms": "2 (english)",
+   "direction": "ltr",
+   "menu_entry": "6/6",
+   "registry_complete": true,
+   "status": "complete",
+   "final_delta_finished": 78,
+   "previously_finished_changed_or_lost": 0,
+   "suspicious_baseline_review": [
+    "NativeWorkspace: 'Claude Code Codex Gemini Cursor VS Code Zed OpenCode Grok He'"
+   ],
+   "glyphs_uncovered": [],
+   "layout_probe_findings": [
+    "elided:text:Chaguo zaidi za ujenzi"
+   ]
+  },
+  "ta": {
+   "finished": 1878,
+   "unfinished": 0,
+   "missing": 0,
+   "stale": 0,
+   "problems": [],
+   "plural_forms": "2 (english)",
+   "direction": "ltr",
+   "menu_entry": "6/6",
+   "registry_complete": true,
+   "status": "complete",
+   "final_delta_finished": 78,
+   "previously_finished_changed_or_lost": 0,
+   "suspicious_baseline_review": [
+    "AndroidDevices: 'the Android SDK'"
+   ],
+   "glyphs_uncovered": [],
+   "layout_probe_findings": [
+    "elided:text:மேலும் உருவாக்க விருப்பங்கள்",
+    "overflow:கோப்புகளைத் திற",
+    "overflow:பாதையை நகலெடு"
+   ]
+  },
+  "th": {
+   "finished": 1878,
+   "unfinished": 0,
+   "missing": 0,
+   "stale": 0,
+   "problems": [],
+   "plural_forms": "1 (universal)",
+   "direction": "ltr",
+   "menu_entry": "6/6",
+   "registry_complete": true,
+   "status": "complete",
+   "final_delta_finished": 78,
+   "previously_finished_changed_or_lost": 0,
+   "suspicious_baseline_review": [
+    "AndroidDevices: 'the Android SDK'"
+   ],
+   "glyphs_uncovered": [],
+   "layout_probe_findings": [
+    "elided:text:ตัวเลือกบิลด์เพิ่มเติม"
+   ]
+  },
+  "tr": {
+   "finished": 1878,
+   "unfinished": 0,
+   "missing": 0,
+   "stale": 0,
+   "problems": [],
+   "plural_forms": "1 (universal)",
+   "direction": "ltr",
+   "menu_entry": "6/6",
+   "registry_complete": true,
+   "status": "complete",
+   "final_delta_finished": 78,
+   "previously_finished_changed_or_lost": 0,
+   "suspicious_baseline_review": [
+    "NativeWorkspace: 'Claude Code Codex Gemini Cursor VS Code Zed OpenCode Grok He'"
+   ],
+   "glyphs_uncovered": [],
+   "layout_probe_findings": [
+    "elided:text:Diğer derleme seçenekleri"
+   ]
+  },
+  "uk": {
+   "finished": 1878,
+   "unfinished": 0,
+   "missing": 0,
+   "stale": 0,
+   "problems": [],
+   "plural_forms": "3 (russian)",
+   "direction": "ltr",
+   "menu_entry": "6/6",
+   "registry_complete": true,
+   "status": "complete",
+   "final_delta_finished": 78,
+   "previously_finished_changed_or_lost": 0,
+   "suspicious_baseline_review": [
+    "AndroidDevices: 'the Android SDK'"
+   ],
+   "glyphs_uncovered": [],
+   "layout_probe_findings": [
+    "elided:text:Додаткові параметри збірки"
+   ]
+  },
+  "ur": {
+   "finished": 1878,
+   "unfinished": 0,
+   "missing": 0,
+   "stale": 0,
+   "problems": [],
+   "plural_forms": "2 (english)",
+   "direction": "rtl",
+   "menu_entry": "6/6",
+   "registry_complete": true,
+   "status": "complete",
+   "final_delta_finished": 78,
+   "previously_finished_changed_or_lost": 0,
+   "suspicious_baseline_review": [
+    "AndroidDevices: 'the Android SDK'",
+    "Main: 'xtool sdk install /path/to/Xcode.xip\\nxtool setup'",
+    "NativeWorkspace: 'Claude Code Codex Gemini Cursor VS Code Zed OpenCode Grok He'"
+   ],
+   "glyphs_uncovered": [],
+   "layout_probe_findings": []
+  },
+  "uz": {
+   "finished": 1878,
+   "unfinished": 0,
+   "missing": 0,
+   "stale": 0,
+   "problems": [],
+   "plural_forms": "2 (english)",
+   "direction": "ltr",
+   "menu_entry": "6/6",
+   "registry_complete": true,
+   "status": "complete",
+   "final_delta_finished": 78,
+   "previously_finished_changed_or_lost": 0,
+   "suspicious_baseline_review": [
+    "NativeWorkspace: 'Claude Code Codex Gemini Cursor VS Code Zed OpenCode Grok He'"
+   ],
+   "glyphs_uncovered": [],
+   "layout_probe_findings": [
+    "elided:text:Boshqa yigʻish parametrlari"
+   ]
+  },
+  "vi": {
+   "finished": 1878,
+   "unfinished": 0,
+   "missing": 0,
+   "stale": 0,
+   "problems": [],
+   "plural_forms": "1 (universal)",
+   "direction": "ltr",
+   "menu_entry": "6/6",
+   "registry_complete": true,
+   "status": "complete",
+   "final_delta_finished": 78,
+   "previously_finished_changed_or_lost": 0,
+   "suspicious_baseline_review": [],
+   "glyphs_uncovered": [],
+   "layout_probe_findings": [
+    "elided:text:Tùy chọn dựng khác"
+   ]
+  },
+  "zh-CN": {
+   "finished": 1878,
+   "unfinished": 0,
+   "missing": 0,
+   "stale": 0,
+   "problems": [],
+   "plural_forms": "1 (universal)",
+   "direction": "ltr",
+   "menu_entry": "6/6",
+   "registry_complete": true,
+   "status": "complete",
+   "final_delta_finished": 78,
+   "previously_finished_changed_or_lost": 0,
+   "suspicious_baseline_review": [
+    "AndroidDevices: 'the Android SDK'"
+   ],
+   "glyphs_uncovered": [],
+   "layout_probe_findings": []
+  },
+  "zh-TW": {
+   "finished": 1878,
+   "unfinished": 0,
+   "missing": 0,
+   "stale": 0,
+   "problems": [],
+   "plural_forms": "1 (universal)",
+   "direction": "ltr",
+   "menu_entry": "6/6",
+   "registry_complete": true,
+   "status": "complete",
+   "final_delta_finished": 78,
+   "previously_finished_changed_or_lost": 0,
+   "suspicious_baseline_review": [
+    "AndroidDevices: 'the Android SDK'"
+   ],
+   "glyphs_uncovered": [],
+   "layout_probe_findings": []
+  }
+ },
+ "tests": {
+  "test_i18n_strict": "PYTHONPATH=.:tools:tests/python TMPDIR=/tmp python3 -m unittest test_i18n -> 18 tests OK (was failing only test_coverage_report_is_current before COVERAGE regeneration)",
+  "isolated_python_suites": "TMPDIR=/tmp python3 .scratch/run_py_tests.py test_i18n test_docs_consistency test_mobile_parity test_docs_links test_docs_reference test_build_site_docs test_product test_release_files test_agent_clients test_agent_skill test_agent_actions test_install test_make_release test_build_portable test_build_source_release test_preview -> 16 modules, 354 tests, 0 failed, 3 skipped (test_i18n numbers: no usable node binary on the trapped PATH; test_install x2: needs a debug build); device/transport executables trapped (exit 97), isolated HOME/XDG/TOMACCO_HOME",
+  "preservation": "python3 .scratch/tools/preserve_check.py c16323a -> 50 catalogs x 78 newly finished, en +1, 0 previously finished translations changed or lost",
+  "qm": "tools/ts2qm.py compiled all 51 catalogs; tomacco_i18n.read_qm read back 50 x 1878 messages + en 21, identical to the finished .ts forms",
+  "lrelease_parity": "unavailable: no lrelease on this host (qt6-tools not installed; qt6-base 6.12.0-3, /usr/lib/qt6/bin has no lrelease); nothing installed",
+  "desktop_entry": "desktop-file-validate assets/io.github.marselnenaj.tomacco.desktop -> OK",
+  "glyphs": "python3 .scratch/tools/glyph_check.py -> every character of every finished translation in all 51 catalogs is covered by an installed font (fontconfig charsets). Script fallbacks found: Noto Naskh/Kufi Arabic (ar, fa, ur), Liberation (he), Noto Sans Devanagari/Bengali/Tamil/Sinhala/Thai, Noto Sans CJK (ja, ko, zh). This is this host; other hosts need the same Noto script families.",
+  "layout_probe": "sh .scratch/render/run_probe.sh SAVE CODES: Qt 6.12 qml tool, offscreen, software backend, real MobileRow/MobileTopBar/StudioButton with a Studio stand-in, each catalog compiled by ts2qm and loaded with --translation; widths 360/393/412 x interface zoom 175/200 %; RTL mirrored as Main.qml does. 51 catalogs probed; PNGs for ar he ur fa ja zh-TW ko hi ta si th de fi ru el en in .scratch/render/out (not committed).",
+  "native_qt_ui_suites": "not re-run here: translations are compiled into the binary as resources, so the existing build/test-* binaries predate these catalogs; root rebuilds and runs them"
+ },
+ "layout_findings": {
+  "more_build_options": "The full-width 'More build options' disclosure StudioButton elides instead of wrapping. English elides at 360/200 %; 42 of 50 languages elide at some width/zoom, 17 even at 412/175 % (bg ca el es es-MX fr ja lt pt pt-BR ro ru si sk ta uk uz); ar bn hi ko nl ur zh-CN zh-TW never do. The action stays reachable and its accessible name is the full text, but the visible label is cut. Component limitation (StudioButton labels elide); QML unchanged here per scope. Suggested fix for root: let this button's label wrap (or use a MobileRow-style disclosure).",
+  "baseline_flow_buttons": "At 360 px / 200 % the pre-existing (baseline, not re-translated) Tamil and Sinhala labels for 'Open files' and 'Copy path' make single Flow buttons wider than the row, so they run past the right edge (Sinhala 'Copy path' also at 393/200). Same StudioButton limitation.",
+  "new_strings": "After the ja/si wording above, no new final-delta string overflows; long detail and notice texts wrap in every language including RTL."
+ },
+ "suspicious_review": "COVERAGE 'Suspicious' lists only baseline names/commands/search keyword strings (e.g. 'the Android SDK', the agent client list, xtool commands); none of the 78 final-delta entries is listed.",
+ "final_source_ready": true,
+ "remaining": [
+  "Root: rebuild (translations are embedded resources) and run the long native and ARM64 verification from the final HEAD.",
+  "Decide on StudioButton label wrapping for 'More build options' and the Ta/Si baseline Flow buttons (QML change, outside this language task).",
+  "Hosts without the Noto script families (Arabic, Devanagari, Bengali, Tamil, Sinhala, Thai, CJK) need them for those languages; the app bundles only Archivo and JetBrains Mono."
+ ],
+ "root_commands": [
+  "git -C /home/maslos/Work/tomacco-finish-integration log -3 --oneline",
+  "cd /home/maslos/Work/tomacco-finish-integration && PYTHONPATH=.:tools:tests/python TMPDIR=/tmp python3 -m unittest test_i18n",
+  "cd /home/maslos/Work/tomacco-finish-integration && python3 tools/i18n_catalog.py report && python3 tools/i18n_catalog.py check-registry",
+  "cd /home/maslos/Work/tomacco-finish-integration && TMPDIR=/tmp python3 .scratch/run_py_tests.py",
+  "cmake --build build && .scratch/run_qt_halves.sh test-desktop-ui && .scratch/run_qt_halves.sh test-phone-routes (offscreen, as before)",
+  "ARM64/native: root's existing long verification from the final HEAD"
+ ]
+}
