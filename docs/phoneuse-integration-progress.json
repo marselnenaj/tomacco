@@ -162,5 +162,29 @@
   "note": "Use the branch build (target/debug/tomaccoctl), not an installed tomaccoctl, until root packages this commit."
  },
  "final_source_ready": true,
- "final_source_ready_scope": "Source integration complete and verified on fixtures at tested_commit; not a hardware, ARM64, packaging or release qualification."
+ "final_source_ready_scope": "Source integration complete and verified on fixtures at tested_commit; not a hardware, ARM64, packaging or release qualification.",
+ "superseded_by": {
+  "note": "This record's evidence stays as it was for its tested_commit 6637045 / record d0a8d53, which root then qualified (CTest 14/14, ARM64 container verify; physical_pixel_verified false). The current final source adds the project chooser fix on top without touching any PhoneUse code; see docs/project-picker-integration-progress.json.",
+  "root_qualification_of_this_record": {
+   "receipt": "/home/maslos/Work/tomacco-phoneuse-implementation-20261107/final-verification-pipeline.json",
+   "state": "succeeded",
+   "source_commit": "d0a8d532d17884b5274067bd22b11ed2d2f51864"
+  },
+  "final_source": {
+   "branch": "integration/project-picker-fix",
+   "tested_commit": "874175c9eadf79099694473e245e9abc3e7c5225",
+   "record": "docs/project-picker-integration-progress.json",
+   "merged": [
+    "d0a8d532d17884b5274067bd22b11ed2d2f51864",
+    "4639bd883f7a4f5218e0962128fb066676f7be3f"
+   ]
+  },
+  "final_languages": {
+   "texts": 1889,
+   "digest": "5d7260fd1b72",
+   "complete": "50 of 50",
+   "delta_over_this_record": "+3 ProjectFolderDialog texts (1886 -> 1889)"
+  },
+  "phoneuse_sources_unchanged": "native/, Cargo.*, build.rs, assets/, tools/, tests/python/, skills and docs/reference identical to d0a8d53 at the final tested_commit"
+ }
 }

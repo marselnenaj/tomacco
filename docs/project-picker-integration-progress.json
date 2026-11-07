@@ -1,0 +1,253 @@
+{
+  "$comment": "Integration record: the fixed project folder chooser (picker lane 4639bd88) merged with the finished PhoneUse integration (d0a8d532, already qualified by root: 14/14 host CTest and ARM64 container verify). Offscreen Qt fixtures with synthetic folders in isolated homes, device/transport/agent helpers trapped. Not a hardware, ARM64, packaging or live-compositor qualification.",
+  "date": "2026-11-07",
+  "model": "claude-opus-5-5; Claude Bash sandbox enabled; every command ran in the Harness bubblewrap workspace sandbox (120 s per call)",
+  "workspace": "/home/maslos/Work/tomacco-project-picker-integration-20261107",
+  "branch": "integration/project-picker-fix",
+  "base": "39935232845346f3c72d03c91471ba8b07cb806a",
+  "source_list": "/home/maslos/Work/tomacco-project-dialog-20261107/ready-for-integration.json (prepared 2026-11-07T14:34:08Z)",
+  "merged_sources": [
+    {
+      "lane": "phoneuse",
+      "task": "7c730014-e875-4179-982d-4391b142c00a",
+      "clone": "/home/maslos/Work/tomacco-phoneuse-integration-20261107",
+      "head": "d0a8d532d17884b5274067bd22b11ed2d2f51864",
+      "merged_as": "fast-forward from the base",
+      "prior_qualification": {
+        "receipt": "/home/maslos/Work/tomacco-phoneuse-implementation-20261107/final-verification-pipeline.json",
+        "state": "succeeded",
+        "stages": "language gate 30 OK, host build, CTest 14/14 (628 s), ARM64 build, ARM64 container verify",
+        "source_commit": "d0a8d532d17884b5274067bd22b11ed2d2f51864",
+        "physical_pixel_verified": false
+      }
+    },
+    {
+      "lane": "project-picker",
+      "task": "3938e8b2-b2c8-4ec9-b4b1-a46daa60d867",
+      "clone": "/home/maslos/Work/tomacco-project-picker-fix-20261107",
+      "head": "4639bd883f7a4f5218e0962128fb066676f7be3f",
+      "merged_as": "merge commit 567ebae624d8af73668374091a6a8eba9afdd86c"
+    }
+  ],
+  "commits": [
+    {
+      "sha": "567ebae624d8af73668374091a6a8eba9afdd86c",
+      "what": "merge of the picker lane; only conflict i18n/COVERAGE.md, regenerated with tools/i18n_catalog.py report --write (not hand-merged)"
+    },
+    {
+      "sha": "874175c9eadf79099694473e245e9abc3e7c5225",
+      "what": "new phone test project_chooser_phone_sheet_reads_translated_and_mirrored (ar RTL / de at 360 px 200 %, ja at 412 px 175 %) and its row in docs/mobile-native.md"
+    }
+  ],
+  "tested_commit": "874175c9eadf79099694473e245e9abc3e7c5225",
+  "record_commit": "the child of tested_commit that changes only docs/project-picker-integration-progress.json and docs/phoneuse-integration-progress.json; `git diff --name-only 874175c9eadf79099694473e245e9abc3e7c5225 HEAD` must list exactly these two files",
+  "merge_review": {
+    "catalogs": "The 50 complete .ts catalogs (incl. es and es-MX) auto-merged: PhoneUse added 8 Operations texts, the picker 3 ProjectFolderDialog texts, in different contexts. Checked per catalog by (context, source, comment) against the base and both lane heads: no entry lost, changed, duplicated or invented; every lane entry present exactly once with its translation. tomacco_en.ts unchanged: 21 entries, 12 plurals, 9 ordinary.",
+    "chooser_translations_spot_checked": {
+      "de": [
+        "Persönlicher Ordner",
+        "Hier sind keine Ordner",
+        "Übergeordneter Ordner"
+      ],
+      "ar": [
+        "مجلد المنزل",
+        "لا توجد مجلدات هنا",
+        "المجلد الأعلى"
+      ],
+      "ja": [
+        "ホームフォルダー",
+        "ここにはフォルダーがありません",
+        "親フォルダー"
+      ]
+    },
+    "code": "PhoneUse touched no QML except qml/OperationTitles.js (+8 titles); the picker touched no Rust, operation asset, tool, Python test or skill. `git diff d0a8d53 874175c` outside i18n/*.ts: CMakeLists.txt (resource list), docs/desktop.md, docs/mobile-native.md, docs/project-picker-fix-progress.json, i18n/COVERAGE.md, qml/Main.qml, qml/NativeWorkspace.qml, qml/ProjectFolderDialog.qml, qml/Workspace.qml, src/backend.cpp, src/backend.h, tests/backend_test.cpp, tests/desktop_ui_test.cpp, tests/phone_routes_test.cpp.",
+    "phoneuse_behavior_retained": "native/, Cargo.*, build.rs, assets/ (operations.json registry, errors), tools/, tests/python/, skills and docs/reference are byte-identical to the qualified d0a8d53: device reservations at admission and before input, the durable request ledger around verified-fill delivery, refused/applied/unknown outcomes with no replay/failover after uncertainty, compact/detail trees with canonical IDs, and the test_avd synthetic-inventory fix (c788101) are unchanged.",
+    "implementation_reviewed": "qml/ProjectFolderDialog.qml is a real StudioDialog (not a description or smaller-font workaround): width min(room-2*gapXl, px(760)), height min(room-2*gapXl, px(640)), a phone sheet fills the inset room above the keyboard; wrapped mono location TextArea (typed/pasted path, ~/, file:// via Backend::resolveFolderPath; Enter shows, Ctrl+Enter/Open chooses, line breaks stripped); folder rows wrap whole names, symlinks show their canonical target; Ctrl+L, Alt+Up, Backspace, arrows mirrored in RTL; Open enabled only for a valid project folder (Backend::projectFolder canonical path); Esc/Cancel never call openProject. Backend::folderListing sorts with a numeric collator, reports missing/not-folder/unreadable, hides dot folders unless Hidden. No global font, zoom, platform theme, Qt system file or portal setting is changed.",
+    "entry_points": [
+      "Ctrl+O (NativeWorkspace shortcut)",
+      "command palette Open project",
+      "header Open project button",
+      "onboarding project step / secondary",
+      "project badge when no project",
+      "Project page Choose folder (Workspace.chooseProjectFolder)",
+      "phone project list Open folder",
+      "Files empty state Choose folder"
+    ],
+    "no_remaining_stock_project_chooser": "grep: no FolderDialog/FileDialog opens a project; projectFolder.open()/chooseProjectFolder all reach the one ProjectFolderDialog"
+  },
+  "languages": {
+    "before": {
+      "texts": 1878,
+      "digest": "d64e05550744",
+      "commit": "39935232845346f3c72d03c91471ba8b07cb806a"
+    },
+    "phoneuse_lane": {
+      "texts": 1886,
+      "digest": "02a8ba1b1b7a",
+      "commit": "d0a8d532d17884b5274067bd22b11ed2d2f51864",
+      "delta": "+8 Operations titles"
+    },
+    "picker_lane": {
+      "texts": 1881,
+      "digest": "59e96e41cc94",
+      "commit": "4639bd883f7a4f5218e0962128fb066676f7be3f",
+      "delta": "+3 ProjectFolderDialog texts: Parent folder, Home folder, No folders here"
+    },
+    "final": {
+      "texts": 1889,
+      "digest": "5d7260fd1b72",
+      "commit": "874175c9eadf79099694473e245e9abc3e7c5225",
+      "command": "python3 tools/i18n_catalog.py report --json",
+      "complete": "50 of 50 (ar … zh-TW incl. es and es-MX), 0 unfinished, 0 problems, menu entry 6/6 each",
+      "english": "21 entries: 12 plurals, 9 ordinary"
+    },
+    "reused_existing_texts": "Hidden (FileWorkspace), placeholder (Workspace), '%1 cannot be read.' (Backend), titles Open project (NativeWorkspace) / Choose project (Workspace)",
+    "qt_standard_buttons": "Open/Cancel are Qt standard buttons translated by the host's Qt catalogs (qt_ar, qt_de, qt_ja present on this host); a host without them shows Qt's English",
+    "no_new_texts_in_this_integration": true
+  },
+  "environment": {
+    "build": "cmake -S . -B build -G Ninja -DBUILD_TESTING=ON -DCMAKE_BUILD_TYPE=Debug -DCARGO_EXECUTABLE=/home/maslos/.cargo/bin/cargo with CARGO_HOME=/home/maslos/.cargo RUSTUP_HOME=/home/maslos/.rustup CARGO_NET_OFFLINE=true; `timeout 110 cmake --build build --parallel 8` resumed three times until ninja finished (exit 0). tomaccoctl was really built from this source in this clone (build/tomaccoctl sha256 17a7a271922a685c2649e539b1f04f611afa4273ba78957d5e8977876750be61); no copied or installed binary was used.",
+    "logs": [
+      ".scratch/logs/configure.log",
+      ".scratch/logs/build.log",
+      ".scratch/logs/build-phone.log"
+    ],
+    "qt_runner": ".scratch/run_qt.sh NAME BINARY [functions]: fresh private HOME/XDG_*/TOMACCO_HOME under /tmp (private per sandbox call), TMPDIR=/tmp, ANDROID_HOME/ANDROID_SDK_ROOT pointing nowhere, PATH = traps + /usr/bin with adb fastboot ssh scp emulator avdmanager sdkmanager xtool idevice_id ideviceinfo idevicesyslog idevicepair iproxy scrcpy go-ios ios usbmuxd tailscale claude codex gemini opencode grok hermes omp trapped (log + exit 97), QT_QPA_PLATFORM=offscreen, QT_QUICK_BACKEND=software, QT_QUICK_CONTROLS_STYLE=Basic, QT_QPA_PLATFORMTHEME=generic, TOMACCO_UPDATES=off, QTWEBENGINE_DISABLE_SANDBOX unset, no --no-sandbox. run_qt_capture.sh is the same plus TOMACCO_UI_CAPTURES=.scratch/evidence/merged. Copied from the picker worker's clone and only renamed (temp prefix, log names, trap log copy)."
+  },
+  "gates": [
+    {
+      "stage": "desktop-chooser",
+      "command": ".scratch/run_qt_capture.sh int-desktop-chooser-cap test-desktop-ui project_chooser_fits_and_shows_whole_names_at_every_interface_size project_chooser_navigates_chooses_and_cancels project_chooser_reads_in_german_arabic_and_japanese",
+      "log": ".scratch/test-logs/int-desktop-chooser-cap.log",
+      "exit_code": 0,
+      "tests": "22 passed, 0 failed (100/125/150/175/200 % x 1750x1331, 1380x970 workspace, 900x640 narrow; navigation at 175/1750x1331 and 200/1280x720; de/ar/ja at 175 %); also run once without captures: int-desktop-chooser.log 22 passed",
+      "source_commit": "874175c9eadf79099694473e245e9abc3e7c5225"
+    },
+    {
+      "stage": "phone-chooser",
+      "command": ".scratch/run_qt_capture.sh int-phone-chooser-cap test-phone-routes project_chooser_is_a_phone_sheet_with_touch_targets",
+      "log": ".scratch/test-logs/int-phone-chooser-cap.log",
+      "exit_code": 0,
+      "tests": "8 passed, 0 failed (360/100, 360/150, 393/125, 393/175, 412/150, 412/200)",
+      "source_commit": "874175c9eadf79099694473e245e9abc3e7c5225"
+    },
+    {
+      "stage": "phone-chooser-translated",
+      "command": ".scratch/run_qt_capture.sh int-phone-chooser-l10n test-phone-routes project_chooser_phone_sheet_reads_translated_and_mirrored",
+      "log": ".scratch/test-logs/int-phone-chooser-l10n.log",
+      "exit_code": 0,
+      "tests": "5 passed, 0 failed (ar-360-200 RTL, de-360-200, ja-412-175 + init/cleanup); new in this integration, fails before the picker fix (no projectFolderDialog)",
+      "source_commit": "874175c9eadf79099694473e245e9abc3e7c5225"
+    },
+    {
+      "stage": "phone-routes-full",
+      "command": ".scratch/run_qt.sh int-phone-full test-phone-routes",
+      "log": ".scratch/test-logs/int-phone-full.log",
+      "exit_code": 0,
+      "tests": "36 passed, 0 failed",
+      "source_commit": "874175c9eadf79099694473e245e9abc3e7c5225"
+    },
+    {
+      "stage": "desktop-ui-full",
+      "command": ".scratch/run_qt_chunks.sh test-desktop-ui 2 (86 functions, two contiguous ordered halves run concurrently, each through run_qt.sh)",
+      "log": ".scratch/test-logs/int-test-desktop-ui-chunk0.log, .scratch/test-logs/int-test-desktop-ui-chunk1.log",
+      "exit_code": 0,
+      "tests": "69 + 64 passed, 0 failed",
+      "source_commit": "874175c9eadf79099694473e245e9abc3e7c5225"
+    },
+    {
+      "stage": "backend",
+      "command": ".scratch/run_qt.sh int-test-backend test-backend",
+      "log": ".scratch/test-logs/int-test-backend.log",
+      "exit_code": 0,
+      "tests": "18 passed, 0 failed (incl. theProjectChooserListsFoldersAndResolvesTypedPaths)",
+      "source_commit": "874175c9eadf79099694473e245e9abc3e7c5225"
+    },
+    {
+      "stage": "components",
+      "command": ".scratch/run_qt.sh int-<binary> <binary> for test-agent-client-picker test-mobile-nav test-mobile-row test-studio-button test-handoff-banner test-environment-panel",
+      "log": ".scratch/test-logs/int-test-*.log",
+      "exit_code": 0,
+      "tests": "6 + 10 + 8 + 9 + 14 + 16 passed, 0 failed",
+      "source_commit": "874175c9eadf79099694473e245e9abc3e7c5225"
+    },
+    {
+      "stage": "language-docs-parity",
+      "command": "PYTHONPATH=.:tools:tests/python TMPDIR=/tmp python3 -m unittest test_i18n test_docs_consistency test_mobile_parity",
+      "log": ".scratch/logs/language-gate-final.log",
+      "exit_code": 0,
+      "tests": "30 OK (the Omarchy registry comparison reads the machine's registry; under an isolated HOME it skips: .scratch/logs/language-gate.log 30 OK, 1 skipped)",
+      "source_commit": "874175c9eadf79099694473e245e9abc3e7c5225"
+    },
+    {
+      "stage": "generated-reference",
+      "command": "python3 tools/build_reference.py --check",
+      "log": ".scratch/logs/reference-check.log",
+      "exit_code": 0,
+      "tests": "up to date",
+      "source_commit": "874175c9eadf79099694473e245e9abc3e7c5225"
+    },
+    {
+      "stage": "mobile-parity",
+      "command": "python3 tools/build_mobile_parity.py --check",
+      "log": ".scratch/logs/parity-check.log",
+      "exit_code": 0,
+      "tests": "mobile parity up to date",
+      "source_commit": "874175c9eadf79099694473e245e9abc3e7c5225"
+    },
+    {
+      "stage": "catalogs-compile",
+      "command": "cmake --build build (qt_add_translations, 51 catalogs)",
+      "log": ".scratch/logs/build.log",
+      "exit_code": 0,
+      "tests": "51 build/i18n/tomacco_*.qm built",
+      "source_commit": "874175c9eadf79099694473e245e9abc3e7c5225"
+    }
+  ],
+  "trapped_calls": {
+    "logs": ".scratch/test-logs/int-*.trapped",
+    "summary": "adb devices -l 227, idevice_id -l 116, xtool sdk status 11, xtool --version 10, opencode --version 10, codex mcp get tomacco 10, claude mcp get tomacco 10, plus single version probes (ssh -V, sdkmanager, scrcpy, iproxy, idevice*, go-ios, emulator, avdmanager list target, adb version, xtool auth status)",
+    "meaning": "every call hit the trap and got exit 97; no device, SSH host, agent client or network was reached"
+  },
+  "captures": {
+    "viewing": "The agent's tools cannot display images: only size, digest and a non-blank colour count were checked (.scratch/tools/png_stats.py -> .scratch/evidence/png-stats.json, 0 blank). Root must view the PNGs.",
+    "after_merged": {
+      "dir": ".scratch/evidence/merged",
+      "count": 29,
+      "from_commit": "874175c9eadf79099694473e245e9abc3e7c5225",
+      "representative": [
+        "project-chooser-175-1750x1331.png",
+        "project-chooser-200-1750x1331.png",
+        "project-chooser-175-900x640.png",
+        "project-chooser-200-900x640.png",
+        "project-chooser-selected-200.png (1280x720)",
+        "project-chooser-175-ar.png",
+        "project-chooser-175-de.png",
+        "project-chooser-175-ja.png",
+        "phone-project-chooser-360-150.png",
+        "phone-project-chooser-393-175.png",
+        "phone-project-chooser-412-200.png",
+        "phone-project-chooser-ar-360-200.png",
+        "phone-project-chooser-de-360-200.png",
+        "phone-project-chooser-ja-412-175.png"
+      ]
+    },
+    "before": {
+      "picker_worker": ".scratch/evidence/before-picker-worker (copies of the picker clone's .scratch/evidence/before: Qt fallback 600x400 at 100/175/200 % in 1750x1331, 900x700 and 393x852 windows)",
+      "root_diagnosis": ".scratch/evidence/before-root-diagnosis/qt-fallback-font-{13,23,26}.png (root's isolated Qt 6.12 reproduction, all 600x400)"
+    }
+  },
+  "not_run": [
+    "rust-core, control-plane, Python suites, test-demo-renderer, test-demo-workspace, test-nativeview: their inputs (Rust, assets, tools, Python tests, those components) are identical to d0a8d53, which root's pipeline ran 14/14; root runs the full host CTest once on the final commit",
+    "ARM64 build, package verification, installation: root's"
+  ],
+  "limitations": [
+    "Offscreen software Qt in isolated sessions, not the user's Hyprland compositor or live window; the user's exact original symptom beyond the reproduced 600x400 scaling defect is not confirmed.",
+    "Other stock Qt choosers still use the fixed-width fallback at large interface sizes (not project selection, unchanged): FolderDialog in Main.qml (web build) and IosResearch.qml (prepared package, .app bundle); FileDialogs for settings import/export, device profiles, app install, screenshots, Apple SDK, Android model, debug program, demo media/scenes, environment routes/import/export, traces, test scenarios.",
+    "The chooser lists folders synchronously (very large folders), has no places sidebar, and Hidden is not persisted.",
+    "No screen-reader (Orca) run; accessible names/roles are asserted by the tests.",
+    "No physical device, Pixel, MacBook, iPhone, ADB, SSH or network use. Fixtures are not physical qualification."
+  ],
+  "final_source_ready": true,
+  "final_source_ready_scope": "All merge, code and catalog issues resolved and verified on fixtures at tested_commit; not a hardware, ARM64, packaging or release qualification."
+}
