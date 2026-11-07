@@ -37,7 +37,11 @@ operations and their JSON results.
   durably before dispatch, with the runtime worker recording each input it delivered. A repeat answers
   the recorded outcome (`retained: true`) or `request_outcome_unknown` and sends nothing again, other
   arguments answer `request_conflict`; `device.request.get` and `device.request.list` show the
-  records. Physical execution is still not exactly-once: a lost answer stays unknown.
+  records. Physical execution is still not exactly-once: a lost answer stays unknown. A verified
+  fill is recorded by what it established: `field_uncertain` (and a batch with `uncertain_steps`)
+  is `unknown` and never typed again under its identity, `fill_verification_unsupported` is a
+  refusal that may be repeated, and a step whose value was verified but whose Return was not sent
+  counts in `applied_steps`.
 - **Verified field input.** `fill` with `verify_value` (in `runtime.input` and `runtime.actions`)
   checks that the editor that took the focus is the one tapped (or named by `field_name`) and a
   readable text field, skips an already matching value, never takes a placeholder for entered text,

@@ -68,6 +68,9 @@ const REFUSED: &[&str] = &[
     "approval_denied",
     "path_outside_roots",
     "operation_not_found",
+    // A verified fill on a transport that cannot read an editor back sends
+    // nothing, not even the focusing tap (runtime/field.rs).
+    "fill_verification_unsupported",
 ];
 /// Error codes of an answer that was lost on the way: the input may or may
 /// not have reached the device.
@@ -78,6 +81,31 @@ const LOST: &[&str] = &[
     "io_error",
     "invalid_json",
 ];
+/// Error codes of an input that was sent and whose effect could not be
+/// established: a verified fill whose clear, write or read-back left the
+/// field's content unknown (runtime/field.rs). Never sent again.
+const UNCERTAIN: &[&str] = &["field_uncertain"];
+
+/// What an error's own evidence says about delivery, where a transport
+/// reports it: `details.delivery` of WebDriverAgent calls (`not_sent` is
+/// refused, `unknown` is unknown), or a verified fill's `tapped`/`typed`
+/// (both false is refused). Anything else is left to the code.
+fn delivery_status(details: &Value) -> Option<&'static str> {
+    match details.get("delivery").and_then(Value::as_str) {
+        Some("not_sent") => return Some("refused"),
+        Some("unknown") => return Some("unknown"),
+        _ => (),
+    }
+    if details.get("typed") == Some(&json!(false)) && details.get("tapped") == Some(&json!(false)) {
+        return Some("refused");
+    }
+    // An error relayed from the runtime worker carries the worker's error,
+    // with its own details, as its details (runtime::request).
+    match details.get("details") {
+        Some(inner) if inner.is_object() && details.get("code").is_some() => delivery_status(inner),
+        _ => None,
+    }
+}
 /// Operations whose request is one input of the runtime worker: their
 /// worker's record of that input is their outcome.
 const SINGLE_INPUT: &[&str] = &["runtime.input", "runtime.gesture", "screen.tap"];
@@ -199,6 +227,30 @@ fn scrub(value: &Value) -> Value {
     kept
 }
 
+/// Whether a batch left a step whose effect is unknown: a verified fill
+/// listed in `uncertain_steps`, or a last step whose answer was lost.
+fn batch_uncertain(error: &Error) -> bool {
+    let Some(details) = error.details.as_ref() else {
+        return false;
+    };
+    if details["uncertain_steps"]
+        .as_array()
+        .is_some_and(|steps| !steps.is_empty())
+    {
+        return true;
+    }
+    match details["steps"].as_array().and_then(|steps| steps.last()) {
+        Some(step) if step["mutated"] == true => {
+            s(step, "status") == "uncertain"
+                || (s(step, "status") == "failed"
+                    && (LOST.contains(&s(&step["error"], "code"))
+                        || UNCERTAIN.contains(&s(&step["error"], "code"))
+                        || delivery_status(&step["error"]["details"]) == Some("unknown")))
+        }
+        _ => false,
+    }
+}
+
 fn batch_sent_nothing(error: &Error) -> bool {
     let Some(details) = error.details.as_ref() else {
         return false;
@@ -209,11 +261,19 @@ fn batch_sent_nothing(error: &Error) -> bool {
     {
         return false;
     }
+    if batch_uncertain(error) {
+        return false;
+    }
     // The last step ran and failed: it sent nothing only if it refused.
     match details["steps"].as_array().and_then(|steps| steps.last()) {
         Some(step) if s(step, "status") == "failed" && step["mutated"] == true => {
-            REFUSED.contains(&s(&step["error"], "code"))
+            let code = s(&step["error"], "code");
+            REFUSED.contains(&code) || delivery_status(&step["error"]["details"]) == Some("refused")
         }
+        // A step that ran and answered something else (applied, verified,
+        // uncertain) is not "nothing"; only a batch stopped before any
+        // mutating step ran sent nothing.
+        Some(step) if step["mutated"] == true => false,
         _ => true,
     }
 }
@@ -242,17 +302,23 @@ pub fn classify(operation: &str, result: &Result) -> (&'static str, Value) {
                     .as_ref()
                     .is_some_and(|d| d.get("applied_steps").is_some());
             let status = if batch {
-                if batch_sent_nothing(error) {
+                if batch_uncertain(error) {
+                    "unknown"
+                } else if batch_sent_nothing(error) {
                     "refused"
                 } else {
                     "failed"
                 }
+            } else if UNCERTAIN.contains(&code) || LOST.contains(&code) {
+                "unknown"
             } else if REFUSED.contains(&code) {
                 "refused"
-            } else if LOST.contains(&code) {
-                "unknown"
             } else {
-                "failed"
+                error
+                    .details
+                    .as_deref()
+                    .and_then(delivery_status)
+                    .unwrap_or("failed")
             };
             (status, json!({"ok":false,"error":scrub(&error.value())}))
         }
@@ -919,8 +985,11 @@ mod tests {
         );
         let partial = Error::new("focus_timeout", "x").details(json!({"applied_steps":[0],"steps":[{"status":"applied","mutated":true},{"status":"failed","mutated":true,"error":{"code":"focus_timeout"}}]}));
         assert_eq!(classify("runtime.actions", &Err(partial)).0, "failed");
+        // A batch whose last step lost its answer left that step's effect unknown.
         let sent = Error::new("actions_step_failed", "x").details(json!({"applied_steps":[],"steps":[{"status":"failed","mutated":true,"error":{"code":"runtime_timeout"}}]}));
-        assert_eq!(classify("runtime.actions", &Err(sent)).0, "failed");
+        assert_eq!(classify("runtime.actions", &Err(sent)).0, "unknown");
+        let ran = Error::new("actions_step_failed", "x").details(json!({"applied_steps":[],"steps":[{"status":"failed","mutated":true,"error":{"code":"unsupported_input"}}]}));
+        assert_eq!(classify("runtime.actions", &Err(ran)).0, "failed");
         assert_eq!(
             classify("runtime.input", &Err(Error::new("runtime_timeout", "x"))).0,
             "unknown"
@@ -944,6 +1013,102 @@ mod tests {
         assert!(checked_id("order-42.retry:1").is_ok());
         assert!(checked_id("a/b").is_err() && checked_id("").is_err());
         assert!(checked_child("order-42/step-3").is_ok() && checked_child("order-42").is_err());
+    }
+
+    /// A verified fill (runtime/field.rs) that sent text it could not
+    /// confirm is unknown, never refused: refused would let the same
+    /// request_id type it again. Only a fill that provably sent nothing,
+    /// not even its tap, is refused.
+    #[test]
+    fn verified_fill_outcomes_are_recorded_without_inviting_a_retype() {
+        let input = |e: Error| classify("runtime.input", &Err(e)).0;
+        let batch = |e: Error| classify("runtime.actions", &Err(e)).0;
+        let uncertain = || {
+            Error::new("field_uncertain", "x")
+                .details(json!({"typed":"unknown","outcome":"unknown"}))
+        };
+        assert_eq!(input(uncertain()), "unknown");
+        // As relayed by the runtime worker: the worker's error is the details.
+        let relayed = Error::new("field_uncertain", "x").details(uncertain().value());
+        assert_eq!(input(relayed), "unknown");
+        let unsupported = Error::new("fill_verification_unsupported", "x")
+            .details(json!({"typed":false,"tapped":false}));
+        assert_eq!(input(unsupported), "refused");
+        let tap_not_sent =
+            Error::new("field_tap_failed", "x").details(json!({"typed":false,"tapped":false}));
+        assert_eq!(
+            input(Error::new("field_tap_failed", "x").details(tap_not_sent.value())),
+            "refused"
+        );
+        // The focusing tap reached the device, the text did not: known, but not nothing.
+        let tapped =
+            Error::new("field_wrong_target", "x").details(json!({"typed":false,"tapped":true}));
+        assert_eq!(input(tapped), "failed");
+        let tap_unknown =
+            Error::new("field_tap_failed", "x").details(json!({"typed":false,"tapped":"unknown"}));
+        assert_eq!(input(tap_unknown), "failed");
+        assert_eq!(
+            input(Error::new("field_submit_not_sent", "x").details(json!({"value_verified":true}))),
+            "failed"
+        );
+        // WebDriverAgent's delivery evidence on a plain input.
+        assert_eq!(
+            input(Error::new("runtime_error", "x").details(json!({"delivery":"unknown"}))),
+            "unknown"
+        );
+        assert_eq!(
+            input(Error::new("runtime_error", "x").details(json!({"delivery":"not_sent"}))),
+            "refused"
+        );
+        assert_eq!(
+            input(Error::new("runtime_error", "x").details(json!({"delivery":"answered"}))),
+            "failed"
+        );
+
+        // Batches: an uncertain fill step as the only mutating step.
+        let only = Error::new("field_uncertain", "x").details(json!({"applied_steps":[],"uncertain_steps":[0],
+            "steps":[{"index":0,"status":"uncertain","mutated":true,"error":uncertain().value()}]}));
+        assert_eq!(batch(only), "unknown");
+        let after = Error::new("field_uncertain", "x")
+            .details(json!({"applied_steps":[0],"uncertain_steps":[1],
+            "steps":[{"status":"verified","mutated":true},{"status":"uncertain","mutated":true}]}));
+        assert_eq!(batch(after), "unknown");
+        let wrong = Error::new("field_wrong_target", "x").details(json!({"applied_steps":[],"uncertain_steps":[],
+            "steps":[{"status":"failed","mutated":true,"error":{"code":"field_wrong_target","details":{"typed":false,"tapped":true}}}]}));
+        assert_eq!(batch(wrong), "failed");
+        let untapped = Error::new("field_tap_failed", "x").details(json!({"applied_steps":[],"uncertain_steps":[],
+            "steps":[{"status":"failed","mutated":true,"error":{"code":"field_tap_failed","details":{"typed":false,"tapped":false}}}]}));
+        assert_eq!(batch(untapped), "refused");
+        let not_offered = Error::new("fill_verification_unsupported", "x").details(json!({"applied_steps":[],"uncertain_steps":[],
+            "steps":[{"status":"failed","mutated":true,"error":{"code":"fill_verification_unsupported"}}]}));
+        assert_eq!(batch(not_offered), "refused");
+        let submit = Error::new("field_submit_not_sent", "x").details(json!({"applied_steps":[0],"uncertain_steps":[],
+            "steps":[{"status":"applied","mutated":true,"error":{"code":"field_submit_not_sent"}}]}));
+        assert_eq!(batch(submit), "failed");
+
+        // End to end in the ledger: the uncertain batch is not run again.
+        let dir = tempfile::tempdir().unwrap();
+        let db = database(dir.path());
+        let phone = Target::new("ios", "", "fixture:search");
+        let d = dispatch("runtime.actions", &phone);
+        let steps = json!({"steps":[{"action":"fill","x":0.5,"y":0.1,"text":"secret query","verify_value":true}]});
+        assert!(proceeds(start(&db, "fill-1", None, &d, &steps)));
+        let only = Error::new("field_uncertain", "x").details(json!({"applied_steps":[],"uncertain_steps":[0],
+            "steps":[{"index":0,"status":"uncertain","mutated":true,"error":uncertain().value()}]}));
+        assert_eq!(
+            finish(&db, "fill-1", "runtime.actions", &Err(only)).unwrap(),
+            "unknown"
+        );
+        let error = answer(start(&db, "fill-1", None, &d, &steps)).unwrap_err();
+        assert_eq!(error.code, "request_outcome_unknown");
+        assert!(
+            !load(&db, "fill-1")
+                .unwrap()
+                .unwrap()
+                .summary
+                .to_string()
+                .contains("secret")
+        );
     }
 
     #[test]

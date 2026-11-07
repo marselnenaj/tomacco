@@ -49,8 +49,9 @@
 //! A tap inside a field focuses it after `focus_after_ms`; a tap elsewhere
 //! leaves the focus where it was. `write` is `accept`, `lose_reply` (the
 //! text lands, the answer is lost), `refuse`, `drop_last` (the last
-//! character never arrives) or `replace` (the field is rebuilt with a new
-//! element ID once written). An empty field reports its placeholder as its
+//! character never arrives), `replace` (the field is rebuilt with a new
+//! element ID once written) or `blur` (the text lands and the field then
+//! loses the focus, so a verified value cannot be submitted). An empty field reports its placeholder as its
 //! value, as XCUITest does. A session offers the verified fill only when a
 //! state scripts fields; the counts of clears, writes, submits and reads of
 //! secure fields are in the fixture evidence.
@@ -391,6 +392,10 @@ impl field::FieldDriver for Fixture {
                 let rebuilt = format!("{key}-rebuilt");
                 self.replaced.insert(key, rebuilt.clone());
                 self.field_focus = Some((rebuilt, Instant::now()));
+                Ok(())
+            }
+            "blur" => {
+                self.field_focus = None;
                 Ok(())
             }
             _ => Ok(()),

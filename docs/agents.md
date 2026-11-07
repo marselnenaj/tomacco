@@ -972,7 +972,8 @@ input notice; lifting a finger (`touch` `cancel`) is always allowed so none is l
 their input is refused like any other. Not governed yet: operations that change a device without
 being input (`device.install`, `device.app`, `android.launch`, `android.deep_link`, `android.settings`,
 `android.permission`, `android.display`, `android.environment.apply`, `ios.virtual.*` lifecycle, `ios.emulator.control`
-`stop`), and everything outside Tomacco. Other tools can take part through the same operations: call
+`stop`), the Home key `profile.startup` presses between hot launches, the scrcpy window `android.mirror` opens (a person
+types and clicks into it directly), emulator sensor events from `android.sensors`, and everything outside Tomacco. Other tools can take part through the same operations: call
 `device.reservation.acquire` before they act (a flasher before it flashes), renew while they work, release after, and
 read `device.reservation.get` before a raw `adb` or `fastboot` step. No Harness or deployment agent does so yet.
 
@@ -991,7 +992,14 @@ the answer, the record is `unknown` and a repeat answers `request_outcome_unknow
 the same transport nor through a new session or another transport. Observe the screen and decide from what is there;
 a new attempt needs a new identity. `device.request.get` shows a record with its children and `advice`;
 `device.request.list` the newest ones. Status is `applied` (the transport took it), `verified` (a batch whose steps' `expect`
-held), `refused`, `failed` (it ran; its error says what reached the device) or `unknown`. Records hold no typed text
+held), `refused`, `failed` (it ran; its error says what reached the device) or `unknown`.
+A verified fill (`verify_value`) is recorded by what it established: `field_uncertain` (text sent, effect unknown) and a
+batch with an entry in `uncertain_steps` are `unknown` and never typed again under the same identity;
+`fill_verification_unsupported` sent nothing, not even the tap, and is `refused`; `field_not_focused`,
+`field_wrong_target`, `field_unsupported`, `field_stale` and `field_unobservable` typed nothing but their focusing tap
+reached the device, so they are `failed` (use a new identity after observing); a step answering `field_submit_not_sent`
+holds the verified text and is listed in `applied_steps`. Where a transport reports delivery (`details.delivery` of a
+WebDriverAgent call), `not_sent` is `refused` and `unknown` is `unknown`. Records hold no typed text
 (lengths only, answers with `text` replaced by its length) and no token, are kept 24 hours and at most 20 000, in an
 owner-only database. None of this makes a physical action exactly-once: a transport that loses an answer leaves the
 effect unknown, and only a fresh observation can tell.

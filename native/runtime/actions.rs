@@ -402,8 +402,15 @@ pub fn run(a: &Value) -> Result {
                 done.push(record);
             }
             Err(error) => {
-                // A verified fill that sent text it could not confirm.
-                record["status"] = json!(if error.code == "field_uncertain" { "uncertain" } else { "failed" });
+                // A verified fill that sent text it could not confirm is
+                // uncertain; one whose value was verified but whose Return
+                // was not sent did reach the device, so it is applied (and
+                // listed in applied_steps) though the batch stops on it.
+                record["status"] = json!(match error.code.as_str() {
+                    "field_uncertain" => "uncertain",
+                    "field_submit_not_sent" => "applied",
+                    _ => "failed",
+                });
                 record["duration_ms"] = json!(at.elapsed().as_millis() as u64);
                 record["error"] = error.value();
                 let code = error.code.clone();
