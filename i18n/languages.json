@@ -50,7 +50,7 @@
       "zeroDigit": "0",
       "plural": "english",
       "omarchy": true,
-      "complete": false
+      "complete": true
     },
     {
       "code": "bn",
@@ -92,7 +92,7 @@
       "zeroDigit": "0",
       "plural": "slovak",
       "omarchy": true,
-      "complete": false
+      "complete": true
     },
     {
       "code": "da",
@@ -288,7 +288,7 @@
       "zeroDigit": "0",
       "plural": "russian",
       "omarchy": true,
-      "complete": false
+      "complete": true
     },
     {
       "code": "hu",
@@ -540,7 +540,7 @@
       "zeroDigit": "0",
       "plural": "slovak",
       "omarchy": true,
-      "complete": false
+      "complete": true
     },
     {
       "code": "sl",
@@ -554,7 +554,7 @@
       "zeroDigit": "0",
       "plural": "slovenian",
       "omarchy": true,
-      "complete": false
+      "complete": true
     },
     {
       "code": "sr",
@@ -568,7 +568,7 @@
       "zeroDigit": "0",
       "plural": "russian",
       "omarchy": true,
-      "complete": false
+      "complete": true
     },
     {
       "code": "sv",

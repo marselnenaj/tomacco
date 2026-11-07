@@ -1,0 +1,19 @@
+{
+  "scope": "frozen1800-text packages; final phone delta pending",
+  "integrated_packages": [
+    {
+      "name": "slavic",
+      "head": "fc5b1aec80459408d5debc58fd0fc929bb621626",
+      "codes": [
+        "cs",
+        "sk",
+        "sl",
+        "hr",
+        "sr",
+        "bg"
+      ],
+      "conflicts_resolved": [],
+      "catalogs_1800_complete_verified": true
+    }
+  ]
+}

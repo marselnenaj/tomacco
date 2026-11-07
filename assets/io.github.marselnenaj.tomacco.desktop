@@ -69,6 +69,24 @@ StartupNotify=true
 StartupWMClass=io.github.marselnenaj.tomacco
 Actions=Project;Devices;Jobs;
 
+GenericName[cs]=Prostředí pro mobilní vývoj
+GenericName[sk]=Prostredie pre mobilný vývoj
+GenericName[sl]=Okolje za mobilni razvoj
+GenericName[hr]=Okruženje za mobilni razvoj
+GenericName[sr]=Окружење за мобилни развој
+GenericName[bg]=Среда за мобилна разработка
+Comment[cs]=Sestavujte, spouštějte a testujte nativní aplikace pro Android a iOS
+Comment[sk]=Zostavujte, spúšťajte a testujte natívne aplikácie pre Android a iOS
+Comment[sl]=Gradite, zaganjajte in preizkušajte izvorne aplikacije za Android in iOS
+Comment[hr]=Izgrađujte, pokrećite i testirajte izvorne Android i iOS aplikacije
+Comment[sr]=Изграђујте, покрећите и тестирајте изворне Android и iOS апликације
+Comment[bg]=Компилирайте, стартирайте и тествайте нативни Android и iOS приложения
+Keywords[cs]=Android;iPhone;iOS;Swift;Kotlin;Flutter;Emulátor;MCP;Agent;Smartphone;
+Keywords[sk]=Android;iPhone;iOS;Swift;Kotlin;Flutter;Emulátor;MCP;Agent;Smartfón;
+Keywords[sl]=Android;iPhone;iOS;Swift;Kotlin;Flutter;Emulator;MCP;Agent;Pametni telefon;
+Keywords[hr]=Android;iPhone;iOS;Swift;Kotlin;Flutter;Emulator;MCP;Agent;Pametni telefon;
+Keywords[sr]=Android;iPhone;iOS;Swift;Kotlin;Flutter;Емулатор;MCP;Агент;Паметни телефон;
+Keywords[bg]=Android;iPhone;iOS;Swift;Kotlin;Flutter;Емулатор;MCP;Агент;Смартфон;
 [Desktop Action Project]
 Name=Project
 Name[de]=Projekt
@@ -92,6 +110,12 @@ Name[uk]=Проєкт
 Name[id]=Proyek
 Exec=tomacco --workspace project
 
+Name[cs]=Projekt
+Name[sk]=Projekt
+Name[sl]=Projekt
+Name[hr]=Projekt
+Name[sr]=Пројекат
+Name[bg]=Проект
 [Desktop Action Devices]
 Name=Devices
 Name[de]=Geräte
@@ -115,6 +139,12 @@ Name[uk]=Пристрої
 Name[id]=Perangkat
 Exec=tomacco --workspace devices
 
+Name[cs]=Zařízení
+Name[sk]=Zariadenia
+Name[sl]=Naprave
+Name[hr]=Uređaji
+Name[sr]=Уређаји
+Name[bg]=Устройства
 [Desktop Action Jobs]
 Name=Builds and jobs
 Name[de]=Builds und Aufträge
@@ -137,3 +167,9 @@ Name[nb_NO]=Bygg og jobber
 Name[uk]=Збірки й завдання
 Name[id]=Build & tugas
 Exec=tomacco --workspace jobs
+Name[cs]=Sestavení a úlohy
+Name[sk]=Zostavenia a úlohy
+Name[sl]=Gradnje in opravila
+Name[hr]=Izgradnje i zadaci
+Name[sr]=Изградње и задаци
+Name[bg]=Компилации и задачи

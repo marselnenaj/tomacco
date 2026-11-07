@@ -1,0 +1,177 @@
+{
+  "package_id": "slavic",
+  "target_locales": [
+    "cs",
+    "sk",
+    "sl",
+    "hr",
+    "sr",
+    "bg"
+  ],
+  "updated_at": "2026-11-07T02:41:21+00:00",
+  "model": "claude-opus-5-5",
+  "branch": "finish/languages-slavic",
+  "base": "df0a353",
+  "source_digest": "3390181968e6",
+  "source_count": 1800,
+  "languages": {
+    "cs": {
+      "name": "Čeština",
+      "plural": "slovak",
+      "plural_forms": 3,
+      "finished": 1800,
+      "unfinished": 0,
+      "stale": 0,
+      "problems": [],
+      "suspicious": [
+        "NativeWorkspace: 'Claude Code Codex Gemini Cursor VS Code Zed OpenCode Grok He'"
+      ],
+      "menu_entry": "6/6",
+      "registry_complete": true,
+      "status": "complete"
+    },
+    "sk": {
+      "name": "Slovenčina",
+      "plural": "slovak",
+      "plural_forms": 3,
+      "finished": 1800,
+      "unfinished": 0,
+      "stale": 0,
+      "problems": [],
+      "suspicious": [
+        "NativeWorkspace: 'Claude Code Codex Gemini Cursor VS Code Zed OpenCode Grok He'"
+      ],
+      "menu_entry": "6/6",
+      "registry_complete": true,
+      "status": "complete"
+    },
+    "sl": {
+      "name": "Slovenščina",
+      "plural": "slovenian",
+      "plural_forms": 4,
+      "finished": 1800,
+      "unfinished": 0,
+      "stale": 0,
+      "problems": [],
+      "suspicious": [
+        "NativeWorkspace: 'Claude Code Codex Gemini Cursor VS Code Zed OpenCode Grok He'"
+      ],
+      "menu_entry": "6/6",
+      "registry_complete": true,
+      "status": "complete"
+    },
+    "hr": {
+      "name": "Hrvatski",
+      "plural": "russian",
+      "plural_forms": 3,
+      "finished": 1800,
+      "unfinished": 0,
+      "stale": 0,
+      "problems": [],
+      "suspicious": [
+        "NativeWorkspace: 'Claude Code Codex Gemini Cursor VS Code Zed OpenCode Grok He'"
+      ],
+      "menu_entry": "6/6",
+      "registry_complete": true,
+      "status": "complete"
+    },
+    "sr": {
+      "name": "Српски",
+      "plural": "russian",
+      "plural_forms": 3,
+      "finished": 1800,
+      "unfinished": 0,
+      "stale": 0,
+      "problems": [],
+      "suspicious": [
+        "AndroidDevices: 'the Android SDK'",
+        "NativeWorkspace: 'Claude Code Codex Gemini Cursor VS Code Zed OpenCode Grok He'"
+      ],
+      "menu_entry": "6/6",
+      "registry_complete": true,
+      "status": "complete"
+    },
+    "bg": {
+      "name": "Български",
+      "plural": "english",
+      "plural_forms": 2,
+      "finished": 1800,
+      "unfinished": 0,
+      "stale": 0,
+      "problems": [],
+      "suspicious": [
+        "AndroidDevices: 'the Android SDK'",
+        "NativeWorkspace: 'Claude Code Codex Gemini Cursor VS Code Zed OpenCode Grok He'"
+      ],
+      "menu_entry": "6/6",
+      "registry_complete": true,
+      "status": "complete"
+    }
+  },
+  "suspicious_review": {
+    "NativeWorkspace: 'Claude Code Codex Gemini Cursor VS Code Zed OpenCode Grok Hermes omp MCP'": "kept identical in all six locales on purpose: it is a list of product names (agent clients) used as search keywords; the already complete locales keep it identical too",
+    "AndroidDevices: 'the Android SDK' (sr, bg)": "translated as the product name 'Android SDK' without an article; Serbian and Bulgarian have no article equivalent here, so no Cyrillic appears; reviewed, correct",
+    "mixed-script check (.scratch/tools/script_check.py)": "Latin catalogs cs/sk/sl/hr contain no Cyrillic; Cyrillic catalogs sr/bg contain no Latin words except names, code, commands and units taken from the source. Only remaining hit: 'ID' for source 'Device IDs' in sr/bg (abbreviation kept, legitimate). Two stray Cyrillic letters in sl were found by this check during translation and fixed before completion",
+    "semantic fix during review": "'Dock' (IosGuestView and NativeWorkspace) is the button that docks a detached device window back; it is translated as an action (cs Ukotvit, sk Ukotviť, sl Zasidraj, hr/sr Usidri/Усидри, bg Вгради), checked against qml/IosGuestView.qml and qml/NativeWorkspace.qml",
+    "script and regional conventions": "Serbian is written in Cyrillic, ekavian (registry name Српски, qt locale sr); Croatian uses Croatian standard terms (računalo, datoteka, postavke); Slovenian uses four plural forms (n%100 = 1, 2, 3-4, other); Czech/Slovak use Qt's slovak family (1, 2-4, other); Croatian/Serbian use Qt's russian family; Bulgarian two forms. All directions are ltr"
+  },
+  "commits": [
+    "f786855 i18n: complete bg (all current source texts, menu entry, registry complete)",
+    "e00c97e i18n: complete sr (all current source texts, menu entry, registry complete)",
+    "be5d2d5 i18n: complete hr (all current source texts, menu entry, registry complete)",
+    "6f059a2 i18n: complete sl (all current source texts, menu entry, registry complete)",
+    "08dd2c1 i18n: complete sk (all current source texts, menu entry, registry complete)",
+    "56a195a i18n: complete cs (all current source texts, menu entry, registry complete)"
+  ],
+  "tests": {
+    "apply": "every tranche applied through tools/i18n_catalog.py apply (via .scratch/tools/apply_multi.py) against sources 3390181968e6: 0 rejected lines in all 14 tranches x 6 locales",
+    "test_i18n": "TMPDIR=/tmp PYTHONPATH=.:tools:tests/python python3 -m unittest tests/python/test_i18n.py: Ran 18 tests, OK (after each language commit and at the end)",
+    "test_docs_consistency": "python3 -m unittest tests/python/test_docs_consistency.py: Ran 6 tests, OK",
+    "qm_readback": ".scratch/tools/qm_readback.py cs sk sl hr sr bg: each catalog compiled with tools/ts2qm.py and read back with tomacco_i18n.read_qm: 1800/1800 messages identical, 0 extra, language section matches, numerus rules equal the registry family, plural index for n in {0,1,2,3,4,5,11,21,22,101,102,103,111} within the form count",
+    "lrelease": "NOT RUN: no lrelease/lrelease6/lrelease-qt6 on this host (qt6-tools LinguistTools not installed); parity with Qt's own lrelease is therefore unverified here, only the repository's lrelease-compatible writer was used",
+    "desktop_entry": "desktop-file-validate assets/io.github.marselnenaj.tomacco.desktop: exit 0; 6/6 keys per target locale",
+    "not_covered": "no app rendering, font, layout or device test; Qt font/RTL/layout qualification belongs to final integration; no device, network or install action was performed"
+  },
+  "completed": [
+    "cs",
+    "sk",
+    "sl",
+    "hr",
+    "sr",
+    "bg"
+  ],
+  "remaining": {},
+  "all_complete_in_branch": [
+    "ar",
+    "bg",
+    "cs",
+    "da",
+    "de",
+    "es",
+    "es-MX",
+    "fr",
+    "hr",
+    "id",
+    "it",
+    "ja",
+    "nl",
+    "no",
+    "pl",
+    "pt",
+    "pt-BR",
+    "ru",
+    "sk",
+    "sl",
+    "sr",
+    "sv",
+    "uk",
+    "zh-CN",
+    "zh-TW"
+  ],
+  "next_step": "Root merges this branch semantically (only the six target catalogs, their menu lines and registry flags; COVERAGE.md regenerated after merge), then reconciles the final UI delta: run tools/i18n_catalog.py sync for cs sk sl hr sr bg on the integration head and translate any texts added after sources 3390181968e6 before re-marking them complete.",
+  "notes": [
+    "Package frozen on sources 3390181968e6 (1800 texts) at base df0a353; no UI source, QML/C++, catalog extraction rule, Bogen or other locale was changed.",
+    "Translation tranches are kept in .scratch/tr-slavic/ (s000 ... s1691.tsv, indices for sources 3390181968e6, sections @cs @sk @sl @hr @sr @bg) for lossless re-application; .scratch is not part of the commits.",
+    "This package's completion does not claim the final integrated product UI is completely translated; texts added to the UI after 3390181968e6 are out of scope here."
+  ]
+}
