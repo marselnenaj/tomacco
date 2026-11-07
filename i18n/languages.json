@@ -596,7 +596,7 @@
       "zeroDigit": "0",
       "plural": "english",
       "omarchy": true,
-      "complete": false
+      "complete": true
     },
     {
       "code": "ta",
