@@ -90,9 +90,18 @@ class AvdTests(unittest.TestCase):
             path.parent.mkdir(parents=True)
             path.write_text(REFUSE)
             path.chmod(0o755)
+        # Discovery also looks in ANDROID_USER_HOME/avd, ~/.android/avd and
+        # $XDG_CONFIG_HOME/.android/avd (devices.rs avd_homes); those point
+        # into the scratch root too, so an AVD of the host account is never
+        # listed here (nor read or changed).
+        user = self.root / "user"
+        (user / ".config").mkdir(parents=True)
         self.env = patch.dict(os.environ, {"TOMACCO_HOME": str(self.root / "state"), "TOMACCO_TEST_ROOT": str(self.root),
                                            "ANDROID_HOME": str(self.sdk), "ANDROID_SDK_ROOT": str(self.sdk),
-                                           "ANDROID_AVD_HOME": str(self.avd_home), "ADB_SERVER_SOCKET": "tcp:127.0.0.1:1"})
+                                           "ANDROID_AVD_HOME": str(self.avd_home), "ADB_SERVER_SOCKET": "tcp:127.0.0.1:1",
+                                           "HOME": str(user), "XDG_CONFIG_HOME": str(user / ".config"),
+                                           "ANDROID_USER_HOME": str(user / ".android"),
+                                           "ANDROID_EMULATOR_HOME": str(user / ".android")})
         self.env.start()
 
     def tearDown(self):
