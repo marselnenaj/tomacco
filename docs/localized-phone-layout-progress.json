@@ -1,0 +1,692 @@
+{
+ "$comment": "Localized phone action-label layout fix: what was measured, changed and verified. Numbers come from .scratch/render probe outputs and the test runs listed; the PNGs and probe tooling stay in .scratch (git-ignored).",
+ "date": "2026-11-07",
+ "model": "claude-opus-5-5",
+ "branch": "integration/finish-tomacco",
+ "base": "e102bc5",
+ "commits": {
+  "fix": "412292c",
+  "record": "the commit that adds this file (HEAD after the fix)"
+ },
+ "source_freeze": {
+  "before": {
+   "digest": "d64e05550744",
+   "texts": 1878,
+   "sources_listing_sha256": "039a3b494a44bc725a0c2ed567507a1924904823e4354b24c1c7b2878f34888b",
+   "catalogs_sha256": "a6b885f6c2a91c1288f45979d101f0596536bbd75a19016e2f496d068f00220c"
+  },
+  "after": {
+   "digest": "d64e05550744",
+   "texts": 1878,
+   "sources_listing_sha256": "039a3b494a44bc725a0c2ed567507a1924904823e4354b24c1c7b2878f34888b",
+   "catalogs_sha256": "a6b885f6c2a91c1288f45979d101f0596536bbd75a19016e2f496d068f00220c"
+  },
+  "unchanged": true,
+  "english_catalog": {
+   "file": "i18n/tomacco_en.ts",
+   "messages": 21,
+   "plural_messages": 12,
+   "other_messages": 9,
+   "unchanged": true,
+   "correction": "The language-delta report (docs/final-language-delta-progress.json) and this task brief call this \"21 plurals\". It is 21 messages: 12 plurals (including the new Search results match(es) entry) and 9 non-plural NativeWorkspace AirPlay/iPhone texts with English translations, all already present at e102bc5 and unchanged here; test_i18n passes with them."
+  },
+  "note": "No translatable source, context or comment changed; no catalog was touched (combined sha256 of i18n/*.ts identical)."
+ },
+ "touched_paths": [
+  "qml/StudioButton.qml",
+  "qml/Workspace.qml",
+  "qml/NativeWorkspace.qml",
+  "qml/UpdateSection.qml",
+  "qml/AgentClientDialog.qml",
+  "tests/studio_button_test.cpp",
+  "tests/phone_routes_test.cpp",
+  "CMakeLists.txt",
+  "docs/mobile-native.md",
+  "docs/localized-phone-layout-progress.json"
+ ],
+ "root_causes": [
+  "StudioButton drew its label as one eliding line in a fixed-height box (anchors.fill, implicitHeight = touch size): a translated action longer than the button was cut, never wrapped.",
+  "A Flow does not constrain its children: a phone action button wider than its row (long label, 175/200 %) stuck out past the screen edge.",
+  "In Qt Quick Layouts an item without Layout.fillWidth is held at its preferred width and that width becomes the layout minimum; one wide non-fill button (Reset in the interface-size row, Save the current layout, Mac hosts, Find devices, Run anyway) widened its whole column, so every section of that screen became wider than the phone.",
+  "The icon was placed with x, which does not mirror: in right-to-left layouts the icon sat on the left while the label box was mirrored, so icon and text overlapped."
+ ],
+ "fix": {
+  "StudioButton": "Phone text buttons (touch && !iconOnly, new readonly wraps) wrap their label (Text.Wrap; label anchored left/right/verticalCenter so its implicit height is the wrapped height) and grow: implicitHeight = max(touch size, label + 2 x gapSm). In a Flow the implicit width is capped at the row (parent as Flow). naturalWidth exposes the one-line width; Layout.minimumWidth is the touch size for touch buttons. The icon is placed from the start edge (mirrored in RTL). Desktop buttons (touch false) keep one eliding line, natural width and fixed height; icon-only buttons stay square touch targets with Accessible.name/tooltip.",
+  "layouts": "Non-fill phone text buttons in layouts get Layout.fillWidth: true + Layout.maximumWidth: naturalWidth (same width as before when there is room, narrower and wrapped when not, no longer inflating the layout minimum): Mac hosts, Find devices (device detail), Run anyway (phone), agent dialog Done, Reset.",
+  "settings_sheet": "Interface size: GridLayout whose column count is measured against the settings column (set by the scroll view, so it cannot inflate itself); Reset moves under - size + when one row has no room. Window layouts: name field and Save the current layout stack on a phone (columns: view.phone ? 1 : 2). Use/Delete, Export/Import and the Updates buttons are touch:view.phone like the other phone settings controls; their Flows have Layout.minimumWidth: 0.",
+  "not_done_on_purpose": "No locale-specific widths, shortened or changed translations, smaller fonts, hidden labels or changed interface scale; no redesign."
+ },
+ "probe": {
+  "tool": ".scratch/render/run_probe.sh SAVE CODES (env OUT, QMLSRC, PROBE); .scratch/render/Probe.qml (after) and Probe-before.qml; summarize.py; Qt 6.12 qml tool, offscreen, software backend, ts2qm-compiled catalog via --translation, Studio stand-in singleton.",
+  "fidelity_fixes_before_use": [
+   "The language-delta probe measured once 60 ms after a size change; Qt Quick layouts polish on a later frame, so it read half-updated geometry. Now each step forces frames (grabToImage) and repeats until two passes agree (all 306 combinations stable).",
+   "It put all screens in one ColumnLayout, so one wide section widened every other one; now one ColumnLayout per real phone screen.",
+   "Containers, margins and texts now match the app: More build options uses gapXs at the start (the old probe used the gutter, which overstated its truncation), the primary says Build & run, file actions sit in their own Flow, and every phone touch text button of the project list/project/devices/device/job/tool/file/settings-size screens appears once.",
+   "Classification: action-elided (a button label), meta-elided (MobileRow meta, full text in the row Accessible.name and stacked below 300 px), placeholder-elided (text-field hint, full text in the field Accessible.name), plus button-overflow, text overflow, label-clipped, small-target and icon-overlap (glyph rectangle vs the label ink)."
+  ],
+  "limitations": [
+   "A component mock, not the app: it uses the qml tool default sans fallback, while the app loads its interface font (Backend::applyInterfaceFont). Latin labels therefore measure wider in the mock than in the app (German More build options wraps in the mock at 360/200 %, but fits on one line in the app); application evidence below takes precedence.",
+   "It mirrors the containers by hand; the settings Window layouts/Transfer/Updates groups are not in the probe (the app test covers them).",
+   "No physical device: not a Pixel acceptance test."
+  ],
+  "combinations": "51 catalogs x 360/393/412 px x 175/200 %"
+ },
+ "render_matrix": {
+  "before_fix_at_e102bc5": {
+   "locales": 51,
+   "combinations": 306,
+   "unstable_measurements": 0,
+   "issues": {
+    "action-elided": {
+     "count": 456,
+     "locales": 44
+    },
+    "button-overflow": {
+     "count": 445,
+     "locales": 48
+    },
+    "icon-overlap": {
+     "count": 467,
+     "locales": 4
+    },
+    "label-clipped": {
+     "count": 2,
+     "locales": 1
+    },
+    "overflow": {
+     "count": 503,
+     "locales": 47
+    },
+    "placeholder-elided": {
+     "count": 553,
+     "locales": 51
+    }
+   },
+   "button_label_line_counts": {
+    "1": 12546
+   },
+   "examples": {
+    "action-elided": [
+     "bg 360/175 text:Компилирай и стартирай",
+     "bg 360/175 text:Още опции за компилиране",
+     "bg 360/175 text:Добави устройство",
+     "bg 360/175 text:Отвори устройство на живо",
+     "bg 393/175 text:Компилирай и стартирай",
+     "bg 393/175 text:Още опции за компилиране"
+    ],
+    "button-overflow": [
+     "ar 360/175 interfaceReset",
+     "ar 360/200 interfaceReset",
+     "ar 393/200 interfaceReset",
+     "ar 412/200 interfaceReset",
+     "bg 360/175 projectPhonePlan",
+     "bg 360/175 Пътища до SDK и инструменти"
+    ],
+    "icon-overlap": [
+     "ar 360/175 projectPhoneOpenFolder",
+     "ar 360/175 projectPhoneSwitch",
+     "ar 360/175 فتح الملفات",
+     "ar 360/175 projectPhonePrimary",
+     "ar 360/175 phoneFindDevices",
+     "ar 360/175 createAndroidEmulatorPhone"
+    ],
+    "label-clipped": [
+     "hu 393/200 projectPhoneOpenFolder",
+     "hu 412/200 projectPhoneMore"
+    ],
+    "overflow": [
+     "ar 360/175 نتائج البحث عن «Ünïcødé» · 12 مطابقةً",
+     "ar 360/175 غير مصرّح: اسمح بتصحيح أخطاء USB على الهاتف",
+     "ar 360/200 إعادة الضبط",
+     "ar 360/200 نتائج البحث عن «Ünïcødé» · 12 مطابقةً",
+     "ar 360/200 غير مصرّح: اسمح بتصحيح أخطاء USB على الهاتف",
+     "ar 393/200 نتائج البحث عن «Ünïcødé» · 12 مطابقةً"
+    ],
+    "placeholder-elided": []
+   }
+  },
+  "after_fix": {
+   "locales": 51,
+   "combinations": 306,
+   "unstable_measurements": 0,
+   "issues": {
+    "placeholder-elided": {
+     "count": 553,
+     "locales": 51
+    }
+   },
+   "button_label_line_counts": {
+    "1": 11560,
+    "2": 963,
+    "3": 23
+   },
+   "examples": {
+    "placeholder-elided": []
+   }
+  },
+  "reverse_order_after_fix": {
+   "locales": 10,
+   "combinations": 80,
+   "unstable_measurements": 0,
+   "issues": {
+    "placeholder-elided": {
+     "count": 133,
+     "locales": 10
+    }
+   },
+   "button_label_line_counts": {
+    "1": 2886,
+    "2": 372,
+    "3": 22
+   },
+   "examples": {
+    "placeholder-elided": []
+   }
+  },
+  "per_locale_before": {
+   "ar": {
+    "button-overflow": 4,
+    "icon-overlap": 115,
+    "overflow": 9,
+    "placeholder-elided": 7
+   },
+   "bg": {
+    "action-elided": 21,
+    "button-overflow": 20,
+    "overflow": 15,
+    "placeholder-elided": 12
+   },
+   "bn": {
+    "action-elided": 2,
+    "button-overflow": 5,
+    "overflow": 10,
+    "placeholder-elided": 12
+   },
+   "ca": {
+    "action-elided": 17,
+    "button-overflow": 13,
+    "overflow": 16,
+    "placeholder-elided": 12
+   },
+   "cs": {
+    "action-elided": 7,
+    "button-overflow": 4,
+    "overflow": 4,
+    "placeholder-elided": 12
+   },
+   "da": {
+    "action-elided": 2,
+    "button-overflow": 2,
+    "overflow": 2,
+    "placeholder-elided": 12
+   },
+   "de": {
+    "action-elided": 4,
+    "button-overflow": 5,
+    "overflow": 14,
+    "placeholder-elided": 12
+   },
+   "el": {
+    "action-elided": 23,
+    "button-overflow": 28,
+    "overflow": 31,
+    "placeholder-elided": 12
+   },
+   "en": {
+    "action-elided": 1,
+    "button-overflow": 1,
+    "overflow": 2,
+    "placeholder-elided": 10
+   },
+   "es-MX": {
+    "action-elided": 14,
+    "button-overflow": 16,
+    "overflow": 17,
+    "placeholder-elided": 12
+   },
+   "es": {
+    "action-elided": 14,
+    "button-overflow": 16,
+    "overflow": 17,
+    "placeholder-elided": 12
+   },
+   "et": {
+    "action-elided": 4,
+    "button-overflow": 2,
+    "overflow": 5,
+    "placeholder-elided": 8
+   },
+   "fa": {
+    "action-elided": 1,
+    "button-overflow": 1,
+    "icon-overlap": 118,
+    "overflow": 2,
+    "placeholder-elided": 6
+   },
+   "fi": {
+    "action-elided": 4,
+    "button-overflow": 1,
+    "overflow": 3,
+    "placeholder-elided": 9
+   },
+   "fil": {
+    "action-elided": 21,
+    "button-overflow": 28,
+    "overflow": 15,
+    "placeholder-elided": 12
+   },
+   "fr": {
+    "action-elided": 16,
+    "button-overflow": 20,
+    "overflow": 17,
+    "placeholder-elided": 12
+   },
+   "ga": {
+    "action-elided": 5,
+    "button-overflow": 10,
+    "overflow": 18,
+    "placeholder-elided": 12
+   },
+   "he": {
+    "action-elided": 1,
+    "icon-overlap": 118,
+    "placeholder-elided": 11
+   },
+   "hi": {
+    "button-overflow": 1,
+    "overflow": 2,
+    "placeholder-elided": 7
+   },
+   "hr": {
+    "action-elided": 6,
+    "button-overflow": 2,
+    "overflow": 1,
+    "placeholder-elided": 12
+   },
+   "hu": {
+    "action-elided": 16,
+    "button-overflow": 10,
+    "label-clipped": 2,
+    "overflow": 16,
+    "placeholder-elided": 12
+   },
+   "id": {
+    "action-elided": 11,
+    "button-overflow": 5,
+    "overflow": 10,
+    "placeholder-elided": 11
+   },
+   "is": {
+    "action-elided": 2,
+    "button-overflow": 4,
+    "overflow": 10,
+    "placeholder-elided": 10
+   },
+   "it": {
+    "action-elided": 11,
+    "button-overflow": 7,
+    "overflow": 7,
+    "placeholder-elided": 12
+   },
+   "ja": {
+    "action-elided": 10,
+    "button-overflow": 4,
+    "overflow": 6,
+    "placeholder-elided": 10
+   },
+   "ko": {
+    "button-overflow": 1,
+    "overflow": 2,
+    "placeholder-elided": 7
+   },
+   "lt": {
+    "action-elided": 13,
+    "button-overflow": 22,
+    "overflow": 26,
+    "placeholder-elided": 12
+   },
+   "lv": {
+    "action-elided": 9,
+    "button-overflow": 3,
+    "overflow": 5,
+    "placeholder-elided": 12
+   },
+   "ms": {
+    "action-elided": 4,
+    "button-overflow": 7,
+    "overflow": 17,
+    "placeholder-elided": 11
+   },
+   "nl": {
+    "action-elided": 10,
+    "button-overflow": 5,
+    "overflow": 9,
+    "placeholder-elided": 11
+   },
+   "no": {
+    "action-elided": 2,
+    "button-overflow": 5,
+    "overflow": 9,
+    "placeholder-elided": 12
+   },
+   "pl": {
+    "action-elided": 11,
+    "button-overflow": 2,
+    "overflow": 5,
+    "placeholder-elided": 12
+   },
+   "pt-BR": {
+    "action-elided": 16,
+    "button-overflow": 11,
+    "overflow": 11,
+    "placeholder-elided": 12
+   },
+   "pt": {
+    "action-elided": 16,
+    "button-overflow": 11,
+    "overflow": 11,
+    "placeholder-elided": 12
+   },
+   "ro": {
+    "action-elided": 18,
+    "button-overflow": 6,
+    "overflow": 10,
+    "placeholder-elided": 12
+   },
+   "ru": {
+    "action-elided": 20,
+    "button-overflow": 13,
+    "overflow": 12,
+    "placeholder-elided": 12
+   },
+   "si": {
+    "action-elided": 28,
+    "button-overflow": 54,
+    "overflow": 56,
+    "placeholder-elided": 12
+   },
+   "sk": {
+    "action-elided": 12,
+    "button-overflow": 4,
+    "overflow": 3,
+    "placeholder-elided": 12
+   },
+   "sl": {
+    "action-elided": 3,
+    "button-overflow": 4,
+    "overflow": 6,
+    "placeholder-elided": 12
+   },
+   "sr": {
+    "action-elided": 11,
+    "button-overflow": 11,
+    "overflow": 8,
+    "placeholder-elided": 12
+   },
+   "sv": {
+    "action-elided": 1,
+    "button-overflow": 5,
+    "overflow": 5,
+    "placeholder-elided": 11
+   },
+   "sw": {
+    "action-elided": 5,
+    "button-overflow": 5,
+    "overflow": 10,
+    "placeholder-elided": 12
+   },
+   "ta": {
+    "action-elided": 26,
+    "button-overflow": 35,
+    "overflow": 20,
+    "placeholder-elided": 12
+   },
+   "th": {
+    "button-overflow": 1,
+    "placeholder-elided": 7
+   },
+   "tr": {
+    "action-elided": 4,
+    "button-overflow": 3,
+    "overflow": 2,
+    "placeholder-elided": 11
+   },
+   "uk": {
+    "action-elided": 17,
+    "button-overflow": 7,
+    "overflow": 8,
+    "placeholder-elided": 12
+   },
+   "ur": {
+    "button-overflow": 5,
+    "icon-overlap": 116,
+    "overflow": 10,
+    "placeholder-elided": 11
+   },
+   "uz": {
+    "action-elided": 16,
+    "button-overflow": 10,
+    "overflow": 5,
+    "placeholder-elided": 11
+   },
+   "vi": {
+    "action-elided": 1,
+    "button-overflow": 6,
+    "overflow": 4,
+    "placeholder-elided": 12
+   },
+   "zh-CN": {
+    "placeholder-elided": 6
+   },
+   "zh-TW": {
+    "placeholder-elided": 6
+   }
+  },
+  "per_locale_after": {
+   "ar": {
+    "placeholder-elided": 7
+   },
+   "bg": {
+    "placeholder-elided": 12
+   },
+   "bn": {
+    "placeholder-elided": 12
+   },
+   "ca": {
+    "placeholder-elided": 12
+   },
+   "cs": {
+    "placeholder-elided": 12
+   },
+   "da": {
+    "placeholder-elided": 12
+   },
+   "de": {
+    "placeholder-elided": 12
+   },
+   "el": {
+    "placeholder-elided": 12
+   },
+   "en": {
+    "placeholder-elided": 10
+   },
+   "es-MX": {
+    "placeholder-elided": 12
+   },
+   "es": {
+    "placeholder-elided": 12
+   },
+   "et": {
+    "placeholder-elided": 8
+   },
+   "fa": {
+    "placeholder-elided": 6
+   },
+   "fi": {
+    "placeholder-elided": 9
+   },
+   "fil": {
+    "placeholder-elided": 12
+   },
+   "fr": {
+    "placeholder-elided": 12
+   },
+   "ga": {
+    "placeholder-elided": 12
+   },
+   "he": {
+    "placeholder-elided": 11
+   },
+   "hi": {
+    "placeholder-elided": 7
+   },
+   "hr": {
+    "placeholder-elided": 12
+   },
+   "hu": {
+    "placeholder-elided": 12
+   },
+   "id": {
+    "placeholder-elided": 11
+   },
+   "is": {
+    "placeholder-elided": 10
+   },
+   "it": {
+    "placeholder-elided": 12
+   },
+   "ja": {
+    "placeholder-elided": 10
+   },
+   "ko": {
+    "placeholder-elided": 7
+   },
+   "lt": {
+    "placeholder-elided": 12
+   },
+   "lv": {
+    "placeholder-elided": 12
+   },
+   "ms": {
+    "placeholder-elided": 11
+   },
+   "nl": {
+    "placeholder-elided": 11
+   },
+   "no": {
+    "placeholder-elided": 12
+   },
+   "pl": {
+    "placeholder-elided": 12
+   },
+   "pt-BR": {
+    "placeholder-elided": 12
+   },
+   "pt": {
+    "placeholder-elided": 12
+   },
+   "ro": {
+    "placeholder-elided": 12
+   },
+   "ru": {
+    "placeholder-elided": 12
+   },
+   "si": {
+    "placeholder-elided": 12
+   },
+   "sk": {
+    "placeholder-elided": 12
+   },
+   "sl": {
+    "placeholder-elided": 12
+   },
+   "sr": {
+    "placeholder-elided": 12
+   },
+   "sv": {
+    "placeholder-elided": 11
+   },
+   "sw": {
+    "placeholder-elided": 12
+   },
+   "ta": {
+    "placeholder-elided": 12
+   },
+   "th": {
+    "placeholder-elided": 7
+   },
+   "tr": {
+    "placeholder-elided": 11
+   },
+   "uk": {
+    "placeholder-elided": 12
+   },
+   "ur": {
+    "placeholder-elided": 11
+   },
+   "uz": {
+    "placeholder-elided": 11
+   },
+   "vi": {
+    "placeholder-elided": 12
+   },
+   "zh-CN": {
+    "placeholder-elided": 6
+   },
+   "zh-TW": {
+    "placeholder-elided": 6
+   }
+  },
+  "reading": "After the fix no action label is elided, no button or text leaves the screen, no label is clipped, no touch target is under 48 px scaled and no icon covers its label, in all 51 catalogs at all six sizes, also with sizes visited in reverse order (412/100 -> 360/200 included). The remaining placeholder-elided entries are single-line text-field hints (identical count before and after), not actions."
+ },
+ "application_evidence": {
+  "test": "tests/phone_routes_test.cpp translated_action_labels_stay_whole (real Main.qml, backend and control program, qrc QML and translations): de/ta/ar at 360 px and ja at 393 px, 200 %; project page with options open, an open file, the whole settings sheet. Checks every phone text button: inside the window, >= 48 px scaled, label not truncated and inside its button, RTL icon right of the text; every settings group inside the window; the primary action shows the language's translation (not English).",
+  "test_harness_fix": "The phone-route test did not connect Backend::languageChanged to engine.retranslate() as main.cpp does, so a language switched while running only reached newly created items; it now does (initTestCase).",
+  "before_fix_qml_at_e102bc5": {
+   "de-360-200": "FAIL projectPhoneMore \"Weitere Build-Optionen\" is cut off",
+   "ta-360-200": "FAIL projectPhoneSwitch \"திட்டத்தை மாற்று\" sticks out of the window",
+   "ar-360-200": "FAIL settingsInterfaceSize wider than the window",
+   "ja-393-200": "FAIL projectPhoneMore \"その他のビルドオプション\" is cut off"
+  },
+  "found_only_in_the_app": "German 360/200 %: the Window layouts group (Save the current layout, a non-touch button beside the name field) was 410 px wide in a 272 px settings column and widened every settings group; fixed as listed under fix.settings_sheet.",
+  "after_fix": {
+   "de-360-200": "20 phone text buttons, 5 wrapped, PASS",
+   "ta-360-200": "20 phone text buttons, 11 wrapped, PASS",
+   "ar-360-200": "20 phone text buttons, 0 wrapped, PASS",
+   "ja-393-200": "20 phone text buttons, 2 wrapped, PASS"
+  }
+ },
+ "tests": {
+  "environment": "Each Qt test via .scratch/run_qt.sh (fresh HOME/XDG/TOMACCO_HOME/TMPDIR, adb/fastboot/ssh/emulator/xtool/idevice*/iproxy/scrcpy/go-ios/agents trapped with exit 97, offscreen software Qt); Python via .scratch/run_py_tests.py (same traps). No device, USB, network or SSH was used; trapped counts are the app's own lookups answered by the traps.",
+  "test-studio-button (new)": "9/9 (7 functions + init/cleanup). Against the e102bc5 StudioButton (with only the two objectNames added) 6 of 7 fail; icon_only_touch_button_stays_a_square_named_target passes on both, as intended (unchanged behaviour); desktop_button_keeps_one_eliding_line fails there only for the new naturalWidth property.",
+  "test-phone-routes": "29/29 in two ordered halves (17 + 12): the 21 existing route tests + 4 rows of translated_action_labels_stay_whole + init/cleanup",
+  "test-desktop-ui": "113/113 in two ordered halves (68 + 45)",
+  "component tests": "test-mobile-row 8/8, test-mobile-nav 10/10, test-agent-client-picker 6/6, test-environment-panel 16/16, test-handoff-banner 14/14, test-demo-workspace 21/21, test-backend 17/17",
+  "binding/polish loops": "0 warnings in the desktop, phone-route and probe logs",
+  "qmllint": "StudioButton.qml 0 findings (as at e102bc5); Workspace 0, NativeWorkspace 23, AgentClientDialog 3, UpdateSection 10: the same counts as at e102bc5",
+  "test_i18n strict": "PYTHONPATH=.:tools:tests/python TMPDIR=/tmp python3 -m unittest test_i18n -> 18 OK",
+  "python suites": "TMPDIR=/tmp python3 .scratch/run_py_tests.py test_i18n test_docs_consistency test_mobile_parity test_docs_links test_docs_reference test_build_site_docs test_product test_release_files test_agent_clients test_agent_skill test_agent_actions test_install test_make_release test_build_portable test_build_source_release test_preview -> 16 modules, 354 tests, 0 failed, 3 skipped (no node on the trapped PATH; two install tests need a debug build)"
+ },
+ "screenshots": {
+  "application": ".scratch/render/representative/app/phone-labels-{project,file,settings}-{de,ta,ar}-360-200.png and -ja-393-200.png (real app, TOMACCO_UI_CAPTURES)",
+  "probe_after": ".scratch/render/representative/probe-after/{ta,de,ar,ja,si,en,el}-360-200.png, ja-393-200.png; all 306 in .scratch/render/out-after",
+  "probe_before": ".scratch/render/representative/probe-before/ (same names, e102bc5 QML)",
+  "inspection": "This harness has no image viewer for Claude: the PNGs were inspected as pixel renderings (.scratch/render/ascii_crop.py around a measured button box, ascii_page.py for a whole capture) plus the geometry above. Checked: Tamil More build options (chevron + 3 lines inside the box), Copy path and Open files (icon + 2 lines), German More build options (2 lines), Arabic Switch project (icon at the right, text to its left), Arabic file actions (Flow right to left, Save at the right), Japanese accent Open live device (2 lines inside the filled box), Tamil Reset on its own row, and the real-app Tamil project page (wrapped labels, nothing past the edges, content above the bottom navigation). A person should still look at them."
+ },
+ "remaining_limitations": [
+  "Single-line text fields (Path to your project, Workspace name, layout name) elide their placeholder hints on narrow phones at 175/200 %; the full hint is the field Accessible.name and is also written out above the field (Open by path detail, Save workspace hint). Not changed: text fields stay single-line inputs.",
+  "MobileRow meta text is intentionally capped at 40 % and elided beside the title above 300 px; the full value is in the row Accessible.name and the row stacks it under the title below 300 px. No meta elision was measured in this matrix.",
+  "Other non-phone StudioButtons (desktop dialogs, Debug/Demo workspaces, desktop toolbars) keep the desktop single eliding line by design.",
+  "Verified offscreen on x86_64 with this host's fonts (Noto script families present); not on the Pixel, not on ARM64. Root runs the integrated native and ARM64 verification.",
+  "Not touched or claimed: AirPlay audio, TV/Wear, Demo Studio, hardware qualification."
+ ],
+ "final_source_ready": true,
+ "root_commands": [
+  "cmake -S . -B build -G Ninja -DBUILD_TESTING=ON && ninja -C build test-studio-button test-phone-routes test-desktop-ui test-mobile-row test-mobile-nav",
+  ".scratch/run_qt.sh test-studio-button",
+  ".scratch/run_qt_halves.sh test-phone-routes   # ordered halves; 29 expected",
+  ".scratch/run_qt_halves.sh test-desktop-ui     # ordered halves; 113 expected",
+  "PYTHONPATH=.:tools:tests/python TMPDIR=/tmp python3 -m unittest test_i18n",
+  "OUT=$PWD/.scratch/render/out-after sh .scratch/render/run_probe.sh 1 $(cat .scratch/render/codes.txt) && python3 .scratch/render/summarize.py .scratch/render/out-after   # optional mock matrix, split in halves under a 120 s limit"
+ ]
+}
