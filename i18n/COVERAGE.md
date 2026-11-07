@@ -48,7 +48,7 @@ review list, not an error count.
 | si | සිංහල (Sinhala) | ltr | 2 (english) | 0/1800 | 1800 | 0 | 0 | 0/6 | untranslated |
 | sk | Slovenčina (Slovak) | ltr | 3 (slovak) | 1800/1800 | 0 | 1 | 0 | 6/6 | complete |
 | sl | Slovenščina (Slovenian) | ltr | 4 (slovenian) | 1800/1800 | 0 | 1 | 0 | 6/6 | complete |
-| sr | Српски (Serbian) | ltr | 3 (russian) | 1800/1800 | 0 | 2 | 0 | 0/6 | partial |
+| sr | Српски (Serbian) | ltr | 3 (russian) | 1800/1800 | 0 | 2 | 0 | 6/6 | complete |
 | sv | Svenska (Swedish) | ltr | 2 (english) | 1800/1800 | 0 | 1 | 0 | 6/6 | complete |
 | sw | Kiswahili (Swahili) | ltr | 2 (english) | 0/1800 | 1800 | 0 | 0 | 0/6 | untranslated |
 | ta | தமிழ் (Tamil) | ltr | 2 (english) | 0/1800 | 1800 | 0 | 0 | 0/6 | untranslated |
@@ -61,6 +61,6 @@ review list, not an error count.
 | zh-CN | 简体中文 (Chinese (Simplified)) | ltr | 1 (universal) | 1800/1800 | 0 | 1 | 0 | 6/6 | complete |
 | zh-TW | 繁體中文 (Chinese (Traditional)) | ltr | 1 (universal) | 1800/1800 | 0 | 1 | 0 | 6/6 | complete |
 
-Complete: 23 of 50 translated languages: ar, cs, da, de, es, es-MX, fr, hr, id, it, ja, nl, no, pl, pt, pt-BR, ru, sk, sl, sv, uk, zh-CN, zh-TW
+Complete: 24 of 50 translated languages: ar, cs, da, de, es, es-MX, fr, hr, id, it, ja, nl, no, pl, pt, pt-BR, ru, sk, sl, sr, sv, uk, zh-CN, zh-TW
 
-Not complete: bg, bn, ca, el, et, fa, fi, fil, ga, he, hi, hu, is, ko, lt, lv, ms, ro, si, sr, sw, ta, th, tr, ur, uz, vi
+Not complete: bg, bn, ca, el, et, fa, fi, fil, ga, he, hi, hu, is, ko, lt, lv, ms, ro, si, sw, ta, th, tr, ur, uz, vi
