@@ -494,6 +494,84 @@ private slots:
         noErrors();
     }
 
+    // The phone chooser sheet in a translated interface at the narrowest phone and largest
+    // interface size, right to left in Arabic: its own texts are translated, the buttons mirror,
+    // the path still reads from the left, and every control and long folder name stays whole,
+    // touch-sized and inside the screen. Cancel leaves the open project.
+    void project_chooser_phone_sheet_reads_translated_and_mirrored_data() {
+        QTest::addColumn<QString>("language");QTest::addColumn<int>("width");QTest::addColumn<int>("percent");
+        QTest::newRow("ar-360-200")<<"ar"<<360<<200;QTest::newRow("de-360-200")<<"de"<<360<<200;QTest::newRow("ja-412-175")<<"ja"<<412<<175;
+    }
+    void project_chooser_phone_sheet_reads_translated_and_mirrored() {
+        QFETCH(QString,language);QFETCH(int,width);QFETCH(int,percent);
+        const auto original=directory.filePath("project");
+        const auto projectPath=[&]{return mapOf(workspace->property("project")).value("path").toString();};
+        auto *dialog=window->findChild<QObject *>("projectFolderDialog");QVERIFY(dialog);
+        const auto restore=qScopeGuard([&]{
+            QMetaObject::invokeMethod(dialog,"close");workspace->setProperty("projectList",false);
+            backend->setLanguage("en");QTest::qWait(50);
+        });
+        backend->setLanguage(language);QTRY_COMPARE(backend->uiLanguage(),language);
+        const bool rightToLeft=language=="ar";QCOMPARE(backend->rightToLeft(),rightToLeft);
+        QTemporaryDir root;QVERIFY(root.isValid());
+        const QString base=root.filePath(QString::fromUtf8("مشاريع الهاتف · Projekte · プロジェクト"));
+        const QStringList names{QString::fromUtf8("تطبيق الهاتف المحمول التجريبي الطويل جدا للتحقق من الترجمة"),
+            QString::fromUtf8("Ein sehr langer Projektordner für die Übersetzungsprüfung der Anwendung"),
+            QString::fromUtf8("とても長い日本語のプロジェクトフォルダー名の確認用ディレクトリ")};
+        for(const auto &name:names)QVERIFY(QDir().mkpath(base+"/"+name));
+        setSize(width,852,percent);QTRY_VERIFY(native->property("phone").toBool());
+        workspace->setProperty("projectList",true);showTab("project");
+        QTRY_VERIFY(shown("projectPhoneOpenFolder"));
+        tap("projectPhoneOpenFolder");
+        QTRY_VERIFY(dialog->property("opened").toBool());
+        QVERIFY(dialog->property("sheet").toBool());
+        const auto title=dialog->property("title").toString();
+        QCOMPARE(title,QCoreApplication::translate("Workspace","Choose project"));
+        QVERIFY2(title!=QString("Choose project"),qPrintable(language+" shows the English title"));
+        const QRectF box(dialog->property("x").toReal(),dialog->property("y").toReal(),dialog->property("width").toReal(),dialog->property("height").toReal());
+        QVERIFY2(qAbs(box.width()-window->width())<1 && box.left()>=-0.5 && box.bottom()<=window->height()+0.5,qPrintable(QString("sheet %1,%2 %3x%4").arg(box.x()).arg(box.y()).arg(box.width()).arg(box.height())));
+        const auto listed=[&]{return mapOf(dialog->property("listing")).value("path").toString();};
+        QVERIFY(QMetaObject::invokeMethod(dialog,"go",Q_ARG(QVariant,base)));QTRY_COMPARE(listed(),base);
+        auto *location=shown("projectFolderDialogLocation");QVERIFY(location);
+        QCOMPARE(location->property("text").toString(),base);
+        QVERIFY(insideWidth(location));
+        // A path reads from the left also in a mirrored interface.
+        QCOMPARE(location->property("effectiveHorizontalAlignment").toInt(),int(Qt::AlignLeft));
+        QCOMPARE(location->property("font").value<QFont>().pixelSize(),px(16));
+        for(const auto &[part,source]:{std::pair{"projectFolderDialogParent","Parent folder"},{"projectFolderDialogHome","Home folder"}}) {
+            auto *b=shown(part);QVERIFY2(b,part);
+            const auto text=b->property("text").toString();
+            QCOMPARE(text,QCoreApplication::translate("ProjectFolderDialog",source));
+            QVERIFY2(text!=QString::fromLatin1(source),qPrintable(language+" has no translation of "+source));
+            touchTarget(b,b->property("displayText").toString().isEmpty());QVERIFY(insideWidth(b));
+        }
+        const auto parentX=sceneRect(shown("projectFolderDialogParent")).center().x(),homeX=sceneRect(shown("projectFolderDialogHome")).center().x();
+        QVERIFY2(rightToLeft?parentX>homeX:parentX<homeX,qPrintable(QString("%1 parent %2 home %3").arg(language).arg(parentX).arg(homeX)));
+        auto *hidden=shown("projectFolderDialogHidden");QVERIFY(hidden);touchTarget(hidden);QVERIFY(insideWidth(hidden));
+        QCOMPARE(hidden->property("text").toString(),QCoreApplication::translate("FileWorkspace","Hidden"));
+        for(const auto &name:{"projectFolderDialog-button-0","projectFolderDialog-button-1"}){
+            auto *b=shown(name);QVERIFY2(b,name);touchTarget(b);QVERIFY(insideWidth(b));
+            QVERIFY(sceneRect(b).bottom()<=window->height()+0.5);QVERIFY(!b->property("text").toString().isEmpty());
+        }
+        auto *list=shown("projectFolderDialogFolders");QVERIFY(list);QVERIFY(list->height()>=2*px(48)-0.5);
+        const auto folders=mapOf(dialog->property("listing")).value("folders").toList();
+        QCOMPARE(folders.size(),names.size());
+        for(int index=0;index<folders.size();++index) {
+            const auto name=folders[index].toMap().value("name").toString();
+            QMetaObject::invokeMethod(list,"positionViewAtIndex",Q_ARG(int,index),Q_ARG(int,4));QTest::qWait(40);
+            auto *row=shown(QString("projectFolderDialogFolder-%1").arg(index));QVERIFY2(row,qPrintable(name));
+            touchTarget(row);QVERIFY(insideWidth(row));
+            auto *label=find(row,"projectFolderName",true);QVERIFY(label);
+            QCOMPARE(label->property("text").toString(),name);
+            QVERIFY2(!label->property("truncated").toBool() && label->property("contentWidth").toReal()<=label->width()+1 && insideWidth(label),qPrintable(name));
+        }
+        list->setProperty("contentY",0);
+        capture("project-chooser-"+language);
+        tap("projectFolderDialog-button-1");QTRY_VERIFY(!dialog->property("visible").toBool());
+        QTest::qWait(100);QCOMPARE(projectPath(),original);
+        noErrors();
+    }
+
     void settings_sheet_and_agent_clients_data() {
         QTest::addColumn<int>("width");QTest::addColumn<int>("percent");
         QTest::newRow("393-100")<<393<<100;QTest::newRow("360-175")<<360<<175;QTest::newRow("412-200")<<412<<200;
