@@ -2724,7 +2724,7 @@ xtool setup</translation>
     </message>
     <message>
         <source>Offline</source>
-        <translation>Offline</translation>
+        <translation>Ei verkkoa</translation>
     </message>
     <message>
         <source>Page color scheme</source>
@@ -6980,433 +6980,433 @@ Lisensoitu GNU General Public License -lisenssillä, versio 2 tai uudempi.</tran
     </message>
     <message>
         <source>Import…</source>
-        <translation type="unfinished"></translation>
+        <translation>Tuo…</translation>
     </message>
     <message>
         <source>Export…</source>
-        <translation type="unfinished"></translation>
+        <translation>Vie…</translation>
     </message>
     <message>
         <source>Delete preset</source>
-        <translation type="unfinished"></translation>
+        <translation>Poista esiasetus</translation>
     </message>
     <message numerus="yes">
         <source>%n preset file(s) could not be read and are not listed.</source>
-        <translation type="unfinished">
-            <numerusform></numerusform>
-            <numerusform></numerusform>
+        <translation>
+            <numerusform>%n esiasetustiedostoa ei voitu lukea, eikä sitä näytetä luettelossa.</numerusform>
+            <numerusform>%n esiasetustiedostoa ei voitu lukea, eikä niitä näytetä luettelossa.</numerusform>
         </translation>
     </message>
     <message>
         <source>Apply to a device</source>
-        <translation type="unfinished"></translation>
+        <translation>Ota käyttöön laitteessa</translation>
     </message>
     <message>
         <source>Choose the device here. Tomacco reads it first, shows what would change, and applies only that plan to that device.</source>
-        <translation type="unfinished"></translation>
+        <translation>Valitse laite tässä. Tomacco lukee sen ensin, näyttää mitä muuttuisi ja ottaa käyttöön vain sen suunnitelman kyseisessä laitteessa.</translation>
     </message>
     <message>
         <source>Choose the target device</source>
-        <translation type="unfinished"></translation>
+        <translation>Valitse kohdelaite</translation>
     </message>
     <message>
         <source>App ID for the app language · optional</source>
-        <translation type="unfinished"></translation>
+        <translation>Sovelluksen tunnus sovelluksen kieltä varten · valinnainen</translation>
     </message>
     <message>
         <source>Read device</source>
-        <translation type="unfinished"></translation>
+        <translation>Lue laite</translation>
     </message>
     <message>
         <source>Plan</source>
-        <translation type="unfinished"></translation>
+        <translation>Suunnittele</translation>
     </message>
     <message>
         <source>Apply plan</source>
-        <translation type="unfinished"></translation>
+        <translation>Toteuta suunnitelma</translation>
     </message>
     <message>
         <source>Restore previous settings</source>
-        <translation type="unfinished"></translation>
+        <translation>Palauta aiemmat asetukset</translation>
     </message>
     <message>
         <source>Skip the settings this device does not support</source>
-        <translation type="unfinished"></translation>
+        <translation>Ohita asetukset, joita tämä laite ei tue</translation>
     </message>
     <message>
         <source>Plan for %1 (%2) · preset revision %3</source>
-        <translation type="unfinished"></translation>
+        <translation>Suunnitelma laitteelle %1 (%2) · esiasetuksen versio %3</translation>
     </message>
     <message>
         <source>TalkBack here switches the screen reader on the device and keeps your other accessibility services. It does not show that your app works with a screen reader; the accessibility audit only checks the screen&apos;s structure.</source>
-        <translation type="unfinished"></translation>
+        <translation>TalkBack kytkee tässä laitteen näytönlukijan päälle ja säilyttää muut saavutettavuuspalvelusi. Se ei osoita, että sovelluksesi toimii näytönlukijan kanssa; saavutettavuustarkastus tarkistaa vain näkymän rakenteen.</translation>
     </message>
     <message>
         <source>QA environment (*.json)</source>
-        <translation type="unfinished"></translation>
+        <translation>QA-ympäristö (*.json)</translation>
     </message>
     <message>
         <source>Delete this preset?</source>
-        <translation type="unfinished"></translation>
+        <translation>Poistetaanko tämä esiasetus?</translation>
     </message>
     <message>
         <source>The preset is removed from this computer. Devices keep their settings, and restore points stay.</source>
-        <translation type="unfinished"></translation>
+        <translation>Esiasetus poistetaan tästä tietokoneesta. Laitteet säilyttävät asetuksensa, ja palautuspisteet säilyvät.</translation>
     </message>
     <message>
         <source>Keep preset</source>
-        <translation type="unfinished"></translation>
+        <translation>Säilytä esiasetus</translation>
     </message>
     <message>
         <source>%1 points, %2 km, %3 min recorded</source>
-        <translation type="unfinished"></translation>
+        <translation>%1 pistettä, %2 km, %3 min tallennettu</translation>
     </message>
     <message>
         <source>%1 points, %2 km, no times: one point per second</source>
-        <translation type="unfinished"></translation>
+        <translation>%1 pistettä, %2 km, ei aikoja: yksi piste sekunnissa</translation>
     </message>
     <message>
         <source>Change route…</source>
-        <translation type="unfinished"></translation>
+        <translation>Vaihda reitti…</translation>
     </message>
     <message>
         <source>Choose a GPX file…</source>
-        <translation type="unfinished"></translation>
+        <translation>Valitse GPX-tiedosto…</translation>
     </message>
     <message>
         <source>Finished. The last position stays on the emulator.</source>
-        <translation type="unfinished"></translation>
+        <translation>Valmis. Viimeinen sijainti jää emulaattoriin.</translation>
     </message>
     <message>
         <source>GPX route (*.gpx)</source>
-        <translation type="unfinished"></translation>
+        <translation>GPX-reitti (*.gpx)</translation>
     </message>
     <message>
         <source>No route chosen</source>
-        <translation type="unfinished"></translation>
+        <translation>Reittiä ei ole valittu</translation>
     </message>
     <message>
         <source>Pause</source>
-        <translation type="unfinished"></translation>
+        <translation>Keskeytä</translation>
     </message>
     <message>
         <source>Paused at %1</source>
-        <translation type="unfinished"></translation>
+        <translation>Keskeytetty kohdassa %1</translation>
     </message>
     <message>
         <source>Play a GPX route on the chosen emulator&apos;s location. Timed points keep their timing; untimed points play one per second.</source>
-        <translation type="unfinished"></translation>
+        <translation>Toista GPX-reitti valitun emulaattorin sijainnissa. Ajastetut pisteet säilyttävät ajoituksensa; ajastamattomat pisteet toistetaan yksi sekunnissa.</translation>
     </message>
     <message>
         <source>Play route</source>
-        <translation type="unfinished"></translation>
+        <translation>Toista reitti</translation>
     </message>
     <message>
         <source>Playback ended: %1</source>
-        <translation type="unfinished"></translation>
+        <translation>Toisto päättyi: %1</translation>
     </message>
     <message>
         <source>Playing %1</source>
-        <translation type="unfinished"></translation>
+        <translation>Toistetaan %1</translation>
     </message>
     <message>
         <source>Playing the route on %1. The previous position is not known and will not be restored.</source>
-        <translation type="unfinished"></translation>
+        <translation>Reittiä toistetaan laitteessa %1. Aiempaa sijaintia ei tunneta, eikä sitä palauteta.</translation>
     </message>
     <message>
         <source>Playing…</source>
-        <translation type="unfinished"></translation>
+        <translation>Toistetaan…</translation>
     </message>
     <message>
         <source>Reading the route…</source>
-        <translation type="unfinished"></translation>
+        <translation>Luetaan reittiä…</translation>
     </message>
     <message>
         <source>Repeat the route</source>
-        <translation type="unfinished"></translation>
+        <translation>Toista reittiä jatkuvasti</translation>
     </message>
     <message>
         <source>Resume</source>
-        <translation type="unfinished"></translation>
+        <translation>Jatka</translation>
     </message>
     <message>
         <source>Route playback</source>
-        <translation type="unfinished"></translation>
+        <translation>Reitin toisto</translation>
     </message>
     <message>
         <source>Route playback reaches emulators only. A phone takes no mock location from here.</source>
-        <translation type="unfinished"></translation>
+        <translation>Reitin toisto toimii vain emulaattoreissa. Puhelin ei ota täältä vastaan simuloitua sijaintia.</translation>
     </message>
     <message>
         <source>Speed · 1 is real time</source>
-        <translation type="unfinished"></translation>
+        <translation>Nopeus · 1 on reaaliaika</translation>
     </message>
     <message>
         <source>Starting playback…</source>
-        <translation type="unfinished"></translation>
+        <translation>Aloitetaan toistoa…</translation>
     </message>
     <message>
         <source>Stop</source>
-        <translation type="unfinished"></translation>
+        <translation>Pysäytä</translation>
     </message>
     <message>
         <source>Stopped. The last position stays on the emulator.</source>
-        <translation type="unfinished"></translation>
+        <translation>Pysäytetty. Viimeinen sijainti jää emulaattoriin.</translation>
     </message>
     <message>
         <source>The emulator does not report its position, so the position before playback is unknown and is not restored. Set one in the preset&apos;s GPS field afterwards if you need it.</source>
-        <translation type="unfinished"></translation>
+        <translation>Emulaattori ei ilmoita sijaintiaan, joten toistoa edeltävä sijainti on tuntematon eikä sitä palauteta. Aseta sijainti jälkikäteen esiasetuksen GPS-kenttään, jos tarvitset sitä.</translation>
     </message>
     <message>
         <source>point %1 of %2</source>
-        <translation type="unfinished"></translation>
+        <translation>piste %1/%2</translation>
     </message>
 </context>
 <context>
     <name>HandoffBanner</name>
     <message>
         <source>%1 · an agent is waiting for you</source>
-        <translation type="unfinished"></translation>
+        <translation>%1 · agentti odottaa sinua</translation>
     </message>
     <message>
         <source>%1 · an agent is waiting for you (%2 more)</source>
-        <translation type="unfinished"></translation>
+        <translation>%1 · agentti odottaa sinua (%2 lisää)</translation>
     </message>
     <message>
         <source>Cancel</source>
-        <translation type="unfinished"></translation>
+        <translation>Peruuta</translation>
     </message>
     <message>
         <source>Do it on the device itself. Tomacco never asks for your passcode or password.</source>
-        <translation type="unfinished"></translation>
+        <translation>Tee se itse laitteessa. Tomacco ei koskaan kysy pääsykoodiasi tai salasanaasi.</translation>
     </message>
     <message>
         <source>Done</source>
-        <translation type="unfinished"></translation>
+        <translation>Valmis</translation>
     </message>
     <message>
         <source>Done: I did it on the device</source>
-        <translation type="unfinished"></translation>
+        <translation>Valmis: tein sen laitteessa</translation>
     </message>
 </context>
 <context>
     <name>HandoffModel</name>
     <message>
         <source>Face ID or Touch ID</source>
-        <translation type="unfinished"></translation>
+        <translation>Face ID tai Touch ID</translation>
     </message>
     <message>
         <source>Passcode</source>
-        <translation type="unfinished"></translation>
+        <translation>Pääsykoodi</translation>
     </message>
     <message>
         <source>Permission</source>
-        <translation type="unfinished"></translation>
+        <translation>Käyttöoikeus</translation>
     </message>
     <message>
         <source>Purchase</source>
-        <translation type="unfinished"></translation>
+        <translation>Osto</translation>
     </message>
     <message>
         <source>Sign-in</source>
-        <translation type="unfinished"></translation>
+        <translation>Kirjautuminen</translation>
     </message>
     <message>
         <source>Your turn on the device</source>
-        <translation type="unfinished"></translation>
+        <translation>Sinun vuorosi laitteessa</translation>
     </message>
 </context>
 <context>
     <name>MobileNav</name>
     <message>
         <source>Ctrl</source>
-        <translation type="unfinished"></translation>
+        <translation>Ctrl</translation>
     </message>
     <message>
         <source>More</source>
         <comment>navigation</comment>
-        <translation type="unfinished"></translation>
+        <translation>Lisää</translation>
     </message>
 </context>
 <context>
     <name>AgentClientDialog</name>
     <message>
         <source>Connect your coding agent</source>
-        <translation type="unfinished"></translation>
+        <translation>Yhdistä koodausagenttisi</translation>
     </message>
     <message>
         <source>Done</source>
-        <translation type="unfinished"></translation>
+        <translation>Valmis</translation>
     </message>
     <message>
         <source>Pick your agent. Tomacco shows whether it is connected and the exact setting it reads.</source>
-        <translation type="unfinished"></translation>
+        <translation>Valitse agenttisi. Tomacco näyttää, onko se yhdistetty, ja tarkan asetuksen, jota se lukee.</translation>
     </message>
 </context>
 <context>
     <name>AgentClientPicker</name>
     <message>
         <source>%1 is not installed here. Install it first, or copy the text for another computer.</source>
-        <translation type="unfinished"></translation>
+        <translation>%1 ei ole asennettu tähän. Asenna se ensin tai kopioi teksti toista tietokonetta varten.</translation>
     </message>
     <message>
         <source>%1 starts Tomacco when it needs it. Nothing to do.</source>
-        <translation type="unfinished"></translation>
+        <translation>%1 käynnistää Tomaccon, kun se tarvitsee sitä. Mitään ei tarvitse tehdä.</translation>
     </message>
     <message>
         <source>Add it by hand</source>
         <comment>agent client</comment>
-        <translation type="unfinished"></translation>
+        <translation>Lisää käsin</translation>
     </message>
     <message>
         <source>Add this to %1:</source>
-        <translation type="unfinished"></translation>
+        <translation>Lisää tämä kohteeseen %1:</translation>
     </message>
     <message>
         <source>Another entry is in the way</source>
         <comment>agent client</comment>
-        <translation type="unfinished"></translation>
+        <translation>Toinen merkintä on tiellä</translation>
     </message>
     <message>
         <source>Check again</source>
-        <translation type="unfinished"></translation>
+        <translation>Tarkista uudelleen</translation>
     </message>
     <message>
         <source>Connect</source>
-        <translation type="unfinished"></translation>
+        <translation>Yhdistä</translation>
     </message>
     <message>
         <source>Connected</source>
         <comment>agent client</comment>
-        <translation type="unfinished"></translation>
+        <translation>Yhdistetty</translation>
     </message>
     <message>
         <source>Connected.</source>
-        <translation type="unfinished"></translation>
+        <translation>Yhdistetty.</translation>
     </message>
     <message>
         <source>Connected. The previous file is saved as %1.</source>
-        <translation type="unfinished"></translation>
+        <translation>Yhdistetty. Aiempi tiedosto on tallennettu nimellä %1.</translation>
     </message>
     <message>
         <source>Connecting…</source>
-        <translation type="unfinished"></translation>
+        <translation>Yhdistetään…</translation>
     </message>
     <message>
         <source>Copied</source>
-        <translation type="unfinished"></translation>
+        <translation>Kopioitu</translation>
     </message>
     <message>
         <source>Copy command</source>
-        <translation type="unfinished"></translation>
+        <translation>Kopioi komento</translation>
     </message>
     <message>
         <source>Copy text</source>
-        <translation type="unfinished"></translation>
+        <translation>Kopioi teksti</translation>
     </message>
     <message>
         <source>Left unchanged</source>
         <comment>agent client</comment>
-        <translation type="unfinished"></translation>
+        <translation>Jätetty ennalleen</translation>
     </message>
     <message>
         <source>Looking for coding agents…</source>
-        <translation type="unfinished"></translation>
+        <translation>Etsitään koodausagentteja…</translation>
     </message>
     <message>
         <source>Needs an update</source>
         <comment>agent client</comment>
-        <translation type="unfinished"></translation>
+        <translation>Vaatii päivityksen</translation>
     </message>
     <message>
         <source>Not connected</source>
         <comment>agent client</comment>
-        <translation type="unfinished"></translation>
+        <translation>Ei yhdistetty</translation>
     </message>
     <message>
         <source>Not found on this computer</source>
         <comment>agent client</comment>
-        <translation type="unfinished"></translation>
+        <translation>Ei löytynyt tästä tietokoneesta</translation>
     </message>
     <message>
         <source>Or run this in a terminal:</source>
-        <translation type="unfinished"></translation>
+        <translation>Tai suorita tämä päätteessä:</translation>
     </message>
     <message>
         <source>Remove Tomacco</source>
-        <translation type="unfinished"></translation>
+        <translation>Poista Tomacco</translation>
     </message>
     <message>
         <source>Removed</source>
         <comment>agent client</comment>
-        <translation type="unfinished"></translation>
+        <translation>Poistettu</translation>
     </message>
     <message>
         <source>Removes only the entry setup added; the rest of the file stays.</source>
-        <translation type="unfinished"></translation>
+        <translation>Poistaa vain asennuksen lisäämän merkinnän; muu tiedosto säilyy.</translation>
     </message>
     <message>
         <source>Setup adds Tomacco to %1&apos;s settings and keeps a backup of the file.</source>
-        <translation type="unfinished"></translation>
+        <translation>Asennus lisää Tomaccon agentin %1 asetuksiin ja säilyttää tiedostosta varmuuskopion.</translation>
     </message>
     <message>
         <source>Setup did not report on this agent.</source>
-        <translation type="unfinished"></translation>
+        <translation>Asennus ei raportoinut tästä agentista.</translation>
     </message>
     <message>
         <source>Setup failed</source>
         <comment>agent client</comment>
-        <translation type="unfinished"></translation>
+        <translation>Asennus epäonnistui</translation>
     </message>
     <message>
         <source>Setup failed.</source>
-        <translation type="unfinished"></translation>
+        <translation>Asennus epäonnistui.</translation>
     </message>
     <message>
         <source>Something else in %1&apos;s settings uses the name. Setup leaves it alone; add Tomacco by hand under another name.</source>
-        <translation type="unfinished"></translation>
+        <translation>Jokin muu agentin %1 asetuksissa käyttää tätä nimeä. Asennus jättää sen rauhaan; lisää Tomacco käsin toisella nimellä.</translation>
     </message>
     <message>
         <source>The agent list could not be requested.</source>
-        <translation type="unfinished"></translation>
+        <translation>Agenttiluetteloa ei voitu pyytää.</translation>
     </message>
     <message>
         <source>This file is not one Tomacco rewrites. Add the text below yourself.</source>
-        <translation type="unfinished"></translation>
+        <translation>Tämä tiedosto ei ole sellainen, jonka Tomacco kirjoittaa uudelleen. Lisää alla oleva teksti itse.</translation>
     </message>
     <message>
         <source>This version of tomaccoctl cannot list coding agents.</source>
-        <translation type="unfinished"></translation>
+        <translation>Tämä tomaccoctl-versio ei osaa luetella koodausagentteja.</translation>
     </message>
     <message>
         <source>Tomacco could not tell which settings layout %1 reads. Add the text below yourself, or run setup in a terminal with the version.</source>
-        <translation type="unfinished"></translation>
+        <translation>Tomacco ei pystynyt päättelemään, mitä asetusrakennetta %1 lukee. Lisää alla oleva teksti itse tai suorita asennus päätteessä version kanssa.</translation>
     </message>
     <message>
         <source>Tomacco&apos;s entry is switched off in %1. Setup leaves your choice alone; switch it on there.</source>
-        <translation type="unfinished"></translation>
+        <translation>Tomaccon merkintä on poistettu käytöstä kohteessa %1. Asennus kunnioittaa valintaasi; ota se käyttöön siellä.</translation>
     </message>
     <message>
         <source>Tomacco&apos;s entry points to another program or older settings. Update rewrites only that entry and keeps a backup.</source>
-        <translation type="unfinished"></translation>
+        <translation>Tomaccon merkintä osoittaa toiseen ohjelmaan tai vanhempiin asetuksiin. Päivitys kirjoittaa uudelleen vain sen merkinnän ja säilyttää varmuuskopion.</translation>
     </message>
     <message>
         <source>Tomacco&apos;s entry was removed; the rest of the file is unchanged.</source>
-        <translation type="unfinished"></translation>
+        <translation>Tomaccon merkintä poistettiin; muu tiedosto on ennallaan.</translation>
     </message>
     <message>
         <source>Turned off in its settings</source>
         <comment>agent client</comment>
-        <translation type="unfinished"></translation>
+        <translation>Poistettu käytöstä asetuksissaan</translation>
     </message>
     <message>
         <source>Update entry</source>
-        <translation type="unfinished"></translation>
+        <translation>Päivitä merkintä</translation>
     </message>
     <message>
         <source>Version unclear</source>
         <comment>agent client</comment>
-        <translation type="unfinished"></translation>
+        <translation>Versio epäselvä</translation>
     </message>
 </context>
 </TS>

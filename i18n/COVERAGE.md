@@ -20,23 +20,23 @@ review list, not an error count.
 | el | Ελληνικά (Greek) | ltr | 2 (english) | 0/1800 | 1800 | 0 | 0 | 0/6 | untranslated |
 | es | Español (Spanish) | ltr | 2 (english) | 1800/1800 | 0 | 0 | 0 | 6/6 | complete |
 | es-MX | Español (México) (Spanish (Mexico)) | ltr | 2 (english) | 1800/1800 | 0 | 1 | 0 | 6/6 | complete |
-| et | Eesti (Estonian) | ltr | 2 (english) | 0/1800 | 1800 | 0 | 0 | 0/6 | untranslated |
+| et | Eesti (Estonian) | ltr | 2 (english) | 1700/1800 | 100 | 2 | 0 | 0/6 | partial |
 | fa | فارسی (Persian) | rtl | 1 (universal) | 0/1800 | 1800 | 0 | 0 | 0/6 | untranslated |
-| fi | Suomi (Finnish) | ltr | 2 (english) | 0/1800 | 1800 | 0 | 0 | 0/6 | untranslated |
+| fi | Suomi (Finnish) | ltr | 2 (english) | 1800/1800 | 0 | 2 | 0 | 6/6 | complete |
 | fil | Filipino (Filipino) | ltr | 3 (tagalog) | 0/1800 | 1800 | 0 | 0 | 0/6 | untranslated |
 | fr | Français (French) | ltr | 2 (french) | 1800/1800 | 0 | 0 | 0 | 6/6 | complete |
 | ga | Gaeilge (Irish) | ltr | 3 (irish) | 0/1800 | 1800 | 0 | 0 | 0/6 | untranslated |
 | he | עברית (Hebrew) | rtl | 2 (english) | 0/1800 | 1800 | 0 | 0 | 0/6 | untranslated |
 | hi | हिन्दी (Hindi) | ltr | 2 (english) | 0/1800 | 1800 | 0 | 0 | 0/6 | untranslated |
 | hr | Hrvatski (Croatian) | ltr | 3 (russian) | 0/1800 | 1800 | 0 | 0 | 0/6 | untranslated |
-| hu | Magyar (Hungarian) | ltr | 1 (universal) | 0/1800 | 1800 | 0 | 0 | 0/6 | untranslated |
+| hu | Magyar (Hungarian) | ltr | 1 (universal) | 1700/1800 | 100 | 2 | 0 | 0/6 | partial |
 | id | Bahasa Indonesia (Indonesian) | ltr | 1 (universal) | 1800/1800 | 0 | 0 | 0 | 6/6 | complete |
-| is | Íslenska (Icelandic) | ltr | 2 (icelandic) | 0/1800 | 1800 | 0 | 0 | 0/6 | untranslated |
+| is | Íslenska (Icelandic) | ltr | 2 (icelandic) | 1700/1800 | 100 | 2 | 0 | 0/6 | partial |
 | it | Italiano (Italian) | ltr | 2 (english) | 1800/1800 | 0 | 1 | 0 | 6/6 | complete |
 | ja | 日本語 (Japanese) | ltr | 1 (universal) | 1800/1800 | 0 | 1 | 0 | 6/6 | complete |
 | ko | 한국어 (Korean) | ltr | 1 (universal) | 0/1800 | 1800 | 0 | 0 | 0/6 | untranslated |
-| lt | Lietuvių (Lithuanian) | ltr | 3 (lithuanian) | 0/1800 | 1800 | 0 | 0 | 0/6 | untranslated |
-| lv | Latviešu (Latvian) | ltr | 3 (latvian) | 0/1800 | 1800 | 0 | 0 | 0/6 | untranslated |
+| lt | Lietuvių (Lithuanian) | ltr | 3 (lithuanian) | 1700/1800 | 100 | 2 | 0 | 0/6 | partial |
+| lv | Latviešu (Latvian) | ltr | 3 (latvian) | 1700/1800 | 100 | 3 | 0 | 0/6 | partial |
 | ms | Bahasa Melayu (Malay) | ltr | 1 (universal) | 0/1800 | 1800 | 0 | 0 | 0/6 | untranslated |
 | nl | Nederlands (Dutch) | ltr | 2 (english) | 1800/1800 | 0 | 1 | 0 | 6/6 | complete |
 | no | Norsk (Norwegian) | ltr | 2 (english) | 1800/1800 | 0 | 1 | 0 | 6/6 | complete |
@@ -61,6 +61,6 @@ review list, not an error count.
 | zh-CN | 简体中文 (Chinese (Simplified)) | ltr | 1 (universal) | 1800/1800 | 0 | 1 | 0 | 6/6 | complete |
 | zh-TW | 繁體中文 (Chinese (Traditional)) | ltr | 1 (universal) | 1800/1800 | 0 | 1 | 0 | 6/6 | complete |
 
-Complete: 19 of 50 translated languages: ar, da, de, es, es-MX, fr, id, it, ja, nl, no, pl, pt, pt-BR, ru, sv, uk, zh-CN, zh-TW
+Complete: 20 of 50 translated languages: ar, da, de, es, es-MX, fi, fr, id, it, ja, nl, no, pl, pt, pt-BR, ru, sv, uk, zh-CN, zh-TW
 
-Not complete: bg, bn, ca, cs, el, et, fa, fi, fil, ga, he, hi, hr, hu, is, ko, lt, lv, ms, ro, si, sk, sl, sr, sw, ta, th, tr, ur, uz, vi
+Not complete: bg, bn, ca, cs, el, et, fa, fil, ga, he, hi, hr, hu, is, ko, lt, lv, ms, ro, si, sk, sl, sr, sw, ta, th, tr, ur, uz, vi
