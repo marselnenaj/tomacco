@@ -55,12 +55,12 @@ review list, not an error count.
 | th | ไทย (Thai) | ltr | 1 (universal) | 0/1800 | 1800 | 0 | 0 | 0/6 | untranslated |
 | tr | Türkçe (Turkish) | ltr | 1 (universal) | 0/1800 | 1800 | 0 | 0 | 0/6 | untranslated |
 | uk | Українська (Ukrainian) | ltr | 3 (russian) | 1800/1800 | 0 | 1 | 0 | 6/6 | complete |
-| ur | اردو (Urdu) | rtl | 2 (english) | 1800/1800 | 0 | 3 | 0 | 0/6 | partial |
+| ur | اردو (Urdu) | rtl | 2 (english) | 1800/1800 | 0 | 3 | 0 | 6/6 | complete |
 | uz | Oʻzbekcha (Uzbek) | ltr | 2 (english) | 0/1800 | 1800 | 0 | 0 | 0/6 | untranslated |
 | vi | Tiếng Việt (Vietnamese) | ltr | 1 (universal) | 0/1800 | 1800 | 0 | 0 | 0/6 | untranslated |
 | zh-CN | 简体中文 (Chinese (Simplified)) | ltr | 1 (universal) | 1800/1800 | 0 | 1 | 0 | 6/6 | complete |
 | zh-TW | 繁體中文 (Chinese (Traditional)) | ltr | 1 (universal) | 1800/1800 | 0 | 1 | 0 | 6/6 | complete |
 
-Complete: 21 of 50 translated languages: ar, da, de, es, es-MX, fa, fr, he, id, it, ja, nl, no, pl, pt, pt-BR, ru, sv, uk, zh-CN, zh-TW
+Complete: 22 of 50 translated languages: ar, da, de, es, es-MX, fa, fr, he, id, it, ja, nl, no, pl, pt, pt-BR, ru, sv, uk, ur, zh-CN, zh-TW
 
-Not complete: bg, bn, ca, cs, el, et, fi, fil, ga, hi, hr, hu, is, ko, lt, lv, ms, ro, si, sk, sl, sr, sw, ta, th, tr, ur, uz, vi
+Not complete: bg, bn, ca, cs, el, et, fi, fil, ga, hi, hr, hu, is, ko, lt, lv, ms, ro, si, sk, sl, sr, sw, ta, th, tr, uz, vi
