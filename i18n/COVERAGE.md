@@ -34,7 +34,7 @@ review list, not an error count.
 | is | Íslenska (Icelandic) | ltr | 2 (icelandic) | 0/1800 | 1800 | 0 | 0 | 0/6 | untranslated |
 | it | Italiano (Italian) | ltr | 2 (english) | 1800/1800 | 0 | 1 | 0 | 6/6 | complete |
 | ja | 日本語 (Japanese) | ltr | 1 (universal) | 1800/1800 | 0 | 1 | 0 | 6/6 | complete |
-| ko | 한국어 (Korean) | ltr | 1 (universal) | 0/1800 | 1800 | 0 | 0 | 0/6 | untranslated |
+| ko | 한국어 (Korean) | ltr | 1 (universal) | 1800/1800 | 0 | 1 | 0 | 0/6 | partial |
 | lt | Lietuvių (Lithuanian) | ltr | 3 (lithuanian) | 0/1800 | 1800 | 0 | 0 | 0/6 | untranslated |
 | lv | Latviešu (Latvian) | ltr | 3 (latvian) | 0/1800 | 1800 | 0 | 0 | 0/6 | untranslated |
 | ms | Bahasa Melayu (Malay) | ltr | 1 (universal) | 0/1800 | 1800 | 0 | 0 | 0/6 | untranslated |
@@ -45,22 +45,22 @@ review list, not an error count.
 | pt-BR | Português (Brasil) (Portuguese (Brazil)) | ltr | 2 (french) | 1800/1800 | 0 | 0 | 0 | 6/6 | complete |
 | ro | Română (Romanian) | ltr | 3 (romanian) | 0/1800 | 1800 | 0 | 0 | 0/6 | untranslated |
 | ru | Русский (Russian) | ltr | 3 (russian) | 1800/1800 | 0 | 1 | 0 | 6/6 | complete |
-| si | සිංහල (Sinhala) | ltr | 2 (english) | 0/1800 | 1800 | 0 | 0 | 0/6 | untranslated |
+| si | සිංහල (Sinhala) | ltr | 2 (english) | 1800/1800 | 0 | 1 | 0 | 0/6 | partial |
 | sk | Slovenčina (Slovak) | ltr | 3 (slovak) | 0/1800 | 1800 | 0 | 0 | 0/6 | untranslated |
 | sl | Slovenščina (Slovenian) | ltr | 4 (slovenian) | 0/1800 | 1800 | 0 | 0 | 0/6 | untranslated |
 | sr | Српски (Serbian) | ltr | 3 (russian) | 0/1800 | 1800 | 0 | 0 | 0/6 | untranslated |
 | sv | Svenska (Swedish) | ltr | 2 (english) | 1800/1800 | 0 | 1 | 0 | 6/6 | complete |
 | sw | Kiswahili (Swahili) | ltr | 2 (english) | 0/1800 | 1800 | 0 | 0 | 0/6 | untranslated |
-| ta | தமிழ் (Tamil) | ltr | 2 (english) | 0/1800 | 1800 | 0 | 0 | 0/6 | untranslated |
-| th | ไทย (Thai) | ltr | 1 (universal) | 0/1800 | 1800 | 0 | 0 | 0/6 | untranslated |
+| ta | தமிழ் (Tamil) | ltr | 2 (english) | 1800/1800 | 0 | 1 | 0 | 6/6 | complete |
+| th | ไทย (Thai) | ltr | 1 (universal) | 1800/1800 | 0 | 1 | 0 | 0/6 | partial |
 | tr | Türkçe (Turkish) | ltr | 1 (universal) | 0/1800 | 1800 | 0 | 0 | 0/6 | untranslated |
 | uk | Українська (Ukrainian) | ltr | 3 (russian) | 1800/1800 | 0 | 1 | 0 | 6/6 | complete |
 | ur | اردو (Urdu) | rtl | 2 (english) | 0/1800 | 1800 | 0 | 0 | 0/6 | untranslated |
 | uz | Oʻzbekcha (Uzbek) | ltr | 2 (english) | 0/1800 | 1800 | 0 | 0 | 0/6 | untranslated |
-| vi | Tiếng Việt (Vietnamese) | ltr | 1 (universal) | 0/1800 | 1800 | 0 | 0 | 0/6 | untranslated |
+| vi | Tiếng Việt (Vietnamese) | ltr | 1 (universal) | 1800/1800 | 0 | 0 | 0 | 0/6 | partial |
 | zh-CN | 简体中文 (Chinese (Simplified)) | ltr | 1 (universal) | 1800/1800 | 0 | 1 | 0 | 6/6 | complete |
 | zh-TW | 繁體中文 (Chinese (Traditional)) | ltr | 1 (universal) | 1800/1800 | 0 | 1 | 0 | 6/6 | complete |
 
-Complete: 19 of 50 translated languages: ar, da, de, es, es-MX, fr, id, it, ja, nl, no, pl, pt, pt-BR, ru, sv, uk, zh-CN, zh-TW
+Complete: 20 of 50 translated languages: ar, da, de, es, es-MX, fr, id, it, ja, nl, no, pl, pt, pt-BR, ru, sv, ta, uk, zh-CN, zh-TW
 
-Not complete: bg, bn, ca, cs, el, et, fa, fi, fil, ga, he, hi, hr, hu, is, ko, lt, lv, ms, ro, si, sk, sl, sr, sw, ta, th, tr, ur, uz, vi
+Not complete: bg, bn, ca, cs, el, et, fa, fi, fil, ga, he, hi, hr, hu, is, ko, lt, lv, ms, ro, si, sk, sl, sr, sw, th, tr, ur, uz, vi
