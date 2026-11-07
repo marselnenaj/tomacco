@@ -6797,7 +6797,7 @@ GNU General Public License, 2-versiya yoki undan keyingi versiya asosida litsenz
     </message>
     <message>
         <source>MP4 video (*.mp4)</source>
-        <translation>MP4 video (*.mp4)</translation>
+        <translation>MP4 videosi (*.mp4)</translation>
     </message>
     <message>
         <source>Discard unsaved changes?</source>
