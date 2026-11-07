@@ -5300,831 +5300,837 @@ Az SSH a meglévő kulcsaidat és az ismert gazdagép-azonosítót használja.</
     </message>
     <message>
         <source>Build number</source>
-        <translation type="unfinished"></translation>
+        <translation>Buildszám</translation>
     </message>
 </context>
 <context>
     <name>StageLogPane</name>
     <message>
         <source>Device log</source>
-        <translation type="unfinished"></translation>
+        <translation>Eszköznapló</translation>
     </message>
     <message>
         <source>Job log</source>
-        <translation type="unfinished"></translation>
+        <translation>Feladatnapló</translation>
     </message>
     <message>
         <source>Open under Builds &amp; jobs</source>
-        <translation type="unfinished"></translation>
+        <translation>Megnyitás a Buildek és feladatok alatt</translation>
     </message>
     <message>
         <source>Hide the log</source>
-        <translation type="unfinished"></translation>
+        <translation>Napló elrejtése</translation>
     </message>
     <message>
         <source>No device is live.</source>
-        <translation type="unfinished"></translation>
+        <translation>Egy eszköz sem élő.</translation>
     </message>
     <message>
         <source>Connect a device and its log runs here, beside its screen.</source>
-        <translation type="unfinished"></translation>
+        <translation>Csatlakoztass egy eszközt, és a naplója itt fut, a képernyője mellett.</translation>
     </message>
     <message>
         <source>No job yet.</source>
-        <translation type="unfinished"></translation>
+        <translation>Még nincs feladat.</translation>
     </message>
     <message>
         <source>Run your app or start a build, and its log follows here.</source>
-        <translation type="unfinished"></translation>
+        <translation>Futtasd az alkalmazásodat vagy indíts egy buildet, és a naplója itt következik.</translation>
     </message>
     <message>
         <source>Waiting for log lines…</source>
-        <translation type="unfinished"></translation>
+        <translation>Várakozás naplósorokra…</translation>
     </message>
     <message>
         <source>Try again</source>
-        <translation type="unfinished"></translation>
+        <translation>Újra</translation>
     </message>
     <message>
         <source>App launch</source>
-        <translation type="unfinished"></translation>
+        <translation>Alkalmazásindítás</translation>
     </message>
 </context>
 <context>
     <name>StudioDialog</name>
     <message>
         <source>Apply</source>
-        <translation type="unfinished"></translation>
+        <translation>Alkalmaz</translation>
     </message>
     <message>
         <source>Cancel</source>
-        <translation type="unfinished"></translation>
+        <translation>Mégse</translation>
     </message>
     <message>
         <source>Close</source>
-        <translation type="unfinished"></translation>
+        <translation>Bezárás</translation>
     </message>
     <message>
         <source>Discard</source>
-        <translation type="unfinished"></translation>
+        <translation>Elvetés</translation>
     </message>
     <message>
         <source>No</source>
-        <translation type="unfinished"></translation>
+        <translation>Nem</translation>
     </message>
     <message>
         <source>Open</source>
-        <translation type="unfinished"></translation>
+        <translation>Megnyitás</translation>
     </message>
     <message>
         <source>Reset</source>
-        <translation type="unfinished"></translation>
+        <translation>Visszaállítás</translation>
     </message>
     <message>
         <source>Save</source>
-        <translation type="unfinished"></translation>
+        <translation>Mentés</translation>
     </message>
     <message>
         <source>Yes</source>
-        <translation type="unfinished"></translation>
+        <translation>Igen</translation>
     </message>
 </context>
 <context>
     <name>TestWorkspace</name>
     <message>
         <source>Accessibility description · exact</source>
-        <translation type="unfinished"></translation>
+        <translation>Akadálymentes leírás · pontos</translation>
     </message>
     <message>
         <source>Choose</source>
-        <translation type="unfinished"></translation>
+        <translation>Kiválasztás</translation>
     </message>
     <message>
         <source>Device IDs separated by commas; empty = selected device</source>
-        <translation type="unfinished"></translation>
+        <translation>Eszközazonosítók vesszővel elválasztva; üres = kiválasztott eszköz</translation>
     </message>
     <message>
         <source>Enter a text, resource ID or description</source>
-        <translation type="unfinished"></translation>
+        <translation>Adj meg egy szöveget, erőforrás-azonosítót vagy leírást</translation>
     </message>
     <message>
         <source>Fill in</source>
-        <translation type="unfinished"></translation>
+        <translation>Kitöltés</translation>
     </message>
     <message>
         <source>Find &amp; wait</source>
-        <translation type="unfinished"></translation>
+        <translation>Keresés és várakozás</translation>
     </message>
     <message>
         <source>Input text</source>
-        <translation type="unfinished"></translation>
+        <translation>Szöveg bevitele</translation>
     </message>
     <message>
         <source>JSON scenario</source>
-        <translation type="unfinished"></translation>
+        <translation>JSON-forgatókönyv</translation>
     </message>
     <message>
         <source>Long press</source>
-        <translation type="unfinished"></translation>
+        <translation>Hosszú nyomás</translation>
     </message>
     <message>
         <source>New, empty directory for JUnit, JSON and screenshots</source>
-        <translation type="unfinished"></translation>
+        <translation>Új, üres könyvtár a JUnit-, JSON-fájloknak és képernyőképeknek</translation>
     </message>
     <message>
         <source>Resource ID · e.g. app.example:id/submit</source>
-        <translation type="unfinished"></translation>
+        <translation>Erőforrás-azonosító · pl. app.example:id/submit</translation>
     </message>
     <message>
         <source>Start scenario</source>
-        <translation type="unfinished"></translation>
+        <translation>Forgatókönyv indítása</translation>
     </message>
     <message>
         <source>Tap</source>
-        <translation type="unfinished"></translation>
+        <translation>Koppintás</translation>
     </message>
     <message>
         <source>Visible text · exact</source>
-        <translation type="unfinished"></translation>
+        <translation>Látható szöveg · pontos</translation>
     </message>
     <message>
         <source>Test your Android app</source>
-        <translation type="unfinished"></translation>
+        <translation>Teszteld az Android-alkalmazásodat</translation>
     </message>
     <message>
         <source>Pick an emulator or phone under Devices first.</source>
-        <translation type="unfinished"></translation>
+        <translation>Előbb válassz egy emulátort vagy telefont az Eszközök alatt.</translation>
     </message>
     <message>
         <source>Set up text input on the device</source>
-        <translation type="unfinished"></translation>
+        <translation>Szövegbevitel beállítása az eszközön</translation>
     </message>
     <message>
         <source>Run on several devices</source>
-        <translation type="unfinished"></translation>
+        <translation>Futtatás több eszközön</translation>
     </message>
     <message>
         <source>JUnit results and the failure screenshot stay, even when a step fails.</source>
-        <translation type="unfinished"></translation>
+        <translation>A JUnit-eredmények és a hibáról készült képernyőkép akkor is megmaradnak, ha egy lépés sikertelen.</translation>
     </message>
 </context>
 <context>
     <name>Workspace</name>
     <message>
         <source>%1 is missing</source>
-        <translation type="unfinished"></translation>
+        <translation>Hiányzik: %1</translation>
     </message>
     <message>
         <source>A job is already running for this project. Use the running session or end it first.</source>
-        <translation type="unfinished"></translation>
+        <translation>Ehhez a projekthez már fut egy feladat. Használd a futó munkamenetet, vagy előbb fejezd be.</translation>
     </message>
     <message>
         <source>Agents &amp; tools</source>
-        <translation type="unfinished"></translation>
+        <translation>Ügynökök és eszközök</translation>
     </message>
     <message>
         <source>App running</source>
-        <translation type="unfinished"></translation>
+        <translation>Az alkalmazás fut</translation>
     </message>
     <message>
         <source>App session running</source>
-        <translation type="unfinished"></translation>
+        <translation>Az alkalmazás-munkamenet fut</translation>
     </message>
     <message>
         <source>Application ID, e.g. com.example.app</source>
-        <translation type="unfinished"></translation>
+        <translation>Alkalmazásazonosító, pl. com.example.app</translation>
     </message>
     <message>
         <source>Build &amp; run</source>
-        <translation type="unfinished"></translation>
+        <translation>Buildelés és futtatás</translation>
     </message>
     <message>
         <source>Building</source>
-        <translation type="unfinished"></translation>
+        <translation>Buildelés</translation>
     </message>
     <message>
         <source>Builds &amp; jobs</source>
-        <translation type="unfinished"></translation>
+        <translation>Buildek és feladatok</translation>
     </message>
     <message>
         <source>Calibrate model</source>
-        <translation type="unfinished"></translation>
+        <translation>Modell kalibrálása</translation>
     </message>
     <message>
         <source>Cancel</source>
-        <translation type="unfinished"></translation>
+        <translation>Mégse</translation>
     </message>
     <message>
         <source>Check code</source>
-        <translation type="unfinished"></translation>
+        <translation>Kód ellenőrzése</translation>
     </message>
     <message>
         <source>Choose a smartphone or emulator</source>
-        <translation type="unfinished"></translation>
+        <translation>Válassz okostelefont vagy emulátort</translation>
     </message>
     <message>
         <source>Choose folder</source>
-        <translation type="unfinished"></translation>
+        <translation>Mappa kiválasztása</translation>
     </message>
     <message>
         <source>Choose project</source>
-        <translation type="unfinished"></translation>
+        <translation>Projekt kiválasztása</translation>
     </message>
     <message>
         <source>Completed</source>
-        <translation type="unfinished"></translation>
+        <translation>Befejezve</translation>
     </message>
     <message>
         <source>Configuration</source>
-        <translation type="unfinished"></translation>
+        <translation>Konfiguráció</translation>
     </message>
     <message>
         <source>Connect via Wi-Fi</source>
-        <translation type="unfinished"></translation>
+        <translation>Csatlakozás Wi-Fin</translation>
     </message>
     <message>
         <source>Copy path</source>
-        <translation type="unfinished"></translation>
+        <translation>Útvonal másolása</translation>
     </message>
     <message>
         <source>Devices</source>
-        <translation type="unfinished"></translation>
+        <translation>Eszközök</translation>
     </message>
     <message>
         <source>Ended</source>
-        <translation type="unfinished"></translation>
+        <translation>Befejeződött</translation>
     </message>
     <message>
         <source>Failed</source>
-        <translation type="unfinished"></translation>
+        <translation>Sikertelen</translation>
     </message>
     <message>
         <source>Files</source>
-        <translation type="unfinished"></translation>
+        <translation>Fájlok</translation>
     </message>
     <message>
         <source>Find devices</source>
-        <translation type="unfinished"></translation>
+        <translation>Eszközök keresése</translation>
     </message>
     <message>
         <source>Go to project</source>
-        <translation type="unfinished"></translation>
+        <translation>Ugrás a projekthez</translation>
     </message>
     <message>
         <source>Information</source>
-        <translation type="unfinished"></translation>
+        <translation>Információ</translation>
     </message>
     <message>
         <source>Install</source>
-        <translation type="unfinished"></translation>
+        <translation>Telepítés</translation>
     </message>
     <message>
         <source>Install APK</source>
-        <translation type="unfinished"></translation>
+        <translation>APK telepítése</translation>
     </message>
     <message>
         <source>Install IPA</source>
-        <translation type="unfinished"></translation>
+        <translation>IPA telepítése</translation>
     </message>
     <message>
         <source>Install app on device</source>
-        <translation type="unfinished"></translation>
+        <translation>Alkalmazás telepítése az eszközre</translation>
     </message>
     <message>
         <source>Job running</source>
-        <translation type="unfinished"></translation>
+        <translation>Feladat fut</translation>
     </message>
     <message>
         <source>Job started · %1</source>
-        <translation type="unfinished"></translation>
+        <translation>Feladat elindítva · %1</translation>
     </message>
     <message>
         <source>Load saved workspace</source>
-        <translation type="unfinished"></translation>
+        <translation>Mentett munkaterület betöltése</translation>
     </message>
     <message>
         <source>Manage devices</source>
-        <translation type="unfinished"></translation>
+        <translation>Eszközök kezelése</translation>
     </message>
     <message>
         <source>Mobile apps (*.apk *.ipa)</source>
-        <translation type="unfinished"></translation>
+        <translation>Mobilalkalmazások (*.apk *.ipa)</translation>
     </message>
     <message>
         <source>New project</source>
-        <translation type="unfinished"></translation>
+        <translation>Új projekt</translation>
     </message>
     <message>
         <source>No</source>
-        <translation type="unfinished"></translation>
+        <translation>Nem</translation>
     </message>
     <message>
         <source>No devices connected. Enable USB debugging or trust on the device.</source>
-        <translation type="unfinished"></translation>
+        <translation>Nincs csatlakoztatott eszköz. Engedélyezd az USB-hibakeresést, vagy fogadd el a megbízhatóságot az eszközön.</translation>
     </message>
     <message>
         <source>Open</source>
-        <translation type="unfinished"></translation>
+        <translation>Megnyitás</translation>
     </message>
     <message>
         <source>Open a project, connect a device and start a build.</source>
-        <translation type="unfinished"></translation>
+        <translation>Nyiss meg egy projektet, csatlakoztass egy eszközt, és indíts egy buildet.</translation>
     </message>
     <message>
         <source>Open files</source>
-        <translation type="unfinished"></translation>
+        <translation>Fájlok megnyitása</translation>
     </message>
     <message>
         <source>Open live device</source>
-        <translation type="unfinished"></translation>
+        <translation>Élő eszköz megnyitása</translation>
     </message>
     <message>
         <source>Package format</source>
-        <translation type="unfinished"></translation>
+        <translation>Csomagformátum</translation>
     </message>
     <message>
         <source>Path to your Swift, Kotlin or Flutter project</source>
-        <translation type="unfinished"></translation>
+        <translation>A Swift-, Kotlin- vagy Flutter-projekted elérési útja</translation>
     </message>
     <message>
         <source>Platform</source>
-        <translation type="unfinished"></translation>
+        <translation>Platform</translation>
     </message>
     <message>
         <source>Project</source>
-        <translation type="unfinished"></translation>
+        <translation>Projekt</translation>
     </message>
     <message>
         <source>Ready · %1</source>
-        <translation type="unfinished"></translation>
+        <translation>Kész · %1</translation>
     </message>
     <message>
         <source>Result</source>
-        <translation type="unfinished"></translation>
+        <translation>Eredmény</translation>
     </message>
     <message>
         <source>Reused running job · %1</source>
-        <translation type="unfinished"></translation>
+        <translation>A futó feladat újrahasznosítva · %1</translation>
     </message>
     <message>
         <source>Run</source>
-        <translation type="unfinished"></translation>
+        <translation>Futtatás</translation>
     </message>
     <message>
         <source>Run on device</source>
-        <translation type="unfinished"></translation>
+        <translation>Futtatás eszközön</translation>
     </message>
     <message>
         <source>Running</source>
-        <translation type="unfinished"></translation>
+        <translation>Fut</translation>
     </message>
     <message>
         <source>Running…</source>
-        <translation type="unfinished"></translation>
+        <translation>Fut…</translation>
     </message>
     <message>
         <source>SDK &amp; tool paths</source>
-        <translation type="unfinished"></translation>
+        <translation>SDK- és eszközútvonalak</translation>
     </message>
     <message>
         <source>Save</source>
-        <translation type="unfinished"></translation>
+        <translation>Mentés</translation>
     </message>
     <message>
         <source>Save device screenshot</source>
-        <translation type="unfinished"></translation>
+        <translation>Eszköz képernyőképének mentése</translation>
     </message>
     <message>
         <source>Save workspace</source>
-        <translation type="unfinished"></translation>
+        <translation>Munkaterület mentése</translation>
     </message>
     <message>
         <source>Search tools…</source>
-        <translation type="unfinished"></translation>
+        <translation>Eszközök keresése…</translation>
     </message>
     <message>
         <source>Set up iPhone</source>
-        <translation type="unfinished"></translation>
+        <translation>iPhone beállítása</translation>
     </message>
     <message>
         <source>Sign build</source>
-        <translation type="unfinished"></translation>
+        <translation>Build aláírása</translation>
     </message>
     <message>
         <source>Signing &amp; release</source>
-        <translation type="unfinished"></translation>
+        <translation>Aláírás és kiadás</translation>
     </message>
     <message>
         <source>Start with a project</source>
-        <translation type="unfinished"></translation>
+        <translation>Kezdd egy projekttel</translation>
     </message>
     <message>
         <source>Stopping</source>
-        <translation type="unfinished"></translation>
+        <translation>Leállítás</translation>
     </message>
     <message>
         <source>Streaming sound</source>
-        <translation type="unfinished"></translation>
+        <translation>Hangtovábbítás</translation>
     </message>
     <message>
         <source>Timed out</source>
-        <translation type="unfinished"></translation>
+        <translation>Időtúllépés</translation>
     </message>
     <message>
         <source>UI tests</source>
-        <translation type="unfinished"></translation>
+        <translation>UI-tesztek</translation>
     </message>
     <message>
         <source>Waiting</source>
-        <translation type="unfinished"></translation>
+        <translation>Várakozik</translation>
     </message>
     <message>
         <source>Waiting for project</source>
-        <translation type="unfinished"></translation>
+        <translation>Várakozás a projektre</translation>
     </message>
     <message>
         <source>Workspace name</source>
-        <translation type="unfinished"></translation>
+        <translation>Munkaterület neve</translation>
     </message>
     <message>
         <source>Yes</source>
-        <translation type="unfinished"></translation>
+        <translation>Igen</translation>
     </message>
     <message>
         <source>Your next build starts here</source>
-        <translation type="unfinished"></translation>
+        <translation>A következő buildelésed itt kezdődik</translation>
     </message>
     <message>
         <source>Choose a job to read its log.</source>
-        <translation type="unfinished"></translation>
+        <translation>Válassz egy feladatot a naplója olvasásához.</translation>
     </message>
     <message>
         <source>Open your app, build it and run it on a device.</source>
-        <translation type="unfinished"></translation>
+        <translation>Nyisd meg az alkalmazásodat, buildeld, és futtasd egy eszközön.</translation>
     </message>
     <message>
         <source>Phones and emulators, ready to run your app.</source>
-        <translation type="unfinished"></translation>
+        <translation>Telefonok és emulátorok, készen az alkalmazásod futtatására.</translation>
     </message>
     <message>
         <source>Every build and agent job, with its logs and results.</source>
-        <translation type="unfinished"></translation>
+        <translation>Minden build és ügynökfeladat, naplókkal és eredményekkel.</translation>
     </message>
     <message>
         <source>Everything your agent can do, as a form you can fill in.</source>
-        <translation type="unfinished"></translation>
+        <translation>Minden, amire az ügynököd képes, kitölthető űrlapként.</translation>
     </message>
     <message>
         <source>Pause your app and see what it&apos;s doing.</source>
-        <translation type="unfinished"></translation>
+        <translation>Szüneteltesd az alkalmazásodat, és nézd meg, mit csinál.</translation>
     </message>
     <message>
         <source>Find anything in your running app and tap it.</source>
-        <translation type="unfinished"></translation>
+        <translation>Találj meg bármit a futó alkalmazásodban, és koppints rá.</translation>
     </message>
     <message>
         <source>See where the time goes and catch regressions.</source>
-        <translation type="unfinished"></translation>
+        <translation>Nézd meg, hová megy az idő, és szűrd ki a regressziókat.</translation>
     </message>
     <message>
         <source>Search, edit and save your project&apos;s files.</source>
-        <translation type="unfinished"></translation>
+        <translation>Keresd, szerkeszd és mentsd a projekted fájljait.</translation>
     </message>
     <message>
         <source>Sign it, version it and ship it.</source>
-        <translation type="unfinished"></translation>
+        <translation>Írd alá, lásd el verzióval, és add ki.</translation>
     </message>
     <message>
         <source>Build</source>
-        <translation type="unfinished"></translation>
+        <translation>Buildelés</translation>
     </message>
     <message>
         <source>Show build steps</source>
-        <translation type="unfinished"></translation>
+        <translation>Buildelési lépések megjelenítése</translation>
     </message>
     <message>
         <source>Plug in a phone or start an emulator under Devices.</source>
-        <translation type="unfinished"></translation>
+        <translation>Csatlakoztass egy telefont, vagy indíts egy emulátort az Eszközök alatt.</translation>
     </message>
     <message>
         <source>Remember this project, platform and device together.</source>
-        <translation type="unfinished"></translation>
+        <translation>Ennek a projektnek, platformnak és eszköznek együttes megjegyzése.</translation>
     </message>
     <message>
         <source>No iPhone yet.</source>
-        <translation type="unfinished"></translation>
+        <translation>Még nincs iPhone.</translation>
     </message>
     <message>
         <source>No phone yet.</source>
-        <translation type="unfinished"></translation>
+        <translation>Még nincs telefon.</translation>
     </message>
     <message>
         <source>Plug it in, unlock it and trust this computer. Setup takes you through the rest.</source>
-        <translation type="unfinished"></translation>
+        <translation>Csatlakoztasd, oldd fel, és fogadd el ezt a számítógépet megbízhatóként. A beállítás végigvezet a többin.</translation>
     </message>
     <message>
         <source>Plug in a phone with USB debugging on, or start an emulator.</source>
-        <translation type="unfinished"></translation>
+        <translation>Csatlakoztass egy telefont bekapcsolt USB-hibakereséssel, vagy indíts egy emulátort.</translation>
     </message>
     <message>
         <source>Build or test from the project. Your agent&apos;s jobs show up here too, with logs and results.</source>
-        <translation type="unfinished"></translation>
+        <translation>Buildelj vagy tesztelj a projektből. Az ügynököd feladatai is itt jelennek meg, naplókkal és eredményekkel.</translation>
     </message>
     <message>
         <source>Your agent can call every one of these over MCP or the command line.</source>
-        <translation type="unfinished"></translation>
+        <translation>Az ügynököd ezek mindegyikét meghívhatja MCP-n vagy parancssoron keresztül.</translation>
     </message>
     <message>
         <source>The result shows up here.</source>
-        <translation type="unfinished"></translation>
+        <translation>Az eredmény itt jelenik meg.</translation>
     </message>
     <message>
         <source>Filter the log</source>
-        <translation type="unfinished"></translation>
+        <translation>Napló szűrése</translation>
     </message>
     <message>
         <source>All lines</source>
-        <translation type="unfinished"></translation>
+        <translation>Minden sor</translation>
     </message>
     <message>
         <source>Warnings</source>
-        <translation type="unfinished"></translation>
+        <translation>Figyelmeztetések</translation>
     </message>
     <message>
         <source>Errors</source>
-        <translation type="unfinished"></translation>
+        <translation>Hibák</translation>
     </message>
     <message numerus="yes">
         <source>%n line(s)</source>
-        <translation type="unfinished">
-            <numerusform></numerusform>
+        <translation>
+            <numerusform>%n sor</numerusform>
         </translation>
     </message>
     <message>
         <source>Copy these lines</source>
-        <translation type="unfinished"></translation>
+        <translation>Ezen sorok másolása</translation>
     </message>
     <message>
         <source>Copy log</source>
-        <translation type="unfinished"></translation>
+        <translation>Napló másolása</translation>
     </message>
     <message>
         <source>No line of this log matches.</source>
-        <translation type="unfinished"></translation>
+        <translation>A napló egyik sora sem egyezik.</translation>
     </message>
     <message>
         <source>%1 s</source>
-        <translation type="unfinished"></translation>
+        <translation>%1 s</translation>
     </message>
     <message>
         <source>%1 min %2 s</source>
-        <translation type="unfinished"></translation>
+        <translation>%1 perc %2 s</translation>
     </message>
     <message>
         <source>%1 h %2 min</source>
-        <translation type="unfinished"></translation>
+        <translation>%1 óra %2 perc</translation>
     </message>
     <message>
         <source>All</source>
-        <translation type="unfinished"></translation>
+        <translation>Mind</translation>
     </message>
     <message>
         <source>Nothing running.</source>
-        <translation type="unfinished"></translation>
+        <translation>Semmi sem fut.</translation>
     </message>
     <message>
         <source>No failed job.</source>
-        <translation type="unfinished"></translation>
+        <translation>Nincs sikertelen feladat.</translation>
     </message>
     <message>
         <source>Open log file</source>
-        <translation type="unfinished"></translation>
+        <translation>Naplófájl megnyitása</translation>
     </message>
     <message>
         <source>Run again</source>
-        <translation type="unfinished"></translation>
+        <translation>Újrafuttatás</translation>
     </message>
     <message>
         <source>Run again · only for jobs this window started</source>
-        <translation type="unfinished"></translation>
+        <translation>Újrafuttatás · csak az ebből az ablakból indított feladatokhoz</translation>
     </message>
     <message>
         <source>Running</source>
         <comment>jobs filter</comment>
-        <translation type="unfinished"></translation>
+        <translation>Futók</translation>
     </message>
     <message>
         <source>Failed</source>
         <comment>jobs filter</comment>
-        <translation type="unfinished"></translation>
+        <translation>Sikertelenek</translation>
     </message>
     <message>
         <source>Jobs</source>
-        <translation type="unfinished"></translation>
+        <translation>Feladatok</translation>
     </message>
     <message>
         <source>Tools</source>
-        <translation type="unfinished"></translation>
+        <translation>Eszközök</translation>
     </message>
     <message>
         <source>Log of %1</source>
-        <translation type="unfinished"></translation>
+        <translation>%1 naplója</translation>
     </message>
     <message>
         <source>Job log</source>
-        <translation type="unfinished"></translation>
+        <translation>Feladatnapló</translation>
     </message>
     <message>
         <source>Live log</source>
-        <translation type="unfinished"></translation>
+        <translation>Élő napló</translation>
     </message>
     <message>
         <source>%1 must be a number</source>
-        <translation type="unfinished"></translation>
+        <translation>A(z) %1 értékének számnak kell lennie</translation>
     </message>
     <message>
         <source>%1 is out of range: %2</source>
-        <translation type="unfinished"></translation>
+        <translation>A(z) %1 a tartományon kívül esik: %2</translation>
     </message>
     <message>
         <source>Command copied</source>
-        <translation type="unfinished"></translation>
+        <translation>Parancs másolva</translation>
     </message>
     <message>
         <source>This tool changes or removes something and cannot be undone. Run it?</source>
-        <translation type="unfinished"></translation>
+        <translation>Ez az eszköz módosít vagy eltávolít valamit, és ez nem vonható vissza. Futtatod?</translation>
     </message>
     <message>
         <source>Run anyway</source>
-        <translation type="unfinished"></translation>
+        <translation>Futtatás mégis</translation>
     </message>
     <message>
         <source>Asks before it runs: this tool changes or removes something</source>
-        <translation type="unfinished"></translation>
+        <translation>Futtatás előtt rákérdez: ez az eszköz módosít vagy eltávolít valamit</translation>
     </message>
     <message>
         <source>Copy as command</source>
-        <translation type="unfinished"></translation>
+        <translation>Másolás parancsként</translation>
     </message>
     <message>
         <source>Copy this call as a tomaccoctl command for a terminal or a script</source>
-        <translation type="unfinished"></translation>
+        <translation>A hívás másolása tomaccoctl-parancsként terminálhoz vagy szkripthez</translation>
     </message>
     <message>
         <source>Try again</source>
-        <translation type="unfinished"></translation>
+        <translation>Újra</translation>
     </message>
     <message>
         <source>Dismiss</source>
-        <translation type="unfinished"></translation>
+        <translation>Elvetés</translation>
     </message>
     <message>
         <source>What to do: %1</source>
-        <translation type="unfinished"></translation>
+        <translation>Teendő: %1</translation>
     </message>
     <message>
         <source>No tools yet.</source>
-        <translation type="unfinished"></translation>
+        <translation>Még nincsenek eszközök.</translation>
     </message>
     <message>
         <source>The control program has not listed its tools yet.</source>
-        <translation type="unfinished"></translation>
+        <translation>A vezérlőprogram még nem listázta az eszközeit.</translation>
     </message>
     <message>
         <source>No tool matches “%1”.</source>
-        <translation type="unfinished"></translation>
+        <translation>Egy eszköz sem egyezik ezzel: „%1”.</translation>
     </message>
     <message>
         <source>Demo Studio</source>
-        <translation type="unfinished"></translation>
+        <translation>Demo Studio</translation>
     </message>
     <message>
         <source>Turn a screen recording into a video with a 3D device.</source>
-        <translation type="unfinished"></translation>
+        <translation>Készíts képernyőfelvételből videót egy 3D-s eszközzel.</translation>
     </message>
     <message>
         <source>All jobs</source>
-        <translation type="unfinished"></translation>
+        <translation>Minden feladat</translation>
     </message>
     <message>
         <source>Agent</source>
-        <translation type="unfinished"></translation>
+        <translation>Ügynök</translation>
     </message>
     <message>
         <source>Connect your coding agent</source>
-        <translation type="unfinished"></translation>
+        <translation>Csatlakoztasd a kódoló ügynöködet</translation>
     </message>
 </context>
 <context>
     <name>main</name>
     <message>
         <source>Device profile ID from tomaccoctl call catalog.list</source>
-        <translation type="unfinished"></translation>
+        <translation>Eszközprofil-azonosító a tomaccoctl call catalog.list kimenetéből</translation>
     </message>
     <message>
         <source>Duo display: closed or open</source>
-        <translation type="unfinished"></translation>
+        <translation>Duo kijelző: zárva vagy nyitva</translation>
     </message>
     <message>
         <source>Invalid orientation or fold position.
 </source>
-        <translation type="unfinished"></translation>
+        <translation>Érvénytelen tájolás vagy hajtási helyzet.
+</translation>
     </message>
     <message>
         <source>Name of the agent preview session</source>
-        <translation type="unfinished"></translation>
+        <translation>Az ügynök előnézeti munkamenetének neve</translation>
     </message>
     <message>
         <source>No web build with index.html found.
 </source>
-        <translation type="unfinished"></translation>
+        <translation>Nem található index.html fájlt tartalmazó webes build.
+</translation>
     </message>
     <message>
         <source>Open a local web build</source>
-        <translation type="unfinished"></translation>
+        <translation>Helyi webes build megnyitása</translation>
     </message>
     <message>
         <source>Open a project in the native workspace</source>
-        <translation type="unfinished"></translation>
+        <translation>Projekt megnyitása a natív munkaterületen</translation>
     </message>
     <message>
         <source>Open a web address at startup</source>
-        <translation type="unfinished"></translation>
+        <translation>Webcím megnyitása indításkor</translation>
     </message>
     <message>
         <source>Orientation: portrait or landscape</source>
-        <translation type="unfinished"></translation>
+        <translation>Tájolás: álló vagy fekvő</translation>
     </message>
     <message>
         <source>Tomacco: build, run and test native Android and iOS apps on Linux.
 Licensed under the GNU General Public License, version 2 or later.</source>
-        <translation type="unfinished"></translation>
+        <translation>Tomacco: natív Android- és iOS-alkalmazások buildelése, futtatása és tesztelése Linuxon.
+A GNU General Public License 2-es vagy későbbi verziója alatt licencelve.</translation>
     </message>
     <message>
         <source>Run the preview&apos;s interactive checks</source>
-        <translation type="unfinished"></translation>
+        <translation>Az előnézet interaktív ellenőrzéseinek futtatása</translation>
     </message>
     <message>
         <source>Save the window as a PNG for visual review and quit</source>
-        <translation type="unfinished"></translation>
+        <translation>Az ablak mentése PNG-ként vizuális áttekintéshez, majd kilépés</translation>
     </message>
     <message>
         <source>Show only the detached device window; the main window stays hidden</source>
-        <translation type="unfinished"></translation>
+        <translation>Csak a leválasztott eszközablak megjelenítése; a főablak rejtve marad</translation>
     </message>
     <message>
         <source>Unknown device profile.
 </source>
-        <translation type="unfinished"></translation>
+        <translation>Ismeretlen eszközprofil.
+</translation>
     </message>
     <message>
         <source>Show the live session with this ID, from tomaccoctl call runtime.list</source>
-        <translation type="unfinished"></translation>
+        <translation>Az ezzel az azonosítóval rendelkező élő munkamenet megjelenítése, a tomaccoctl call runtime.list kimenetéből</translation>
     </message>
     <message>
         <source>Invalid session ID.
 </source>
-        <translation type="unfinished"></translation>
+        <translation>Érvénytelen munkamenet-azonosító.
+</translation>
     </message>
     <message>
         <source>Unknown workspace. See --help for the available workspaces.
 </source>
-        <translation type="unfinished"></translation>
+        <translation>Ismeretlen munkaterület. Az elérhető munkaterületeket lásd: --help.
+</translation>
     </message>
     <message>
         <source>Open a workspace: runtime, project, devices, ios-research, jobs, tools, debug, testing, profiling, files, release, demo or preview</source>
-        <translation type="unfinished"></translation>
+        <translation>Munkaterület megnyitása: runtime, project, devices, ios-research, jobs, tools, debug, testing, profiling, files, release, demo vagy preview</translation>
     </message>
 </context>
 <context>
     <name>UpdateModel</name>
     <message>
         <source>Updated · restart</source>
-        <translation type="unfinished"></translation>
+        <translation>Frissítve · indítsd újra</translation>
     </message>
     <message>
         <source>Installing update</source>
-        <translation type="unfinished"></translation>
+        <translation>Frissítés telepítése</translation>
     </message>
     <message>
         <source>Update %1</source>
-        <translation type="unfinished"></translation>
+        <translation>Frissítés erre: %1</translation>
     </message>
     <message>
         <source>Version %1 is up to date.</source>
-        <translation type="unfinished"></translation>
+        <translation>A(z) %1 verzió naprakész.</translation>
     </message>
     <message>
         <source>Version %1 is available. You have %2.</source>
-        <translation type="unfinished"></translation>
+        <translation>Elérhető a(z) %1 verzió. A tied: %2.</translation>
     </message>
     <message>
         <source>No release is available yet.</source>
-        <translation type="unfinished"></translation>
+        <translation>Még nincs elérhető kiadás.</translation>
     </message>
     <message>
         <source>Version %1 has no package for this system.</source>
-        <translation type="unfinished"></translation>
+        <translation>A(z) %1 verziónak nincs csomagja ehhez a rendszerhez.</translation>
     </message>
     <message>
         <source>GitHub could not be reached. This computer may be offline.</source>

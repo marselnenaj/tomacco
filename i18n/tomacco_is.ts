@@ -5309,832 +5309,838 @@ SSH notar fyrirliggjandi lykla þína og þekkt auðkenni hýsils.</translation>
     </message>
     <message>
         <source>Build number</source>
-        <translation type="unfinished"></translation>
+        <translation>Smíðanúmer</translation>
     </message>
 </context>
 <context>
     <name>StageLogPane</name>
     <message>
         <source>Device log</source>
-        <translation type="unfinished"></translation>
+        <translation>Annáll tækis</translation>
     </message>
     <message>
         <source>Job log</source>
-        <translation type="unfinished"></translation>
+        <translation>Annáll verks</translation>
     </message>
     <message>
         <source>Open under Builds &amp; jobs</source>
-        <translation type="unfinished"></translation>
+        <translation>Opna undir Smíðar og verk</translation>
     </message>
     <message>
         <source>Hide the log</source>
-        <translation type="unfinished"></translation>
+        <translation>Fela annálinn</translation>
     </message>
     <message>
         <source>No device is live.</source>
-        <translation type="unfinished"></translation>
+        <translation>Ekkert tæki er í beinni.</translation>
     </message>
     <message>
         <source>Connect a device and its log runs here, beside its screen.</source>
-        <translation type="unfinished"></translation>
+        <translation>Tengdu tæki og annáll þess birtist hér, við hlið skjásins.</translation>
     </message>
     <message>
         <source>No job yet.</source>
-        <translation type="unfinished"></translation>
+        <translation>Ekkert verk enn.</translation>
     </message>
     <message>
         <source>Run your app or start a build, and its log follows here.</source>
-        <translation type="unfinished"></translation>
+        <translation>Keyrðu appið þitt eða hefðu smíð og annáll þess fylgir hér.</translation>
     </message>
     <message>
         <source>Waiting for log lines…</source>
-        <translation type="unfinished"></translation>
+        <translation>Bíður eftir annálslínum…</translation>
     </message>
     <message>
         <source>Try again</source>
-        <translation type="unfinished"></translation>
+        <translation>Reyna aftur</translation>
     </message>
     <message>
         <source>App launch</source>
-        <translation type="unfinished"></translation>
+        <translation>Ræsing apps</translation>
     </message>
 </context>
 <context>
     <name>StudioDialog</name>
     <message>
         <source>Apply</source>
-        <translation type="unfinished"></translation>
+        <translation>Virkja</translation>
     </message>
     <message>
         <source>Cancel</source>
-        <translation type="unfinished"></translation>
+        <translation>Hætta við</translation>
     </message>
     <message>
         <source>Close</source>
-        <translation type="unfinished"></translation>
+        <translation>Loka</translation>
     </message>
     <message>
         <source>Discard</source>
-        <translation type="unfinished"></translation>
+        <translation>Henda</translation>
     </message>
     <message>
         <source>No</source>
-        <translation type="unfinished"></translation>
+        <translation>Nei</translation>
     </message>
     <message>
         <source>Open</source>
-        <translation type="unfinished"></translation>
+        <translation>Opna</translation>
     </message>
     <message>
         <source>Reset</source>
-        <translation type="unfinished"></translation>
+        <translation>Endurstilla</translation>
     </message>
     <message>
         <source>Save</source>
-        <translation type="unfinished"></translation>
+        <translation>Vista</translation>
     </message>
     <message>
         <source>Yes</source>
-        <translation type="unfinished"></translation>
+        <translation>Já</translation>
     </message>
 </context>
 <context>
     <name>TestWorkspace</name>
     <message>
         <source>Accessibility description · exact</source>
-        <translation type="unfinished"></translation>
+        <translation>Aðgengislýsing · nákvæm</translation>
     </message>
     <message>
         <source>Choose</source>
-        <translation type="unfinished"></translation>
+        <translation>Velja</translation>
     </message>
     <message>
         <source>Device IDs separated by commas; empty = selected device</source>
-        <translation type="unfinished"></translation>
+        <translation>Auðkenni tækja aðskilin með kommum; autt = valið tæki</translation>
     </message>
     <message>
         <source>Enter a text, resource ID or description</source>
-        <translation type="unfinished"></translation>
+        <translation>Sláðu inn texta, auðkenni tilfangs eða lýsingu</translation>
     </message>
     <message>
         <source>Fill in</source>
-        <translation type="unfinished"></translation>
+        <translation>Fylla út</translation>
     </message>
     <message>
         <source>Find &amp; wait</source>
-        <translation type="unfinished"></translation>
+        <translation>Finna og bíða</translation>
     </message>
     <message>
         <source>Input text</source>
-        <translation type="unfinished"></translation>
+        <translation>Slá inn texta</translation>
     </message>
     <message>
         <source>JSON scenario</source>
-        <translation type="unfinished"></translation>
+        <translation>JSON-atburðarás</translation>
     </message>
     <message>
         <source>Long press</source>
-        <translation type="unfinished"></translation>
+        <translation>Langt ýt</translation>
     </message>
     <message>
         <source>New, empty directory for JUnit, JSON and screenshots</source>
-        <translation type="unfinished"></translation>
+        <translation>Ný, tóm mappa fyrir JUnit, JSON og skjámyndir</translation>
     </message>
     <message>
         <source>Resource ID · e.g. app.example:id/submit</source>
-        <translation type="unfinished"></translation>
+        <translation>Auðkenni tilfangs · t.d. app.example:id/submit</translation>
     </message>
     <message>
         <source>Start scenario</source>
-        <translation type="unfinished"></translation>
+        <translation>Hefja atburðarás</translation>
     </message>
     <message>
         <source>Tap</source>
-        <translation type="unfinished"></translation>
+        <translation>Ýta</translation>
     </message>
     <message>
         <source>Visible text · exact</source>
-        <translation type="unfinished"></translation>
+        <translation>Sýnilegur texti · nákvæmur</translation>
     </message>
     <message>
         <source>Test your Android app</source>
-        <translation type="unfinished"></translation>
+        <translation>Prófaðu Android-appið þitt</translation>
     </message>
     <message>
         <source>Pick an emulator or phone under Devices first.</source>
-        <translation type="unfinished"></translation>
+        <translation>Veldu fyrst hermi eða síma undir Tæki.</translation>
     </message>
     <message>
         <source>Set up text input on the device</source>
-        <translation type="unfinished"></translation>
+        <translation>Setja upp textainnslátt á tækinu</translation>
     </message>
     <message>
         <source>Run on several devices</source>
-        <translation type="unfinished"></translation>
+        <translation>Keyra á nokkrum tækjum</translation>
     </message>
     <message>
         <source>JUnit results and the failure screenshot stay, even when a step fails.</source>
-        <translation type="unfinished"></translation>
+        <translation>JUnit-niðurstöður og skjámynd af villunni haldast, jafnvel þegar skref mistekst.</translation>
     </message>
 </context>
 <context>
     <name>Workspace</name>
     <message>
         <source>%1 is missing</source>
-        <translation type="unfinished"></translation>
+        <translation>%1 vantar</translation>
     </message>
     <message>
         <source>A job is already running for this project. Use the running session or end it first.</source>
-        <translation type="unfinished"></translation>
+        <translation>Verk er þegar í gangi fyrir þetta verkefni. Notaðu lotuna sem er í gangi eða ljúktu henni fyrst.</translation>
     </message>
     <message>
         <source>Agents &amp; tools</source>
-        <translation type="unfinished"></translation>
+        <translation>Fulltrúar og verkfæri</translation>
     </message>
     <message>
         <source>App running</source>
-        <translation type="unfinished"></translation>
+        <translation>App í gangi</translation>
     </message>
     <message>
         <source>App session running</source>
-        <translation type="unfinished"></translation>
+        <translation>Applota í gangi</translation>
     </message>
     <message>
         <source>Application ID, e.g. com.example.app</source>
-        <translation type="unfinished"></translation>
+        <translation>Auðkenni apps, t.d. com.example.app</translation>
     </message>
     <message>
         <source>Build &amp; run</source>
-        <translation type="unfinished"></translation>
+        <translation>Smíða og keyra</translation>
     </message>
     <message>
         <source>Building</source>
-        <translation type="unfinished"></translation>
+        <translation>Smíðar</translation>
     </message>
     <message>
         <source>Builds &amp; jobs</source>
-        <translation type="unfinished"></translation>
+        <translation>Smíðar og verk</translation>
     </message>
     <message>
         <source>Calibrate model</source>
-        <translation type="unfinished"></translation>
+        <translation>Kvörða gerð</translation>
     </message>
     <message>
         <source>Cancel</source>
-        <translation type="unfinished"></translation>
+        <translation>Hætta við</translation>
     </message>
     <message>
         <source>Check code</source>
-        <translation type="unfinished"></translation>
+        <translation>Athuga kóða</translation>
     </message>
     <message>
         <source>Choose a smartphone or emulator</source>
-        <translation type="unfinished"></translation>
+        <translation>Veldu snjallsíma eða hermi</translation>
     </message>
     <message>
         <source>Choose folder</source>
-        <translation type="unfinished"></translation>
+        <translation>Veldu möppu</translation>
     </message>
     <message>
         <source>Choose project</source>
-        <translation type="unfinished"></translation>
+        <translation>Veldu verkefni</translation>
     </message>
     <message>
         <source>Completed</source>
-        <translation type="unfinished"></translation>
+        <translation>Lokið</translation>
     </message>
     <message>
         <source>Configuration</source>
-        <translation type="unfinished"></translation>
+        <translation>Grunnstilling</translation>
     </message>
     <message>
         <source>Connect via Wi-Fi</source>
-        <translation type="unfinished"></translation>
+        <translation>Tengjast um Wi-Fi</translation>
     </message>
     <message>
         <source>Copy path</source>
-        <translation type="unfinished"></translation>
+        <translation>Afrita slóð</translation>
     </message>
     <message>
         <source>Devices</source>
-        <translation type="unfinished"></translation>
+        <translation>Tæki</translation>
     </message>
     <message>
         <source>Ended</source>
-        <translation type="unfinished"></translation>
+        <translation>Lokið</translation>
     </message>
     <message>
         <source>Failed</source>
-        <translation type="unfinished"></translation>
+        <translation>Mistókst</translation>
     </message>
     <message>
         <source>Files</source>
-        <translation type="unfinished"></translation>
+        <translation>Skrár</translation>
     </message>
     <message>
         <source>Find devices</source>
-        <translation type="unfinished"></translation>
+        <translation>Finna tæki</translation>
     </message>
     <message>
         <source>Go to project</source>
-        <translation type="unfinished"></translation>
+        <translation>Fara í verkefni</translation>
     </message>
     <message>
         <source>Information</source>
-        <translation type="unfinished"></translation>
+        <translation>Upplýsingar</translation>
     </message>
     <message>
         <source>Install</source>
-        <translation type="unfinished"></translation>
+        <translation>Setja upp</translation>
     </message>
     <message>
         <source>Install APK</source>
-        <translation type="unfinished"></translation>
+        <translation>Setja upp APK</translation>
     </message>
     <message>
         <source>Install IPA</source>
-        <translation type="unfinished"></translation>
+        <translation>Setja upp IPA</translation>
     </message>
     <message>
         <source>Install app on device</source>
-        <translation type="unfinished"></translation>
+        <translation>Setja upp app á tæki</translation>
     </message>
     <message>
         <source>Job running</source>
-        <translation type="unfinished"></translation>
+        <translation>Verk í gangi</translation>
     </message>
     <message>
         <source>Job started · %1</source>
-        <translation type="unfinished"></translation>
+        <translation>Verk hafið · %1</translation>
     </message>
     <message>
         <source>Load saved workspace</source>
-        <translation type="unfinished"></translation>
+        <translation>Hlaða vistuðu vinnusvæði</translation>
     </message>
     <message>
         <source>Manage devices</source>
-        <translation type="unfinished"></translation>
+        <translation>Sýsla með tæki</translation>
     </message>
     <message>
         <source>Mobile apps (*.apk *.ipa)</source>
-        <translation type="unfinished"></translation>
+        <translation>Farsímaöpp (*.apk *.ipa)</translation>
     </message>
     <message>
         <source>New project</source>
-        <translation type="unfinished"></translation>
+        <translation>Nýtt verkefni</translation>
     </message>
     <message>
         <source>No</source>
-        <translation type="unfinished"></translation>
+        <translation>Nei</translation>
     </message>
     <message>
         <source>No devices connected. Enable USB debugging or trust on the device.</source>
-        <translation type="unfinished"></translation>
+        <translation>Engin tæki tengd. Virkjaðu USB-villuleit eða treystu tölvunni á tækinu.</translation>
     </message>
     <message>
         <source>Open</source>
-        <translation type="unfinished"></translation>
+        <translation>Opna</translation>
     </message>
     <message>
         <source>Open a project, connect a device and start a build.</source>
-        <translation type="unfinished"></translation>
+        <translation>Opnaðu verkefni, tengdu tæki og hefðu smíð.</translation>
     </message>
     <message>
         <source>Open files</source>
-        <translation type="unfinished"></translation>
+        <translation>Opna skrár</translation>
     </message>
     <message>
         <source>Open live device</source>
-        <translation type="unfinished"></translation>
+        <translation>Opna tæki í beinni</translation>
     </message>
     <message>
         <source>Package format</source>
-        <translation type="unfinished"></translation>
+        <translation>Pakkasnið</translation>
     </message>
     <message>
         <source>Path to your Swift, Kotlin or Flutter project</source>
-        <translation type="unfinished"></translation>
+        <translation>Slóð að Swift-, Kotlin- eða Flutter-verkefninu þínu</translation>
     </message>
     <message>
         <source>Platform</source>
-        <translation type="unfinished"></translation>
+        <translation>Verkvangur</translation>
     </message>
     <message>
         <source>Project</source>
-        <translation type="unfinished"></translation>
+        <translation>Verkefni</translation>
     </message>
     <message>
         <source>Ready · %1</source>
-        <translation type="unfinished"></translation>
+        <translation>Tilbúið · %1</translation>
     </message>
     <message>
         <source>Result</source>
-        <translation type="unfinished"></translation>
+        <translation>Niðurstaða</translation>
     </message>
     <message>
         <source>Reused running job · %1</source>
-        <translation type="unfinished"></translation>
+        <translation>Keyrandi verk endurnýtt · %1</translation>
     </message>
     <message>
         <source>Run</source>
-        <translation type="unfinished"></translation>
+        <translation>Keyra</translation>
     </message>
     <message>
         <source>Run on device</source>
-        <translation type="unfinished"></translation>
+        <translation>Keyra á tæki</translation>
     </message>
     <message>
         <source>Running</source>
-        <translation type="unfinished"></translation>
+        <translation>Í gangi</translation>
     </message>
     <message>
         <source>Running…</source>
-        <translation type="unfinished"></translation>
+        <translation>Í gangi…</translation>
     </message>
     <message>
         <source>SDK &amp; tool paths</source>
-        <translation type="unfinished"></translation>
+        <translation>Slóðir SDK og verkfæra</translation>
     </message>
     <message>
         <source>Save</source>
-        <translation type="unfinished"></translation>
+        <translation>Vista</translation>
     </message>
     <message>
         <source>Save device screenshot</source>
-        <translation type="unfinished"></translation>
+        <translation>Vista skjámynd af tæki</translation>
     </message>
     <message>
         <source>Save workspace</source>
-        <translation type="unfinished"></translation>
+        <translation>Vista vinnusvæði</translation>
     </message>
     <message>
         <source>Search tools…</source>
-        <translation type="unfinished"></translation>
+        <translation>Leita að verkfærum…</translation>
     </message>
     <message>
         <source>Set up iPhone</source>
-        <translation type="unfinished"></translation>
+        <translation>Setja upp iPhone</translation>
     </message>
     <message>
         <source>Sign build</source>
-        <translation type="unfinished"></translation>
+        <translation>Undirrita smíð</translation>
     </message>
     <message>
         <source>Signing &amp; release</source>
-        <translation type="unfinished"></translation>
+        <translation>Undirritun og útgáfa</translation>
     </message>
     <message>
         <source>Start with a project</source>
-        <translation type="unfinished"></translation>
+        <translation>Byrjaðu með verkefni</translation>
     </message>
     <message>
         <source>Stopping</source>
-        <translation type="unfinished"></translation>
+        <translation>Stöðvar</translation>
     </message>
     <message>
         <source>Streaming sound</source>
-        <translation type="unfinished"></translation>
+        <translation>Streymir hljóði</translation>
     </message>
     <message>
         <source>Timed out</source>
-        <translation type="unfinished"></translation>
+        <translation>Tími rann út</translation>
     </message>
     <message>
         <source>UI tests</source>
-        <translation type="unfinished"></translation>
+        <translation>Viðmótsprófanir</translation>
     </message>
     <message>
         <source>Waiting</source>
-        <translation type="unfinished"></translation>
+        <translation>Bíður</translation>
     </message>
     <message>
         <source>Waiting for project</source>
-        <translation type="unfinished"></translation>
+        <translation>Bíður eftir verkefni</translation>
     </message>
     <message>
         <source>Workspace name</source>
-        <translation type="unfinished"></translation>
+        <translation>Heiti vinnusvæðis</translation>
     </message>
     <message>
         <source>Yes</source>
-        <translation type="unfinished"></translation>
+        <translation>Já</translation>
     </message>
     <message>
         <source>Your next build starts here</source>
-        <translation type="unfinished"></translation>
+        <translation>Næsta smíð þín hefst hér</translation>
     </message>
     <message>
         <source>Choose a job to read its log.</source>
-        <translation type="unfinished"></translation>
+        <translation>Veldu verk til að lesa annál þess.</translation>
     </message>
     <message>
         <source>Open your app, build it and run it on a device.</source>
-        <translation type="unfinished"></translation>
+        <translation>Opnaðu appið þitt, smíðaðu það og keyrðu á tæki.</translation>
     </message>
     <message>
         <source>Phones and emulators, ready to run your app.</source>
-        <translation type="unfinished"></translation>
+        <translation>Símar og hermar, tilbúnir að keyra appið þitt.</translation>
     </message>
     <message>
         <source>Every build and agent job, with its logs and results.</source>
-        <translation type="unfinished"></translation>
+        <translation>Hver smíð og hvert verk fulltrúa, með annálum og niðurstöðum.</translation>
     </message>
     <message>
         <source>Everything your agent can do, as a form you can fill in.</source>
-        <translation type="unfinished"></translation>
+        <translation>Allt sem fulltrúinn þinn getur gert, sem eyðublað sem þú getur fyllt út.</translation>
     </message>
     <message>
         <source>Pause your app and see what it&apos;s doing.</source>
-        <translation type="unfinished"></translation>
+        <translation>Gerðu hlé á appinu og sjáðu hvað það er að gera.</translation>
     </message>
     <message>
         <source>Find anything in your running app and tap it.</source>
-        <translation type="unfinished"></translation>
+        <translation>Finndu hvað sem er í keyrandi appinu og ýttu á það.</translation>
     </message>
     <message>
         <source>See where the time goes and catch regressions.</source>
-        <translation type="unfinished"></translation>
+        <translation>Sjáðu hvert tíminn fer og gríptu afturför.</translation>
     </message>
     <message>
         <source>Search, edit and save your project&apos;s files.</source>
-        <translation type="unfinished"></translation>
+        <translation>Leitaðu í, breyttu og vistaðu skrár verkefnisins.</translation>
     </message>
     <message>
         <source>Sign it, version it and ship it.</source>
-        <translation type="unfinished"></translation>
+        <translation>Undirritaðu, gefðu útgáfunúmer og gefðu út.</translation>
     </message>
     <message>
         <source>Build</source>
-        <translation type="unfinished"></translation>
+        <translation>Smíða</translation>
     </message>
     <message>
         <source>Show build steps</source>
-        <translation type="unfinished"></translation>
+        <translation>Sýna smíðaskref</translation>
     </message>
     <message>
         <source>Plug in a phone or start an emulator under Devices.</source>
-        <translation type="unfinished"></translation>
+        <translation>Tengdu síma eða ræstu hermi undir Tæki.</translation>
     </message>
     <message>
         <source>Remember this project, platform and device together.</source>
-        <translation type="unfinished"></translation>
+        <translation>Muna þetta verkefni, verkvang og tæki saman.</translation>
     </message>
     <message>
         <source>No iPhone yet.</source>
-        <translation type="unfinished"></translation>
+        <translation>Enginn iPhone enn.</translation>
     </message>
     <message>
         <source>No phone yet.</source>
-        <translation type="unfinished"></translation>
+        <translation>Enginn sími enn.</translation>
     </message>
     <message>
         <source>Plug it in, unlock it and trust this computer. Setup takes you through the rest.</source>
-        <translation type="unfinished"></translation>
+        <translation>Tengdu hann, aflæstu honum og treystu þessari tölvu. Uppsetningin leiðir þig í gegnum restina.</translation>
     </message>
     <message>
         <source>Plug in a phone with USB debugging on, or start an emulator.</source>
-        <translation type="unfinished"></translation>
+        <translation>Tengdu síma með kveikt á USB-villuleit, eða ræstu hermi.</translation>
     </message>
     <message>
         <source>Build or test from the project. Your agent&apos;s jobs show up here too, with logs and results.</source>
-        <translation type="unfinished"></translation>
+        <translation>Smíðaðu eða prófaðu úr verkefninu. Verk fulltrúans þíns birtast líka hér, með annálum og niðurstöðum.</translation>
     </message>
     <message>
         <source>Your agent can call every one of these over MCP or the command line.</source>
-        <translation type="unfinished"></translation>
+        <translation>Fulltrúinn þinn getur kallað á hvert þeirra um MCP eða skipanalínu.</translation>
     </message>
     <message>
         <source>The result shows up here.</source>
-        <translation type="unfinished"></translation>
+        <translation>Niðurstaðan birtist hér.</translation>
     </message>
     <message>
         <source>Filter the log</source>
-        <translation type="unfinished"></translation>
+        <translation>Sía annálinn</translation>
     </message>
     <message>
         <source>All lines</source>
-        <translation type="unfinished"></translation>
+        <translation>Allar línur</translation>
     </message>
     <message>
         <source>Warnings</source>
-        <translation type="unfinished"></translation>
+        <translation>Viðvaranir</translation>
     </message>
     <message>
         <source>Errors</source>
-        <translation type="unfinished"></translation>
+        <translation>Villur</translation>
     </message>
     <message numerus="yes">
         <source>%n line(s)</source>
-        <translation type="unfinished">
-            <numerusform></numerusform>
-            <numerusform></numerusform>
+        <translation>
+            <numerusform>%n lína</numerusform>
+            <numerusform>%n línur</numerusform>
         </translation>
     </message>
     <message>
         <source>Copy these lines</source>
-        <translation type="unfinished"></translation>
+        <translation>Afrita þessar línur</translation>
     </message>
     <message>
         <source>Copy log</source>
-        <translation type="unfinished"></translation>
+        <translation>Afrita annál</translation>
     </message>
     <message>
         <source>No line of this log matches.</source>
-        <translation type="unfinished"></translation>
+        <translation>Engin lína í þessum annál passar.</translation>
     </message>
     <message>
         <source>%1 s</source>
-        <translation type="unfinished"></translation>
+        <translation>%1 s</translation>
     </message>
     <message>
         <source>%1 min %2 s</source>
-        <translation type="unfinished"></translation>
+        <translation>%1 mín %2 s</translation>
     </message>
     <message>
         <source>%1 h %2 min</source>
-        <translation type="unfinished"></translation>
+        <translation>%1 klst %2 mín</translation>
     </message>
     <message>
         <source>All</source>
-        <translation type="unfinished"></translation>
+        <translation>Öll</translation>
     </message>
     <message>
         <source>Nothing running.</source>
-        <translation type="unfinished"></translation>
+        <translation>Ekkert í gangi.</translation>
     </message>
     <message>
         <source>No failed job.</source>
-        <translation type="unfinished"></translation>
+        <translation>Ekkert misheppnað verk.</translation>
     </message>
     <message>
         <source>Open log file</source>
-        <translation type="unfinished"></translation>
+        <translation>Opna annálsskrá</translation>
     </message>
     <message>
         <source>Run again</source>
-        <translation type="unfinished"></translation>
+        <translation>Keyra aftur</translation>
     </message>
     <message>
         <source>Run again · only for jobs this window started</source>
-        <translation type="unfinished"></translation>
+        <translation>Keyra aftur · aðeins fyrir verk sem þessi gluggi hóf</translation>
     </message>
     <message>
         <source>Running</source>
         <comment>jobs filter</comment>
-        <translation type="unfinished"></translation>
+        <translation>Í gangi</translation>
     </message>
     <message>
         <source>Failed</source>
         <comment>jobs filter</comment>
-        <translation type="unfinished"></translation>
+        <translation>Mistókst</translation>
     </message>
     <message>
         <source>Jobs</source>
-        <translation type="unfinished"></translation>
+        <translation>Verk</translation>
     </message>
     <message>
         <source>Tools</source>
-        <translation type="unfinished"></translation>
+        <translation>Verkfæri</translation>
     </message>
     <message>
         <source>Log of %1</source>
-        <translation type="unfinished"></translation>
+        <translation>Annáll %1</translation>
     </message>
     <message>
         <source>Job log</source>
-        <translation type="unfinished"></translation>
+        <translation>Annáll verks</translation>
     </message>
     <message>
         <source>Live log</source>
-        <translation type="unfinished"></translation>
+        <translation>Annáll í beinni</translation>
     </message>
     <message>
         <source>%1 must be a number</source>
-        <translation type="unfinished"></translation>
+        <translation>%1 verður að vera tala</translation>
     </message>
     <message>
         <source>%1 is out of range: %2</source>
-        <translation type="unfinished"></translation>
+        <translation>%1 er utan marka: %2</translation>
     </message>
     <message>
         <source>Command copied</source>
-        <translation type="unfinished"></translation>
+        <translation>Skipun afrituð</translation>
     </message>
     <message>
         <source>This tool changes or removes something and cannot be undone. Run it?</source>
-        <translation type="unfinished"></translation>
+        <translation>Þetta verkfæri breytir eða fjarlægir eitthvað og það er ekki hægt að afturkalla. Keyra það?</translation>
     </message>
     <message>
         <source>Run anyway</source>
-        <translation type="unfinished"></translation>
+        <translation>Keyra samt</translation>
     </message>
     <message>
         <source>Asks before it runs: this tool changes or removes something</source>
-        <translation type="unfinished"></translation>
+        <translation>Spyr áður en það keyrir: þetta verkfæri breytir eða fjarlægir eitthvað</translation>
     </message>
     <message>
         <source>Copy as command</source>
-        <translation type="unfinished"></translation>
+        <translation>Afrita sem skipun</translation>
     </message>
     <message>
         <source>Copy this call as a tomaccoctl command for a terminal or a script</source>
-        <translation type="unfinished"></translation>
+        <translation>Afrita þetta kall sem tomaccoctl-skipun fyrir skipanaskel eða skriftu</translation>
     </message>
     <message>
         <source>Try again</source>
-        <translation type="unfinished"></translation>
+        <translation>Reyna aftur</translation>
     </message>
     <message>
         <source>Dismiss</source>
-        <translation type="unfinished"></translation>
+        <translation>Loka</translation>
     </message>
     <message>
         <source>What to do: %1</source>
-        <translation type="unfinished"></translation>
+        <translation>Hvað skal gera: %1</translation>
     </message>
     <message>
         <source>No tools yet.</source>
-        <translation type="unfinished"></translation>
+        <translation>Engin verkfæri enn.</translation>
     </message>
     <message>
         <source>The control program has not listed its tools yet.</source>
-        <translation type="unfinished"></translation>
+        <translation>Stýriforritið hefur ekki enn talið upp verkfæri sín.</translation>
     </message>
     <message>
         <source>No tool matches “%1”.</source>
-        <translation type="unfinished"></translation>
+        <translation>Ekkert verkfæri passar við „%1“.</translation>
     </message>
     <message>
         <source>Demo Studio</source>
-        <translation type="unfinished"></translation>
+        <translation>Demo Studio</translation>
     </message>
     <message>
         <source>Turn a screen recording into a video with a 3D device.</source>
-        <translation type="unfinished"></translation>
+        <translation>Breyttu skjáupptöku í myndband með þrívíðu tæki.</translation>
     </message>
     <message>
         <source>All jobs</source>
-        <translation type="unfinished"></translation>
+        <translation>Öll verk</translation>
     </message>
     <message>
         <source>Agent</source>
-        <translation type="unfinished"></translation>
+        <translation>Fulltrúi</translation>
     </message>
     <message>
         <source>Connect your coding agent</source>
-        <translation type="unfinished"></translation>
+        <translation>Tengdu forritunarfulltrúann þinn</translation>
     </message>
 </context>
 <context>
     <name>main</name>
     <message>
         <source>Device profile ID from tomaccoctl call catalog.list</source>
-        <translation type="unfinished"></translation>
+        <translation>Auðkenni tækissniðs úr tomaccoctl call catalog.list</translation>
     </message>
     <message>
         <source>Duo display: closed or open</source>
-        <translation type="unfinished"></translation>
+        <translation>Duo-skjár: lokaður eða opinn</translation>
     </message>
     <message>
         <source>Invalid orientation or fold position.
 </source>
-        <translation type="unfinished"></translation>
+        <translation>Ógild stefna eða brotstaða.
+</translation>
     </message>
     <message>
         <source>Name of the agent preview session</source>
-        <translation type="unfinished"></translation>
+        <translation>Heiti forskoðunarlotu fulltrúa</translation>
     </message>
     <message>
         <source>No web build with index.html found.
 </source>
-        <translation type="unfinished"></translation>
+        <translation>Engin vefsmíð með index.html fannst.
+</translation>
     </message>
     <message>
         <source>Open a local web build</source>
-        <translation type="unfinished"></translation>
+        <translation>Opna staðbundna vefsmíð</translation>
     </message>
     <message>
         <source>Open a project in the native workspace</source>
-        <translation type="unfinished"></translation>
+        <translation>Opna verkefni í innbyggða vinnusvæðinu</translation>
     </message>
     <message>
         <source>Open a web address at startup</source>
-        <translation type="unfinished"></translation>
+        <translation>Opna vefslóð við ræsingu</translation>
     </message>
     <message>
         <source>Orientation: portrait or landscape</source>
-        <translation type="unfinished"></translation>
+        <translation>Stefna: lóðrétt eða lárétt</translation>
     </message>
     <message>
         <source>Tomacco: build, run and test native Android and iOS apps on Linux.
 Licensed under the GNU General Public License, version 2 or later.</source>
-        <translation type="unfinished"></translation>
+        <translation>Tomacco: smíðaðu, keyrðu og prófaðu innbyggð Android- og iOS-öpp á Linux.
+Með leyfi samkvæmt GNU General Public License, útgáfu 2 eða nýrri.</translation>
     </message>
     <message>
         <source>Run the preview&apos;s interactive checks</source>
-        <translation type="unfinished"></translation>
+        <translation>Keyra gagnvirkar athuganir forskoðunarinnar</translation>
     </message>
     <message>
         <source>Save the window as a PNG for visual review and quit</source>
-        <translation type="unfinished"></translation>
+        <translation>Vista gluggann sem PNG til sjónrænnar yfirferðar og hætta</translation>
     </message>
     <message>
         <source>Show only the detached device window; the main window stays hidden</source>
-        <translation type="unfinished"></translation>
+        <translation>Sýna aðeins losaða tækisgluggann; aðalglugginn helst falinn</translation>
     </message>
     <message>
         <source>Unknown device profile.
 </source>
-        <translation type="unfinished"></translation>
+        <translation>Óþekkt tækissnið.
+</translation>
     </message>
     <message>
         <source>Show the live session with this ID, from tomaccoctl call runtime.list</source>
-        <translation type="unfinished"></translation>
+        <translation>Sýna lotuna í beinni með þessu auðkenni, úr tomaccoctl call runtime.list</translation>
     </message>
     <message>
         <source>Invalid session ID.
 </source>
-        <translation type="unfinished"></translation>
+        <translation>Ógilt lotuauðkenni.
+</translation>
     </message>
     <message>
         <source>Unknown workspace. See --help for the available workspaces.
 </source>
-        <translation type="unfinished"></translation>
+        <translation>Óþekkt vinnusvæði. Sjá --help fyrir tiltæk vinnusvæði.
+</translation>
     </message>
     <message>
         <source>Open a workspace: runtime, project, devices, ios-research, jobs, tools, debug, testing, profiling, files, release, demo or preview</source>
-        <translation type="unfinished"></translation>
+        <translation>Opna vinnusvæði: runtime, project, devices, ios-research, jobs, tools, debug, testing, profiling, files, release, demo eða preview</translation>
     </message>
 </context>
 <context>
     <name>UpdateModel</name>
     <message>
         <source>Updated · restart</source>
-        <translation type="unfinished"></translation>
+        <translation>Uppfært · endurræstu</translation>
     </message>
     <message>
         <source>Installing update</source>
-        <translation type="unfinished"></translation>
+        <translation>Setur upp uppfærslu</translation>
     </message>
     <message>
         <source>Update %1</source>
-        <translation type="unfinished"></translation>
+        <translation>Uppfæra í %1</translation>
     </message>
     <message>
         <source>Version %1 is up to date.</source>
-        <translation type="unfinished"></translation>
+        <translation>Útgáfa %1 er nýjust.</translation>
     </message>
     <message>
         <source>Version %1 is available. You have %2.</source>
-        <translation type="unfinished"></translation>
+        <translation>Útgáfa %1 er tiltæk. Þú ert með %2.</translation>
     </message>
     <message>
         <source>No release is available yet.</source>
-        <translation type="unfinished"></translation>
+        <translation>Engin útgáfa er tiltæk enn.</translation>
     </message>
     <message>
         <source>Version %1 has no package for this system.</source>
-        <translation type="unfinished"></translation>
+        <translation>Útgáfa %1 hefur engan pakka fyrir þetta kerfi.</translation>
     </message>
     <message>
         <source>GitHub could not be reached. This computer may be offline.</source>
