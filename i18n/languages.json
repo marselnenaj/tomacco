@@ -498,7 +498,7 @@
       "zeroDigit": "0",
       "plural": "romanian",
       "omarchy": true,
-      "complete": false
+      "complete": true
     },
     {
       "code": "ru",
