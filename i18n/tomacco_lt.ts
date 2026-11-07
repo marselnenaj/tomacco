@@ -5,127 +5,127 @@
     <name>ActivityPanel</name>
     <message>
         <source>%1 ago</source>
-        <translation type="unfinished"></translation>
+        <translation>prieš %1</translation>
     </message>
     <message>
         <source>Running</source>
-        <translation type="unfinished"></translation>
+        <translation>Vykdoma</translation>
     </message>
     <message>
         <source>Stop this job</source>
-        <translation type="unfinished"></translation>
+        <translation>Sustabdyti šią užduotį</translation>
     </message>
     <message>
         <source>Recent</source>
-        <translation type="unfinished"></translation>
+        <translation>Naujausi</translation>
     </message>
     <message>
         <source>Connect your agent.</source>
-        <translation type="unfinished"></translation>
+        <translation>Prijunkite savo agentą.</translation>
     </message>
     <message>
         <source>Claude Code, Codex or any MCP client. It can then do everything this window can.</source>
-        <translation type="unfinished"></translation>
+        <translation>Claude Code, Codex ar bet kuris MCP klientas. Tada jis galės daryti viską, ką gali šis langas.</translation>
     </message>
     <message>
         <source>Copied</source>
-        <translation type="unfinished"></translation>
+        <translation>Nukopijuota</translation>
     </message>
     <message>
         <source>3  Ask it to run your app.</source>
-        <translation type="unfinished"></translation>
+        <translation>3  Paprašykite jo paleisti jūsų programą.</translation>
     </message>
     <message>
         <source>Nothing running. Builds and agent jobs show up here as they start.</source>
-        <translation type="unfinished"></translation>
+        <translation>Niekas nevykdoma. Kompiliavimai ir agento užduotys atsiras čia, kai tik prasidės.</translation>
     </message>
     <message>
         <source>%1 ms</source>
-        <translation type="unfinished"></translation>
+        <translation>%1 ms</translation>
     </message>
     <message>
         <source>%1 s</source>
-        <translation type="unfinished"></translation>
+        <translation>%1 s</translation>
     </message>
     <message>
         <source>Agent activity</source>
-        <translation type="unfinished"></translation>
+        <translation>Agento veikla</translation>
     </message>
     <message>
         <source>All</source>
-        <translation type="unfinished"></translation>
+        <translation>Visi</translation>
     </message>
     <message>
         <source>Failed</source>
-        <translation type="unfinished"></translation>
+        <translation>Nepavykę</translation>
     </message>
     <message>
         <source>Find an operation</source>
-        <translation type="unfinished"></translation>
+        <translation>Ieškoti operacijos</translation>
     </message>
     <message>
         <source>No call failed.</source>
-        <translation type="unfinished"></translation>
+        <translation>Nė vienas iškvietimas nepatyrė nesėkmės.</translation>
     </message>
     <message>
         <source>No call matches.</source>
-        <translation type="unfinished"></translation>
+        <translation>Nė vienas iškvietimas neatitinka.</translation>
     </message>
     <message>
         <source>failed</source>
-        <translation type="unfinished"></translation>
+        <translation>nepavyko</translation>
     </message>
     <message>
         <source>running</source>
-        <translation type="unfinished"></translation>
+        <translation>vykdoma</translation>
     </message>
     <message>
         <source>done</source>
-        <translation type="unfinished"></translation>
+        <translation>atlikta</translation>
     </message>
     <message>
         <source>An agent&apos;s call failed: %1</source>
-        <translation type="unfinished"></translation>
+        <translation>Agento iškvietimas nepavyko: %1</translation>
     </message>
     <message>
         <source>An agent started a job: %1</source>
-        <translation type="unfinished"></translation>
+        <translation>Agentas pradėjo užduotį: %1</translation>
     </message>
     <message>
         <source>Notifications</source>
-        <translation type="unfinished"></translation>
+        <translation>Pranešimai</translation>
     </message>
     <message>
         <source>Fewer</source>
-        <translation type="unfinished"></translation>
+        <translation>Mažiau</translation>
     </message>
     <message>
         <source>All %1</source>
-        <translation type="unfinished"></translation>
+        <translation>Visi %1</translation>
     </message>
     <message>
         <source>Clear</source>
-        <translation type="unfinished"></translation>
+        <translation>Išvalyti</translation>
     </message>
     <message>
         <source>Clear the notifications</source>
-        <translation type="unfinished"></translation>
+        <translation>Išvalyti pranešimus</translation>
     </message>
     <message>
         <source>1  Pick your agent.</source>
-        <translation type="unfinished"></translation>
+        <translation>1  Pasirinkite savo agentą.</translation>
     </message>
     <message>
         <source>2  Connect it, or copy its own setting.</source>
-        <translation type="unfinished"></translation>
+        <translation>2  Prijunkite jį arba nukopijuokite jo paties nustatymą.</translation>
     </message>
     <message>
         <source>Connect your agent</source>
-        <translation type="unfinished"></translation>
+        <translation>Prijunkite savo agentą</translation>
     </message>
     <message>
         <source>Copy entry for another MCP client</source>
-        <translation type="unfinished"></translation>
+        <translation>Kopijuoti įrašą kitam MCP klientui</translation>
     </message>
 </context>
 <context>
@@ -135,685 +135,688 @@
 %2 dpi
 
 The model determines the display and frame. Android comes from the chosen system image; vendor interfaces such as One UI are not included.</source>
-        <translation type="unfinished"></translation>
+        <translation>%1 pikselių
+%2 dpi
+
+Modelis nulemia ekraną ir rėmelį. Android gaunamas iš pasirinkto sistemos atvaizdo; gamintojų sąsajos, pvz., One UI, neįtrauktos.</translation>
     </message>
     <message>
         <source>Add Android device</source>
-        <translation type="unfinished"></translation>
+        <translation>Pridėti Android įrenginį</translation>
     </message>
     <message>
         <source>Add device</source>
-        <translation type="unfinished"></translation>
+        <translation>Pridėti įrenginį</translation>
     </message>
     <message>
         <source>Automatic</source>
-        <translation type="unfinished"></translation>
+        <translation>Automatiškai</translation>
     </message>
     <message>
         <source>CPU cores</source>
-        <translation type="unfinished"></translation>
+        <translation>Procesoriaus branduoliai</translation>
     </message>
     <message>
         <source>Cancel</source>
-        <translation type="unfinished"></translation>
+        <translation>Atšaukti</translation>
     </message>
     <message>
         <source>Close</source>
-        <translation type="unfinished"></translation>
+        <translation>Uždaryti</translation>
     </message>
     <message>
         <source>Computer GPU</source>
-        <translation type="unfinished"></translation>
+        <translation>Kompiuterio GPU</translation>
     </message>
     <message>
         <source>Connected</source>
-        <translation type="unfinished"></translation>
+        <translation>Prijungta</translation>
     </message>
     <message>
         <source>Create</source>
-        <translation type="unfinished"></translation>
+        <translation>Sukurti</translation>
     </message>
     <message>
         <source>Creating…</source>
-        <translation type="unfinished"></translation>
+        <translation>Kuriama…</translation>
     </message>
     <message>
         <source>Device created · open it with Start</source>
-        <translation type="unfinished"></translation>
+        <translation>Įrenginys sukurtas · atidarykite jį mygtuku Paleisti</translation>
     </message>
     <message>
         <source>Device name</source>
-        <translation type="unfinished"></translation>
+        <translation>Įrenginio pavadinimas</translation>
     </message>
     <message>
         <source>Device profile (*.json)</source>
-        <translation type="unfinished"></translation>
+        <translation>Įrenginio profilis (*.json)</translation>
     </message>
     <message>
         <source>Disabled · OpenGL ES only</source>
-        <translation type="unfinished"></translation>
+        <translation>Išjungta · tik OpenGL ES</translation>
     </message>
     <message>
         <source>Emulator ended · %1</source>
-        <translation type="unfinished"></translation>
+        <translation>Emuliatorius baigė darbą · %1</translation>
     </message>
     <message>
         <source>Emulator performance</source>
-        <translation type="unfinished"></translation>
+        <translation>Emuliatoriaus našumas</translation>
     </message>
     <message>
         <source>Emulator ready</source>
-        <translation type="unfinished"></translation>
+        <translation>Emuliatorius paruoštas</translation>
     </message>
     <message>
         <source>Emulator starting…</source>
-        <translation type="unfinished"></translation>
+        <translation>Emuliatorius paleidžiamas…</translation>
     </message>
     <message>
         <source>Enabled</source>
-        <translation type="unfinished"></translation>
+        <translation>Įjungta</translation>
     </message>
     <message>
         <source>External profile</source>
-        <translation type="unfinished"></translation>
+        <translation>Išorinis profilis</translation>
     </message>
     <message>
         <source>Graphics</source>
-        <translation type="unfinished"></translation>
+        <translation>Grafika</translation>
     </message>
     <message>
         <source>Graphics: %1</source>
-        <translation type="unfinished"></translation>
+        <translation>Grafika: %1</translation>
     </message>
     <message>
         <source>Import Android model</source>
-        <translation type="unfinished"></translation>
+        <translation>Importuoti Android modelį</translation>
     </message>
     <message>
         <source>Import custom model</source>
-        <translation type="unfinished"></translation>
+        <translation>Importuoti pasirinktinį modelį</translation>
     </message>
     <message>
         <source>Imported · contains no Android model</source>
-        <translation type="unfinished"></translation>
+        <translation>Importuota · Android modelio nėra</translation>
     </message>
     <message>
         <source>Memory (MB)</source>
-        <translation type="unfinished"></translation>
+        <translation>Atmintis (MB)</translation>
     </message>
     <message>
         <source>Model</source>
-        <translation type="unfinished"></translation>
+        <translation>Modelis</translation>
     </message>
     <message>
         <source>Model imported</source>
-        <translation type="unfinished"></translation>
+        <translation>Modelis importuotas</translation>
     </message>
     <message>
         <source>No system image installed yet</source>
-        <translation type="unfinished"></translation>
+        <translation>Sistemos atvaizdas dar neįdiegtas</translation>
     </message>
     <message>
         <source>Off</source>
-        <translation type="unfinished"></translation>
+        <translation>Išjungta</translation>
     </message>
     <message>
         <source>Open</source>
-        <translation type="unfinished"></translation>
+        <translation>Atidaryti</translation>
     </message>
     <message>
         <source>Open job</source>
-        <translation type="unfinished"></translation>
+        <translation>Atidaryti užduotį</translation>
     </message>
     <message>
         <source>Performance settings saved · used on the next start</source>
-        <translation type="unfinished"></translation>
+        <translation>Našumo nustatymai išsaugoti · bus naudojami kitą kartą paleidžiant</translation>
     </message>
     <message>
         <source>Save</source>
-        <translation type="unfinished"></translation>
+        <translation>Išsaugoti</translation>
     </message>
     <message>
         <source>Saving…</source>
-        <translation type="unfinished"></translation>
+        <translation>Išsaugoma…</translation>
     </message>
     <message>
         <source>Set graphics, memory and CPU</source>
-        <translation type="unfinished"></translation>
+        <translation>Nustatyti grafiką, atmintį ir procesorių</translation>
     </message>
     <message>
         <source>Setting up device…</source>
-        <translation type="unfinished"></translation>
+        <translation>Įrenginys parengiamas…</translation>
     </message>
     <message>
         <source>Setup failed · details in the job</source>
-        <translation type="unfinished"></translation>
+        <translation>Parengti nepavyko · išsami informacija užduotyje</translation>
     </message>
     <message>
         <source>Software · compatible renderer</source>
-        <translation type="unfinished"></translation>
+        <translation>Programinė įranga · suderinamas atvaizdavimas</translation>
     </message>
     <message>
         <source>Start</source>
-        <translation type="unfinished"></translation>
+        <translation>Paleisti</translation>
     </message>
     <message>
         <source>Starting…</source>
-        <translation type="unfinished"></translation>
+        <translation>Paleidžiama…</translation>
     </message>
     <message>
         <source>The computer GPU can speed up animations considerably. If graphics glitch, choose a software renderer. Changes require the emulator to be off; app data is kept.</source>
-        <translation type="unfinished"></translation>
+        <translation>Kompiuterio GPU gali gerokai pagreitinti animacijas. Jei grafika striginėja ar iškraipoma, pasirinkite programinį atvaizdavimą. Pakeitimams emuliatorius turi būti išjungtas; programų duomenys išsaugomi.</translation>
     </message>
     <message>
         <source>Turn off emulator</source>
-        <translation type="unfinished"></translation>
+        <translation>Išjungti emuliatorių</translation>
     </message>
     <message>
         <source>Vulkan compatibility</source>
-        <translation type="unfinished"></translation>
+        <translation>Vulkan suderinamumas</translation>
     </message>
     <message>
         <source>Each emulator keeps its own model and app data.</source>
-        <translation type="unfinished"></translation>
+        <translation>Kiekvienas emuliatorius turi savo modelį ir programų duomenis.</translation>
     </message>
     <message>
         <source>No phone yet.</source>
-        <translation type="unfinished"></translation>
+        <translation>Telefono dar nėra.</translation>
     </message>
     <message>
         <source>Add an emulator, or plug in a phone with USB debugging on.</source>
-        <translation type="unfinished"></translation>
+        <translation>Pridėkite emuliatorių arba prijunkite telefoną su įjungtu USB derinimu.</translation>
     </message>
     <message>
         <source>Unpin</source>
-        <translation type="unfinished"></translation>
+        <translation>Atsegti</translation>
     </message>
     <message>
         <source>Pin</source>
-        <translation type="unfinished"></translation>
+        <translation>Prisegti</translation>
     </message>
     <message>
         <source>Unpin this device</source>
-        <translation type="unfinished"></translation>
+        <translation>Atsegti šį įrenginį</translation>
     </message>
     <message>
         <source>Pin this device to the top</source>
-        <translation type="unfinished"></translation>
+        <translation>Prisegti šį įrenginį viršuje</translation>
     </message>
     <message>
         <source>Rename</source>
-        <translation type="unfinished"></translation>
+        <translation>Pervadinti</translation>
     </message>
     <message>
         <source>Give this device a nickname</source>
-        <translation type="unfinished"></translation>
+        <translation>Suteikti šiam įrenginiui slapyvardį</translation>
     </message>
     <message>
         <source>Device nickname</source>
-        <translation type="unfinished"></translation>
+        <translation>Įrenginio slapyvardis</translation>
     </message>
     <message>
         <source>Shown instead of %1 here, in device lists and in the Omarchy panel.</source>
-        <translation type="unfinished"></translation>
+        <translation>Rodomas vietoj %1 čia, įrenginių sąrašuose ir Omarchy skydelyje.</translation>
     </message>
     <message>
         <source>Nickname</source>
-        <translation type="unfinished"></translation>
+        <translation>Slapyvardis</translation>
     </message>
     <message>
         <source>Remove nickname</source>
-        <translation type="unfinished"></translation>
+        <translation>Pašalinti slapyvardį</translation>
     </message>
     <message>
         <source>Paired and connected · %1</source>
-        <translation type="unfinished"></translation>
+        <translation>Susieta ir prijungta · %1</translation>
     </message>
     <message>
         <source>Paired. Enter the IP address and port shown under Wireless debugging to connect.</source>
-        <translation type="unfinished"></translation>
+        <translation>Susieta. Kad prisijungtumėte, įveskite IP adresą ir prievadą, rodomus skiltyje Belaidis derinimas.</translation>
     </message>
     <message>
         <source>adb could not pair</source>
-        <translation type="unfinished"></translation>
+        <translation>adb nepavyko susieti</translation>
     </message>
     <message>
         <source>adb could not connect</source>
-        <translation type="unfinished"></translation>
+        <translation>adb nepavyko prisijungti</translation>
     </message>
     <message>
         <source>Pair over Wi-Fi</source>
-        <translation type="unfinished"></translation>
+        <translation>Susieti per Wi-Fi</translation>
     </message>
     <message>
         <source>QR code</source>
-        <translation type="unfinished"></translation>
+        <translation>QR kodas</translation>
     </message>
     <message>
         <source>Pairing code</source>
-        <translation type="unfinished"></translation>
+        <translation>Susiejimo kodas</translation>
     </message>
     <message>
         <source>On the phone, open Developer options › Wireless debugging › Pair device with QR code and scan this code. The phone and this computer must be on the same network; Android 11 or newer.</source>
-        <translation type="unfinished"></translation>
+        <translation>Telefone atidarykite Pažangių naudotojų parinktys › Belaidis derinimas › Susieti įrenginį su QR kodu ir nuskaitykite šį kodą. Telefonas ir šis kompiuteris turi būti tame pačiame tinkle; Android 11 ar naujesnė.</translation>
     </message>
     <message>
         <source>On the phone, open Developer options › Wireless debugging › Pair device with pairing code, then enter the address and code it shows.</source>
-        <translation type="unfinished"></translation>
+        <translation>Telefone atidarykite Pažangių naudotojų parinktys › Belaidis derinimas › Susieti įrenginį su susiejimo kodu, tada įveskite rodomą adresą ir kodą.</translation>
     </message>
     <message>
         <source>QR code for wireless debugging</source>
-        <translation type="unfinished"></translation>
+        <translation>QR kodas belaidžiam derinimui</translation>
     </message>
     <message>
         <source>Creating a code…</source>
-        <translation type="unfinished"></translation>
+        <translation>Kuriamas kodas…</translation>
     </message>
     <message>
         <source>Pairing address</source>
-        <translation type="unfinished"></translation>
+        <translation>Susiejimo adresas</translation>
     </message>
     <message>
         <source>Waiting for the phone…</source>
-        <translation type="unfinished"></translation>
+        <translation>Laukiama telefono…</translation>
     </message>
     <message>
         <source>Pairing…</source>
-        <translation type="unfinished"></translation>
+        <translation>Susiejama…</translation>
     </message>
     <message>
         <source>Connecting…</source>
-        <translation type="unfinished"></translation>
+        <translation>Jungiamasi…</translation>
     </message>
     <message>
         <source>New code</source>
-        <translation type="unfinished"></translation>
+        <translation>Naujas kodas</translation>
     </message>
     <message>
         <source>Pair</source>
-        <translation type="unfinished"></translation>
+        <translation>Susieti</translation>
     </message>
     <message>
         <source>List</source>
-        <translation type="unfinished"></translation>
+        <translation>Sąrašas</translation>
     </message>
     <message>
         <source>All screens</source>
-        <translation type="unfinished"></translation>
+        <translation>Visi ekranai</translation>
     </message>
     <message>
         <source>Show the device list</source>
-        <translation type="unfinished"></translation>
+        <translation>Rodyti įrenginių sąrašą</translation>
     </message>
     <message>
         <source>Show every running device&apos;s screen side by side</source>
-        <translation type="unfinished"></translation>
+        <translation>Rodyti visų veikiančių įrenginių ekranus greta</translation>
     </message>
     <message>
         <source>Accept Google&apos;s Android SDK licence for this download</source>
-        <translation type="unfinished"></translation>
+        <translation>Sutikti su „Google“ Android SDK licencija šiam atsisiuntimui</translation>
     </message>
     <message>
         <source>Android system image</source>
-        <translation type="unfinished"></translation>
+        <translation>Android sistemos atvaizdas</translation>
     </message>
     <message>
         <source>App data removed · %1 freed · the next start boots like a new device</source>
-        <translation type="unfinished"></translation>
+        <translation>Programų duomenys pašalinti · atlaisvinta %1 · kitas paleidimas bus kaip naujo įrenginio</translation>
     </message>
     <message>
         <source>Cannot start: %1</source>
-        <translation type="unfinished"></translation>
+        <translation>Negalima paleisti: %1</translation>
     </message>
     <message>
         <source>Checking…</source>
-        <translation type="unfinished"></translation>
+        <translation>Tikrinama…</translation>
     </message>
     <message>
         <source>Copying device…</source>
-        <translation type="unfinished"></translation>
+        <translation>Kopijuojamas įrenginys…</translation>
     </message>
     <message>
         <source>Copying…</source>
-        <translation type="unfinished"></translation>
+        <translation>Kopijuojama…</translation>
     </message>
     <message>
         <source>Disk: about %1 for the emulator · %2 free</source>
-        <translation type="unfinished"></translation>
+        <translation>Diskas: apie %1 emuliatoriui · laisva %2</translation>
     </message>
     <message>
         <source>Download about %1 (estimate) · needs Google&apos;s SDK licence: %2</source>
-        <translation type="unfinished"></translation>
+        <translation>Atsisiuntimas apie %1 (įvertis) · reikia „Google“ SDK licencijos: %2</translation>
     </message>
     <message>
         <source>Download and create</source>
-        <translation type="unfinished"></translation>
+        <translation>Atsisiųsti ir sukurti</translation>
     </message>
     <message>
         <source>Duplicate</source>
-        <translation type="unfinished"></translation>
+        <translation>Dubliuoti</translation>
     </message>
     <message>
         <source>Duplicate copies the emulator with its apps and data under the new name, as a job you can cancel. Rename is a real rename of the emulator through the Android SDK; the nickname moves along. A nickname alone is set with the pencil button.</source>
-        <translation type="unfinished"></translation>
+        <translation>Dubliavimas nukopijuoja emuliatorių su programomis ir duomenimis nauju pavadinimu kaip užduotį, kurią galima atšaukti. Pervadinimas tikrai pervadina emuliatorių per Android SDK; slapyvardis perkeliamas kartu. Vien slapyvardį galima nustatyti pieštuko mygtuku.</translation>
     </message>
     <message>
         <source>Duplicate, rename or wipe this emulator</source>
-        <translation type="unfinished"></translation>
+        <translation>Dubliuoti, pervadinti arba išvalyti šį emuliatorių</translation>
     </message>
     <message>
         <source>Letters, digits, - and _</source>
-        <translation type="unfinished"></translation>
+        <translation>Raidės, skaitmenys, - ir _</translation>
     </message>
     <message>
         <source>Manage</source>
-        <translation type="unfinished"></translation>
+        <translation>Tvarkyti</translation>
     </message>
     <message>
         <source>Manage emulator</source>
-        <translation type="unfinished"></translation>
+        <translation>Tvarkyti emuliatorių</translation>
     </message>
     <message>
         <source>New name</source>
-        <translation type="unfinished"></translation>
+        <translation>Naujas pavadinimas</translation>
     </message>
     <message>
         <source>On disk: %1 · a wipe frees %2</source>
-        <translation type="unfinished"></translation>
+        <translation>Diske: %1 · išvalymas atlaisvins %2</translation>
     </message>
     <message>
         <source>Pick an installed image, or type another package: it is downloaded as the first step. Tomacco creates phone, foldable and tablet emulators.</source>
-        <translation type="unfinished"></translation>
+        <translation>Pasirinkite įdiegtą atvaizdą arba įveskite kitą paketą: jis bus atsisiųstas pirmuoju žingsniu. Tomacco kuria telefono, sulankstomo įrenginio ir planšetės emuliatorius.</translation>
     </message>
     <message>
         <source>Reading disk usage…</source>
-        <translation type="unfinished"></translation>
+        <translation>Skaitomas disko naudojimas…</translation>
     </message>
     <message>
         <source>Rename and wipe need the emulator&apos;s name typed here</source>
-        <translation type="unfinished"></translation>
+        <translation>Norint pervadinti ar išvalyti, čia reikia įvesti emuliatoriaus pavadinimą</translation>
     </message>
     <message>
         <source>Renamed to %1</source>
-        <translation type="unfinished"></translation>
+        <translation>Pervadinta į %1</translation>
     </message>
     <message>
         <source>Renaming…</source>
-        <translation type="unfinished"></translation>
+        <translation>Pervadinama…</translation>
     </message>
     <message>
         <source>Start the emulator when it is ready</source>
-        <translation type="unfinished"></translation>
+        <translation>Paleisti emuliatorių, kai jis bus paruoštas</translation>
     </message>
     <message>
         <source>Steps: %1</source>
-        <translation type="unfinished"></translation>
+        <translation>Žingsniai: %1</translation>
     </message>
     <message>
         <source>System image installed · no download</source>
-        <translation type="unfinished"></translation>
+        <translation>Sistemos atvaizdas įdiegtas · atsisiųsti nereikia</translation>
     </message>
     <message>
         <source>TV, Wear, Automotive and XR images are not supported yet</source>
-        <translation type="unfinished"></translation>
+        <translation>TV, Wear, Automotive ir XR atvaizdai dar nepalaikomi</translation>
     </message>
     <message>
         <source>The emulator is on or its lock files exist. Turn it off first; nothing here changes a running emulator.</source>
-        <translation type="unfinished"></translation>
+        <translation>Emuliatorius įjungtas arba yra jo užrakto failai. Pirmiausia jį išjunkite; niekas čia nekeičia veikiančio emuliatoriaus.</translation>
     </message>
     <message>
         <source>Wipe app data</source>
-        <translation type="unfinished"></translation>
+        <translation>Išvalyti programų duomenis</translation>
     </message>
     <message>
         <source>Wipe removes the apps, their data and the snapshots; the next start boots like a new device. The emulator&apos;s model and settings stay.</source>
-        <translation type="unfinished"></translation>
+        <translation>Išvalymas pašalina programas, jų duomenis ir momentines kopijas; kitas paleidimas bus kaip naujo įrenginio. Emuliatoriaus modelis ir nustatymai išlieka.</translation>
     </message>
     <message>
         <source>Wiping…</source>
-        <translation type="unfinished"></translation>
+        <translation>Išvaloma…</translation>
     </message>
     <message>
         <source>already accepted</source>
-        <translation type="unfinished"></translation>
+        <translation>jau priimta</translation>
     </message>
     <message>
         <source>apply model</source>
-        <translation type="unfinished"></translation>
+        <translation>taikyti modelį</translation>
     </message>
     <message>
         <source>create</source>
-        <translation type="unfinished"></translation>
+        <translation>sukurti</translation>
     </message>
     <message>
         <source>install image</source>
-        <translation type="unfinished"></translation>
+        <translation>įdiegti atvaizdą</translation>
     </message>
     <message>
         <source>is missing</source>
-        <translation type="unfinished"></translation>
+        <translation>trūksta</translation>
     </message>
     <message>
         <source>not enough free space</source>
-        <translation type="unfinished"></translation>
+        <translation>nepakanka laisvos vietos</translation>
     </message>
     <message>
         <source>not yet accepted</source>
-        <translation type="unfinished"></translation>
+        <translation>dar nepriimta</translation>
     </message>
     <message>
         <source>start</source>
-        <translation type="unfinished"></translation>
+        <translation>paleisti</translation>
     </message>
     <message>
         <source>the Android SDK</source>
-        <translation type="unfinished"></translation>
+        <translation>Android SDK</translation>
     </message>
     <message>
         <source>the name is taken</source>
-        <translation type="unfinished"></translation>
+        <translation>pavadinimas užimtas</translation>
     </message>
 </context>
 <context>
     <name>Backend</name>
     <message>
         <source>%1 is not part of this installation.</source>
-        <translation type="unfinished"></translation>
+        <translation>%1 nėra šio įdiegimo dalis.</translation>
     </message>
     <message>
         <source>Check failed</source>
-        <translation type="unfinished"></translation>
+        <translation>Patikrinti nepavyko</translation>
     </message>
     <message>
         <source>Checking…</source>
-        <translation type="unfinished"></translation>
+        <translation>Tikrinama…</translation>
     </message>
     <message>
         <source>Copied</source>
-        <translation type="unfinished"></translation>
+        <translation>Nukopijuota</translation>
     </message>
     <message>
         <source>Enter a valid http:// or https:// address.</source>
-        <translation type="unfinished"></translation>
+        <translation>Įveskite galiojantį http:// arba https:// adresą.</translation>
     </message>
     <message>
         <source>No index.html found. Choose a built web folder or open the dev server address.</source>
-        <translation type="unfinished"></translation>
+        <translation>Nerasta index.html. Pasirinkite sukompiliuotą žiniatinklio aplanką arba atidarykite kūrimo serverio adresą.</translation>
     </message>
     <message>
         <source>Not installed</source>
-        <translation type="unfinished"></translation>
+        <translation>Neįdiegta</translation>
     </message>
     <message>
         <source>The local preview server could not start.</source>
-        <translation type="unfinished"></translation>
+        <translation>Nepavyko paleisti vietinio peržiūros serverio.</translation>
     </message>
     <message>
         <source>The screenshot folder could not be created.</source>
-        <translation type="unfinished"></translation>
+        <translation>Nepavyko sukurti ekrano kopijų aplanko.</translation>
     </message>
     <message>
         <source>Unknown</source>
-        <translation type="unfinished"></translation>
+        <translation>Nežinoma</translation>
     </message>
     <message>
         <source>This job has no log file yet.</source>
-        <translation type="unfinished"></translation>
+        <translation>Ši užduotis dar neturi žurnalo failo.</translation>
     </message>
     <message>
         <source>Open</source>
-        <translation type="unfinished"></translation>
+        <translation>Atidaryti</translation>
     </message>
     <message>
         <source>%1 cannot be written.</source>
-        <translation type="unfinished"></translation>
+        <translation>Į %1 negalima rašyti.</translation>
     </message>
     <message>
         <source>%1 cannot be read.</source>
-        <translation type="unfinished"></translation>
+        <translation>%1 negalima perskaityti.</translation>
     </message>
     <message>
         <source>%1 is too large for a settings file.</source>
-        <translation type="unfinished"></translation>
+        <translation>%1 per didelis nustatymų failui.</translation>
     </message>
     <message>
         <source>%1 is not a Tomacco settings file.</source>
-        <translation type="unfinished"></translation>
+        <translation>%1 nėra Tomacco nustatymų failas.</translation>
     </message>
     <message>
         <source>%1 comes from a newer Tomacco; update this one first.</source>
-        <translation type="unfinished"></translation>
+        <translation>%1 sukurtas naujesne Tomacco versija; pirmiausia atnaujinkite šią.</translation>
     </message>
     <message>
         <source>The recordings folder could not be created.</source>
-        <translation type="unfinished"></translation>
+        <translation>Nepavyko sukurti įrašų aplanko.</translation>
     </message>
     <message>
         <source>The session log must be an absolute path.</source>
-        <translation type="unfinished"></translation>
+        <translation>Seanso žurnalas turi būti absoliutus kelias.</translation>
     </message>
     <message>
         <source>No session log at %1 yet. It appears with the agent&apos;s first call.</source>
-        <translation type="unfinished"></translation>
+        <translation>Seanso žurnalo %1 dar nėra. Jis atsiras po pirmojo agento iškvietimo.</translation>
     </message>
 </context>
 <context>
     <name>Colors</name>
     <message>
         <source>Cream</source>
-        <translation type="unfinished"></translation>
+        <translation>Kreminis</translation>
     </message>
     <message>
         <source>Graphite</source>
-        <translation type="unfinished"></translation>
+        <translation>Grafitinis</translation>
     </message>
     <message>
         <source>Gray</source>
-        <translation type="unfinished"></translation>
+        <translation>Pilkas</translation>
     </message>
     <message>
         <source>Green Shadow</source>
-        <translation type="unfinished"></translation>
+        <translation>Žalias šešėlis</translation>
     </message>
     <message>
         <source>Mint</source>
-        <translation type="unfinished"></translation>
+        <translation>Mėtinis</translation>
     </message>
     <message>
         <source>Violet Shadow</source>
-        <translation type="unfinished"></translation>
+        <translation>Violetinis šešėlis</translation>
     </message>
     <message>
         <source>Black</source>
-        <translation type="unfinished"></translation>
+        <translation>Juodas</translation>
     </message>
     <message>
         <source>Burgundy</source>
-        <translation type="unfinished"></translation>
+        <translation>Bordo</translation>
     </message>
     <message>
         <source>Canyon</source>
-        <translation type="unfinished"></translation>
+        <translation>Kanjonas</translation>
     </message>
     <message>
         <source>Cloud White</source>
-        <translation type="unfinished"></translation>
+        <translation>Debesų baltumo</translation>
     </message>
     <message>
         <source>Cobalt Violet</source>
-        <translation type="unfinished"></translation>
+        <translation>Kobalto violetinis</translation>
     </message>
     <message>
         <source>Device</source>
-        <translation type="unfinished"></translation>
+        <translation>Įrenginys</translation>
     </message>
     <message>
         <source>Fog</source>
-        <translation type="unfinished"></translation>
+        <translation>Rūkas</translation>
     </message>
     <message>
         <source>Frost</source>
-        <translation type="unfinished"></translation>
+        <translation>Šerkšnas</translation>
     </message>
     <message>
         <source>Glacier</source>
-        <translation type="unfinished"></translation>
+        <translation>Ledynas</translation>
     </message>
     <message>
         <source>Hibiscus</source>
-        <translation type="unfinished"></translation>
+        <translation>Hibiskas</translation>
     </message>
     <message>
         <source>Lavender</source>
-        <translation type="unfinished"></translation>
+        <translation>Levandų</translation>
     </message>
     <message>
         <source>Light Gold</source>
-        <translation type="unfinished"></translation>
+        <translation>Šviesus auksinis</translation>
     </message>
     <message>
         <source>Mist Blue</source>
-        <translation type="unfinished"></translation>
+        <translation>Ükūkai mėlynas</translation>
     </message>
     <message>
         <source>Night Sky</source>
-        <translation type="unfinished"></translation>
+        <translation>Naktinis dangus</translation>
     </message>
     <message>
         <source>Obsidian</source>
-        <translation type="unfinished"></translation>
+        <translation>Obsidianas</translation>
     </message>
     <message>
         <source>Olive</source>
-        <translation type="unfinished"></translation>
+        <translation>Alyvuogių</translation>
     </message>
     <message>
         <source>Pink</source>
-        <translation type="unfinished"></translation>
+        <translation>Rožinis</translation>
     </message>
     <message>
         <source>Pistachio</source>
-        <translation type="unfinished"></translation>
+        <translation>Pistacijų</translation>
     </message>
     <message>
         <source>Sage</source>
-        <translation type="unfinished"></translation>
+        <translation>Šalavijų</translation>
     </message>
     <message>
         <source>Silver</source>
-        <translation type="unfinished"></translation>
+        <translation>Sidabrinis</translation>
     </message>
     <message>
         <source>Sky Blue</source>
-        <translation type="unfinished"></translation>
+        <translation>Dangaus mėlynas</translation>
     </message>
     <message>
         <source>Soft Pink</source>
-        <translation type="unfinished"></translation>
+        <translation>Švelniai rožinis</translation>
     </message>
     <message>
         <source>Space Black</source>
-        <translation type="unfinished"></translation>
+        <translation>Kosmoso juodas</translation>
     </message>
     <message>
         <source>Star White</source>

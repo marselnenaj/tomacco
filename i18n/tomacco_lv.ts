@@ -5,127 +5,127 @@
     <name>ActivityPanel</name>
     <message>
         <source>%1 ago</source>
-        <translation type="unfinished"></translation>
+        <translation>pirms %1</translation>
     </message>
     <message>
         <source>Running</source>
-        <translation type="unfinished"></translation>
+        <translation>Darbojas</translation>
     </message>
     <message>
         <source>Stop this job</source>
-        <translation type="unfinished"></translation>
+        <translation>Apturēt šo darbu</translation>
     </message>
     <message>
         <source>Recent</source>
-        <translation type="unfinished"></translation>
+        <translation>Nesenie</translation>
     </message>
     <message>
         <source>Connect your agent.</source>
-        <translation type="unfinished"></translation>
+        <translation>Pievienojiet savu aģentu.</translation>
     </message>
     <message>
         <source>Claude Code, Codex or any MCP client. It can then do everything this window can.</source>
-        <translation type="unfinished"></translation>
+        <translation>Claude Code, Codex vai jebkurš MCP klients. Pēc tam tas var darīt visu, ko spēj šis logs.</translation>
     </message>
     <message>
         <source>Copied</source>
-        <translation type="unfinished"></translation>
+        <translation>Nokopēts</translation>
     </message>
     <message>
         <source>3  Ask it to run your app.</source>
-        <translation type="unfinished"></translation>
+        <translation>3  Lūdziet to palaist jūsu lietotni.</translation>
     </message>
     <message>
         <source>Nothing running. Builds and agent jobs show up here as they start.</source>
-        <translation type="unfinished"></translation>
+        <translation>Nekas nedarbojas. Būvējumi un aģenta darbi parādās šeit, tiklīdz tie sākas.</translation>
     </message>
     <message>
         <source>%1 ms</source>
-        <translation type="unfinished"></translation>
+        <translation>%1 ms</translation>
     </message>
     <message>
         <source>%1 s</source>
-        <translation type="unfinished"></translation>
+        <translation>%1 s</translation>
     </message>
     <message>
         <source>Agent activity</source>
-        <translation type="unfinished"></translation>
+        <translation>Aģenta darbība</translation>
     </message>
     <message>
         <source>All</source>
-        <translation type="unfinished"></translation>
+        <translation>Visi</translation>
     </message>
     <message>
         <source>Failed</source>
-        <translation type="unfinished"></translation>
+        <translation>Neizdevās</translation>
     </message>
     <message>
         <source>Find an operation</source>
-        <translation type="unfinished"></translation>
+        <translation>Meklēt darbību</translation>
     </message>
     <message>
         <source>No call failed.</source>
-        <translation type="unfinished"></translation>
+        <translation>Neviens izsaukums nav neizdevies.</translation>
     </message>
     <message>
         <source>No call matches.</source>
-        <translation type="unfinished"></translation>
+        <translation>Neviens izsaukums neatbilst.</translation>
     </message>
     <message>
         <source>failed</source>
-        <translation type="unfinished"></translation>
+        <translation>neizdevās</translation>
     </message>
     <message>
         <source>running</source>
-        <translation type="unfinished"></translation>
+        <translation>darbojas</translation>
     </message>
     <message>
         <source>done</source>
-        <translation type="unfinished"></translation>
+        <translation>pabeigts</translation>
     </message>
     <message>
         <source>An agent&apos;s call failed: %1</source>
-        <translation type="unfinished"></translation>
+        <translation>Aģenta izsaukums neizdevās: %1</translation>
     </message>
     <message>
         <source>An agent started a job: %1</source>
-        <translation type="unfinished"></translation>
+        <translation>Aģents sāka darbu: %1</translation>
     </message>
     <message>
         <source>Notifications</source>
-        <translation type="unfinished"></translation>
+        <translation>Paziņojumi</translation>
     </message>
     <message>
         <source>Fewer</source>
-        <translation type="unfinished"></translation>
+        <translation>Mazāk</translation>
     </message>
     <message>
         <source>All %1</source>
-        <translation type="unfinished"></translation>
+        <translation>Visi %1</translation>
     </message>
     <message>
         <source>Clear</source>
-        <translation type="unfinished"></translation>
+        <translation>Notīrīt</translation>
     </message>
     <message>
         <source>Clear the notifications</source>
-        <translation type="unfinished"></translation>
+        <translation>Notīrīt paziņojumus</translation>
     </message>
     <message>
         <source>1  Pick your agent.</source>
-        <translation type="unfinished"></translation>
+        <translation>1  Izvēlieties savu aģentu.</translation>
     </message>
     <message>
         <source>2  Connect it, or copy its own setting.</source>
-        <translation type="unfinished"></translation>
+        <translation>2  Pievienojiet to vai nokopējiet tā paša iestatījumu.</translation>
     </message>
     <message>
         <source>Connect your agent</source>
-        <translation type="unfinished"></translation>
+        <translation>Pievienojiet savu aģentu</translation>
     </message>
     <message>
         <source>Copy entry for another MCP client</source>
-        <translation type="unfinished"></translation>
+        <translation>Kopēt ierakstu citam MCP klientam</translation>
     </message>
 </context>
 <context>
@@ -135,685 +135,688 @@
 %2 dpi
 
 The model determines the display and frame. Android comes from the chosen system image; vendor interfaces such as One UI are not included.</source>
-        <translation type="unfinished"></translation>
+        <translation>%1 pikseļi
+%2 dpi
+
+Modelis nosaka displeju un rāmi. Android nāk no izvēlētā sistēmas attēla; ražotāju saskarnes, piemēram, One UI, nav iekļautas.</translation>
     </message>
     <message>
         <source>Add Android device</source>
-        <translation type="unfinished"></translation>
+        <translation>Pievienot Android ierīci</translation>
     </message>
     <message>
         <source>Add device</source>
-        <translation type="unfinished"></translation>
+        <translation>Pievienot ierīci</translation>
     </message>
     <message>
         <source>Automatic</source>
-        <translation type="unfinished"></translation>
+        <translation>Automātiski</translation>
     </message>
     <message>
         <source>CPU cores</source>
-        <translation type="unfinished"></translation>
+        <translation>CPU kodoli</translation>
     </message>
     <message>
         <source>Cancel</source>
-        <translation type="unfinished"></translation>
+        <translation>Atcelt</translation>
     </message>
     <message>
         <source>Close</source>
-        <translation type="unfinished"></translation>
+        <translation>Aizvērt</translation>
     </message>
     <message>
         <source>Computer GPU</source>
-        <translation type="unfinished"></translation>
+        <translation>Datora GPU</translation>
     </message>
     <message>
         <source>Connected</source>
-        <translation type="unfinished"></translation>
+        <translation>Savienots</translation>
     </message>
     <message>
         <source>Create</source>
-        <translation type="unfinished"></translation>
+        <translation>Izveidot</translation>
     </message>
     <message>
         <source>Creating…</source>
-        <translation type="unfinished"></translation>
+        <translation>Veido…</translation>
     </message>
     <message>
         <source>Device created · open it with Start</source>
-        <translation type="unfinished"></translation>
+        <translation>Ierīce izveidota · atveriet to ar Palaist</translation>
     </message>
     <message>
         <source>Device name</source>
-        <translation type="unfinished"></translation>
+        <translation>Ierīces nosaukums</translation>
     </message>
     <message>
         <source>Device profile (*.json)</source>
-        <translation type="unfinished"></translation>
+        <translation>Ierīces profils (*.json)</translation>
     </message>
     <message>
         <source>Disabled · OpenGL ES only</source>
-        <translation type="unfinished"></translation>
+        <translation>Atspējots · tikai OpenGL ES</translation>
     </message>
     <message>
         <source>Emulator ended · %1</source>
-        <translation type="unfinished"></translation>
+        <translation>Emulators beidza darbu · %1</translation>
     </message>
     <message>
         <source>Emulator performance</source>
-        <translation type="unfinished"></translation>
+        <translation>Emulatora veiktspēja</translation>
     </message>
     <message>
         <source>Emulator ready</source>
-        <translation type="unfinished"></translation>
+        <translation>Emulators gatavs</translation>
     </message>
     <message>
         <source>Emulator starting…</source>
-        <translation type="unfinished"></translation>
+        <translation>Emulators sāk darbu…</translation>
     </message>
     <message>
         <source>Enabled</source>
-        <translation type="unfinished"></translation>
+        <translation>Iespējots</translation>
     </message>
     <message>
         <source>External profile</source>
-        <translation type="unfinished"></translation>
+        <translation>Ārējs profils</translation>
     </message>
     <message>
         <source>Graphics</source>
-        <translation type="unfinished"></translation>
+        <translation>Grafika</translation>
     </message>
     <message>
         <source>Graphics: %1</source>
-        <translation type="unfinished"></translation>
+        <translation>Grafika: %1</translation>
     </message>
     <message>
         <source>Import Android model</source>
-        <translation type="unfinished"></translation>
+        <translation>Importēt Android modeli</translation>
     </message>
     <message>
         <source>Import custom model</source>
-        <translation type="unfinished"></translation>
+        <translation>Importēt pielāgotā modeli</translation>
     </message>
     <message>
         <source>Imported · contains no Android model</source>
-        <translation type="unfinished"></translation>
+        <translation>Importēts · nesatur Android modeli</translation>
     </message>
     <message>
         <source>Memory (MB)</source>
-        <translation type="unfinished"></translation>
+        <translation>Atmiņa (MB)</translation>
     </message>
     <message>
         <source>Model</source>
-        <translation type="unfinished"></translation>
+        <translation>Modelis</translation>
     </message>
     <message>
         <source>Model imported</source>
-        <translation type="unfinished"></translation>
+        <translation>Modelis importēts</translation>
     </message>
     <message>
         <source>No system image installed yet</source>
-        <translation type="unfinished"></translation>
+        <translation>Sistēmas attēls vēl nav instalēts</translation>
     </message>
     <message>
         <source>Off</source>
-        <translation type="unfinished"></translation>
+        <translation>Izslēgts</translation>
     </message>
     <message>
         <source>Open</source>
-        <translation type="unfinished"></translation>
+        <translation>Atvērt</translation>
     </message>
     <message>
         <source>Open job</source>
-        <translation type="unfinished"></translation>
+        <translation>Atvērt darbu</translation>
     </message>
     <message>
         <source>Performance settings saved · used on the next start</source>
-        <translation type="unfinished"></translation>
+        <translation>Veiktspējas iestatījumi saglabāti · tiks izmantoti nākamajā palaišanā</translation>
     </message>
     <message>
         <source>Save</source>
-        <translation type="unfinished"></translation>
+        <translation>Saglabāt</translation>
     </message>
     <message>
         <source>Saving…</source>
-        <translation type="unfinished"></translation>
+        <translation>Saglabā…</translation>
     </message>
     <message>
         <source>Set graphics, memory and CPU</source>
-        <translation type="unfinished"></translation>
+        <translation>Iestatīt grafiku, atmiņu un CPU</translation>
     </message>
     <message>
         <source>Setting up device…</source>
-        <translation type="unfinished"></translation>
+        <translation>Ierīce tiek iestatīta…</translation>
     </message>
     <message>
         <source>Setup failed · details in the job</source>
-        <translation type="unfinished"></translation>
+        <translation>Iestatīšana neizdevās · detaļas darbā</translation>
     </message>
     <message>
         <source>Software · compatible renderer</source>
-        <translation type="unfinished"></translation>
+        <translation>Programmatūra · saderīgs renderētājs</translation>
     </message>
     <message>
         <source>Start</source>
-        <translation type="unfinished"></translation>
+        <translation>Palaist</translation>
     </message>
     <message>
         <source>Starting…</source>
-        <translation type="unfinished"></translation>
+        <translation>Palaiž…</translation>
     </message>
     <message>
         <source>The computer GPU can speed up animations considerably. If graphics glitch, choose a software renderer. Changes require the emulator to be off; app data is kept.</source>
-        <translation type="unfinished"></translation>
+        <translation>Datora GPU var ievērojami paātrināt animācijas. Ja grafikā rodas kļūmes, izvēlieties programmatūras renderētāju. Lai veiktu izmaiņas, emulatoram jābūt izslēgtam; lietotņu dati tiek saglabāti.</translation>
     </message>
     <message>
         <source>Turn off emulator</source>
-        <translation type="unfinished"></translation>
+        <translation>Izslēgt emulatoru</translation>
     </message>
     <message>
         <source>Vulkan compatibility</source>
-        <translation type="unfinished"></translation>
+        <translation>Vulkan saderība</translation>
     </message>
     <message>
         <source>Each emulator keeps its own model and app data.</source>
-        <translation type="unfinished"></translation>
+        <translation>Katrs emulators glābā savu modeli un lietotņu datus.</translation>
     </message>
     <message>
         <source>No phone yet.</source>
-        <translation type="unfinished"></translation>
+        <translation>Tālruņa vēl nav.</translation>
     </message>
     <message>
         <source>Add an emulator, or plug in a phone with USB debugging on.</source>
-        <translation type="unfinished"></translation>
+        <translation>Pievienojiet emulatoru vai pievienojiet tālruni ar iespējotu USB atkļūdošanu.</translation>
     </message>
     <message>
         <source>Unpin</source>
-        <translation type="unfinished"></translation>
+        <translation>Atspraust</translation>
     </message>
     <message>
         <source>Pin</source>
-        <translation type="unfinished"></translation>
+        <translation>Piespraust</translation>
     </message>
     <message>
         <source>Unpin this device</source>
-        <translation type="unfinished"></translation>
+        <translation>Atspraust šo ierīci</translation>
     </message>
     <message>
         <source>Pin this device to the top</source>
-        <translation type="unfinished"></translation>
+        <translation>Piespraust šo ierīci augšā</translation>
     </message>
     <message>
         <source>Rename</source>
-        <translation type="unfinished"></translation>
+        <translation>Pārdēvēt</translation>
     </message>
     <message>
         <source>Give this device a nickname</source>
-        <translation type="unfinished"></translation>
+        <translation>Piešķirt šai ierīcei segvārdu</translation>
     </message>
     <message>
         <source>Device nickname</source>
-        <translation type="unfinished"></translation>
+        <translation>Ierīces segvārds</translation>
     </message>
     <message>
         <source>Shown instead of %1 here, in device lists and in the Omarchy panel.</source>
-        <translation type="unfinished"></translation>
+        <translation>Tiek rādīts %1 vietā šeit, ierīču sarakstos un Omarchy panelī.</translation>
     </message>
     <message>
         <source>Nickname</source>
-        <translation type="unfinished"></translation>
+        <translation>Segvārds</translation>
     </message>
     <message>
         <source>Remove nickname</source>
-        <translation type="unfinished"></translation>
+        <translation>Noņemt segvārdu</translation>
     </message>
     <message>
         <source>Paired and connected · %1</source>
-        <translation type="unfinished"></translation>
+        <translation>Sapārots un savienots · %1</translation>
     </message>
     <message>
         <source>Paired. Enter the IP address and port shown under Wireless debugging to connect.</source>
-        <translation type="unfinished"></translation>
+        <translation>Sapārots. Lai savienotu, ievadiet IP adresi un portu, kas redzami sadaļā Bezvadu atkļūdošana.</translation>
     </message>
     <message>
         <source>adb could not pair</source>
-        <translation type="unfinished"></translation>
+        <translation>adb nevarēja izveidot pāri</translation>
     </message>
     <message>
         <source>adb could not connect</source>
-        <translation type="unfinished"></translation>
+        <translation>adb nevarēja izveidot savienojumu</translation>
     </message>
     <message>
         <source>Pair over Wi-Fi</source>
-        <translation type="unfinished"></translation>
+        <translation>Sapārot, izmantojot Wi-Fi</translation>
     </message>
     <message>
         <source>QR code</source>
-        <translation type="unfinished"></translation>
+        <translation>QR kods</translation>
     </message>
     <message>
         <source>Pairing code</source>
-        <translation type="unfinished"></translation>
+        <translation>Sapārošanas kods</translation>
     </message>
     <message>
         <source>On the phone, open Developer options › Wireless debugging › Pair device with QR code and scan this code. The phone and this computer must be on the same network; Android 11 or newer.</source>
-        <translation type="unfinished"></translation>
+        <translation>Tālrunī atveriet Izstrādātāja opcijas › Bezvadu atkļūdošana › Sapārot ierīci ar QR kodu un noskenējiet šo kodu. Tālrunim un šim datoram jābūt vienā tīklā; Android 11 vai jaunāka versija.</translation>
     </message>
     <message>
         <source>On the phone, open Developer options › Wireless debugging › Pair device with pairing code, then enter the address and code it shows.</source>
-        <translation type="unfinished"></translation>
+        <translation>Tālrunī atveriet Izstrādātāja opcijas › Bezvadu atkļūdošana › Sapārot ierīci ar sapārošanas kodu, pēc tam ievadiet parādīto adresi un kodu.</translation>
     </message>
     <message>
         <source>QR code for wireless debugging</source>
-        <translation type="unfinished"></translation>
+        <translation>QR kods bezvadu atkļūdošanai</translation>
     </message>
     <message>
         <source>Creating a code…</source>
-        <translation type="unfinished"></translation>
+        <translation>Veido kodu…</translation>
     </message>
     <message>
         <source>Pairing address</source>
-        <translation type="unfinished"></translation>
+        <translation>Sapārošanas adrese</translation>
     </message>
     <message>
         <source>Waiting for the phone…</source>
-        <translation type="unfinished"></translation>
+        <translation>Gaida tālruni…</translation>
     </message>
     <message>
         <source>Pairing…</source>
-        <translation type="unfinished"></translation>
+        <translation>Sapāro…</translation>
     </message>
     <message>
         <source>Connecting…</source>
-        <translation type="unfinished"></translation>
+        <translation>Savieno…</translation>
     </message>
     <message>
         <source>New code</source>
-        <translation type="unfinished"></translation>
+        <translation>Jauns kods</translation>
     </message>
     <message>
         <source>Pair</source>
-        <translation type="unfinished"></translation>
+        <translation>Sapārot</translation>
     </message>
     <message>
         <source>List</source>
-        <translation type="unfinished"></translation>
+        <translation>Saraksts</translation>
     </message>
     <message>
         <source>All screens</source>
-        <translation type="unfinished"></translation>
+        <translation>Visi ekrāni</translation>
     </message>
     <message>
         <source>Show the device list</source>
-        <translation type="unfinished"></translation>
+        <translation>Rādīt ierīču sarakstu</translation>
     </message>
     <message>
         <source>Show every running device&apos;s screen side by side</source>
-        <translation type="unfinished"></translation>
+        <translation>Rādīt visu darbojošos ierīču ekrānus blakus</translation>
     </message>
     <message>
         <source>Accept Google&apos;s Android SDK licence for this download</source>
-        <translation type="unfinished"></translation>
+        <translation>Pieņemt Google Android SDK licenci šai lejupielādei</translation>
     </message>
     <message>
         <source>Android system image</source>
-        <translation type="unfinished"></translation>
+        <translation>Android sistēmas attēls</translation>
     </message>
     <message>
         <source>App data removed · %1 freed · the next start boots like a new device</source>
-        <translation type="unfinished"></translation>
+        <translation>Lietotņu dati noņemti · atbrīvoti %1 · nākamā palaišana būs kā jaunai ierīcei</translation>
     </message>
     <message>
         <source>Cannot start: %1</source>
-        <translation type="unfinished"></translation>
+        <translation>Nevar palaist: %1</translation>
     </message>
     <message>
         <source>Checking…</source>
-        <translation type="unfinished"></translation>
+        <translation>Pārbauda…</translation>
     </message>
     <message>
         <source>Copying device…</source>
-        <translation type="unfinished"></translation>
+        <translation>Kopē ierīci…</translation>
     </message>
     <message>
         <source>Copying…</source>
-        <translation type="unfinished"></translation>
+        <translation>Kopē…</translation>
     </message>
     <message>
         <source>Disk: about %1 for the emulator · %2 free</source>
-        <translation type="unfinished"></translation>
+        <translation>Disks: aptuveni %1 emulatoram · %2 brīvs</translation>
     </message>
     <message>
         <source>Download about %1 (estimate) · needs Google&apos;s SDK licence: %2</source>
-        <translation type="unfinished"></translation>
+        <translation>Lejupielāde aptuveni %1 (aplese) · nepieciešama Google SDK licence: %2</translation>
     </message>
     <message>
         <source>Download and create</source>
-        <translation type="unfinished"></translation>
+        <translation>Lejupielādēt un izveidot</translation>
     </message>
     <message>
         <source>Duplicate</source>
-        <translation type="unfinished"></translation>
+        <translation>Dublēt</translation>
     </message>
     <message>
         <source>Duplicate copies the emulator with its apps and data under the new name, as a job you can cancel. Rename is a real rename of the emulator through the Android SDK; the nickname moves along. A nickname alone is set with the pencil button.</source>
-        <translation type="unfinished"></translation>
+        <translation>Dublēšana nokopē emulatoru ar tā lietotnēm un datiem ar jauno nosaukumu kā darbu, ko var atcelt. Pārdēvēšana ir īsta emulatora pārdēvēšana, izmantojot Android SDK; segvārds pāriet līdzi. Tikai segvārdu iestata ar zīmuļa pogu.</translation>
     </message>
     <message>
         <source>Duplicate, rename or wipe this emulator</source>
-        <translation type="unfinished"></translation>
+        <translation>Dublēt, pārdēvēt vai notīrīt šo emulatoru</translation>
     </message>
     <message>
         <source>Letters, digits, - and _</source>
-        <translation type="unfinished"></translation>
+        <translation>Burti, cipari, - un _</translation>
     </message>
     <message>
         <source>Manage</source>
-        <translation type="unfinished"></translation>
+        <translation>Pārvaldīt</translation>
     </message>
     <message>
         <source>Manage emulator</source>
-        <translation type="unfinished"></translation>
+        <translation>Pārvaldīt emulatoru</translation>
     </message>
     <message>
         <source>New name</source>
-        <translation type="unfinished"></translation>
+        <translation>Jauns nosaukums</translation>
     </message>
     <message>
         <source>On disk: %1 · a wipe frees %2</source>
-        <translation type="unfinished"></translation>
+        <translation>Diskā: %1 · notīrīšana atbrīvos %2</translation>
     </message>
     <message>
         <source>Pick an installed image, or type another package: it is downloaded as the first step. Tomacco creates phone, foldable and tablet emulators.</source>
-        <translation type="unfinished"></translation>
+        <translation>Izvēlieties instalētu attēlu vai ierakstiet citu pakotni: tā tiks lejupielādēta kā pirmais solis. Tomacco veido tālruņa, salokamās ierīces un planšetdatora emulatorus.</translation>
     </message>
     <message>
         <source>Reading disk usage…</source>
-        <translation type="unfinished"></translation>
+        <translation>Nolasa diska lietojumu…</translation>
     </message>
     <message>
         <source>Rename and wipe need the emulator&apos;s name typed here</source>
-        <translation type="unfinished"></translation>
+        <translation>Lai pārdēvētu vai notīrītu, šeit jāieraksta emulatora nosaukums</translation>
     </message>
     <message>
         <source>Renamed to %1</source>
-        <translation type="unfinished"></translation>
+        <translation>Pārdēvēts par %1</translation>
     </message>
     <message>
         <source>Renaming…</source>
-        <translation type="unfinished"></translation>
+        <translation>Pārdēvē…</translation>
     </message>
     <message>
         <source>Start the emulator when it is ready</source>
-        <translation type="unfinished"></translation>
+        <translation>Palaist emulatoru, kad tas ir gatavs</translation>
     </message>
     <message>
         <source>Steps: %1</source>
-        <translation type="unfinished"></translation>
+        <translation>Darbības: %1</translation>
     </message>
     <message>
         <source>System image installed · no download</source>
-        <translation type="unfinished"></translation>
+        <translation>Sistēmas attēls instalēts · bez lejupielādes</translation>
     </message>
     <message>
         <source>TV, Wear, Automotive and XR images are not supported yet</source>
-        <translation type="unfinished"></translation>
+        <translation>TV, Wear, Automotive un XR attēli vēl netiek atbalstīti</translation>
     </message>
     <message>
         <source>The emulator is on or its lock files exist. Turn it off first; nothing here changes a running emulator.</source>
-        <translation type="unfinished"></translation>
+        <translation>Emulators ir ieslēgts vai pastāv tā bloķēšanas faili. Vispirms izslēdziet to; nekas šeit nemaina darbojošos emulatoru.</translation>
     </message>
     <message>
         <source>Wipe app data</source>
-        <translation type="unfinished"></translation>
+        <translation>Notīrīt lietotņu datus</translation>
     </message>
     <message>
         <source>Wipe removes the apps, their data and the snapshots; the next start boots like a new device. The emulator&apos;s model and settings stay.</source>
-        <translation type="unfinished"></translation>
+        <translation>Notīrīšana noņem lietotnes, to datus un momentuzņēmumus; nākamā palaišana būs kā jaunai ierīcei. Emulatora modelis un iestatījumi paliek.</translation>
     </message>
     <message>
         <source>Wiping…</source>
-        <translation type="unfinished"></translation>
+        <translation>Notīra…</translation>
     </message>
     <message>
         <source>already accepted</source>
-        <translation type="unfinished"></translation>
+        <translation>jau pieņemta</translation>
     </message>
     <message>
         <source>apply model</source>
-        <translation type="unfinished"></translation>
+        <translation>lietot modeli</translation>
     </message>
     <message>
         <source>create</source>
-        <translation type="unfinished"></translation>
+        <translation>izveidot</translation>
     </message>
     <message>
         <source>install image</source>
-        <translation type="unfinished"></translation>
+        <translation>instalēt attēlu</translation>
     </message>
     <message>
         <source>is missing</source>
-        <translation type="unfinished"></translation>
+        <translation>trūkst</translation>
     </message>
     <message>
         <source>not enough free space</source>
-        <translation type="unfinished"></translation>
+        <translation>nepietiek brīvas vietas</translation>
     </message>
     <message>
         <source>not yet accepted</source>
-        <translation type="unfinished"></translation>
+        <translation>vēl nav pieņemta</translation>
     </message>
     <message>
         <source>start</source>
-        <translation type="unfinished"></translation>
+        <translation>palaist</translation>
     </message>
     <message>
         <source>the Android SDK</source>
-        <translation type="unfinished"></translation>
+        <translation>Android SDK</translation>
     </message>
     <message>
         <source>the name is taken</source>
-        <translation type="unfinished"></translation>
+        <translation>nosaukums ir aizņemts</translation>
     </message>
 </context>
 <context>
     <name>Backend</name>
     <message>
         <source>%1 is not part of this installation.</source>
-        <translation type="unfinished"></translation>
+        <translation>%1 neietilpst šajā instalācijā.</translation>
     </message>
     <message>
         <source>Check failed</source>
-        <translation type="unfinished"></translation>
+        <translation>Pārbaude neizdevās</translation>
     </message>
     <message>
         <source>Checking…</source>
-        <translation type="unfinished"></translation>
+        <translation>Pārbauda…</translation>
     </message>
     <message>
         <source>Copied</source>
-        <translation type="unfinished"></translation>
+        <translation>Nokopēts</translation>
     </message>
     <message>
         <source>Enter a valid http:// or https:// address.</source>
-        <translation type="unfinished"></translation>
+        <translation>Ievadiet derīgu http:// vai https:// adresi.</translation>
     </message>
     <message>
         <source>No index.html found. Choose a built web folder or open the dev server address.</source>
-        <translation type="unfinished"></translation>
+        <translation>Fails index.html nav atrasts. Izvēlieties uzbūvētu tīmekļa mapi vai atveriet izstrādes servera adresi.</translation>
     </message>
     <message>
         <source>Not installed</source>
-        <translation type="unfinished"></translation>
+        <translation>Nav instalēts</translation>
     </message>
     <message>
         <source>The local preview server could not start.</source>
-        <translation type="unfinished"></translation>
+        <translation>Nevarēja palaist lokālo priekšskatījuma serveri.</translation>
     </message>
     <message>
         <source>The screenshot folder could not be created.</source>
-        <translation type="unfinished"></translation>
+        <translation>Nevarēja izveidot ekrānuzņēmumu mapi.</translation>
     </message>
     <message>
         <source>Unknown</source>
-        <translation type="unfinished"></translation>
+        <translation>Nezināms</translation>
     </message>
     <message>
         <source>This job has no log file yet.</source>
-        <translation type="unfinished"></translation>
+        <translation>Šim darbam vēl nav žurnāla faila.</translation>
     </message>
     <message>
         <source>Open</source>
-        <translation type="unfinished"></translation>
+        <translation>Atvērt</translation>
     </message>
     <message>
         <source>%1 cannot be written.</source>
-        <translation type="unfinished"></translation>
+        <translation>%1 nevar ierakstīt.</translation>
     </message>
     <message>
         <source>%1 cannot be read.</source>
-        <translation type="unfinished"></translation>
+        <translation>%1 nevar nolasīt.</translation>
     </message>
     <message>
         <source>%1 is too large for a settings file.</source>
-        <translation type="unfinished"></translation>
+        <translation>%1 ir pārāk liels iestatījumu failam.</translation>
     </message>
     <message>
         <source>%1 is not a Tomacco settings file.</source>
-        <translation type="unfinished"></translation>
+        <translation>%1 nav Tomacco iestatījumu fails.</translation>
     </message>
     <message>
         <source>%1 comes from a newer Tomacco; update this one first.</source>
-        <translation type="unfinished"></translation>
+        <translation>%1 nāk no jaunākas Tomacco versijas; vispirms atjauniniet šo.</translation>
     </message>
     <message>
         <source>The recordings folder could not be created.</source>
-        <translation type="unfinished"></translation>
+        <translation>Nevarēja izveidot ierakstu mapi.</translation>
     </message>
     <message>
         <source>The session log must be an absolute path.</source>
-        <translation type="unfinished"></translation>
+        <translation>Sesijas žurnālam jābūt absolūtam ceļam.</translation>
     </message>
     <message>
         <source>No session log at %1 yet. It appears with the agent&apos;s first call.</source>
-        <translation type="unfinished"></translation>
+        <translation>Sesijas žurnāla %1 vēl nav. Tas parādīsies pēc aģenta pirmā izsaukuma.</translation>
     </message>
 </context>
 <context>
     <name>Colors</name>
     <message>
         <source>Cream</source>
-        <translation type="unfinished"></translation>
+        <translation>Krēmkrāsa</translation>
     </message>
     <message>
         <source>Graphite</source>
-        <translation type="unfinished"></translation>
+        <translation>Grāfīts</translation>
     </message>
     <message>
         <source>Gray</source>
-        <translation type="unfinished"></translation>
+        <translation>Pelēks</translation>
     </message>
     <message>
         <source>Green Shadow</source>
-        <translation type="unfinished"></translation>
+        <translation>Zaļš ēnojums</translation>
     </message>
     <message>
         <source>Mint</source>
-        <translation type="unfinished"></translation>
+        <translation>Mētru zaļš</translation>
     </message>
     <message>
         <source>Violet Shadow</source>
-        <translation type="unfinished"></translation>
+        <translation>Violets ēnojums</translation>
     </message>
     <message>
         <source>Black</source>
-        <translation type="unfinished"></translation>
+        <translation>Melns</translation>
     </message>
     <message>
         <source>Burgundy</source>
-        <translation type="unfinished"></translation>
+        <translation>Bordo</translation>
     </message>
     <message>
         <source>Canyon</source>
-        <translation type="unfinished"></translation>
+        <translation>Kanjons</translation>
     </message>
     <message>
         <source>Cloud White</source>
-        <translation type="unfinished"></translation>
+        <translation>Mākoņbalts</translation>
     </message>
     <message>
         <source>Cobalt Violet</source>
-        <translation type="unfinished"></translation>
+        <translation>Kobalta violets</translation>
     </message>
     <message>
         <source>Device</source>
-        <translation type="unfinished"></translation>
+        <translation>Ierīce</translation>
     </message>
     <message>
         <source>Fog</source>
-        <translation type="unfinished"></translation>
+        <translation>Migla</translation>
     </message>
     <message>
         <source>Frost</source>
-        <translation type="unfinished"></translation>
+        <translation>Sarma</translation>
     </message>
     <message>
         <source>Glacier</source>
-        <translation type="unfinished"></translation>
+        <translation>Ledusājs</translation>
     </message>
     <message>
         <source>Hibiscus</source>
-        <translation type="unfinished"></translation>
+        <translation>Hibisks</translation>
     </message>
     <message>
         <source>Lavender</source>
-        <translation type="unfinished"></translation>
+        <translation>Lavanda</translation>
     </message>
     <message>
         <source>Light Gold</source>
-        <translation type="unfinished"></translation>
+        <translation>Gaišs zelts</translation>
     </message>
     <message>
         <source>Mist Blue</source>
-        <translation type="unfinished"></translation>
+        <translation>Miglaini zils</translation>
     </message>
     <message>
         <source>Night Sky</source>
-        <translation type="unfinished"></translation>
+        <translation>Nakts debesis</translation>
     </message>
     <message>
         <source>Obsidian</source>
-        <translation type="unfinished"></translation>
+        <translation>Obsidiāns</translation>
     </message>
     <message>
         <source>Olive</source>
-        <translation type="unfinished"></translation>
+        <translation>Olīvu</translation>
     </message>
     <message>
         <source>Pink</source>
-        <translation type="unfinished"></translation>
+        <translation>Rozā</translation>
     </message>
     <message>
         <source>Pistachio</source>
-        <translation type="unfinished"></translation>
+        <translation>Pistāciju</translation>
     </message>
     <message>
         <source>Sage</source>
-        <translation type="unfinished"></translation>
+        <translation>Salvija</translation>
     </message>
     <message>
         <source>Silver</source>
-        <translation type="unfinished"></translation>
+        <translation>Sudrabs</translation>
     </message>
     <message>
         <source>Sky Blue</source>
-        <translation type="unfinished"></translation>
+        <translation>Debeszils</translation>
     </message>
     <message>
         <source>Soft Pink</source>
-        <translation type="unfinished"></translation>
+        <translation>Maigi rozā</translation>
     </message>
     <message>
         <source>Space Black</source>
-        <translation type="unfinished"></translation>
+        <translation>Kosmosa melns</translation>
     </message>
     <message>
         <source>Star White</source>

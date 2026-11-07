@@ -5,127 +5,127 @@
     <name>ActivityPanel</name>
     <message>
         <source>%1 ago</source>
-        <translation type="unfinished"></translation>
+        <translation>%1 sitten</translation>
     </message>
     <message>
         <source>Running</source>
-        <translation type="unfinished"></translation>
+        <translation>Käynnissä</translation>
     </message>
     <message>
         <source>Stop this job</source>
-        <translation type="unfinished"></translation>
+        <translation>Pysäytä tämä työ</translation>
     </message>
     <message>
         <source>Recent</source>
-        <translation type="unfinished"></translation>
+        <translation>Viimeisimmät</translation>
     </message>
     <message>
         <source>Connect your agent.</source>
-        <translation type="unfinished"></translation>
+        <translation>Yhdistä agenttisi.</translation>
     </message>
     <message>
         <source>Claude Code, Codex or any MCP client. It can then do everything this window can.</source>
-        <translation type="unfinished"></translation>
+        <translation>Claude Code, Codex tai mikä tahansa MCP-asiakas. Sen jälkeen se voi tehdä kaiken, mitä tämä ikkuna osaa.</translation>
     </message>
     <message>
         <source>Copied</source>
-        <translation type="unfinished"></translation>
+        <translation>Kopioitu</translation>
     </message>
     <message>
         <source>3  Ask it to run your app.</source>
-        <translation type="unfinished"></translation>
+        <translation>3  Pyydä sitä käynnistämään sovelluksesi.</translation>
     </message>
     <message>
         <source>Nothing running. Builds and agent jobs show up here as they start.</source>
-        <translation type="unfinished"></translation>
+        <translation>Mitään ei ole käynnissä. Käännökset ja agentin työt näkyvät täällä, kun ne alkavat.</translation>
     </message>
     <message>
         <source>%1 ms</source>
-        <translation type="unfinished"></translation>
+        <translation>%1 ms</translation>
     </message>
     <message>
         <source>%1 s</source>
-        <translation type="unfinished"></translation>
+        <translation>%1 s</translation>
     </message>
     <message>
         <source>Agent activity</source>
-        <translation type="unfinished"></translation>
+        <translation>Agentin toiminta</translation>
     </message>
     <message>
         <source>All</source>
-        <translation type="unfinished"></translation>
+        <translation>Kaikki</translation>
     </message>
     <message>
         <source>Failed</source>
-        <translation type="unfinished"></translation>
+        <translation>Epäonnistuneet</translation>
     </message>
     <message>
         <source>Find an operation</source>
-        <translation type="unfinished"></translation>
+        <translation>Etsi toimintoa</translation>
     </message>
     <message>
         <source>No call failed.</source>
-        <translation type="unfinished"></translation>
+        <translation>Yksikään kutsu ei epäonnistunut.</translation>
     </message>
     <message>
         <source>No call matches.</source>
-        <translation type="unfinished"></translation>
+        <translation>Mikään kutsu ei vastaa hakua.</translation>
     </message>
     <message>
         <source>failed</source>
-        <translation type="unfinished"></translation>
+        <translation>epäonnistui</translation>
     </message>
     <message>
         <source>running</source>
-        <translation type="unfinished"></translation>
+        <translation>käynnissä</translation>
     </message>
     <message>
         <source>done</source>
-        <translation type="unfinished"></translation>
+        <translation>valmis</translation>
     </message>
     <message>
         <source>An agent&apos;s call failed: %1</source>
-        <translation type="unfinished"></translation>
+        <translation>Agentin kutsu epäonnistui: %1</translation>
     </message>
     <message>
         <source>An agent started a job: %1</source>
-        <translation type="unfinished"></translation>
+        <translation>Agentti aloitti työn: %1</translation>
     </message>
     <message>
         <source>Notifications</source>
-        <translation type="unfinished"></translation>
+        <translation>Ilmoitukset</translation>
     </message>
     <message>
         <source>Fewer</source>
-        <translation type="unfinished"></translation>
+        <translation>Vähemmän</translation>
     </message>
     <message>
         <source>All %1</source>
-        <translation type="unfinished"></translation>
+        <translation>Kaikki %1</translation>
     </message>
     <message>
         <source>Clear</source>
-        <translation type="unfinished"></translation>
+        <translation>Tyhjennä</translation>
     </message>
     <message>
         <source>Clear the notifications</source>
-        <translation type="unfinished"></translation>
+        <translation>Tyhjennä ilmoitukset</translation>
     </message>
     <message>
         <source>1  Pick your agent.</source>
-        <translation type="unfinished"></translation>
+        <translation>1  Valitse agenttisi.</translation>
     </message>
     <message>
         <source>2  Connect it, or copy its own setting.</source>
-        <translation type="unfinished"></translation>
+        <translation>2  Yhdistä se tai kopioi sen oma asetus.</translation>
     </message>
     <message>
         <source>Connect your agent</source>
-        <translation type="unfinished"></translation>
+        <translation>Yhdistä agenttisi</translation>
     </message>
     <message>
         <source>Copy entry for another MCP client</source>
-        <translation type="unfinished"></translation>
+        <translation>Kopioi merkintä toiselle MCP-asiakkaalle</translation>
     </message>
 </context>
 <context>
@@ -135,685 +135,688 @@
 %2 dpi
 
 The model determines the display and frame. Android comes from the chosen system image; vendor interfaces such as One UI are not included.</source>
-        <translation type="unfinished"></translation>
+        <translation>%1 pikseliä
+%2 dpi
+
+Malli määrää näytön ja kehyksen. Android tulee valitusta järjestelmäkuvasta; valmistajan käyttöliittymät, kuten One UI, eivät sisälly.</translation>
     </message>
     <message>
         <source>Add Android device</source>
-        <translation type="unfinished"></translation>
+        <translation>Lisää Android-laite</translation>
     </message>
     <message>
         <source>Add device</source>
-        <translation type="unfinished"></translation>
+        <translation>Lisää laite</translation>
     </message>
     <message>
         <source>Automatic</source>
-        <translation type="unfinished"></translation>
+        <translation>Automaattinen</translation>
     </message>
     <message>
         <source>CPU cores</source>
-        <translation type="unfinished"></translation>
+        <translation>Suoritinytimet</translation>
     </message>
     <message>
         <source>Cancel</source>
-        <translation type="unfinished"></translation>
+        <translation>Peruuta</translation>
     </message>
     <message>
         <source>Close</source>
-        <translation type="unfinished"></translation>
+        <translation>Sulje</translation>
     </message>
     <message>
         <source>Computer GPU</source>
-        <translation type="unfinished"></translation>
+        <translation>Tietokoneen näytönohjain</translation>
     </message>
     <message>
         <source>Connected</source>
-        <translation type="unfinished"></translation>
+        <translation>Yhdistetty</translation>
     </message>
     <message>
         <source>Create</source>
-        <translation type="unfinished"></translation>
+        <translation>Luo</translation>
     </message>
     <message>
         <source>Creating…</source>
-        <translation type="unfinished"></translation>
+        <translation>Luodaan…</translation>
     </message>
     <message>
         <source>Device created · open it with Start</source>
-        <translation type="unfinished"></translation>
+        <translation>Laite luotu · avaa se Käynnistä-painikkeella</translation>
     </message>
     <message>
         <source>Device name</source>
-        <translation type="unfinished"></translation>
+        <translation>Laitteen nimi</translation>
     </message>
     <message>
         <source>Device profile (*.json)</source>
-        <translation type="unfinished"></translation>
+        <translation>Laiteprofiili (*.json)</translation>
     </message>
     <message>
         <source>Disabled · OpenGL ES only</source>
-        <translation type="unfinished"></translation>
+        <translation>Pois käytöstä · vain OpenGL ES</translation>
     </message>
     <message>
         <source>Emulator ended · %1</source>
-        <translation type="unfinished"></translation>
+        <translation>Emulaattori päättyi · %1</translation>
     </message>
     <message>
         <source>Emulator performance</source>
-        <translation type="unfinished"></translation>
+        <translation>Emulaattorin suorituskyky</translation>
     </message>
     <message>
         <source>Emulator ready</source>
-        <translation type="unfinished"></translation>
+        <translation>Emulaattori valmis</translation>
     </message>
     <message>
         <source>Emulator starting…</source>
-        <translation type="unfinished"></translation>
+        <translation>Emulaattori käynnistyy…</translation>
     </message>
     <message>
         <source>Enabled</source>
-        <translation type="unfinished"></translation>
+        <translation>Käytössä</translation>
     </message>
     <message>
         <source>External profile</source>
-        <translation type="unfinished"></translation>
+        <translation>Ulkoinen profiili</translation>
     </message>
     <message>
         <source>Graphics</source>
-        <translation type="unfinished"></translation>
+        <translation>Grafiikka</translation>
     </message>
     <message>
         <source>Graphics: %1</source>
-        <translation type="unfinished"></translation>
+        <translation>Grafiikka: %1</translation>
     </message>
     <message>
         <source>Import Android model</source>
-        <translation type="unfinished"></translation>
+        <translation>Tuo Android-malli</translation>
     </message>
     <message>
         <source>Import custom model</source>
-        <translation type="unfinished"></translation>
+        <translation>Tuo oma malli</translation>
     </message>
     <message>
         <source>Imported · contains no Android model</source>
-        <translation type="unfinished"></translation>
+        <translation>Tuotu · ei sisällä Android-mallia</translation>
     </message>
     <message>
         <source>Memory (MB)</source>
-        <translation type="unfinished"></translation>
+        <translation>Muisti (Mt)</translation>
     </message>
     <message>
         <source>Model</source>
-        <translation type="unfinished"></translation>
+        <translation>Malli</translation>
     </message>
     <message>
         <source>Model imported</source>
-        <translation type="unfinished"></translation>
+        <translation>Malli tuotu</translation>
     </message>
     <message>
         <source>No system image installed yet</source>
-        <translation type="unfinished"></translation>
+        <translation>Järjestelmäkuvaa ei ole vielä asennettu</translation>
     </message>
     <message>
         <source>Off</source>
-        <translation type="unfinished"></translation>
+        <translation>Pois</translation>
     </message>
     <message>
         <source>Open</source>
-        <translation type="unfinished"></translation>
+        <translation>Avaa</translation>
     </message>
     <message>
         <source>Open job</source>
-        <translation type="unfinished"></translation>
+        <translation>Avaa työ</translation>
     </message>
     <message>
         <source>Performance settings saved · used on the next start</source>
-        <translation type="unfinished"></translation>
+        <translation>Suorituskykyasetukset tallennettu · käytetään seuraavassa käynnistyksessä</translation>
     </message>
     <message>
         <source>Save</source>
-        <translation type="unfinished"></translation>
+        <translation>Tallenna</translation>
     </message>
     <message>
         <source>Saving…</source>
-        <translation type="unfinished"></translation>
+        <translation>Tallennetaan…</translation>
     </message>
     <message>
         <source>Set graphics, memory and CPU</source>
-        <translation type="unfinished"></translation>
+        <translation>Aseta grafiikka, muisti ja suoritin</translation>
     </message>
     <message>
         <source>Setting up device…</source>
-        <translation type="unfinished"></translation>
+        <translation>Laitetta otetaan käyttöön…</translation>
     </message>
     <message>
         <source>Setup failed · details in the job</source>
-        <translation type="unfinished"></translation>
+        <translation>Käyttöönotto epäonnistui · tiedot työssä</translation>
     </message>
     <message>
         <source>Software · compatible renderer</source>
-        <translation type="unfinished"></translation>
+        <translation>Ohjelmisto · yhteensopiva renderöijä</translation>
     </message>
     <message>
         <source>Start</source>
-        <translation type="unfinished"></translation>
+        <translation>Käynnistä</translation>
     </message>
     <message>
         <source>Starting…</source>
-        <translation type="unfinished"></translation>
+        <translation>Käynnistetään…</translation>
     </message>
     <message>
         <source>The computer GPU can speed up animations considerably. If graphics glitch, choose a software renderer. Changes require the emulator to be off; app data is kept.</source>
-        <translation type="unfinished"></translation>
+        <translation>Tietokoneen näytönohjain voi nopeuttaa animaatioita huomattavasti. Jos grafiikassa on häiriöitä, valitse ohjelmistorenderöijä. Muutokset vaativat, että emulaattori on sammutettu; sovellusten tiedot säilyvät.</translation>
     </message>
     <message>
         <source>Turn off emulator</source>
-        <translation type="unfinished"></translation>
+        <translation>Sammuta emulaattori</translation>
     </message>
     <message>
         <source>Vulkan compatibility</source>
-        <translation type="unfinished"></translation>
+        <translation>Vulkan-yhteensopivuus</translation>
     </message>
     <message>
         <source>Each emulator keeps its own model and app data.</source>
-        <translation type="unfinished"></translation>
+        <translation>Jokainen emulaattori säilyttää oman mallinsa ja sovellustietonsa.</translation>
     </message>
     <message>
         <source>No phone yet.</source>
-        <translation type="unfinished"></translation>
+        <translation>Ei vielä puhelinta.</translation>
     </message>
     <message>
         <source>Add an emulator, or plug in a phone with USB debugging on.</source>
-        <translation type="unfinished"></translation>
+        <translation>Lisää emulaattori tai liitä puhelin, jossa USB-virheenkorjaus on päällä.</translation>
     </message>
     <message>
         <source>Unpin</source>
-        <translation type="unfinished"></translation>
+        <translation>Irrota kiinnitys</translation>
     </message>
     <message>
         <source>Pin</source>
-        <translation type="unfinished"></translation>
+        <translation>Kiinnitä</translation>
     </message>
     <message>
         <source>Unpin this device</source>
-        <translation type="unfinished"></translation>
+        <translation>Irrota tämän laitteen kiinnitys</translation>
     </message>
     <message>
         <source>Pin this device to the top</source>
-        <translation type="unfinished"></translation>
+        <translation>Kiinnitä tämä laite ylimmäksi</translation>
     </message>
     <message>
         <source>Rename</source>
-        <translation type="unfinished"></translation>
+        <translation>Nimeä uudelleen</translation>
     </message>
     <message>
         <source>Give this device a nickname</source>
-        <translation type="unfinished"></translation>
+        <translation>Anna tälle laitteelle lempinimi</translation>
     </message>
     <message>
         <source>Device nickname</source>
-        <translation type="unfinished"></translation>
+        <translation>Laitteen lempinimi</translation>
     </message>
     <message>
         <source>Shown instead of %1 here, in device lists and in the Omarchy panel.</source>
-        <translation type="unfinished"></translation>
+        <translation>Näytetään nimen %1 sijaan täällä, laiteluetteloissa ja Omarchy-paneelissa.</translation>
     </message>
     <message>
         <source>Nickname</source>
-        <translation type="unfinished"></translation>
+        <translation>Lempinimi</translation>
     </message>
     <message>
         <source>Remove nickname</source>
-        <translation type="unfinished"></translation>
+        <translation>Poista lempinimi</translation>
     </message>
     <message>
         <source>Paired and connected · %1</source>
-        <translation type="unfinished"></translation>
+        <translation>Pariliitetty ja yhdistetty · %1</translation>
     </message>
     <message>
         <source>Paired. Enter the IP address and port shown under Wireless debugging to connect.</source>
-        <translation type="unfinished"></translation>
+        <translation>Pariliitetty. Yhdistä syöttämällä IP-osoite ja portti, jotka näkyvät kohdassa Langaton virheenkorjaus.</translation>
     </message>
     <message>
         <source>adb could not pair</source>
-        <translation type="unfinished"></translation>
+        <translation>adb ei voinut muodostaa pariliitosta</translation>
     </message>
     <message>
         <source>adb could not connect</source>
-        <translation type="unfinished"></translation>
+        <translation>adb ei voinut muodostaa yhteyttä</translation>
     </message>
     <message>
         <source>Pair over Wi-Fi</source>
-        <translation type="unfinished"></translation>
+        <translation>Pariliitä Wi-Fin kautta</translation>
     </message>
     <message>
         <source>QR code</source>
-        <translation type="unfinished"></translation>
+        <translation>QR-koodi</translation>
     </message>
     <message>
         <source>Pairing code</source>
-        <translation type="unfinished"></translation>
+        <translation>Pariliitoskoodi</translation>
     </message>
     <message>
         <source>On the phone, open Developer options › Wireless debugging › Pair device with QR code and scan this code. The phone and this computer must be on the same network; Android 11 or newer.</source>
-        <translation type="unfinished"></translation>
+        <translation>Avaa puhelimessa Kehittäjäasetukset › Langaton virheenkorjaus › Muodosta laitepari QR-koodilla ja skannaa tämä koodi. Puhelimen ja tämän tietokoneen on oltava samassa verkossa; Android 11 tai uudempi.</translation>
     </message>
     <message>
         <source>On the phone, open Developer options › Wireless debugging › Pair device with pairing code, then enter the address and code it shows.</source>
-        <translation type="unfinished"></translation>
+        <translation>Avaa puhelimessa Kehittäjäasetukset › Langaton virheenkorjaus › Muodosta laitepari pariliitoskoodilla ja syötä sitten näytetty osoite ja koodi.</translation>
     </message>
     <message>
         <source>QR code for wireless debugging</source>
-        <translation type="unfinished"></translation>
+        <translation>QR-koodi langatonta virheenkorjausta varten</translation>
     </message>
     <message>
         <source>Creating a code…</source>
-        <translation type="unfinished"></translation>
+        <translation>Luodaan koodia…</translation>
     </message>
     <message>
         <source>Pairing address</source>
-        <translation type="unfinished"></translation>
+        <translation>Pariliitososoite</translation>
     </message>
     <message>
         <source>Waiting for the phone…</source>
-        <translation type="unfinished"></translation>
+        <translation>Odotetaan puhelinta…</translation>
     </message>
     <message>
         <source>Pairing…</source>
-        <translation type="unfinished"></translation>
+        <translation>Muodostetaan pariliitosta…</translation>
     </message>
     <message>
         <source>Connecting…</source>
-        <translation type="unfinished"></translation>
+        <translation>Yhdistetään…</translation>
     </message>
     <message>
         <source>New code</source>
-        <translation type="unfinished"></translation>
+        <translation>Uusi koodi</translation>
     </message>
     <message>
         <source>Pair</source>
-        <translation type="unfinished"></translation>
+        <translation>Pariliitä</translation>
     </message>
     <message>
         <source>List</source>
-        <translation type="unfinished"></translation>
+        <translation>Luettelo</translation>
     </message>
     <message>
         <source>All screens</source>
-        <translation type="unfinished"></translation>
+        <translation>Kaikki näytöt</translation>
     </message>
     <message>
         <source>Show the device list</source>
-        <translation type="unfinished"></translation>
+        <translation>Näytä laiteluettelo</translation>
     </message>
     <message>
         <source>Show every running device&apos;s screen side by side</source>
-        <translation type="unfinished"></translation>
+        <translation>Näytä jokaisen käynnissä olevan laitteen näyttö rinnakkain</translation>
     </message>
     <message>
         <source>Accept Google&apos;s Android SDK licence for this download</source>
-        <translation type="unfinished"></translation>
+        <translation>Hyväksy Googlen Android SDK -lisenssi tätä latausta varten</translation>
     </message>
     <message>
         <source>Android system image</source>
-        <translation type="unfinished"></translation>
+        <translation>Androidin järjestelmäkuva</translation>
     </message>
     <message>
         <source>App data removed · %1 freed · the next start boots like a new device</source>
-        <translation type="unfinished"></translation>
+        <translation>Sovellustiedot poistettu · %1 vapautettu · seuraava käynnistys on kuin uudella laitteella</translation>
     </message>
     <message>
         <source>Cannot start: %1</source>
-        <translation type="unfinished"></translation>
+        <translation>Ei voi käynnistää: %1</translation>
     </message>
     <message>
         <source>Checking…</source>
-        <translation type="unfinished"></translation>
+        <translation>Tarkistetaan…</translation>
     </message>
     <message>
         <source>Copying device…</source>
-        <translation type="unfinished"></translation>
+        <translation>Kopioidaan laitetta…</translation>
     </message>
     <message>
         <source>Copying…</source>
-        <translation type="unfinished"></translation>
+        <translation>Kopioidaan…</translation>
     </message>
     <message>
         <source>Disk: about %1 for the emulator · %2 free</source>
-        <translation type="unfinished"></translation>
+        <translation>Levy: noin %1 emulaattorille · %2 vapaana</translation>
     </message>
     <message>
         <source>Download about %1 (estimate) · needs Google&apos;s SDK licence: %2</source>
-        <translation type="unfinished"></translation>
+        <translation>Lataus noin %1 (arvio) · vaatii Googlen SDK-lisenssin: %2</translation>
     </message>
     <message>
         <source>Download and create</source>
-        <translation type="unfinished"></translation>
+        <translation>Lataa ja luo</translation>
     </message>
     <message>
         <source>Duplicate</source>
-        <translation type="unfinished"></translation>
+        <translation>Monista</translation>
     </message>
     <message>
         <source>Duplicate copies the emulator with its apps and data under the new name, as a job you can cancel. Rename is a real rename of the emulator through the Android SDK; the nickname moves along. A nickname alone is set with the pencil button.</source>
-        <translation type="unfinished"></translation>
+        <translation>Monistaminen kopioi emulaattorin sovelluksineen ja tietoineen uudella nimellä peruttavissa olevana työnä. Nimeä uudelleen on emulaattorin todellinen uudelleennimeäminen Android SDK:n kautta; lempinimi siirtyy mukana. Pelkän lempinimen voi asettaa kynäpainikkeella.</translation>
     </message>
     <message>
         <source>Duplicate, rename or wipe this emulator</source>
-        <translation type="unfinished"></translation>
+        <translation>Monista, nimeä uudelleen tai tyhjennä tämä emulaattori</translation>
     </message>
     <message>
         <source>Letters, digits, - and _</source>
-        <translation type="unfinished"></translation>
+        <translation>Kirjaimet, numerot, - ja _</translation>
     </message>
     <message>
         <source>Manage</source>
-        <translation type="unfinished"></translation>
+        <translation>Hallitse</translation>
     </message>
     <message>
         <source>Manage emulator</source>
-        <translation type="unfinished"></translation>
+        <translation>Hallitse emulaattoria</translation>
     </message>
     <message>
         <source>New name</source>
-        <translation type="unfinished"></translation>
+        <translation>Uusi nimi</translation>
     </message>
     <message>
         <source>On disk: %1 · a wipe frees %2</source>
-        <translation type="unfinished"></translation>
+        <translation>Levyllä: %1 · tyhjennys vapauttaa %2</translation>
     </message>
     <message>
         <source>Pick an installed image, or type another package: it is downloaded as the first step. Tomacco creates phone, foldable and tablet emulators.</source>
-        <translation type="unfinished"></translation>
+        <translation>Valitse asennettu kuva tai kirjoita toinen paketti: se ladataan ensimmäisenä vaiheena. Tomacco luo puhelin-, taittopuhelin- ja tablettiemulaattoreita.</translation>
     </message>
     <message>
         <source>Reading disk usage…</source>
-        <translation type="unfinished"></translation>
+        <translation>Luetaan levyn käyttöä…</translation>
     </message>
     <message>
         <source>Rename and wipe need the emulator&apos;s name typed here</source>
-        <translation type="unfinished"></translation>
+        <translation>Uudelleennimeäminen ja tyhjennys vaativat, että emulaattorin nimi kirjoitetaan tähän</translation>
     </message>
     <message>
         <source>Renamed to %1</source>
-        <translation type="unfinished"></translation>
+        <translation>Nimetty uudelleen: %1</translation>
     </message>
     <message>
         <source>Renaming…</source>
-        <translation type="unfinished"></translation>
+        <translation>Nimetään uudelleen…</translation>
     </message>
     <message>
         <source>Start the emulator when it is ready</source>
-        <translation type="unfinished"></translation>
+        <translation>Käynnistä emulaattori, kun se on valmis</translation>
     </message>
     <message>
         <source>Steps: %1</source>
-        <translation type="unfinished"></translation>
+        <translation>Vaiheet: %1</translation>
     </message>
     <message>
         <source>System image installed · no download</source>
-        <translation type="unfinished"></translation>
+        <translation>Järjestelmäkuva asennettu · ei latausta</translation>
     </message>
     <message>
         <source>TV, Wear, Automotive and XR images are not supported yet</source>
-        <translation type="unfinished"></translation>
+        <translation>TV-, Wear-, Automotive- ja XR-kuvia ei vielä tueta</translation>
     </message>
     <message>
         <source>The emulator is on or its lock files exist. Turn it off first; nothing here changes a running emulator.</source>
-        <translation type="unfinished"></translation>
+        <translation>Emulaattori on päällä tai sen lukitustiedostot ovat olemassa. Sammuta se ensin; mikään täällä ei muuta käynnissä olevaa emulaattoria.</translation>
     </message>
     <message>
         <source>Wipe app data</source>
-        <translation type="unfinished"></translation>
+        <translation>Tyhjennä sovellustiedot</translation>
     </message>
     <message>
         <source>Wipe removes the apps, their data and the snapshots; the next start boots like a new device. The emulator&apos;s model and settings stay.</source>
-        <translation type="unfinished"></translation>
+        <translation>Tyhjennys poistaa sovellukset, niiden tiedot ja tilannevedokset; seuraava käynnistys on kuin uudella laitteella. Emulaattorin malli ja asetukset säilyvät.</translation>
     </message>
     <message>
         <source>Wiping…</source>
-        <translation type="unfinished"></translation>
+        <translation>Tyhjennetään…</translation>
     </message>
     <message>
         <source>already accepted</source>
-        <translation type="unfinished"></translation>
+        <translation>jo hyväksytty</translation>
     </message>
     <message>
         <source>apply model</source>
-        <translation type="unfinished"></translation>
+        <translation>ota malli käyttöön</translation>
     </message>
     <message>
         <source>create</source>
-        <translation type="unfinished"></translation>
+        <translation>luo</translation>
     </message>
     <message>
         <source>install image</source>
-        <translation type="unfinished"></translation>
+        <translation>asenna kuva</translation>
     </message>
     <message>
         <source>is missing</source>
-        <translation type="unfinished"></translation>
+        <translation>puuttuu</translation>
     </message>
     <message>
         <source>not enough free space</source>
-        <translation type="unfinished"></translation>
+        <translation>vapaata tilaa ei ole tarpeeksi</translation>
     </message>
     <message>
         <source>not yet accepted</source>
-        <translation type="unfinished"></translation>
+        <translation>ei vielä hyväksytty</translation>
     </message>
     <message>
         <source>start</source>
-        <translation type="unfinished"></translation>
+        <translation>käynnistä</translation>
     </message>
     <message>
         <source>the Android SDK</source>
-        <translation type="unfinished"></translation>
+        <translation>Android SDK</translation>
     </message>
     <message>
         <source>the name is taken</source>
-        <translation type="unfinished"></translation>
+        <translation>nimi on jo käytössä</translation>
     </message>
 </context>
 <context>
     <name>Backend</name>
     <message>
         <source>%1 is not part of this installation.</source>
-        <translation type="unfinished"></translation>
+        <translation>%1 ei kuulu tähän asennukseen.</translation>
     </message>
     <message>
         <source>Check failed</source>
-        <translation type="unfinished"></translation>
+        <translation>Tarkistus epäonnistui</translation>
     </message>
     <message>
         <source>Checking…</source>
-        <translation type="unfinished"></translation>
+        <translation>Tarkistetaan…</translation>
     </message>
     <message>
         <source>Copied</source>
-        <translation type="unfinished"></translation>
+        <translation>Kopioitu</translation>
     </message>
     <message>
         <source>Enter a valid http:// or https:// address.</source>
-        <translation type="unfinished"></translation>
+        <translation>Syötä kelvollinen http://- tai https://-osoite.</translation>
     </message>
     <message>
         <source>No index.html found. Choose a built web folder or open the dev server address.</source>
-        <translation type="unfinished"></translation>
+        <translation>index.html-tiedostoa ei löytynyt. Valitse käännetty verkkokansio tai avaa kehityspalvelimen osoite.</translation>
     </message>
     <message>
         <source>Not installed</source>
-        <translation type="unfinished"></translation>
+        <translation>Ei asennettu</translation>
     </message>
     <message>
         <source>The local preview server could not start.</source>
-        <translation type="unfinished"></translation>
+        <translation>Paikallista esikatselupalvelinta ei voitu käynnistää.</translation>
     </message>
     <message>
         <source>The screenshot folder could not be created.</source>
-        <translation type="unfinished"></translation>
+        <translation>Kuvakaappauskansiota ei voitu luoda.</translation>
     </message>
     <message>
         <source>Unknown</source>
-        <translation type="unfinished"></translation>
+        <translation>Tuntematon</translation>
     </message>
     <message>
         <source>This job has no log file yet.</source>
-        <translation type="unfinished"></translation>
+        <translation>Tällä työllä ei ole vielä lokitiedostoa.</translation>
     </message>
     <message>
         <source>Open</source>
-        <translation type="unfinished"></translation>
+        <translation>Avaa</translation>
     </message>
     <message>
         <source>%1 cannot be written.</source>
-        <translation type="unfinished"></translation>
+        <translation>Kohteeseen %1 ei voi kirjoittaa.</translation>
     </message>
     <message>
         <source>%1 cannot be read.</source>
-        <translation type="unfinished"></translation>
+        <translation>Kohdetta %1 ei voi lukea.</translation>
     </message>
     <message>
         <source>%1 is too large for a settings file.</source>
-        <translation type="unfinished"></translation>
+        <translation>%1 on liian suuri asetustiedostoksi.</translation>
     </message>
     <message>
         <source>%1 is not a Tomacco settings file.</source>
-        <translation type="unfinished"></translation>
+        <translation>%1 ei ole Tomaccon asetustiedosto.</translation>
     </message>
     <message>
         <source>%1 comes from a newer Tomacco; update this one first.</source>
-        <translation type="unfinished"></translation>
+        <translation>%1 on peräisin uudemmasta Tomaccosta; päivitä ensin tämä.</translation>
     </message>
     <message>
         <source>The recordings folder could not be created.</source>
-        <translation type="unfinished"></translation>
+        <translation>Tallennekansiota ei voitu luoda.</translation>
     </message>
     <message>
         <source>The session log must be an absolute path.</source>
-        <translation type="unfinished"></translation>
+        <translation>Istuntolokin on oltava absoluuttinen polku.</translation>
     </message>
     <message>
         <source>No session log at %1 yet. It appears with the agent&apos;s first call.</source>
-        <translation type="unfinished"></translation>
+        <translation>Istuntolokia ei vielä ole sijainnissa %1. Se ilmestyy agentin ensimmäisestä kutsusta.</translation>
     </message>
 </context>
 <context>
     <name>Colors</name>
     <message>
         <source>Cream</source>
-        <translation type="unfinished"></translation>
+        <translation>Kerma</translation>
     </message>
     <message>
         <source>Graphite</source>
-        <translation type="unfinished"></translation>
+        <translation>Grafiitti</translation>
     </message>
     <message>
         <source>Gray</source>
-        <translation type="unfinished"></translation>
+        <translation>Harmaa</translation>
     </message>
     <message>
         <source>Green Shadow</source>
-        <translation type="unfinished"></translation>
+        <translation>Vihreä varjo</translation>
     </message>
     <message>
         <source>Mint</source>
-        <translation type="unfinished"></translation>
+        <translation>Minttu</translation>
     </message>
     <message>
         <source>Violet Shadow</source>
-        <translation type="unfinished"></translation>
+        <translation>Violetti varjo</translation>
     </message>
     <message>
         <source>Black</source>
-        <translation type="unfinished"></translation>
+        <translation>Musta</translation>
     </message>
     <message>
         <source>Burgundy</source>
-        <translation type="unfinished"></translation>
+        <translation>Viininpunainen</translation>
     </message>
     <message>
         <source>Canyon</source>
-        <translation type="unfinished"></translation>
+        <translation>Kanjoni</translation>
     </message>
     <message>
         <source>Cloud White</source>
-        <translation type="unfinished"></translation>
+        <translation>Pilvenvalkoinen</translation>
     </message>
     <message>
         <source>Cobalt Violet</source>
-        <translation type="unfinished"></translation>
+        <translation>Kobolttivioletti</translation>
     </message>
     <message>
         <source>Device</source>
-        <translation type="unfinished"></translation>
+        <translation>Laite</translation>
     </message>
     <message>
         <source>Fog</source>
-        <translation type="unfinished"></translation>
+        <translation>Sumu</translation>
     </message>
     <message>
         <source>Frost</source>
-        <translation type="unfinished"></translation>
+        <translation>Huurre</translation>
     </message>
     <message>
         <source>Glacier</source>
-        <translation type="unfinished"></translation>
+        <translation>Jäätikkö</translation>
     </message>
     <message>
         <source>Hibiscus</source>
-        <translation type="unfinished"></translation>
+        <translation>Hibiskus</translation>
     </message>
     <message>
         <source>Lavender</source>
-        <translation type="unfinished"></translation>
+        <translation>Laventeli</translation>
     </message>
     <message>
         <source>Light Gold</source>
-        <translation type="unfinished"></translation>
+        <translation>Vaalea kulta</translation>
     </message>
     <message>
         <source>Mist Blue</source>
-        <translation type="unfinished"></translation>
+        <translation>Usvansininen</translation>
     </message>
     <message>
         <source>Night Sky</source>
-        <translation type="unfinished"></translation>
+        <translation>Yötaivas</translation>
     </message>
     <message>
         <source>Obsidian</source>
-        <translation type="unfinished"></translation>
+        <translation>Obsidiaani</translation>
     </message>
     <message>
         <source>Olive</source>
-        <translation type="unfinished"></translation>
+        <translation>Oliivi</translation>
     </message>
     <message>
         <source>Pink</source>
-        <translation type="unfinished"></translation>
+        <translation>Vaaleanpunainen</translation>
     </message>
     <message>
         <source>Pistachio</source>
-        <translation type="unfinished"></translation>
+        <translation>Pistaasi</translation>
     </message>
     <message>
         <source>Sage</source>
-        <translation type="unfinished"></translation>
+        <translation>Salvia</translation>
     </message>
     <message>
         <source>Silver</source>
-        <translation type="unfinished"></translation>
+        <translation>Hopea</translation>
     </message>
     <message>
         <source>Sky Blue</source>
-        <translation type="unfinished"></translation>
+        <translation>Taivaansininen</translation>
     </message>
     <message>
         <source>Soft Pink</source>
-        <translation type="unfinished"></translation>
+        <translation>Pehmeä vaaleanpunainen</translation>
     </message>
     <message>
         <source>Space Black</source>
-        <translation type="unfinished"></translation>
+        <translation>Avaruusmusta</translation>
     </message>
     <message>
         <source>Star White</source>
