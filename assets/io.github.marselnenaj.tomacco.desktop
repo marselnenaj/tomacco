@@ -26,6 +26,7 @@ GenericName[sk]=Prostredie pre mobilný vývoj
 GenericName[sl]=Okolje za mobilni razvoj
 GenericName[hr]=Okruženje za mobilni razvoj
 GenericName[sr]=Окружење за мобилни развој
+GenericName[bg]=Среда за мобилна разработка
 Comment=Build, run and test native Android and iOS apps
 Comment[de]=Native Android- und iOS-Apps bauen, starten und testen
 Comment[fr]=Compiler, lancer et tester des apps Android et iOS natives
@@ -51,6 +52,7 @@ Comment[sk]=Zostavujte, spúšťajte a testujte natívne aplikácie pre Android 
 Comment[sl]=Gradite, zaganjajte in preizkušajte izvorne aplikacije za Android in iOS
 Comment[hr]=Izgrađujte, pokrećite i testirajte izvorne Android i iOS aplikacije
 Comment[sr]=Изграђујте, покрећите и тестирајте изворне Android и iOS апликације
+Comment[bg]=Компилирайте, стартирайте и тествайте нативни Android и iOS приложения
 Exec=tomacco
 Icon=io.github.marselnenaj.tomacco
 Terminal=false
@@ -80,6 +82,7 @@ Keywords[sk]=Android;iPhone;iOS;Swift;Kotlin;Flutter;Emulátor;MCP;Agent;Smartf�
 Keywords[sl]=Android;iPhone;iOS;Swift;Kotlin;Flutter;Emulator;MCP;Agent;Pametni telefon;
 Keywords[hr]=Android;iPhone;iOS;Swift;Kotlin;Flutter;Emulator;MCP;Agent;Pametni telefon;
 Keywords[sr]=Android;iPhone;iOS;Swift;Kotlin;Flutter;Емулатор;MCP;Агент;Паметни телефон;
+Keywords[bg]=Android;iPhone;iOS;Swift;Kotlin;Flutter;Емулатор;MCP;Агент;Смартфон;
 StartupNotify=true
 StartupWMClass=io.github.marselnenaj.tomacco
 Actions=Project;Devices;Jobs;
@@ -110,6 +113,7 @@ Name[sk]=Projekt
 Name[sl]=Projekt
 Name[hr]=Projekt
 Name[sr]=Пројекат
+Name[bg]=Проект
 Exec=tomacco --workspace project
 
 [Desktop Action Devices]
@@ -138,6 +142,7 @@ Name[sk]=Zariadenia
 Name[sl]=Naprave
 Name[hr]=Uređaji
 Name[sr]=Уређаји
+Name[bg]=Устройства
 Exec=tomacco --workspace devices
 
 [Desktop Action Jobs]
@@ -166,4 +171,5 @@ Name[sk]=Zostavenia a úlohy
 Name[sl]=Gradnje in opravila
 Name[hr]=Izgradnje i zadaci
 Name[sr]=Изградње и задаци
+Name[bg]=Компилации и задачи
 Exec=tomacco --workspace jobs
