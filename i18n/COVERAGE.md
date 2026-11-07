@@ -25,7 +25,7 @@ review list, not an error count.
 | fi | Suomi (Finnish) | ltr | 2 (english) | 0/1800 | 1800 | 0 | 0 | 0/6 | untranslated |
 | fil | Filipino (Filipino) | ltr | 3 (tagalog) | 0/1800 | 1800 | 0 | 0 | 0/6 | untranslated |
 | fr | Français (French) | ltr | 2 (french) | 1800/1800 | 0 | 0 | 0 | 6/6 | complete |
-| ga | Gaeilge (Irish) | ltr | 3 (irish) | 0/1800 | 1800 | 0 | 0 | 0/6 | untranslated |
+| ga | Gaeilge (Irish) | ltr | 3 (irish) | 1800/1800 | 0 | 1 | 0 | 6/6 | complete |
 | he | עברית (Hebrew) | rtl | 2 (english) | 0/1800 | 1800 | 0 | 0 | 0/6 | untranslated |
 | hi | हिन्दी (Hindi) | ltr | 2 (english) | 0/1800 | 1800 | 0 | 0 | 0/6 | untranslated |
 | hr | Hrvatski (Croatian) | ltr | 3 (russian) | 0/1800 | 1800 | 0 | 0 | 0/6 | untranslated |
@@ -61,6 +61,6 @@ review list, not an error count.
 | zh-CN | 简体中文 (Chinese (Simplified)) | ltr | 1 (universal) | 1800/1800 | 0 | 1 | 0 | 6/6 | complete |
 | zh-TW | 繁體中文 (Chinese (Traditional)) | ltr | 1 (universal) | 1800/1800 | 0 | 1 | 0 | 6/6 | complete |
 
-Complete: 22 of 50 translated languages: ar, ca, da, de, el, es, es-MX, fr, id, it, ja, nl, no, pl, pt, pt-BR, ro, ru, sv, uk, zh-CN, zh-TW
+Complete: 23 of 50 translated languages: ar, ca, da, de, el, es, es-MX, fr, ga, id, it, ja, nl, no, pl, pt, pt-BR, ro, ru, sv, uk, zh-CN, zh-TW
 
-Not complete: bg, bn, cs, et, fa, fi, fil, ga, he, hi, hr, hu, is, ko, lt, lv, ms, si, sk, sl, sr, sw, ta, th, tr, ur, uz, vi
+Not complete: bg, bn, cs, et, fa, fi, fil, he, hi, hr, hu, is, ko, lt, lv, ms, si, sk, sl, sr, sw, ta, th, tr, ur, uz, vi

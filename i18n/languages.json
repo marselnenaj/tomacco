@@ -246,7 +246,7 @@
       "zeroDigit": "0",
       "plural": "irish",
       "omarchy": true,
-      "complete": false
+      "complete": true
     },
     {
       "code": "he",

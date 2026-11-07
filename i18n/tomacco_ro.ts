@@ -1207,7 +1207,7 @@ Modelul determină ecranul și rama. Android provine din imaginea de sistem alea
     </message>
     <message>
         <source>Back</source>
-        <translation>Spate</translation>
+        <translation>Înapoi</translation>
     </message>
     <message>
         <source>Bring back into the workspace</source>

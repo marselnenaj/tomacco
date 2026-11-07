@@ -1207,7 +1207,7 @@ The model determines the display and frame. Android comes from the chosen system
     </message>
     <message>
         <source>Back</source>
-        <translation>Πίσω όψη</translation>
+        <translation>Πίσω</translation>
     </message>
     <message>
         <source>Bring back into the workspace</source>

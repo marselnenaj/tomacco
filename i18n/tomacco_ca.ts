@@ -1207,7 +1207,7 @@ El model determina la pantalla i el marc. Android prové de la imatge del sistem
     </message>
     <message>
         <source>Back</source>
-        <translation>Part posterior</translation>
+        <translation>Enrere</translation>
     </message>
     <message>
         <source>Bring back into the workspace</source>
@@ -6689,7 +6689,7 @@ Llicència: Llicència Pública General de GNU, versió 2 o posterior.</translat
     </message>
     <message>
         <source>Turn · yaw (degrees)</source>
-        <translation>Gir · guiñada (graus)</translation>
+        <translation>Gir · guinyada (graus)</translation>
     </message>
     <message>
         <source>Tilt · pitch (degrees)</source>
