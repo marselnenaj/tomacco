@@ -24,6 +24,19 @@ operations and their JSON results.
   gets marks, taps, tree, OCR, waits, diffs and exports: its WebDriverAgent hierarchy is read in
   screenshot pixels. Marks carry the frame id and size they were made on, and a tap after a rotation
   answers `mark_stale` naming it and taps nothing.
+- **Verified field input.** `fill` with `verify_value` (in `runtime.input` and `runtime.actions`)
+  checks that the editor that took the focus is the one tapped (or named by `field_name`) and a
+  readable text field, skips an already matching value, never takes a placeholder for entered text,
+  reads the exact value back, and answers `field_uncertain` instead of typing again when the effect of
+  a sent write is unknown. Secure fields are refused unread; `submit` sends one Return only after the
+  value is verified. USB iPhone over WebDriverAgent (contract-tested on a loopback double, not on
+  hardware) and scripted fixtures; other transports answer `fill_verification_unsupported`, and
+  `input_capabilities.fill_verification` says which. `runtime.actions` reports `uncertain_steps`.
+- **Compact screen trees.** `screen.tree` takes `mode: compact`, which picks whole records from the
+  entire hierarchy within `max_chars` by focus, editors, a task `query`, controls, state, screen
+  bands and repetition, folds a static label into the one control it belongs to with its source
+  reference, and lists what it left out; `mode: detail` answers complete records by reference.
+  Every mode answers a `digest`, and a stale one answers `tree_stale`. The default tree is unchanged.
 - **Offline fixture runtime.** With `TOMACCO_FIXTURE_RUNTIME` set, `runtime.start` on
   `fixture:NAME` connects a scripted device for tests and the benchmark runner, labelled
   `evidence: fixture` everywhere.

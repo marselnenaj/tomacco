@@ -8,7 +8,10 @@
 //! would send it; waits and mark taps go through the same screen operations
 //! an agent calls one by one. A step's status is `applied` (the transport
 //! accepted it), `verified` (its `expect` postcondition was seen on the
-//! screen), `skipped` (after a failure) or `failed`.
+//! screen, or a `fill` with `verify_value` read its exact value back),
+//! `uncertain` (a verified fill sent text whose effect could not be
+//! established; it is never sent again), `skipped` (after a failure) or
+//! `failed`.
 use super::*;
 use crate::screen::{self, Session, Store};
 use crate::screen_ocr::Tesseract;
@@ -53,6 +56,16 @@ fn check(steps: &[Value]) -> Result<()> {
         if action == "gesture" {
             super::check_gesture(step).map_err(|e| invalid(format!("Step {i}: {}", e.message)))?;
         }
+        if action == "fill" || step.get("verify_value").is_some() || step.get("submit").is_some() || step.get("field_name").is_some() {
+            // focus_timeout_ms is also a text step's; only a verified fill bounds it at 10 s.
+            let mut fill = step.clone();
+            if !b(step, "verify_value") {
+                if let Some(fill) = fill.as_object_mut() {
+                    fill.remove("focus_timeout_ms");
+                }
+            }
+            super::field::check(&fill).map_err(|e| invalid(format!("Step {i}: {}", e.message)))?;
+        }
         if let Some(expect) = step.get("expect") {
             if !expect.is_object() || (expect.get("text").is_none() && expect.get("text_gone").is_none()) {
                 return Err(invalid(format!("Step {i}: expect names text or text_gone")));
@@ -73,9 +86,15 @@ fn stopped(error: Error, remedy: &str, done: &[Value], total: usize) -> Error {
         .filter(|r| r["mutated"] == true && matches!(s(r, "status"), "applied" | "verified"))
         .map(|r| n(r, "index"))
         .collect();
+    // Sent, with an effect nobody could establish: neither applied nor not.
+    let uncertain: Vec<u64> = done
+        .iter()
+        .filter(|r| s(r, "status") == "uncertain")
+        .map(|r| n(r, "index"))
+        .collect();
     let skipped: Vec<usize> = (done.len()..total).collect();
     error.remedy(remedy).details(
-        json!({"steps":done,"applied_steps":applied,"skipped":skipped,"stopped_at":done.len().saturating_sub(1)}),
+        json!({"steps":done,"applied_steps":applied,"uncertain_steps":uncertain,"skipped":skipped,"stopped_at":done.len().saturating_sub(1)}),
     )
 }
 
@@ -116,6 +135,18 @@ fn run_step(id: &str, step: &Value, deadline: Instant, store: &Store) -> Result<
             if let Some(v) = step.get(key) {
                 a[key] = v.clone();
             }
+        }
+        // A verified fill's own arguments, validated by check(); its focus
+        // wait never outlasts the batch.
+        if action == "fill" && b(step, "verify_value") {
+            a["verify_value"] = json!(true);
+            for key in ["field_name", "submit"] {
+                if let Some(v) = step.get(key) {
+                    a[key] = v.clone();
+                }
+            }
+            let wait = ms(step, "focus_timeout_ms", 2000, super::field::FOCUS_MAX_MS);
+            a["focus_timeout_ms"] = json!(wait.min(remaining.as_millis() as u64));
         }
         if let Some(extra) = extra.as_object() {
             for (k, v) in extra {
@@ -330,7 +361,12 @@ pub fn run(a: &Value) -> Result {
         let mut record = json!({"index":index,"action":action,"mutated":mutated,"started_at":now()});
         match run_step(id, step, deadline, &store) {
             Ok((result, extra)) => {
-                record["status"] = json!("applied");
+                // A verified fill read its exact value back from the editor.
+                let field_verified = action == "fill" && result["verified"] == true;
+                record["status"] = json!(if field_verified { "verified" } else { "applied" });
+                if action == "fill" && b(step, "verify_value") {
+                    record["field_verified"] = json!(field_verified);
+                }
                 record["result"] = result;
                 if let Some(extra) = extra.as_object() {
                     for (k, v) in extra {
@@ -362,7 +398,8 @@ pub fn run(a: &Value) -> Result {
                 done.push(record);
             }
             Err(error) => {
-                record["status"] = json!("failed");
+                // A verified fill that sent text it could not confirm.
+                record["status"] = json!(if error.code == "field_uncertain" { "uncertain" } else { "failed" });
                 record["duration_ms"] = json!(at.elapsed().as_millis() as u64);
                 record["error"] = error.value();
                 let code = error.code.clone();
@@ -374,15 +411,33 @@ pub fn run(a: &Value) -> Result {
                 // is a failed step.
                 let kept = matches!(
                     code.as_str(),
-                    "focus_timeout" | "focus_unobservable" | "mark_stale" | "frame_stale" | "request_cancelled"
+                    "focus_timeout"
+                        | "focus_unobservable"
+                        | "mark_stale"
+                        | "frame_stale"
+                        | "request_cancelled"
+                        | "fill_verification_unsupported"
+                        | "field_tap_failed"
+                        | "field_not_focused"
+                        | "field_wrong_target"
+                        | "field_unsupported"
+                        | "field_stale"
+                        | "field_unobservable"
+                        | "field_uncertain"
+                        | "field_submit_not_sent"
                 );
+                let remedy = if code == "field_uncertain" {
+                    "The step listed in uncertain_steps sent text whose effect is unknown: never resend it. Observe the field and decide from what it holds; the steps listed as applied reached the device"
+                } else {
+                    "The steps listed as applied reached the device; do not resend them. Observe, fix the failed step and continue from it"
+                };
                 return Err(stopped(
                     if kept {
                         Error::new(&code, message)
                     } else {
                         Error::new("actions_step_failed", message)
                     },
-                    "The steps listed as applied reached the device; do not resend them. Observe, fix the failed step and continue from it",
+                    remedy,
                     &done,
                     total,
                 ));
@@ -423,5 +478,25 @@ mod tests {
         let details = error.details.unwrap();
         assert_eq!(details["applied_steps"], json!([0]));
         assert_eq!(details["skipped"], json!([3, 4]));
+        // An uncertain fill is listed apart: neither applied nor safe to resend.
+        let error = stopped(
+            Error::new("field_uncertain", "lost"),
+            "look",
+            &[json!({"index":0,"status":"verified","mutated":true}), json!({"index":1,"status":"uncertain","mutated":true})],
+            3,
+        );
+        let details = error.details.unwrap();
+        assert_eq!(details["applied_steps"], json!([0]));
+        assert_eq!(details["uncertain_steps"], json!([1]));
+        assert_eq!(details["skipped"], json!([2]));
+        // A verified fill is checked like the rest before anything is sent.
+        let fill = json!({"action":"fill","x":0.5,"y":0.5,"text":"a","verify_value":true,"submit":true});
+        assert!(check(std::slice::from_ref(&fill)).is_ok());
+        assert!(check(&[json!({"action":"fill","x":0.5,"y":0.5,"text":"a","submit":true})]).is_err());
+        assert!(check(&[json!({"action":"key","key":"enter","submit":true})]).is_err());
+        assert!(check(&[json!({"action":"fill","x":0.5,"y":0.5,"text":"a","verify_value":true,"focus_timeout_ms":30000})]).is_err());
+        // A plain fill and a text step keep their old focus bound.
+        assert!(check(&[json!({"action":"fill","x":0.5,"y":0.5,"text":"a","focus_timeout_ms":30000})]).is_ok());
+        assert!(check(&[json!({"action":"text","text":"a","focus_timeout_ms":30000})]).is_ok());
     }
 }

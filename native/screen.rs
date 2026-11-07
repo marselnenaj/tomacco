@@ -730,29 +730,87 @@ pub fn tap(a: &Value, screen: &mut dyn Screen, store: &Store) -> Result {
 
 // ---- screen.tree ----------------------------------------------------------------
 
+/// `screen.tree`: the document-order text (`mode` tree, the default), the
+/// relevant records of the whole tree within the budget (`compact`), or the
+/// complete records of named references (`detail`). Every mode reads a fresh
+/// hierarchy, keeps its marks for screen.tap, and answers its `digest`; a
+/// given `digest` that differs answers tree_stale with nothing else done.
 pub fn tree_text(a: &Value, screen: &mut dyn Screen, store: &Store) -> Result {
     let device = s(a, "device");
     let max_chars = limit_argument(a, "max_chars", 6000, 500, 100_000)?;
+    let mode = a["mode"].as_str().unwrap_or("tree");
+    let refs: Vec<String> = a["refs"]
+        .as_array()
+        .map(|r| r.iter().filter_map(|v| v.as_str().map(str::to_string)).collect())
+        .unwrap_or_default();
+    match mode {
+        "tree" | "compact" if a.get("refs").is_some() => {
+            return Err(Error::new("invalid_argument", "refs belong to mode detail"));
+        }
+        "tree" | "detail" if a.get("query").is_some() => {
+            return Err(Error::new("invalid_argument", "query ranks the records of mode compact"));
+        }
+        "detail" if refs.is_empty() => {
+            return Err(Error::new("invalid_argument", "mode detail needs refs, such as [\"n12\"] from a compact tree"));
+        }
+        "tree" | "compact" | "detail" => {}
+        other => return Err(Error::new("invalid_argument", format!("Unknown mode {other:?}"))),
+    }
     let xml = screen
         .hierarchy()?
         .ok_or_else(|| no_hierarchy("screen.tree", device))?;
+    let digest: String = crate::core::digest(xml.as_bytes()).chars().take(16).collect();
+    if let Some(expected) = a["digest"].as_str() {
+        if expected != digest {
+            return Err(Error::new(
+                "tree_stale",
+                "The screen's hierarchy changed since the tree with this digest was read; its references may name other nodes now",
+            )
+            .remedy("Read the tree again (mode compact or tree) and use the references and digest it answers")
+            .details(json!({"expected":expected,"current":digest})));
+        }
+    }
     if let Some(keep) = a["xml_path"].as_str() {
         atomic_write(&output_path(keep)?, xml.as_bytes())?;
     }
     let nodes = tree::parse(&xml)?;
+    // A reference that is no node fails before the marks are replaced.
+    let wanted = refs
+        .iter()
+        .map(|r| tree::reference(&nodes, r))
+        .collect::<Result<Vec<usize>>>()?;
     let numbers = tree::numbering(&nodes, 200);
-    let rendered = tree::tree(&nodes, &numbers, max_chars, b(a, "only_interactive"));
     let (found, _) = tree::marks(&nodes, 200);
+    let (width, height) = tree::screen_size(&nodes);
     store.save(
         device,
-        &json!({"device":device,"taken":now(),"source":"hierarchy","width":rendered.width,"height":rendered.height,"marks":found}),
+        &json!({"device":device,"taken":now(),"source":"hierarchy","width":width,"height":height,"marks":found}),
         None,
     )?;
-    Ok(
-        json!({"text":rendered.text,"chars":rendered.text.chars().count(),"package":rendered.package,
-        "width":rendered.width,"height":rendered.height,"nodes":rendered.nodes_total,"shown":rendered.nodes_shown,
-        "truncated":rendered.truncated,"marks":found.len(),"source":"hierarchy"}),
-    )
+    match mode {
+        "compact" => {
+            let c = tree::compact(&nodes, &numbers, max_chars, s(a, "query"), b(a, "only_interactive"), &digest);
+            Ok(json!({"text":c.text,"chars":c.text.chars().count(),"bytes":c.text.len(),"package":c.package,
+                "width":c.width,"height":c.height,"nodes":c.records,"shown":c.selected.len(),
+                "truncated":c.truncated,"marks":found.len(),"source":"hierarchy","mode":"compact","digest":digest,
+                "omitted":c.omitted.len(),"omitted_by":c.omitted_by,
+                "omitted_refs":c.omitted.iter().take(100).map(|i| format!("n{i}")).collect::<Vec<_>>(),
+                "omitted_refs_truncated":c.omitted.len() > 100,"folded":c.folded,"hidden":c.hidden}))
+        }
+        "detail" => {
+            let records: Vec<Value> = wanted.iter().map(|i| tree::detail(&nodes, &numbers, *i)).collect();
+            Ok(json!({"records":records,"count":records.len(),"package":tree::app_package_of(&nodes),
+                "width":width,"height":height,"marks":found.len(),"source":"hierarchy","mode":"detail","digest":digest}))
+        }
+        _ => {
+            let rendered = tree::tree(&nodes, &numbers, max_chars, b(a, "only_interactive"));
+            Ok(
+                json!({"text":rendered.text,"chars":rendered.text.chars().count(),"package":rendered.package,
+                "width":rendered.width,"height":rendered.height,"nodes":rendered.nodes_total,"shown":rendered.nodes_shown,
+                "truncated":rendered.truncated,"marks":found.len(),"source":"hierarchy","mode":"tree","digest":digest}),
+            )
+        }
+    }
 }
 
 // ---- screen.ocr -------------------------------------------------------------------

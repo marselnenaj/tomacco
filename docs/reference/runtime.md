@@ -95,7 +95,7 @@ tomaccoctl call runtime.stop '{"session":"<session>"}'
 
 **Native input**
 
-Deliver native input using normalized 0..1 coordinates. Android supports touch/tap/swipe/key/text/rotate; text pastes UTF-8. Physical iPhone uses WDA for Unicode text/fill, tap/swipe/rotate, a two-finger pinch (x, y, scale, duration) and gestures committed as one atomic request on touch-up; shake/hinge are unsupported there. Android also takes pinch, as two scrcpy pointers. Apple Simulator supports ASCII HID text and Unicode accessible fill; extra gestures depend on the companion. Pass decoded width/height after Simulator rotation. An AirPlay session (device airplay) drives the iPhone as a Bluetooth pointer and US-layout keyboard once it is paired with Tomacco and AssistiveTouch is on: touch moves the pointer relatively, hover moves it without a button, cancel without a button forgets the last position; tap, swipe, text and the keys home, volume_up, volume_down, enter, escape, backspace, delete, tab and the arrows work. runtime.state answers input_capabilities per transport; runtime.gesture sends timestamped traces.
+Deliver native input using normalized 0..1 coordinates. Android supports touch/tap/swipe/key/text/rotate; text pastes UTF-8. Physical iPhone uses WDA for Unicode text/fill, tap/swipe/rotate, a two-finger pinch (x, y, scale, duration) and gestures committed as one atomic request on touch-up; shake/hinge are unsupported there. Android also takes pinch, as two scrcpy pointers. Apple Simulator supports ASCII HID text and Unicode accessible fill; extra gestures depend on the companion. Pass decoded width/height after Simulator rotation. An AirPlay session (device airplay) drives the iPhone as a Bluetooth pointer and US-layout keyboard once it is paired with Tomacco and AssistiveTouch is on: touch moves the pointer relatively, hover moves it without a button, cancel without a button forgets the last position; tap, swipe, text and the keys home, volume_up, volume_down, enter, escape, backspace, delete, tab and the arrows work. fill with verify_value checks the focused editor and reads its exact value back before answering verified (USB iPhone over WebDriverAgent and scripted fixtures; others answer fill_verification_unsupported). runtime.state answers input_capabilities per transport; runtime.gesture sends timestamped traces.
 
 Annotations: writes, not idempotent, open world.
 
@@ -116,6 +116,10 @@ Annotations: writes, not idempotent, open world.
 | `angle` | number |  |  | 0 to 180 |
 | `width` | integer |  |  | 1 to 16384 |
 | `height` | integer |  |  | 1 to 16384 |
+| `verify_value` | boolean |  |  | For fill: verify it (off when left out). The editor that takes the focus after the tap must cover the tapped point (or be named by field_name) and be a supported text field; its value is read before writing (an already matching value is not typed again; a value equal to the placeholder never counts as entered text) and read back afterwards on the same session and element. Answers verified, or an error: nothing typed (field_not_focused, field_wrong_target, field_unsupported, field_stale, field_unobservable, field_tap_failed), or field_uncertain when text was sent and its effect is unknown; nothing is ever retyped. Secure fields are refused unread. Transports that cannot read an editor back answer fill_verification_unsupported and send nothing (input_capabilities.fill_verification) |
+| `field_name` | string |  |  | non-empty, up to 256 characters; For a verified fill: the editor must have this accessibility identifier or label (for a field that moves as it takes the focus); otherwise it must cover the tapped point |
+| `focus_timeout_ms` | integer |  |  | 0 to 10000; For a verified fill: how long to wait for the editor to take the focus after the tap (2000 when left out) |
+| `submit` | boolean |  |  | For a verified fill: send one Return to the field once its value is verified (or already matched) and it still has the focus; never on any other outcome. Check where it led with an expect postcondition or a fresh observation |
 
 ```sh
 tomaccoctl call runtime.input '{"session":"<session>","action":"touch"}'
@@ -197,7 +201,7 @@ tomaccoctl call runtime.gesture '{"session":"<session>","contacts":[{"points":[{
 
 **Ordered input batch**
 
-Run up to 50 input and wait steps in order on one session, in one call, with a result per step. A text step waits until a field has the focus (polling the session's focus and keyboard) before it types, so the first characters are not lost, and answers focus_timeout with nothing typed when no field takes it; where the transport cannot report focus it says so and settles briefly instead. A tap can name a mark from the last screen.marks of this session and is verified like screen.tap. A step may carry expect, a text that must appear or go afterwards: met makes the step verified, otherwise postcondition_failed stops the batch with the step still counted as applied. The first failure stops the rest: the error's details list every step so far (steps), the indexes that reached the device (applied_steps) and those not run (skipped), so an agent never resends an applied step. The whole batch is bounded by timeout and by the client's cancellation. With frame (width, height, orientation from runtime.observe) the batch is refused with frame_stale and nothing sent when the screen's geometry changed since. observe_after appends a fresh runtime.observe. The answer's evidence is fixture on the offline fixture runtime.
+Run up to 50 input and wait steps in order on one session, in one call, with a result per step. A text step waits until a field has the focus (polling the session's focus and keyboard) before it types, so the first characters are not lost, and answers focus_timeout with nothing typed when no field takes it; where the transport cannot report focus it says so and settles briefly instead. A tap can name a mark from the last screen.marks of this session and is verified like screen.tap. A step may carry expect, a text that must appear or go afterwards: met makes the step verified, otherwise postcondition_failed stops the batch with the step still counted as applied. A fill step with verify_value is verified only when the field's exact value was read back; text sent with an unknown effect makes it uncertain (field_uncertain) and it is never sent again. The first failure stops the rest: the error's details list every step so far (steps), the indexes that reached the device (applied_steps), those whose effect is unknown (uncertain_steps) and those not run (skipped), so an agent never resends an applied step. The whole batch is bounded by timeout and by the client's cancellation. With frame (width, height, orientation from runtime.observe) the batch is refused with frame_stale and nothing sent when the screen's geometry changed since. observe_after appends a fresh runtime.observe. The answer's evidence is fixture on the offline fixture runtime.
 
 Annotations: writes, not idempotent, open world.
 
@@ -205,7 +209,7 @@ Annotations: writes, not idempotent, open world.
 | --- | --- | --- | --- | --- |
 | `session` | string | yes |  | matching `^[a-f0-9]{32}$`; ID returned by runtime.start; separate from desktop preview sessions. |
 | `steps` | array of object | yes |  | 1 to 50 items |
-| `steps[].action` | string | yes |  | one of `tap`, `swipe`, `key`, `text`, `fill`, `pinch`, `rotate`, `gesture`, `wait`, `wait_text`, `wait_text_gone`, `wait_stable`, `observe`; tap (x, y or mark), swipe, key, text (after the field has the focus), fill, pinch, rotate and gesture change the device; wait, wait_text, wait_text_gone, wait_stable and observe only look |
+| `steps[].action` | string | yes |  | one of `tap`, `swipe`, `key`, `text`, `fill`, `pinch`, `rotate`, `gesture`, `wait`, `wait_text`, `wait_text_gone`, `wait_stable`, `observe`; tap (x, y or mark), swipe, key, text (after the field has the focus), fill (verify_value reads the value back), pinch, rotate and gesture change the device; wait, wait_text, wait_text_gone, wait_stable and observe only look |
 | `steps[].x` | number |  |  | 0 to 1; 0..1 of the frame's width |
 | `steps[].y` | number |  |  | 0 to 1; 0..1 of the frame's height |
 | `steps[].x2` | number |  |  | 0 to 1; Swipe end |
@@ -217,7 +221,7 @@ Annotations: writes, not idempotent, open world.
 | `steps[].key` | string |  |  | one of `home`, `back`, `escape`, `enter`, `backspace`, `delete`, `tab`, `up`, `down`, `left`, `right`, `power`, `volume_up`, `volume_down`, `apps` |
 | `steps[].text` | string |  |  | up to 16000 characters; For text and fill: what to type; for wait_text and wait_text_gone: what to wait for |
 | `steps[].focus` | string |  | `"wait"` | one of `wait`, `require`, `none`; For text: wait polls the session until a field has the focus (or the keyboard shows where focus is not reported) before typing, and answers focus_timeout with nothing typed when none does; require also fails when the transport cannot report focus; none types at once |
-| `steps[].focus_timeout_ms` | integer |  | `2000` | 0 to 60000 |
+| `steps[].focus_timeout_ms` | integer |  | `2000` | 0 to 60000; For text: how long to wait for a focused field. For a verified fill: how long to wait for the editor after the tap, at most 10000 |
 | `steps[].settle_ms` | integer |  | `300` | 0 to 5000; For text when focus cannot be observed: how long to wait before typing |
 | `steps[].orientation` | string |  |  | one of `portrait`, `portrait_upside_down`, `landscape_left`, `landscape_right` |
 | `steps[].scale` | number |  |  | 0.05 to 20 |
@@ -261,6 +265,9 @@ Annotations: writes, not idempotent, open world.
 | `steps[].expect.region.y` | integer | yes |  | at least 0 |
 | `steps[].expect.region.width` | integer | yes |  | at least 1 |
 | `steps[].expect.region.height` | integer | yes |  | at least 1 |
+| `steps[].verify_value` | boolean |  |  | For fill: verify the editor and read its exact value back, as runtime.input does; verified makes the step verified, field_uncertain makes it uncertain (listed in uncertain_steps, never resent) |
+| `steps[].field_name` | string |  |  | non-empty, up to 256 characters; For a verified fill: the editor must have this accessibility identifier or label (for a field that moves as it takes the focus); otherwise it must cover the tapped point |
+| `steps[].submit` | boolean |  |  | For a verified fill: send one Return to the field once its value is verified (or already matched) and it still has the focus; never on any other outcome. Check where it led with an expect postcondition or a fresh observation |
 | `timeout` | integer |  | `30` | 1 to 300; Seconds for the whole batch, waits included |
 | `frame` | object |  |  | The frame the steps were planned on, from runtime.observe: refused with frame_stale when the screen's size or orientation differs now |
 | `frame.id` | string |  |  | up to 64 characters |

@@ -1,0 +1,157 @@
+{
+ "$comment": "Lane B of the PhoneUse-derived work: verified field input and compact whole-screen observations. What was built, how it was tested, what it does not cover. All evidence is from offline fixtures, a loopback WebDriverAgent double and isolated temporary homes with every device helper trapped; no phone, Pixel, MacBook or iPhone was contacted.",
+ "date": "2026-11-07",
+ "model": "claude-opus-5-5",
+ "branch": "feat/phoneuse-input-observation",
+ "base": "39935232845346f3c72d03c91471ba8b07cb806a",
+ "commits": {
+  "implementation": "the commit that adds this file (HEAD of the branch)"
+ },
+ "upstream_reference": {
+  "review": "/home/maslos/Work/tomacco-research-20261107/phoneuse-review.json (findings verified-fill and targeted-ui-budget)",
+  "copied_source": "none; Tomacco-native implementations of the reviewed patterns, no upstream code, installers, tests or scripts run"
+ },
+ "verified_fill": {
+  "contract": "fill with verify_value:true in runtime.input and in runtime.actions fill steps. Opt-in: a plain fill (no verify_value) is unchanged, byte-identical results on the fixture against the base binary.",
+  "steps": [
+   "tap the step's x, y once",
+   "wait up to focus_timeout_ms (default 2000, max 10000, never beyond the batch deadline) for the active element; identity = it covers the tapped point (2 pt slack) or, with field_name, its accessibility identifier or label equals field_name",
+   "refuse unread: XCUIElementTypeSecureTextField (secure_field), anything but TextField/SearchField/TextView (not_a_text_editor), disabled",
+   "read the value on the same session and element ID; a value equal to placeholderValue is 'placeholder', never entered text",
+   "already exactly the text (not via placeholder): verified, writes [] (no clear, no write)",
+   "otherwise clear (skipped when unambiguously empty) and write once; empty text clears only",
+   "read back on the same element ID, polling up to 1 s for an exact (code point) match",
+   "submit:true: one Return (/wda/keys \\n) only after verified/already_matching and only while the same element still has the focus"
+  ],
+  "outcomes": {
+   "verified": "result verified:true, field_status verified|already_matching, writes [{op,outcome}], editor {element,class,name,label,rect,placeholder:bool}, before {state,chars}, value {chars,match:exact,shows_placeholder}, submitted, focus_polls, evidence wda|fixture",
+   "refused_before_typing": ["field_tap_failed", "field_not_focused", "field_wrong_target", "field_unsupported", "field_stale", "field_unobservable"],
+   "uncertain_after_a_write": "field_uncertain with details.reason clear_unknown|write_unknown|partial_write|field_replaced|readback_unavailable|value_matches_placeholder|value_mismatch|submit_unknown, details.writes and retried:false; nothing is ever retyped",
+   "submit_not_sent": "field_submit_not_sent: value verified, focus moved or Return could not be sent",
+   "transport_without_support": "fill_verification_unsupported, nothing sent (not even the tap)"
+  },
+  "runtime_actions": "a verified fill step is status verified; field_uncertain makes it status uncertain, listed in the new uncertain_steps (not in applied_steps), batch stops, remedy says never resend; field_* codes are kept rather than folded into actions_step_failed; an expect postcondition after a submit is checked separately and its failure does not repeat the step",
+  "delivery_evidence": "native/runtime/iphone.rs WebDriverAgent HTTP errors now carry details.delivery: not_sent (connect/handshake/request build), answered (HTTP status with WDA JSON, as before plus the key) or unknown (request sent, reply lost, timed out, truncated or not JSON). Additive to existing error details.",
+  "capability": "runtime.state and runtime.observe input_capabilities.fill_verification: {supported:true, evidence:wda, editors} on the USB iPhone, {supported:true, evidence:fixture} on a fixture scenario that scripts fields, {supported:false, reason} on every other transport (Android, Apple Simulator, AirPlay, fixture without fields) via the Device trait default",
+  "coverage": {
+   "usb_iphone_wda": "implemented; contract-tested against a loopback WebDriverAgent double (W3C routes, no such element, stale element reference, placeholder-as-value, dropped connection). Not run on hardware.",
+   "fixture_runtime": "scripted editors (accept, lose_reply, refuse, drop_last, replace faults, delayed focus, focused_element) for end-to-end CLI/MCP/runtime.actions tests",
+   "android_simulator_airplay": "unsupported, advertised; no verification is faked"
+  },
+  "not_covered": [
+   "No physical iPhone run: WebDriverAgent's real attribute names (type, name, label, placeholderValue, enabled, value) and rect are taken from its W3C/XCUITest routes as the existing code already used them; the double encodes that assumption.",
+   "Autocorrect, smart punctuation, input formatters and IME composition change the read-back: reported as field_uncertain value_mismatch, by design, never retyped.",
+   "Unicode equality is exact code points; a field that normalizes (NFC/NFD) reads back as a mismatch.",
+   "Web content editors that WDA reports as XCUIElementTypeOther are not_a_text_editor.",
+   "Not a lease or ledger: does not prevent another client typing concurrently, and does not make execution exactly-once; a lost reply is reported uncertain and left to the caller."
+  ]
+ },
+ "compact_tree": {
+  "contract": "screen.tree mode: tree (default, unchanged), compact, detail; new arguments query (compact), refs (detail), digest (any mode). Every mode answers digest (first 16 hex digits of the hierarchy XML's SHA-256) and mode; a given digest that differs answers tree_stale before marks are replaced or anything else is done.",
+  "selection": [
+   "records = shown nodes (text/description, interactive or scrollable, with area) minus folded labels; only_interactive keeps controls, numbered marks and scroll regions",
+   "tier 0: focused, editable, query match (case-insensitive tokens and whole query in text, description, resource id, folded label); tier 1: enabled controls, stateful (checkable/selected) and scroll regions/collections; tier 2: disabled controls and static text; tier 3: wholly outside the window (window = top-level nodes' bounds)",
+   "within a tier the fourth and later sibling of one class under one parent comes after the rest; the window's four horizontal bands take turns; document order within a band",
+   "greedy whole records within max_chars minus header and a reserved footer; a record that does not fit is omitted whole, a shorter one may use the room; off-screen records only when every on-screen record fitted",
+   "output in document order, indented by record depth (max 12), header 'screen WxH package P mode compact digest D', footer with omitted counts"
+  ],
+  "records": "nN reference (node index in the parsed hierarchy), short class, text, desc=, label=\"...\" from=nA,nB for folded texts, id=, #mark (same numbering as tree/marks, stored for screen.tap), (l,t,r,b), flags checked/unchecked/selected/focused/disabled/scrollable/password/editable/offscreen/cut, in=nP:\"...\" only for labels shared by several records. Password text is never printed (compact) and is null with text_withheld in detail.",
+  "folding": "a static leaf text (no shown descendants, not interactive, not a container, not a password) folds into its nearest interactive ancestor only if no scroll region/collection lies between, the ancestor is not an editor, holds no other control/editor/scroll region, contains the text's bounds, and has at most four such texts. The ancestor's own text/description/id are unchanged; detail lists label_sources and folded_into.",
+  "detail": "complete record per ref: every attribute, has_area, mark, label, parent, children (50) and children_total, label_sources, folded_into; text/description up to 4000 characters with *_cut and *_chars when longer",
+  "budget": "Unicode code points (chars), as tree mode; result also reports bytes",
+  "compatibility": "base binary 3993523 vs branch binary on the same fixture: default screen.tree text and counts at max_chars 500/1500/6000/100000 with and without only_interactive, screen.marks, plain fill result and pre-existing input_capabilities keys all identical (.scratch comparison, not committed). New result keys mode and digest are additive."
+ },
+ "fixture_measurement": {
+  "$comment": "Equal offline fixtures through both modes at equal budgets. Fixture data only: not a token count, not a model success rate, not device performance.",
+  "rust_fixture_1080x2400": {
+   "source": "native/screen_tree.rs compact_tests::shop, test at_equal_budgets_compact_keeps_the_on_screen_controls_the_tree_keeps (--nocapture)",
+   "unbudgeted_chars": {"tree": 5554, "compact": 6101},
+   "marks": {"total": 34, "on_window": 33, "below_window": 1},
+   "rows": [
+    {"budget": 1500, "tree": {"chars": 1398, "bytes": 1424, "marks": 0, "pay_now": false}, "compact": {"chars": 1481, "bytes": 1504, "marks": 19, "pay_now": true, "omitted": 48}},
+    {"budget": 3000, "tree": {"chars": 2938, "bytes": 2992, "marks": 0, "pay_now": false}, "compact": {"chars": 2971, "bytes": 3002, "marks": 33, "pay_now": true, "omitted": 27}},
+    {"budget": 6000, "tree": {"chars": 5554, "bytes": 5635, "marks": 34, "pay_now": true, "truncated": false}, "compact": {"chars": 5916, "bytes": 5997, "marks": 33, "pay_now": true, "omitted": 2}}
+   ]
+  },
+  "cli_fixture_360x800": {
+   "source": "tests/python/test_agent_observation.py through tomaccoctl call screen.tree on a fixture session",
+   "rows": [
+    {"budget": 1500, "tree": {"chars": 1465, "bytes": 1493, "marks": 0, "pay_now": false, "search_field": false}, "compact": {"chars": 1481, "bytes": 1504, "marks": 20, "pay_now": true, "search_field": true}},
+    {"budget": 3000, "tree": {"chars": 2869, "bytes": 2923, "marks": 0, "pay_now": false, "search_field": false}, "compact": {"chars": 2954, "bytes": 2987, "marks": 33, "pay_now": true, "search_field": true}},
+    {"budget": 6000, "tree": {"chars": 5345, "bytes": 5426, "marks": 34, "pay_now": true, "search_field": true, "truncated": false}, "compact": {"chars": 5900, "bytes": 5983, "marks": 34, "pay_now": true, "search_field": true, "truncated": false}}
+   ]
+  },
+  "reading": "On this adversarial screen (long header first) the document-order tree keeps no control at 1500 and 3000 characters; compact keeps the search field, Pay now and most controls. Compact records are longer per line, so when the whole tree fits (6000 here) compact is about 7-10% longer and on the larger fixture omits the one control below the window. No reduction in tokens is claimed."
+ },
+ "tests": {
+  "environment": "CARGO_HOME=/home/maslos/.cargo RUSTUP_HOME=/home/maslos/.rustup CARGO_NET_OFFLINE=true CARGO_TARGET_DIR=<clone>/target TMPDIR=/tmp; TOMACCOCTL=<clone>/target/debug/tomaccoctl; PYTHONPATH=<clone>:<clone>/tools:<clone>/tests/python:<clone>/tests; harness workspace sandbox (bubblewrap), 120 s per command",
+  "rust": {
+   "command": "cargo test --offline --locked",
+   "result": "710 passed, 0 failed (unit; base had 692) + 2 passed (tests/update_e2e.rs)",
+   "new": [
+    "runtime::field::tests (2): placeholder/verdict rules, argument checks",
+    "runtime::iphone::tests (8): verified/read-back/order/already matching; placeholder equal to text; delayed/no/wrong focus and field_name; stale before write, replaced after write, autocorrect mismatch, lost reply with exactly one write and nothing after it; Unicode/RTL/emoji/combining exact and canonical-equal rewrite; secure (zero value reads), button, disabled; submit once after verify and never after mismatch, submit without verify refused with no request; unreachable agent not_sent",
+    "runtime::actions::tests (extended): uncertain_steps bookkeeping, fill argument checks before sending",
+    "screen_tree::compact_tests (8): bottom control under a long header, whole records at budgets 500-6000 and determinism, folding and provenance, duplicate labels with context, query/off-screen/cut, RTL and emoji budget in chars, nested scroll regions/editor in control/password withheld/refs, equal-budget measurement"
+   ]
+  },
+  "python": {
+   "new": [
+    "tests/python/test_agent_fill.py: 6 tests, OK (CLI and MCP runtime.input, runtime.actions submit/expect/lost reply, unsupported transport sends nothing)",
+    "tests/python/test_agent_observation.py: 3 tests, OK (default unchanged, compact keeps Pay now and its mark taps, detail/digest/tree_stale, CLI = MCP text, measurement)"
+   ],
+   "control_plane": "all 121 tests/python test files run file by file (python3 -m unittest <module> from tests/python): 120 OK; test_avd 3 failures, reproduced identically with the base 3993523 binary in this sandbox (a host AVD 'PocketStudioQA' is visible to the test), unrelated to this branch",
+   "focused_reruns_after_last_edit": "test_agent_fill 6, test_agent_observation 3, test_agent_runtime 7, test_agent_actions 7, test_agent_skill 13, test_agent_clients 8, test_docs_consistency 6, test_docs_links 2, test_docs_reference 5, test_docs_virtual_iphone 25, test_build_site_docs 19, test_screen_export_schema 5 (1 skipped), test_i18n 18, test_mcp_robustness 17, test_mobile_parity 6: all OK"
+  },
+  "generated": "python3 tools/build_reference.py (docs/reference and agent-skill references regenerated); --check exit 0",
+  "traps": "every Isolated fixture box ended with an empty trap log (adb, iproxy, go-ios, ideviceinfo, ssh, ... never called)",
+  "not_run": ["CTest/CMake build and C++/QML suites (no UI change)", "native ARM64 build, packaging, hardware", "javascript::tests::the_server_is_up_before_the_following_commands_run is owned by the baseline agent; it passed in these runs, which proves nothing about its race"],
+  "lint": {
+   "cargo_fmt": "base is not fmt-clean (devices.rs, gpx.rs, handoff.rs, report_draft.rs, runtime/android.rs, runtime/ios.rs, screen_ocr.rs untouched here differ too); the new native/runtime/field.rs is rustfmt-formatted; edits in shared files keep their style to avoid churn and merge conflicts",
+   "cargo_clippy_all_targets_D_warnings": "only the base's findings remain (devices.rs:203, gpx.rs:148-149, runtime/android.rs:442, runtime/fixture.rs:192 frame timing code from the base); none from this branch"
+  }
+ },
+ "i18n_freeze": {
+  "before": {"texts": 1878, "digest": "d64e05550744"},
+  "after": {"texts": 1878, "digest": "d64e05550744"},
+  "report_identical": true,
+  "catalogs_concatenated_sha256": "8d195cd65ea21b95ffac9c451a78550901bd5bb27e9dc43a2c7f9cff4a5620a9 (before and after)",
+  "qml_src_i18n_tracked_files_sha256": "eb0132f23b9d29742464e4f7b0cbb2ca9acff3fca526ac49a45b628c8c10dbd7 (before and after)",
+  "english_catalog": "21 entries: 12 plurals and 9 ordinary texts, untouched",
+  "note": "No QML, font, theme, language key or translation was touched."
+ },
+ "touched_paths": [
+  "native/runtime/field.rs (new)",
+  "native/runtime.rs",
+  "native/runtime/actions.rs",
+  "native/runtime/iphone.rs",
+  "native/runtime/fixture.rs",
+  "native/screen.rs",
+  "native/screen_tree.rs",
+  "assets/operations.json",
+  "assets/errors.json",
+  "docs/agents.md",
+  "docs/agent-patterns.md",
+  "CHANGELOG.md",
+  "docs/reference/{README,errors,runtime,screen}.md (generated)",
+  "integrations/agent-skill/tomacco/references/{errors,runtime,screen}.md (generated)",
+  "tests/python/agent_fixture.py",
+  "tests/python/test_agent_fill.py (new)",
+  "tests/python/test_agent_observation.py (new)",
+  "docs/input-observation-progress.json (new)"
+ ],
+ "integration_notes": {
+  "overlap_with_lane_a": [
+   "native/runtime.rs: `pub mod field;`, two default methods on trait Device (verified_fill, fill_verification), free functions advertised() and deliver(); in the worker's command loop the \"input\" branch calls deliver(device.as_mut(), &a) instead of device.input(&a), and both input_capabilities sites call advertised(). Lane A's dispatch enforcement (leases/request IDs) should wrap deliver() the same way it wraps device.input().",
+   "native/runtime/actions.rs: check() also validates fill-only arguments; run_step passes verify_value/field_name/submit/focus_timeout_ms for verified fills; step status verified|uncertain; stopped() adds uncertain_steps; the kept error-code list gains the field_* codes and fill_verification_unsupported. A durable ledger should record status uncertain as an unknown outcome, never as applied.",
+   "assets/operations.json: runtime.input (+verify_value, field_name, focus_timeout_ms, submit; description), runtime.actions step (+verify_value, field_name, submit; descriptions), screen.tree (+mode, query, refs, digest; descriptions). No defaults on the input additions, so nothing new reaches transports that did not ask. After merging both lanes' operations.json and errors.json, rerun python3 tools/build_reference.py (generated docs will conflict textually).",
+   "assets/errors.json: 10 new codes (fill_verification_unsupported, field_tap_failed, field_not_focused, field_wrong_target, field_unsupported, field_stale, field_unobservable, field_uncertain, field_submit_not_sent, tree_stale), sorted insertion",
+   "CHANGELOG.md and docs/agents.md: additive paragraphs in Unreleased/Added and the Display sessions and Seeing the screen sections"
+  ],
+  "not_done_here": ["device reservations/leases", "durable request IDs or ledger", "runtime dispatch enforcement"]
+ },
+ "blockers": [
+  "Real-hardware qualification of the verified fill on a USB iPhone with WebDriverAgent is pending (hardware not released; out of scope here).",
+  "test_avd host-environment leak (pre-existing, reproduced on base) for whoever owns the AVD tests."
+ ]
+}

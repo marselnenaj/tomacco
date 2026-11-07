@@ -463,6 +463,38 @@
     "cause": "The preset document has a format version this Tomacco does not read.",
     "remedy": "Update Tomacco, or export the preset again from the version that made it."
   },
+  "field_not_focused": {
+    "cause": "No field took the focus within focus_timeout_ms after the verified fill's tap; nothing was typed.",
+    "remedy": "Tap the field itself (screen.tree or screen.marks gives its bounds), or wait longer with focus_timeout_ms."
+  },
+  "field_stale": {
+    "cause": "The field a verified fill found was replaced before any text was cleared or typed; nothing was typed.",
+    "remedy": "Observe the screen and fill the field that is there now."
+  },
+  "field_submit_not_sent": {
+    "cause": "A verified fill verified the value but did not send Return, because the focus left the field or Return could not be sent.",
+    "remedy": "The field holds the text; do not fill it again. Submit with the screen's own button or a key step after observing."
+  },
+  "field_tap_failed": {
+    "cause": "The tap that focuses the field for a verified fill failed or got no answer; nothing was typed.",
+    "remedy": "Check runtime.state, observe the screen and fill again once the session answers."
+  },
+  "field_uncertain": {
+    "cause": "A verified fill sent a clear or text whose effect could not be established: the value read back differs, equals the placeholder, the field was replaced, or the answer was lost (details.reason and details.writes). Nothing was typed again.",
+    "remedy": "Do not resend the text: observe the field (screen.tree or runtime.observe) and decide from what it holds."
+  },
+  "field_unobservable": {
+    "cause": "The focus, the focused element or its value could not be read (or a clear or write could not be sent) before anything was typed; nothing was typed.",
+    "remedy": "Observe the screen and try again once the session answers; send fill without verify_value only for a field that cannot be read."
+  },
+  "field_unsupported": {
+    "cause": "The focused element is not a text field whose value can be read back (details.reason: secure_field, not_a_text_editor or disabled); nothing was typed, and a secure field was not read.",
+    "remedy": "Type into it with fill or text without verify_value and check the screen that follows, or fill once the field is enabled."
+  },
+  "field_wrong_target": {
+    "cause": "The element with the focus after the verified fill's tap does not cover the tapped point or does not carry field_name; nothing was typed. details.focused says what has the focus.",
+    "remedy": "Observe the screen and tap the intended field; for a field that moves as it takes the focus, name it with field_name."
+  },
   "file_conflict": {
     "cause": "The file changed after files.read gave its digest.",
     "remedy": "Read it again with files.read, merge the changes, and write with the new digest as if_match."
@@ -474,6 +506,10 @@
   "file_too_large": {
     "cause": "Text editing is limited to files up to 1 MiB.",
     "remedy": "Edit the file with another tool; files.read and files.write handle text up to 1 MiB."
+  },
+  "fill_verification_unsupported": {
+    "cause": "A fill with verify_value was asked of a transport that cannot read an editor back (input_capabilities.fill_verification.supported is false); nothing was sent.",
+    "remedy": "Send fill without verify_value and check the result with an expect postcondition or a fresh runtime.observe or screen.tree."
   },
   "firmware_incomplete": {
     "cause": "The virtual iOS device or its research engine refused the request or stopped answering.",
@@ -1838,6 +1874,10 @@
   "transport_failed": {
     "cause": "The MCP server could not write to its client.",
     "remedy": "Restart the client's connection to tomaccoctl mcp."
+  },
+  "tree_stale": {
+    "cause": "screen.tree was given the digest of an earlier hierarchy and the screen's hierarchy is no longer the same, so its references may name other nodes.",
+    "remedy": "Read the tree again (mode compact or tree) and use the references and digest it answers."
   },
   "ui_hierarchy_unavailable": {
     "cause": "… needs a UI hierarchy, and the virtual iPhone's guest tools do not report one.",

@@ -26,6 +26,25 @@
 //! A transition with `after_ms` becomes visible only after that time, so a
 //! caller can tell an acknowledged action from a visible one. Text sent while
 //! the state is not `focused` is counted as lost, as a phone would lose it.
+//!
+//! A state may also script editors for the verified fill
+//! (native/runtime/field.rs), with WebDriverAgent's element classes:
+//!
+//! ```json
+//! {"fields":[{"element":"q-1","class":"XCUIElementTypeSearchField","name":"query",
+//!     "label":"Search","placeholder":"Search","value":"","left":0,"top":80,"right":360,"bottom":130,
+//!     "focus_after_ms":100,"enabled":true,"write":"accept"}],
+//!  "focused_element":"other-1","submit_to":"results"}
+//! ```
+//!
+//! A tap inside a field focuses it after `focus_after_ms`; a tap elsewhere
+//! leaves the focus where it was. `write` is `accept`, `lose_reply` (the
+//! text lands, the answer is lost), `refuse`, `drop_last` (the last
+//! character never arrives) or `replace` (the field is rebuilt with a new
+//! element ID once written). An empty field reports its placeholder as its
+//! value, as XCUITest does. A session offers the verified fill only when a
+//! state scripts fields; the counts of clears, writes, submits and reads of
+//! secure fields are in the fixture evidence.
 use super::*;
 
 pub const PREFIX: &str = "fixture:";
@@ -78,6 +97,15 @@ pub struct Fixture {
     lost_characters: u64,
     missed_taps: u64,
     captures: u64,
+    /// Scripted editors: the value each field holds now, where the focus
+    /// is (and from when), rebuilt element IDs, and what the verified fill
+    /// sent.
+    field_values: std::collections::BTreeMap<String, String>,
+    field_focus: Option<(String, Instant)>,
+    replaced: std::collections::BTreeMap<String, String>,
+    field_writes: Value,
+    secure_reads: u64,
+    offers_fields: bool,
 }
 
 pub fn connect(a: &Value, shared: Shared, _dir: &Path) -> Result<Fixture> {
@@ -90,6 +118,9 @@ pub fn connect(a: &Value, shared: Shared, _dir: &Path) -> Result<Fixture> {
         return Err(err("scenario.json names no initial state"));
     }
     let latency = Duration::from_millis(scenario["latency_ms"].as_u64().unwrap_or(0).min(10_000));
+    let offers_fields = scenario["states"]
+        .as_object()
+        .is_some_and(|states| states.values().any(|state| state["fields"].is_array()));
     let mut fixture = Fixture {
         shared: shared.clone(),
         directory,
@@ -103,7 +134,14 @@ pub fn connect(a: &Value, shared: Shared, _dir: &Path) -> Result<Fixture> {
         lost_characters: 0,
         missed_taps: 0,
         captures: 0,
+        field_values: Default::default(),
+        field_focus: None,
+        replaced: Default::default(),
+        field_writes: json!({"clear":0,"value":0,"submit":0}),
+        secure_reads: 0,
+        offers_fields,
     };
+    fixture.enter();
     let (width, height) = fixture.size()?;
     shared.lock().unwrap().update(json!({"name":format!("Fixture {name}"),"width":width,"height":height,
         "codec":"none","transport":"fixture","evidence":"fixture","fixture":name}))?;
@@ -121,7 +159,14 @@ impl Fixture {
                 self.state = to.clone();
                 self.pending = None;
                 self.entered = Instant::now();
+                self.enter();
             }
+        }
+    }
+    /// A state's scripted focus takes effect as it is entered.
+    fn enter(&mut self) {
+        if let Some(element) = self.current()["focused_element"].as_str() {
+            self.field_focus = Some((element.to_string(), Instant::now()));
         }
     }
     fn go(&mut self, to: &str, after_ms: u64) -> Result<()> {
@@ -132,6 +177,7 @@ impl Fixture {
             self.state = to.to_string();
             self.pending = None;
             self.entered = Instant::now();
+            self.enter();
         } else {
             self.pending = Some((to.to_string(), Instant::now() + Duration::from_millis(after_ms)));
         }
@@ -205,11 +251,168 @@ impl Fixture {
         Ok(())
     }
     fn evidence(&self) -> Value {
-        json!({"inputs":self.inputs,"captures":self.captures,"lost_characters":self.lost_characters,"missed_taps":self.missed_taps,"state":self.state})
+        let mut evidence = json!({"inputs":self.inputs,"captures":self.captures,"lost_characters":self.lost_characters,"missed_taps":self.missed_taps,"state":self.state});
+        if self.offers_fields {
+            evidence["field_writes"] = self.field_writes.clone();
+            evidence["secure_reads"] = json!(self.secure_reads);
+            evidence["field_values"] = json!(self.field_values);
+        }
+        evidence
+    }
+    /// A field of the current state by the element ID it has now.
+    fn field(&self, id: &str) -> Option<Value> {
+        self.current()["fields"]
+            .as_array()?
+            .iter()
+            .find(|f| self.element_of(f) == id)
+            .cloned()
+    }
+    /// A field's element ID: a new one once a `replace` field was written.
+    fn element_of(&self, field: &Value) -> String {
+        let id = s(field, "element");
+        self.replaced.get(id).cloned().unwrap_or_else(|| id.to_string())
+    }
+    fn stored(&self, field: &Value) -> String {
+        self.field_values
+            .get(s(field, "element"))
+            .cloned()
+            .unwrap_or_else(|| s(field, "value").to_string())
+    }
+    fn count(&mut self, op: &str) {
+        self.field_writes[op] = json!(n(&self.field_writes, op) + 1);
+    }
+    /// The field an element ID names now; a replaced or vanished one is
+    /// stale, as WebDriverAgent answers it.
+    fn scripted(&mut self, id: &str) -> field::Step<Value> {
+        self.settle();
+        self.field(id).ok_or_else(|| {
+            field::Failure::new(field::Fault::Stale, "stale element reference: the fixture has no such field now")
+        })
+    }
+}
+
+/// The fixture's scripted editors for the verified fill.
+impl field::FieldDriver for Fixture {
+    fn evidence(&self) -> &'static str {
+        "fixture"
+    }
+    fn tap(&mut self, a: &Value) -> field::Step<(f64, f64)> {
+        thread::sleep(self.latency);
+        self.settle();
+        self.inputs += 1;
+        let (x, y) = self
+            .pixel(a)
+            .map_err(|e| field::Failure::new(field::Fault::NotSent, e.message))?;
+        let fields = self.current()["fields"].as_array().cloned().unwrap_or_default();
+        for f in &fields {
+            let inside = x >= n(f, "left") as i64
+                && x < n(f, "right") as i64
+                && y >= n(f, "top") as i64
+                && y < n(f, "bottom") as i64;
+            if inside {
+                let due = Instant::now() + Duration::from_millis(n(f, "focus_after_ms").min(10_000));
+                self.field_focus = Some((self.element_of(f), due));
+            }
+        }
+        self.tap_at(a)
+            .map_err(|e| field::Failure::new(field::Fault::Refused, e.message))?;
+        Ok((x as f64, y as f64))
+    }
+    fn active(&mut self) -> field::Step<Option<String>> {
+        self.settle();
+        Ok(match &self.field_focus {
+            Some((id, due)) if Instant::now() >= *due => Some(id.clone()),
+            _ => None,
+        })
+    }
+    fn describe(&mut self, id: &str) -> field::Step<field::Editor> {
+        let f = self.scripted(id)?;
+        let edge = |key: &str| n(&f, key) as f64;
+        let (l, t, r, b) = (edge("left"), edge("top"), edge("right"), edge("bottom"));
+        Ok(field::Editor {
+            class: s(&f, "class").to_string(),
+            name: s(&f, "name").to_string(),
+            label: s(&f, "label").to_string(),
+            placeholder: s(&f, "placeholder").to_string(),
+            rect: Some((l, t, r - l, b - t)),
+            enabled: f["enabled"].as_bool().unwrap_or(true),
+        })
+    }
+    fn value(&mut self, id: &str) -> field::Step<Option<String>> {
+        let f = self.scripted(id)?;
+        if s(&f, "class") == field::SECURE {
+            // Counted, so a test can prove the verified fill never asks.
+            self.secure_reads += 1;
+            return Ok(Some("\u{2022}".repeat(self.stored(&f).chars().count())));
+        }
+        let value = self.stored(&f);
+        Ok(if value.is_empty() {
+            Some(s(&f, "placeholder").to_string()).filter(|p| !p.is_empty())
+        } else {
+            Some(value)
+        })
+    }
+    fn clear(&mut self, id: &str) -> field::Step<()> {
+        let f = self.scripted(id)?;
+        self.count("clear");
+        self.field_values
+            .insert(s(&f, "element").to_string(), String::new());
+        Ok(())
+    }
+    fn write(&mut self, id: &str, text: &str) -> field::Step<()> {
+        let f = self.scripted(id)?;
+        self.count("value");
+        let key = s(&f, "element").to_string();
+        let mut value = self.stored(&f);
+        match s(&f, "write") {
+            "refuse" => {
+                return Err(field::Failure::new(field::Fault::Refused, "the fixture field refuses text"));
+            }
+            "drop_last" => {
+                let mut chars: Vec<char> = text.chars().collect();
+                chars.pop();
+                value.extend(chars);
+            }
+            _ => value.push_str(text),
+        }
+        self.field_values.insert(key.clone(), value);
+        match s(&f, "write") {
+            "lose_reply" => Err(field::Failure::new(field::Fault::Lost, "the fixture dropped the answer")),
+            "replace" => {
+                let rebuilt = format!("{key}-rebuilt");
+                self.replaced.insert(key, rebuilt.clone());
+                self.field_focus = Some((rebuilt, Instant::now()));
+                Ok(())
+            }
+            _ => Ok(()),
+        }
+    }
+    fn submit(&mut self) -> field::Step<()> {
+        self.settle();
+        self.inputs += 1;
+        self.count("submit");
+        self.follow("submit_to")
+            .map_err(|e| field::Failure::new(field::Fault::Refused, e.message))
     }
 }
 
 impl Device for Fixture {
+    fn verified_fill(&mut self, a: &Value) -> Result {
+        if !self.offers_fields {
+            return Err(field::unsupported_transport());
+        }
+        let mut result = field::fill(self, a)?;
+        result["fixture"] = self.evidence();
+        Ok(result)
+    }
+    fn fill_verification(&self) -> Value {
+        if self.offers_fields {
+            json!({"supported":true,"evidence":"fixture","editors":field::SUPPORTED,
+                "note":"Scripted fields of the fixture scenario; nothing here is a device's behaviour"})
+        } else {
+            field::not_offered("This fixture scenario scripts no fields")
+        }
+    }
     fn input(&mut self, a: &Value) -> Result {
         thread::sleep(self.latency);
         self.settle();
@@ -421,6 +624,12 @@ mod tests {
             lost_characters: 0,
             missed_taps: 0,
             captures: 0,
+            field_values: Default::default(),
+            field_focus: None,
+            replaced: Default::default(),
+            field_writes: json!({"clear":0,"value":0,"submit":0}),
+            secure_reads: 0,
+            offers_fields: false,
         };
         let (w, h) = fixture.size().unwrap();
         shared

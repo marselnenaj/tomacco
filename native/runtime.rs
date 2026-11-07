@@ -25,6 +25,7 @@ pub mod airplay;
 pub mod android;
 pub mod audio;
 pub mod bluetooth;
+pub mod field;
 pub mod fixture;
 pub mod ios;
 pub mod iphone;
@@ -204,6 +205,33 @@ pub trait Device: Send {
     /// under `input_capabilities`: whether touch streams live or is sent as
     /// one atomic trace on touch-up, how many contacts, pinch, fill, rotate.
     fn capabilities(&self) -> Value;
+    /// `fill` with `verify_value` (native/runtime/field.rs). A transport
+    /// that cannot read an editor back keeps this default, which sends
+    /// nothing and says so, never a generic success.
+    fn verified_fill(&mut self, _a: &Value) -> Result {
+        Err(field::unsupported_transport())
+    }
+    /// What `input_capabilities.fill_verification` says about this transport.
+    fn fill_verification(&self) -> Value {
+        field::not_offered("This transport cannot read a focused editor's value back")
+    }
+}
+/// The capabilities `runtime.state` and `runtime.observe` report, with
+/// whether a verified fill is offered.
+fn advertised(device: &dyn Device) -> Value {
+    let mut capabilities = device.capabilities();
+    capabilities["fill_verification"] = device.fill_verification();
+    capabilities
+}
+/// One `runtime.input` on the device: a verified fill goes to the
+/// transport's field driver, anything else to its input as before.
+fn deliver(device: &mut dyn Device, a: &Value) -> Result {
+    field::check(a)?;
+    if s(a, "action") == "fill" && b(a, "verify_value") {
+        device.verified_fill(a)
+    } else {
+        device.input(a)
+    }
 }
 /// A field a transport cannot observe.
 pub fn unavailable(reason: &str) -> Value {
@@ -294,7 +322,7 @@ fn observe(device: &mut dyn Device, a: &Value, state: &Value, default_path: &Pat
         "orientation":orientation,
         "app":context["app"],"keyboard":context["keyboard"],"focus":context["focus"],
         "fixture":context.get("fixture").cloned().unwrap_or(Value::Null),
-        "input_capabilities":device.capabilities(),
+        "input_capabilities":advertised(device),
         "context":summary,
         "note":"age_ms is 0 at capture; add the time since captured_at before acting on this frame. Fields with available false were not observed, not guessed."
     }))
@@ -843,7 +871,7 @@ pub fn worker(id: &str) -> Result<()> {
         shared
             .lock()
             .unwrap()
-            .update(json!({"status":"connected","input_capabilities":device.capabilities()}))?;
+            .update(json!({"status":"connected","input_capabilities":advertised(device.as_ref())}))?;
         // A recording of a UI test (testing.record) takes Android input.
         let mut recording = if s(&spec, "platform") == "android" {
             crate::recorder::Store::home()
@@ -865,7 +893,7 @@ pub fn worker(id: &str) -> Result<()> {
                                     .filter(|xml| !xml.is_empty())
                             })
                         });
-                        let result = device.input(&a)?;
+                        let result = deliver(device.as_mut(), &a)?;
                         if let Some(live) = &recording {
                             live.after(step);
                         }

@@ -101,6 +101,11 @@ tomaccoctl call screen.wait '{"device":"emulator-5554","until":"stable"}'
   belong to that look. `screen.tap` refuses a mark whose element has changed (`mark_stale`) instead of tapping
   something else: call `screen.marks` again.
 - Use `screen.tree` when you need text rather than a picture, and `screen.diff` after an action to read what changed.
+  On a long screen, `mode:"compact"` (with a `query` of what you look for) picks whole records from the entire tree within
+  `max_chars` instead of the first ones, and `mode:"detail"` with `refs` and the `digest` shows any record it left out.
+- To type into a field and know it holds the text, send `fill` with `verify_value:true` where
+  `input_capabilities.fill_verification.supported` is true. `field_uncertain` means the text was sent and its effect is
+  unknown: observe the field, never type it again blindly.
 - A screen without a UI hierarchy (the virtual iPhone, a game, a canvas) is read with OCR (`source:"ocr"`). Treat it as
   evidence with a confidence, not as a fact: check the picture when a tap matters.
 - After an action, `screen.wait` for the text you expect, or for the screen to settle, rather than a fixed pause.
