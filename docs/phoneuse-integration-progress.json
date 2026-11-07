@@ -1,0 +1,166 @@
+{
+ "$comment": "Integration record of the four authorized PhoneUse-derived improvements (device reservations, durable action outcomes, verified field input, useful UI-tree observations) plus the baseline qualification fix. Evidence is offline fixtures, a loopback WebDriverAgent double and isolated temporary homes with device/transport/paid-client helpers trapped. Nothing here was run on, or qualifies, a physical device, and nothing was packaged, installed, pushed or published.",
+ "date": "2026-11-07",
+ "model": "claude-opus-5-5 (workspace-local .claude/settings.local.json; Claude Bash sandbox enabled with failIfUnavailable; commands ran in the Harness bubblewrap workspace sandbox, 120 s per call)",
+ "branch": "integration/phoneuse-improvements",
+ "base": "39935232845346f3c72d03c91471ba8b07cb806a",
+ "sources": [
+  {"lane": "qualification-fix", "task": "e40668d4-0330-4015-b379-ec2fbdec3f74", "clone": "/home/maslos/Work/tomacco-phoneuse-qualification-fix-20261107", "head": "cec0acea005aca82b8b547f038ea6ba9f29a8819", "merged_as": "fast-forward (2aad941, cec0ace)"},
+  {"lane": "coordination", "task": "1496a9fd-809f-4d75-b5e3-f428a79e0784", "clone": "/home/maslos/Work/tomacco-phoneuse-coordination-20261107", "head": "623cc776ba7425152b7918d41a665ccc1bb2c34f", "merged_as": "e6b4e7f4b13d8fb94a0535897a36aa216e94bfbd (no conflicts)"},
+  {"lane": "input-observation", "task": "b57fe7a5-f21f-42db-9af6-5dbdac0fe8c0", "clone": "/home/maslos/Work/tomacco-phoneuse-input-observation-20261107", "head": "6bb0f1c57103c1240cfb28674752c2651fd53b72", "merged_as": "89d2e1863830d0aea2e93aacca6e6df20bafba45 (conflicts resolved, see merge_resolution)"}
+ ],
+ "source_list": "/home/maslos/Work/tomacco-phoneuse-implementation-20261107/ready-for-integration.json; exact commits fetched from the local clones with git fetch <clone> <sha>; nothing partial or later was merged",
+ "merge_resolution": [
+  "assets/operations.json: runtime.input and runtime.actions descriptions keep lane B's verified-fill text plus lane A's reservation/request sentence; runtime.input properties: lane B's verify_value, field_name, focus_timeout_ms, submit, then lane A's reservation_token, request_id",
+  "native/runtime.rs: the worker reports advertised(device) capabilities (lane B, adds fill_verification) and keeps lane A's coordination target/transport/instance; git placed coordination::worker_input around lane B's deliver(), so every verified fill is admitted and recorded as one input",
+  "native/runtime/fixture.rs: both knob documentations kept (journal/lose_reply_after/crash_after and scripted fields)",
+  "CHANGELOG.md: all four features listed",
+  "docs/reference/* and integrations/agent-skill/tomacco/references/*: regenerated with python3 tools/build_reference.py (lane B added no operations; 296 operations, 108 read-only, 29 destructive unchanged from lane A)"
+ ],
+ "commits": [
+  {"sha": "e6b4e7f4b13d8fb94a0535897a36aa216e94bfbd", "what": "merge lane A"},
+  {"sha": "89d2e1863830d0aea2e93aacca6e6df20bafba45", "what": "merge lane B with conflict resolution only"},
+  {"sha": "8a7dc96652114b7588c2ee320e1b91f123920c3b", "what": "integration fix: uncertain verified fills never recorded as retryable refusals; submit-not-sent counted applied; fixture blur mode; ledger unit test; tests/python/test_phoneuse_integration.py; docs/agents.md"},
+  {"sha": "775b71587502fbe782262c9a7ce4eff893211c59", "what": "i18n: 8 operation titles in qml/OperationTitles.js, finished in all 50 catalogs"},
+  {"sha": "c7881011ce317833a7413aa152cf2d4942730b78", "what": "test_avd isolation: host AVDs no longer listed"},
+  {"sha": "6637045a4fadf9f30207ffb85484fcc50145ac97", "what": "agent skill workflows.md: compact/detail trees and verified fill"}
+ ],
+ "tested_commit": "6637045a4fadf9f30207ffb85484fcc50145ac97",
+ "record_commit": "the child of tested_commit that adds only this file; `git diff --name-only 6637045a4fadf9f30207ffb85484fcc50145ac97 HEAD` must list exactly docs/phoneuse-integration-progress.json",
+ "integration_defects_found_and_fixed": [
+  {
+   "id": "uncertain-fill-recorded-refused",
+   "severity": "duplicate mutation",
+   "detail": "Lane A's ledger classified a runtime.actions error as refused whenever applied_steps was empty and the last step was not a failed refusal. Lane B's uncertain verified fill is listed in uncertain_steps, not applied_steps, with step status uncertain, so a batch whose only mutating step was an uncertain fill was recorded (completed, refused) and repeating its request_id typed the text again.",
+   "evidence_before_fix": ".scratch/integration/logs/py-integration-unfixed.log (binary built with the merged lanes' ledger.rs: AssertionError Tuples differ: ('completed', 'refused') != ('unknown', 'unknown'); 3 of 4 tests failed)",
+   "fix": "native/coordination/ledger.rs: field_uncertain and batches with uncertain_steps or a last step whose answer was lost are unknown; fill_verification_unsupported and errors whose own evidence says nothing left (details.delivery not_sent, typed and tapped false, also nested as relayed by the runtime worker) are refused; delivery unknown is unknown; field refusals after the focusing tap remain failed (the tap reached the device)"
+  },
+  {
+   "id": "submit-not-sent-not-applied",
+   "severity": "unsafe resend invitation",
+   "detail": "A verified fill answering field_submit_not_sent has typed and verified its text, but runtime.actions recorded the step as failed and left it out of applied_steps, whose contract is the steps that reached the device.",
+   "fix": "native/runtime/actions.rs: such a step is applied and listed in applied_steps; the batch still stops with field_submit_not_sent. Fixture write mode blur (native/runtime/fixture.rs) reaches it in tests."
+  },
+  {
+   "id": "operation-titles-untranslated",
+   "severity": "red gate (test_i18n) on lane A",
+   "fix": "8 titles added and translated into all 50 catalogs under the root addendum's authorized i18n exception"
+  },
+  {
+   "id": "test-avd-host-leak",
+   "severity": "test isolation (3 failures on base and both lanes)",
+   "fix": "tests/python/test_avd.py privatizes HOME, XDG_CONFIG_HOME, ANDROID_USER_HOME, ANDROID_EMULATOR_HOME; the host AVD ~/.config/.android/avd/PocketStudioQA.ini was neither read nor changed (mtime 2026-10-03 unchanged)",
+   "evidence": ".scratch/integration/logs/py-avd-host-env.log (inherited host HOME/XDG: 7 OK)"
+  }
+ ],
+ "coverage": {
+  "device_reservations": {
+   "operations": ["device.reservation.acquire", "device.reservation.get", "device.reservation.list", "device.reservation.renew", "device.reservation.release", "device.reservation.takeover"],
+   "identity": "canonical platform/scope/device; a session ID resolves to the device it shows, device.label nicknames offline, virtual-iphone",
+   "capability": "reservation_token shown once, stored as SHA-256 only, masked by redact; examples run verified it appears nowhere under TOMACCO_HOME",
+   "checks": "read-only participation check before a participating call prepares or queues anything; admission in one SQLite IMMEDIATE transaction right before each transport; queued input under an expired/released/taken-over reservation is not sent",
+   "guarded_routes": [
+    "runtime worker: runtime.input (including verified fill), runtime.gesture, runtime.actions, screen.tap on a session, desktop NativeView control-socket input (no token)",
+    "adb: android.input and through it screen.tap/testing.action/testing.run input on a serial, testing.action fill select-all, instrumented fill",
+    "virtual iPhone control: ios.emulator.control input actions and through it screen.tap/testing.action/testing.run on virtual-iphone; ios.virtual.unlock and the startup unlock (no token)"
+   ],
+   "uncovered": [
+    "device mutations that are not input: device.install, device.app, android.launch, android.deep_link, android.settings, android.permission, android.display, android.environment.apply/restore, ios.virtual.* lifecycle, ios.emulator.control stop/trust_cache_update",
+    "testing.run and ios.virtual.unlock honour a reservation but take no token (refused while another holder has it, also for the holder)",
+    "the Home key profile.startup presses between hot launches; the scrcpy window android.mirror opens (direct human input); android.sensors emulator console events (found in this integration's audit, documented in docs/agents.md)",
+    "raw adb, SSH, fastboot, flashing tools, other agents and the MacBook installer: outside Tomacco; docs/agents.md describes the acquire/renew/release/get protocol for them; no external tool has adopted it"
+   ],
+   "not_claimed": "no global locking and no security boundary within one user account; owner/task/reason/client are labels, not authentication"
+  },
+  "durable_action_outcomes": {
+   "operations": ["device.request.get", "device.request.list"],
+   "participating": "request_id and reservation_token on runtime.input, runtime.gesture, runtime.actions, screen.tap, android.input, testing.action, ios.emulator.control input",
+   "behaviour": "identity + SHA-256 of canonical arguments committed (synchronous FULL) before dispatch; runtime worker records each delivered input as a child; same intent answers the recorded outcome (retained true, replayed false), changed arguments request_conflict, live executor request_in_progress, dead executor or lost answer unknown -> request_outcome_unknown, never resent through any session or transport; single-input requests reconciled from the worker child record",
+   "statuses": "applied, verified, refused (provably nothing dispatched; repeatable), failed, unknown",
+   "verified_fill_mapping": "field_uncertain and batches with uncertain_steps -> unknown; fill_verification_unsupported -> refused; field_not_focused/field_wrong_target/field_unsupported/field_stale/field_unobservable -> failed (focusing tap reached the device); field_submit_not_sent -> failed with the step in applied_steps; WDA details.delivery not_sent -> refused, unknown -> unknown",
+   "privacy_and_bounds": "no typed text (character counts; stored answers scrub text/value strings) and no token; 24 h retention, at most 20000 rows, 64 KiB per stored answer; owner-only TOMACCO_HOME/coordination",
+   "not_claimed": "not exactly-once: a transport that loses an answer leaves the effect unknown; only observation decides"
+  },
+  "verified_field_input": {
+   "contract": "fill with verify_value in runtime.input and runtime.actions; plain fill unchanged",
+   "checks": "focused editor covers the tapped point or matches field_name; supported text classes only; value read before (already-matching is not retyped; placeholder never taken as entered text); one clear/write; exact code-point read-back on the same element; submit only after verification while focus remains",
+   "passwords": "secure fields refused unread (fixture secure_reads 0)",
+   "transports": "USB iPhone over WebDriverAgent (contract-tested against a loopback double only) and scripted fixtures; Android, Apple Simulator and AirPlay advertise fill_verification supported:false and answer fill_verification_unsupported without sending anything, not even the tap",
+   "limits": "autocorrect/IME/formatters and NFC/NFD normalisation read back as field_uncertain (never retyped); web editors reported as XCUIElementTypeOther are unsupported; WDA attribute names are the double's assumption until run on a real iPhone"
+  },
+  "useful_observations": {
+   "contract": "screen.tree mode tree (default, unchanged) | compact | detail; query, refs, digest; every mode answers digest; a stale digest answers tree_stale before anything else",
+   "compact": "deterministic whole-record selection from the entire tree within max_chars (focus/editors/query, controls/stateful/scroll, text, off-screen last; band rotation; repetition demotion); static labels folded into their single owning control with from= provenance, independent widgets and scroll regions not folded; original nN reference, mark number, bounds and state kept; omitted/omitted_refs/omitted_by explicit; password text never printed",
+   "detail": "complete records per reference, password text withheld",
+   "measurement": "fixture-only (lane B docs/input-observation-progress.json); compact keeps controls the document-order tree loses at small budgets and is about 7-10% longer when the whole tree fits; no token or performance claim"
+  },
+  "baseline_qualification_fix": "javascript::tests::the_server_is_up_before_the_following_commands_run: only the follow-up's own connection (sending then) ends the fixture server; serve_worker unchanged. Old failed evidence in /home/maslos/Work/tomacco-finish-20261107 untouched and not reinterpreted."
+ },
+ "interfaces": {
+  "cli_mcp_schema": "one registry (assets/operations.json); MCP tools/inputSchema identical to tomaccoctl schema (test_device_coordination.test_mcp_offers_the_same_operations_and_records_its_client, test_agent_fill CLI and MCP, test_agent_observation CLI = MCP text); generated docs/reference and skill references current (build_reference.py --check)",
+  "gui": "desktop NativeView sends control-socket input without a token: refused on a reserved device (lane A test of a held desktop touch delaying acquisition); 8 operation titles translated; no C++/QML logic changed; all 51 catalogs compile with tools/ts2qm.py (the build's compiler where Qt lrelease is absent, as on this host)",
+  "agent_skill": "SKILL.md Share a device rule (lane A); workflows.md sections for compact/detail trees and verified fill with schema-validated call lines (this integration)",
+  "clients": "test_agent_clients 8 OK; no user/global client configuration was read for writing or changed"
+ },
+ "i18n": {
+  "before": {"texts": 1878, "digest": "d64e05550744"},
+  "after": {"texts": 1886, "digest": "02a8ba1b1b7a"},
+  "delta": "8 new Operations texts (Device reservation state, Recorded request, Recorded requests, Release a device reservation, Renew a device reservation, Reserve a device, Reserved devices, Take over a device reservation), the root addendum's authorized exception; finished in all 50 catalogs including es and es-MX via i18n_catalog.py apply (0 rejected)",
+  "churn": "catalog diffs are additions only (1600 lines added, 0 removed over 50 files); i18n/COVERAGE.md changes only its count/digest lines; no existing key, translation or plural form changed",
+  "english_catalog": {"file": "i18n/tomacco_en.ts", "entries": 21, "plural": 12, "ordinary": 9, "changed": false},
+  "complete_languages": 50
+ },
+ "environment": {
+  "runner": ".scratch/integration/run.sh NAME [--limit S] -- CMD: offline Cargo cache (CARGO_HOME=/home/maslos/.cargo RUSTUP_HOME=/home/maslos/.rustup CARGO_NET_OFFLINE=true), this clone's target/, fresh isolated HOME/XDG_*/TOMACCO_HOME/ANDROID_* under .scratch/integration/iso/NAME, TMPDIR=/tmp (private per sandbox call), TOMACCO_UPDATES=off, TOMACCOCTL=<clone>/target/debug/tomaccoctl, PYTHONPATH=<clone>:<clone>/tools:<clone>/tests/python:<clone>/tests, Qt offscreen/software/generic/Basic; traps (exit 97, logged) for adb fastboot ssh iproxy uxplay scrcpy emulator idevice_id ideviceinfo idevicesyslog go-ios xtool gradle scp sftp idevicepair usbmuxd tailscale claude codex",
+  "pythonpath_note": "<clone>/tests is added because standalone module runs need native_client (CTest's single-process discover gets it from modules that insert tests/ first)",
+  "sweep": ".scratch/integration/sweep.py: every tests/python module in its own process, resumable across 120 s calls, per-module trap attribution",
+  "examples": ".scratch/integration/examples.sh: the handoff CLI/MCP examples on fixture sessions",
+  "installed_tomaccoctl_executed": false,
+  "physical_devices_or_remote_hosts_contacted": false,
+  "paid_api_calls": false
+ },
+ "gates": [
+  {"stage": "rust-core", "command": "cargo test --offline --locked --manifest-path <clone>/Cargo.toml", "log": ".scratch/integration/logs/final-rust-core.log", "exit_code": 0, "tests": "721 unit + 2 update_e2e passed, 0 failed (692 base + 10 lane A + 18 lane B + 1 integration)", "source_commit": "6637045a4fadf9f30207ffb85484fcc50145ac97"},
+  {"stage": "rust-focused", "command": "cargo test --offline --locked --bin tomaccoctl -- coordination runtime::field runtime::iphone runtime::actions screen_tree runtime::fixture javascript::tests::the_server_is_up", "log": ".scratch/integration/logs/final-rust-focused.log", "exit_code": 0, "tests": "51 passed", "source_commit": "6637045a4fadf9f30207ffb85484fcc50145ac97"},
+  {"stage": "javascript-readiness-race-stress", "command": "40 sequential runs of target/debug/deps/tomaccoctl-* javascript::tests::the_server_is_up_before_the_following_commands_run --exact", "log": ".scratch/integration/logs/final-js-race-stress.log", "exit_code": 0, "tests": "40 of 40 passed", "source_commit": "6637045a4fadf9f30207ffb85484fcc50145ac97"},
+  {"stage": "python-features", "command": "cd tests/python && python3 -m unittest test_phoneuse_integration test_device_coordination test_agent_fill test_agent_observation test_agent_actions test_agent_runtime test_avd", "log": ".scratch/integration/logs/final-py-features.log", "exit_code": 0, "tests": "48 OK", "source_commit": "6637045a4fadf9f30207ffb85484fcc50145ac97"},
+  {"stage": "python-control-plane-sweep", "command": "python3 .scratch/integration/sweep.py (each tests/python module: python3 -m unittest MODULE), six bounded calls final-sweep-1..6", "log": ".scratch/integration/logs/final-sweep-summary.json; per module .scratch/integration/logs/sweep/<module>.log; calls .scratch/integration/logs/final-sweep-{1..6}.log", "exit_code": 0, "tests": "123 of 123 modules OK, 1660 tests, 37 skipped, 0 failed", "source_commit": "6637045a4fadf9f30207ffb85484fcc50145ac97"},
+  {"stage": "language-gate", "command": "cd tests/python && python3 -m unittest test_i18n test_docs_consistency test_mobile_parity (inherited HOME, as final_verification_pipeline.py)", "log": ".scratch/integration/logs/final-language-gate.log", "exit_code": 0, "tests": "30 OK", "source_commit": "6637045a4fadf9f30207ffb85484fcc50145ac97"},
+  {"stage": "generated-artifacts", "command": "python3 tools/build_reference.py --check && python3 tools/build_mobile_parity.py --check && python3 tools/i18n_catalog.py sources | head -1 && tools/ts2qm.py on all 51 catalogs", "log": ".scratch/integration/logs/final-generated-checks.log", "exit_code": 0, "tests": "reference and parity up to date; sources 02a8ba1b1b7a 1886 texts; 51 catalogs compiled", "source_commit": "6637045a4fadf9f30207ffb85484fcc50145ac97"},
+  {"stage": "cli-mcp-examples", "command": ".scratch/integration/examples.sh", "log": ".scratch/integration/logs/final-examples.log", "exit_code": 0, "tests": "examples executed; token absent from TOMACCO_HOME", "source_commit": "6637045a4fadf9f30207ffb85484fcc50145ac97"}
+ ],
+ "skips_and_trap_calls": {
+  "skipped": "37 tests in 13 modules for host tools not installed or not applicable (test_engine_branch, test_engine_litmus, test_engine_pac, test_i18n, test_ios_disk_overlay, test_ios_guest_tools, test_ios_paravirt_kernel, test_ios_paravirt_reproducibility, test_ios_workloop_compat, test_release_files, test_screen_export_schema, test_tcg_profile, test_update); test_i18n's skip is the mise node shim needing the real HOME (the inherited-HOME language gate runs it: 30 OK, 0 skipped)",
+  "trap_calls": "84 in the final sweep, all toolchain version/status probes caught and failed by the traps: test_product 73 (emulator/xtool/iproxy/go-ios/ideviceinfo/gradle --version), test_apple_dev 6 (xtool sdk/auth status, idevice_id -l), test_report_draft 3 (version probes), test_iphone_device 2 (ideviceinfo -u on a fake UDID); no device was reached; the tests pass with the tools absent"
+ },
+ "not_run": [
+  "Qt/C++ CTest suites: no C++ or QML logic changed (OperationTitles.js gained 8 table entries; catalogs compile); the earlier phone/desktop proof is preserved; root runs the full host CTest once on the final commit",
+  "cargo clippy: not run here (the lanes reported the base's 5 existing warnings and none on their lines); rustfmt --check is clean for native/coordination/ledger.rs; other shared files kept their existing style",
+  "native ARM64 builds, packaging, installation, publishing",
+  "any physical device, USB, ADB, fastboot, SSH, discovery or network to the Pixel, MacBook or iPhone"
+ ],
+ "remaining_blockers": [
+  {"id": "hardware", "detail": "No physical qualification: the Pixel is in active kernel/display/modem use and unreleased; the WDA verified fill is contract-tested on a loopback double only. Root/MacBook installer own the device handoff."},
+  {"id": "external-adoption", "detail": "No Harness, deployment agent, flasher or the MacBook installer calls device.reservation.* yet; until they do, they are not coordinated with Tomacco's inputs."}
+ ],
+ "observations_for_root": [
+  "Pre-existing, not changed here: the guard audit log (native/guard/audit.rs) records a `text` argument as its byte length and SHA-256, so a short secret typed with fill/text (a PIN) is recoverable from the audit log by brute force. The request ledger stores neither text nor digest. Changing the audit format is a public-contract decision outside this integration.",
+  "Root's CTest control-plane runs all modules in one discover process; this record's sweep ran them one per process."
+ ],
+ "examples": {
+  "cli": [
+   "tomaccoctl call device.reservation.acquire '{\"device\":\"SESSION_ID\",\"owner\":\"claude-code\",\"task\":\"search test\",\"ttl_ms\":120000}'",
+   "tomaccoctl call runtime.input '{\"session\":\"SESSION_ID\",\"action\":\"fill\",\"x\":0.5,\"y\":0.2,\"text\":\"tomacco\",\"verify_value\":true,\"submit\":true,\"reservation_token\":\"TOKEN\",\"request_id\":\"search-1\"}'",
+   "tomaccoctl call device.request.get '{\"request_id\":\"search-1\"}'",
+   "tomaccoctl call runtime.actions '{\"session\":\"SESSION_ID\",\"request_id\":\"lossy-1\",\"steps\":[{\"action\":\"fill\",\"x\":0.5,\"y\":0.2,\"text\":\"tomacco\",\"verify_value\":true}]}'",
+   "tomaccoctl call device.request.list '{\"state\":\"unknown\"}'",
+   "tomaccoctl call screen.tree '{\"device\":\"SESSION_ID\",\"mode\":\"compact\",\"max_chars\":3000,\"query\":\"pay\"}'",
+   "tomaccoctl call screen.tree '{\"device\":\"SESSION_ID\",\"mode\":\"detail\",\"refs\":[\"n12\"],\"digest\":\"DIGEST_FROM_LAST_TREE\"}'",
+   "tomaccoctl call device.reservation.release '{\"device\":\"SESSION_ID\",\"reservation_token\":\"TOKEN\"}'"
+  ],
+  "mcp": "initialize, then {\"jsonrpc\":\"2.0\",\"id\":2,\"method\":\"tools/call\",\"params\":{\"name\":\"device.reservation.list\",\"arguments\":{}}} on `tomaccoctl mcp` (run in final-examples.log); every operation above is an MCP tool of the same name and schema",
+  "note": "Use the branch build (target/debug/tomaccoctl), not an installed tomaccoctl, until root packages this commit."
+ },
+ "final_source_ready": true,
+ "final_source_ready_scope": "Source integration complete and verified on fixtures at tested_commit; not a hardware, ARM64, packaging or release qualification."
+}
