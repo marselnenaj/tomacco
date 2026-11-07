@@ -1,0 +1,188 @@
+{
+  "package_id": "asian",
+  "target_locales": [
+    "ta",
+    "si",
+    "ko",
+    "th",
+    "vi"
+  ],
+  "branch": "finish/languages-asian",
+  "base": "df0a353bd2bdae96a337920674f5c4e979085647",
+  "source_digest": "3390181968e6",
+  "source_count": 1800,
+  "updated_at": "2026-11-07T06:22:03+00:00",
+  "model": "claude-opus-5-5",
+  "languages": {
+    "ta": {
+      "name": "Tamil",
+      "plural_forms": 2,
+      "texts": 1800,
+      "finished": 1800,
+      "unfinished": 0,
+      "stale": 0,
+      "problems": [],
+      "suspicious": [
+        "AndroidDevices: 'the Android SDK'"
+      ],
+      "suspicious_review": [
+        "AndroidDevices 'the Android SDK' -> 'Android SDK': product name, Tamil has no article; joined with the translated 'is missing' at runtime; kept (ja/id do the same)."
+      ],
+      "menu": "6/6",
+      "menu_complete": true,
+      "registry_complete": true,
+      "status": "complete",
+      "commit": {
+        "sha": "0d10d0418ec46a4e33485b26ee3bee465d7a9367",
+        "subject": "i18n: complete ta (all current source texts, menu entry, registry complete)"
+      }
+    },
+    "si": {
+      "name": "Sinhala",
+      "plural_forms": 2,
+      "texts": 1800,
+      "finished": 1800,
+      "unfinished": 0,
+      "stale": 0,
+      "problems": [],
+      "suspicious": [
+        "AndroidDevices: 'the Android SDK'"
+      ],
+      "suspicious_review": [
+        "AndroidDevices 'the Android SDK' -> 'Android SDK': product name, Sinhala has no article; kept (ja/id do the same)."
+      ],
+      "menu": "6/6",
+      "menu_complete": true,
+      "registry_complete": true,
+      "status": "complete",
+      "commit": {
+        "sha": "82cbf635d2cd6553eab1e375f758b455a30aafd5",
+        "subject": "i18n: complete si (all current source texts, menu entry, registry complete)"
+      }
+    },
+    "ko": {
+      "name": "Korean",
+      "plural_forms": 1,
+      "texts": 1800,
+      "finished": 1800,
+      "unfinished": 0,
+      "stale": 0,
+      "problems": [],
+      "suspicious": [
+        "AndroidDevices: 'the Android SDK'"
+      ],
+      "suspicious_review": [
+        "AndroidDevices 'the Android SDK' -> 'Android SDK': product name, Korean has no article; kept (ja/id do the same)."
+      ],
+      "menu": "6/6",
+      "menu_complete": true,
+      "registry_complete": true,
+      "status": "complete",
+      "commit": {
+        "sha": "7db047bcdd5040ae2a05d24cb17a7119072a1250",
+        "subject": "i18n: complete ko (all current source texts, menu entry, registry complete)"
+      }
+    },
+    "th": {
+      "name": "Thai",
+      "plural_forms": 1,
+      "texts": 1800,
+      "finished": 1800,
+      "unfinished": 0,
+      "stale": 0,
+      "problems": [],
+      "suspicious": [
+        "AndroidDevices: 'the Android SDK'"
+      ],
+      "suspicious_review": [
+        "AndroidDevices 'the Android SDK' -> 'Android SDK': product name, Thai has no article; kept (ja/id do the same)."
+      ],
+      "menu": "6/6",
+      "menu_complete": true,
+      "registry_complete": true,
+      "status": "complete",
+      "commit": {
+        "sha": "d90349aba3b0ab3e7629cd879c14b65eb842d003",
+        "subject": "i18n: complete th (all current source texts, menu entry, registry complete)"
+      }
+    },
+    "vi": {
+      "name": "Vietnamese",
+      "plural_forms": 1,
+      "texts": 1800,
+      "finished": 1800,
+      "unfinished": 0,
+      "stale": 0,
+      "problems": [],
+      "suspicious": [],
+      "suspicious_review": [],
+      "menu": "6/6",
+      "menu_complete": true,
+      "registry_complete": true,
+      "status": "complete",
+      "commit": {
+        "sha": "796afc0a02c65d1825d6cee7306266d144a42773",
+        "subject": "i18n: complete vi (all current source texts, menu entry, registry complete)"
+      }
+    }
+  },
+  "suspicious_review_notes": [
+    "Index 978 (agent keyword list of product names) keeps the product names and appends native words for 'agent' and 'connect', as ja/de/id do.",
+    "Index 653 (xtool command line) keeps the command literally; only the path placeholder wording is localized.",
+    "Index 1492 keeps the workspace identifiers (runtime, project, devices, ...) literal because they are CLI arguments.",
+    "Short proper names (App Links, Demo Studio, TalkBack, Ctrl, Face ID/Touch ID, Android SDK) stay as product/UI names; below the 3-word detector threshold.",
+    "Detector was not suppressed or changed; the only remaining flag per language is the reviewed 'the Android SDK' entry (vi has none)."
+  ],
+  "commits": [
+    {
+      "sha": "0d10d0418ec46a4e33485b26ee3bee465d7a9367",
+      "subject": "i18n: complete ta (all current source texts, menu entry, registry complete)"
+    },
+    {
+      "sha": "82cbf635d2cd6553eab1e375f758b455a30aafd5",
+      "subject": "i18n: complete si (all current source texts, menu entry, registry complete)"
+    },
+    {
+      "sha": "7db047bcdd5040ae2a05d24cb17a7119072a1250",
+      "subject": "i18n: complete ko (all current source texts, menu entry, registry complete)"
+    },
+    {
+      "sha": "d90349aba3b0ab3e7629cd879c14b65eb842d003",
+      "subject": "i18n: complete th (all current source texts, menu entry, registry complete)"
+    },
+    {
+      "sha": "796afc0a02c65d1825d6cee7306266d144a42773",
+      "subject": "i18n: complete vi (all current source texts, menu entry, registry complete)"
+    }
+  ],
+  "tests": {
+    "strict_i18n": {
+      "command": "PYTHONPATH=.:tools:tests/python TMPDIR=/tmp python3 -m unittest -v tests/python/test_i18n.py",
+      "result": "Ran 18 tests, OK",
+      "after": "each language commit and again on the final tree"
+    },
+    "qm_readback": {
+      "command": "python3 .scratch/tools/qm_readback.py .scratch/qm-asian ta si ko th vi",
+      "compiler": "tools/ts2qm.py (fallback compiler)",
+      "result": "ta/si/ko/th/vi: 1800 of 1800 messages read back identical, 0 mismatched, 0 extra; numerus forms ta/si 2, ko/th/vi 1"
+    },
+    "lrelease_parity": {
+      "result": "not run: Qt lrelease is not installed on this host (no lrelease/lrelease-qt6 on PATH or in /usr/lib/qt6/bin)"
+    },
+    "desktop_entry": {
+      "command": "desktop-file-validate assets/io.github.marselnenaj.tomacco.desktop",
+      "result": "valid; 30 new keys (6 per locale)"
+    },
+    "apply_checks": "every tranche applied with 0 rejected (digest, placeholders, plural form count, markup, line breaks, whitespace) plus cross-script and index-set checks",
+    "devices_network": "none: no device, USB, ADB, SSH, network or model calls"
+  },
+  "completed": [
+    "ta",
+    "si",
+    "ko",
+    "th",
+    "vi"
+  ],
+  "remaining": [],
+  "next_step": "Package complete. Remaining outside this package: integrate the final native UI delta (new/changed source texts from the phone UI worker) after it lands on integration/finish-tomacco; then re-sync catalogs and translate only the new texts for ta, si, ko, th, vi."
+}
