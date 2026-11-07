@@ -218,7 +218,7 @@
       "zeroDigit": "0",
       "plural": "tagalog",
       "omarchy": true,
-      "complete": false
+      "complete": true
     },
     {
       "code": "fr",
@@ -414,7 +414,7 @@
       "zeroDigit": "0",
       "plural": "universal",
       "omarchy": true,
-      "complete": false
+      "complete": true
     },
     {
       "code": "nl",
@@ -638,7 +638,7 @@
       "zeroDigit": "0",
       "plural": "universal",
       "omarchy": true,
-      "complete": false
+      "complete": true
     },
     {
       "code": "uk",

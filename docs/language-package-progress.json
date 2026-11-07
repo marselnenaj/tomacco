@@ -79,6 +79,20 @@
       "conflicts_resolved": [
         "docs/language-package-progress.json"
       ],
+      "catalogs_1800_complete_verified": true,
+      "merge_commit": "ddf9a2c6bb54c71154f9af64de4e1b53e6493084"
+    },
+    {
+      "name": "remaining",
+      "head": "f3095fa3e2447f753c351338de17f583adba43a0",
+      "codes": [
+        "ms",
+        "fil",
+        "tr"
+      ],
+      "conflicts_resolved": [
+        "docs/language-package-progress.json"
+      ],
       "catalogs_1800_complete_verified": true
     }
   ]
