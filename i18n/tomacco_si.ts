@@ -5,127 +5,127 @@
     <name>ActivityPanel</name>
     <message>
         <source>%1 ago</source>
-        <translation type="unfinished"></translation>
+        <translation>%1 කට පෙර</translation>
     </message>
     <message>
         <source>Running</source>
-        <translation type="unfinished"></translation>
+        <translation>ධාවනය වෙමින්</translation>
     </message>
     <message>
         <source>Stop this job</source>
-        <translation type="unfinished"></translation>
+        <translation>මෙම කාර්යය නවත්වන්න</translation>
     </message>
     <message>
         <source>Recent</source>
-        <translation type="unfinished"></translation>
+        <translation>මෑත</translation>
     </message>
     <message>
         <source>Connect your agent.</source>
-        <translation type="unfinished"></translation>
+        <translation>ඔබේ නියෝජිතයා සම්බන්ධ කරන්න.</translation>
     </message>
     <message>
         <source>Claude Code, Codex or any MCP client. It can then do everything this window can.</source>
-        <translation type="unfinished"></translation>
+        <translation>Claude Code, Codex හෝ ඕනෑම MCP සේවාලාභියෙක්. එවිට මෙම කවුළුවට කළ හැකි සියල්ල එයටද කළ හැක.</translation>
     </message>
     <message>
         <source>Copied</source>
-        <translation type="unfinished"></translation>
+        <translation>පිටපත් කළා</translation>
     </message>
     <message>
         <source>3  Ask it to run your app.</source>
-        <translation type="unfinished"></translation>
+        <translation>3  ඔබේ යෙදුම ධාවනය කරන්නැයි එයට කියන්න.</translation>
     </message>
     <message>
         <source>Nothing running. Builds and agent jobs show up here as they start.</source>
-        <translation type="unfinished"></translation>
+        <translation>කිසිවක් ධාවනය නොවේ. ගොඩනැගීම් සහ නියෝජිත කාර්යයන් ආරම්භ වන විට මෙහි පෙන්වයි.</translation>
     </message>
     <message>
         <source>%1 ms</source>
-        <translation type="unfinished"></translation>
+        <translation>%1 ms</translation>
     </message>
     <message>
         <source>%1 s</source>
-        <translation type="unfinished"></translation>
+        <translation>තත්. %1</translation>
     </message>
     <message>
         <source>Agent activity</source>
-        <translation type="unfinished"></translation>
+        <translation>නියෝජිත ක්‍රියාකාරකම්</translation>
     </message>
     <message>
         <source>All</source>
-        <translation type="unfinished"></translation>
+        <translation>සියල්ල</translation>
     </message>
     <message>
         <source>Failed</source>
-        <translation type="unfinished"></translation>
+        <translation>අසාර්ථක</translation>
     </message>
     <message>
         <source>Find an operation</source>
-        <translation type="unfinished"></translation>
+        <translation>මෙහෙයුමක් සොයන්න</translation>
     </message>
     <message>
         <source>No call failed.</source>
-        <translation type="unfinished"></translation>
+        <translation>කිසිදු ඇමතුමක් අසාර්ථක නොවීය.</translation>
     </message>
     <message>
         <source>No call matches.</source>
-        <translation type="unfinished"></translation>
+        <translation>ගැළපෙන ඇමතුමක් නැත.</translation>
     </message>
     <message>
         <source>failed</source>
-        <translation type="unfinished"></translation>
+        <translation>අසාර්ථකයි</translation>
     </message>
     <message>
         <source>running</source>
-        <translation type="unfinished"></translation>
+        <translation>ධාවනය වෙමින්</translation>
     </message>
     <message>
         <source>done</source>
-        <translation type="unfinished"></translation>
+        <translation>අවසන්</translation>
     </message>
     <message>
         <source>An agent&apos;s call failed: %1</source>
-        <translation type="unfinished"></translation>
+        <translation>නියෝජිතයෙකුගේ ඇමතුමක් අසාර්ථක විය: %1</translation>
     </message>
     <message>
         <source>An agent started a job: %1</source>
-        <translation type="unfinished"></translation>
+        <translation>නියෝජිතයෙක් කාර්යයක් ආරම්භ කළේය: %1</translation>
     </message>
     <message>
         <source>Notifications</source>
-        <translation type="unfinished"></translation>
+        <translation>දැනුම්දීම්</translation>
     </message>
     <message>
         <source>Fewer</source>
-        <translation type="unfinished"></translation>
+        <translation>අඩුවෙන්</translation>
     </message>
     <message>
         <source>All %1</source>
-        <translation type="unfinished"></translation>
+        <translation>සියල්ල (%1)</translation>
     </message>
     <message>
         <source>Clear</source>
-        <translation type="unfinished"></translation>
+        <translation>හිස් කරන්න</translation>
     </message>
     <message>
         <source>Clear the notifications</source>
-        <translation type="unfinished"></translation>
+        <translation>දැනුම්දීම් හිස් කරන්න</translation>
     </message>
     <message>
         <source>1  Pick your agent.</source>
-        <translation type="unfinished"></translation>
+        <translation>1  ඔබේ නියෝජිතයා තෝරන්න.</translation>
     </message>
     <message>
         <source>2  Connect it, or copy its own setting.</source>
-        <translation type="unfinished"></translation>
+        <translation>2  එය සම්බන්ධ කරන්න, නැතහොත් එහිම සැකසුම පිටපත් කරන්න.</translation>
     </message>
     <message>
         <source>Connect your agent</source>
-        <translation type="unfinished"></translation>
+        <translation>ඔබේ නියෝජිතයා සම්බන්ධ කරන්න</translation>
     </message>
     <message>
         <source>Copy entry for another MCP client</source>
-        <translation type="unfinished"></translation>
+        <translation>වෙනත් MCP සේවාලාභියෙකු සඳහා ඇතුළත් කිරීම පිටපත් කරන්න</translation>
     </message>
 </context>
 <context>
@@ -135,2278 +135,2281 @@
 %2 dpi
 
 The model determines the display and frame. Android comes from the chosen system image; vendor interfaces such as One UI are not included.</source>
-        <translation type="unfinished"></translation>
+        <translation>පික්සල %1
+%2 dpi
+
+මාදිලිය සංදර්ශකය සහ රාමුව තීරණය කරයි. Android පැමිණෙන්නේ තෝරාගත් පද්ධති රූපයෙනි; One UI වැනි නිෂ්පාදක අතුරුමුහුණත් ඇතුළත් නොවේ.</translation>
     </message>
     <message>
         <source>Add Android device</source>
-        <translation type="unfinished"></translation>
+        <translation>Android උපාංගයක් එක් කරන්න</translation>
     </message>
     <message>
         <source>Add device</source>
-        <translation type="unfinished"></translation>
+        <translation>උපාංගය එක් කරන්න</translation>
     </message>
     <message>
         <source>Automatic</source>
-        <translation type="unfinished"></translation>
+        <translation>ස්වයංක්‍රීය</translation>
     </message>
     <message>
         <source>CPU cores</source>
-        <translation type="unfinished"></translation>
+        <translation>CPU හර</translation>
     </message>
     <message>
         <source>Cancel</source>
-        <translation type="unfinished"></translation>
+        <translation>අවලංගු කරන්න</translation>
     </message>
     <message>
         <source>Close</source>
-        <translation type="unfinished"></translation>
+        <translation>වසන්න</translation>
     </message>
     <message>
         <source>Computer GPU</source>
-        <translation type="unfinished"></translation>
+        <translation>පරිගණක GPU</translation>
     </message>
     <message>
         <source>Connected</source>
-        <translation type="unfinished"></translation>
+        <translation>සම්බන්ධයි</translation>
     </message>
     <message>
         <source>Create</source>
-        <translation type="unfinished"></translation>
+        <translation>සාදන්න</translation>
     </message>
     <message>
         <source>Creating…</source>
-        <translation type="unfinished"></translation>
+        <translation>සාදමින්…</translation>
     </message>
     <message>
         <source>Device created · open it with Start</source>
-        <translation type="unfinished"></translation>
+        <translation>උපාංගය සාදන ලදී · ආරම්භ කරන්න මගින් එය විවෘත කරන්න</translation>
     </message>
     <message>
         <source>Device name</source>
-        <translation type="unfinished"></translation>
+        <translation>උපාංගයේ නම</translation>
     </message>
     <message>
         <source>Device profile (*.json)</source>
-        <translation type="unfinished"></translation>
+        <translation>උපාංග පැතිකඩ (*.json)</translation>
     </message>
     <message>
         <source>Disabled · OpenGL ES only</source>
-        <translation type="unfinished"></translation>
+        <translation>අබල කර ඇත · OpenGL ES පමණි</translation>
     </message>
     <message>
         <source>Emulator ended · %1</source>
-        <translation type="unfinished"></translation>
+        <translation>ඉමියුලේටරය අවසන් විය · %1</translation>
     </message>
     <message>
         <source>Emulator performance</source>
-        <translation type="unfinished"></translation>
+        <translation>ඉමියුලේටර කාර්ය සාධනය</translation>
     </message>
     <message>
         <source>Emulator ready</source>
-        <translation type="unfinished"></translation>
+        <translation>ඉමියුලේටරය සූදානම්</translation>
     </message>
     <message>
         <source>Emulator starting…</source>
-        <translation type="unfinished"></translation>
+        <translation>ඉමියුලේටරය ආරම්භ වෙමින්…</translation>
     </message>
     <message>
         <source>Enabled</source>
-        <translation type="unfinished"></translation>
+        <translation>සබල කර ඇත</translation>
     </message>
     <message>
         <source>External profile</source>
-        <translation type="unfinished"></translation>
+        <translation>බාහිර පැතිකඩ</translation>
     </message>
     <message>
         <source>Graphics</source>
-        <translation type="unfinished"></translation>
+        <translation>චිත්‍රක</translation>
     </message>
     <message>
         <source>Graphics: %1</source>
-        <translation type="unfinished"></translation>
+        <translation>චිත්‍රක: %1</translation>
     </message>
     <message>
         <source>Import Android model</source>
-        <translation type="unfinished"></translation>
+        <translation>Android මාදිලිය ආයාත කරන්න</translation>
     </message>
     <message>
         <source>Import custom model</source>
-        <translation type="unfinished"></translation>
+        <translation>අභිරුචි මාදිලිය ආයාත කරන්න</translation>
     </message>
     <message>
         <source>Imported · contains no Android model</source>
-        <translation type="unfinished"></translation>
+        <translation>ආයාත කළා · Android මාදිලියක් අඩංගු නැත</translation>
     </message>
     <message>
         <source>Memory (MB)</source>
-        <translation type="unfinished"></translation>
+        <translation>මතකය (MB)</translation>
     </message>
     <message>
         <source>Model</source>
-        <translation type="unfinished"></translation>
+        <translation>මාදිලිය</translation>
     </message>
     <message>
         <source>Model imported</source>
-        <translation type="unfinished"></translation>
+        <translation>මාදිලිය ආයාත කළා</translation>
     </message>
     <message>
         <source>No system image installed yet</source>
-        <translation type="unfinished"></translation>
+        <translation>තවමත් පද්ධති රූපයක් ස්ථාපනය කර නැත</translation>
     </message>
     <message>
         <source>Off</source>
-        <translation type="unfinished"></translation>
+        <translation>අක්‍රිය</translation>
     </message>
     <message>
         <source>Open</source>
-        <translation type="unfinished"></translation>
+        <translation>විවෘත කරන්න</translation>
     </message>
     <message>
         <source>Open job</source>
-        <translation type="unfinished"></translation>
+        <translation>කාර්යය විවෘත කරන්න</translation>
     </message>
     <message>
         <source>Performance settings saved · used on the next start</source>
-        <translation type="unfinished"></translation>
+        <translation>කාර්ය සාධන සැකසුම් සුරකින ලදී · ඊළඟ ආරම්භයේදී භාවිත වේ</translation>
     </message>
     <message>
         <source>Save</source>
-        <translation type="unfinished"></translation>
+        <translation>සුරකින්න</translation>
     </message>
     <message>
         <source>Saving…</source>
-        <translation type="unfinished"></translation>
+        <translation>සුරකිමින්…</translation>
     </message>
     <message>
         <source>Set graphics, memory and CPU</source>
-        <translation type="unfinished"></translation>
+        <translation>චිත්‍රක, මතකය සහ CPU සකසන්න</translation>
     </message>
     <message>
         <source>Setting up device…</source>
-        <translation type="unfinished"></translation>
+        <translation>උපාංගය පිහිටුවමින්…</translation>
     </message>
     <message>
         <source>Setup failed · details in the job</source>
-        <translation type="unfinished"></translation>
+        <translation>පිහිටුවීම අසාර්ථක විය · විස්තර කාර්යයේ ඇත</translation>
     </message>
     <message>
         <source>Software · compatible renderer</source>
-        <translation type="unfinished"></translation>
+        <translation>මෘදුකාංග · අනුකූල විදැහුම්කරු</translation>
     </message>
     <message>
         <source>Start</source>
-        <translation type="unfinished"></translation>
+        <translation>ආරම්භ කරන්න</translation>
     </message>
     <message>
         <source>Starting…</source>
-        <translation type="unfinished"></translation>
+        <translation>ආරම්භ වෙමින්…</translation>
     </message>
     <message>
         <source>The computer GPU can speed up animations considerably. If graphics glitch, choose a software renderer. Changes require the emulator to be off; app data is kept.</source>
-        <translation type="unfinished"></translation>
+        <translation>පරිගණක GPU මගින් සජීවිකරණ සැලකිය යුතු ලෙස වේගවත් කළ හැක. චිත්‍රකවල දෝෂ ඇති වුවහොත්, මෘදුකාංග විදැහුම්කරුවෙකු තෝරන්න. වෙනස්කම් සඳහා ඉමියුලේටරය ක්‍රියාවිරහිත විය යුතුය; යෙදුම් දත්ත රැඳේ.</translation>
     </message>
     <message>
         <source>Turn off emulator</source>
-        <translation type="unfinished"></translation>
+        <translation>ඉමියුලේටරය ක්‍රියාවිරහිත කරන්න</translation>
     </message>
     <message>
         <source>Vulkan compatibility</source>
-        <translation type="unfinished"></translation>
+        <translation>Vulkan අනුකූලතාව</translation>
     </message>
     <message>
         <source>Each emulator keeps its own model and app data.</source>
-        <translation type="unfinished"></translation>
+        <translation>සෑම ඉමියුලේටරයක්ම තමන්ගේම මාදිලිය සහ යෙදුම් දත්ත තබා ගනී.</translation>
     </message>
     <message>
         <source>No phone yet.</source>
-        <translation type="unfinished"></translation>
+        <translation>තවමත් දුරකථනයක් නැත.</translation>
     </message>
     <message>
         <source>Add an emulator, or plug in a phone with USB debugging on.</source>
-        <translation type="unfinished"></translation>
+        <translation>ඉමියුලේටරයක් එක් කරන්න, නැතහොත් USB නිදොස්කරණය සක්‍රිය දුරකථනයක් සම්බන්ධ කරන්න.</translation>
     </message>
     <message>
         <source>Unpin</source>
-        <translation type="unfinished"></translation>
+        <translation>ගලවන්න</translation>
     </message>
     <message>
         <source>Pin</source>
-        <translation type="unfinished"></translation>
+        <translation>අමුණන්න</translation>
     </message>
     <message>
         <source>Unpin this device</source>
-        <translation type="unfinished"></translation>
+        <translation>මෙම උපාංගය ගලවන්න</translation>
     </message>
     <message>
         <source>Pin this device to the top</source>
-        <translation type="unfinished"></translation>
+        <translation>මෙම උපාංගය ඉහළට අමුණන්න</translation>
     </message>
     <message>
         <source>Rename</source>
-        <translation type="unfinished"></translation>
+        <translation>නැවත නම් කරන්න</translation>
     </message>
     <message>
         <source>Give this device a nickname</source>
-        <translation type="unfinished"></translation>
+        <translation>මෙම උපාංගයට අන්වර්ථ නාමයක් දෙන්න</translation>
     </message>
     <message>
         <source>Device nickname</source>
-        <translation type="unfinished"></translation>
+        <translation>උපාංග අන්වර්ථ නාමය</translation>
     </message>
     <message>
         <source>Shown instead of %1 here, in device lists and in the Omarchy panel.</source>
-        <translation type="unfinished"></translation>
+        <translation>මෙහි, උපාංග ලැයිස්තුවල සහ Omarchy පැනලයේ %1 වෙනුවට පෙන්වයි.</translation>
     </message>
     <message>
         <source>Nickname</source>
-        <translation type="unfinished"></translation>
+        <translation>අන්වර්ථ නාමය</translation>
     </message>
     <message>
         <source>Remove nickname</source>
-        <translation type="unfinished"></translation>
+        <translation>අන්වර්ථ නාමය ඉවත් කරන්න</translation>
     </message>
     <message>
         <source>Paired and connected · %1</source>
-        <translation type="unfinished"></translation>
+        <translation>යුගල කර සම්බන්ධ කළා · %1</translation>
     </message>
     <message>
         <source>Paired. Enter the IP address and port shown under Wireless debugging to connect.</source>
-        <translation type="unfinished"></translation>
+        <translation>යුගල කළා. සම්බන්ධ වීමට රැහැන් රහිත නිදොස්කරණය යටතේ පෙන්වන IP ලිපිනය සහ තොට ඇතුළත් කරන්න.</translation>
     </message>
     <message>
         <source>adb could not pair</source>
-        <translation type="unfinished"></translation>
+        <translation>adb හට යුගල කළ නොහැකි විය</translation>
     </message>
     <message>
         <source>adb could not connect</source>
-        <translation type="unfinished"></translation>
+        <translation>adb හට සම්බන්ධ විය නොහැකි විය</translation>
     </message>
     <message>
         <source>Pair over Wi-Fi</source>
-        <translation type="unfinished"></translation>
+        <translation>Wi-Fi හරහා යුගල කරන්න</translation>
     </message>
     <message>
         <source>QR code</source>
-        <translation type="unfinished"></translation>
+        <translation>QR කේතය</translation>
     </message>
     <message>
         <source>Pairing code</source>
-        <translation type="unfinished"></translation>
+        <translation>යුගල කිරීමේ කේතය</translation>
     </message>
     <message>
         <source>On the phone, open Developer options › Wireless debugging › Pair device with QR code and scan this code. The phone and this computer must be on the same network; Android 11 or newer.</source>
-        <translation type="unfinished"></translation>
+        <translation>දුරකථනයේ, සංවර්ධක විකල්ප › රැහැන් රහිත නිදොස්කරණය › QR කේතය සමඟ උපාංගය යුගල කරන්න විවෘත කර මෙම කේතය ස්කෑන් කරන්න. දුරකථනය සහ මෙම පරිගණකය එකම ජාලයේ තිබිය යුතුය; Android 11 හෝ නවතම.</translation>
     </message>
     <message>
         <source>On the phone, open Developer options › Wireless debugging › Pair device with pairing code, then enter the address and code it shows.</source>
-        <translation type="unfinished"></translation>
+        <translation>දුරකථනයේ, සංවර්ධක විකල්ප › රැහැන් රහිත නිදොස්කරණය › යුගල කිරීමේ කේතය සමඟ උපාංගය යුගල කරන්න විවෘත කර, එය පෙන්වන ලිපිනය සහ කේතය ඇතුළත් කරන්න.</translation>
     </message>
     <message>
         <source>QR code for wireless debugging</source>
-        <translation type="unfinished"></translation>
+        <translation>රැහැන් රහිත නිදොස්කරණය සඳහා QR කේතය</translation>
     </message>
     <message>
         <source>Creating a code…</source>
-        <translation type="unfinished"></translation>
+        <translation>කේතයක් සාදමින්…</translation>
     </message>
     <message>
         <source>Pairing address</source>
-        <translation type="unfinished"></translation>
+        <translation>යුගල කිරීමේ ලිපිනය</translation>
     </message>
     <message>
         <source>Waiting for the phone…</source>
-        <translation type="unfinished"></translation>
+        <translation>දුරකථනය එනතුරු රැඳී සිටිමින්…</translation>
     </message>
     <message>
         <source>Pairing…</source>
-        <translation type="unfinished"></translation>
+        <translation>යුගල කරමින්…</translation>
     </message>
     <message>
         <source>Connecting…</source>
-        <translation type="unfinished"></translation>
+        <translation>සම්බන්ධ වෙමින්…</translation>
     </message>
     <message>
         <source>New code</source>
-        <translation type="unfinished"></translation>
+        <translation>නව කේතය</translation>
     </message>
     <message>
         <source>Pair</source>
-        <translation type="unfinished"></translation>
+        <translation>යුගල කරන්න</translation>
     </message>
     <message>
         <source>List</source>
-        <translation type="unfinished"></translation>
+        <translation>ලැයිස්තුව</translation>
     </message>
     <message>
         <source>All screens</source>
-        <translation type="unfinished"></translation>
+        <translation>සියලු තිර</translation>
     </message>
     <message>
         <source>Show the device list</source>
-        <translation type="unfinished"></translation>
+        <translation>උපාංග ලැයිස්තුව පෙන්වන්න</translation>
     </message>
     <message>
         <source>Show every running device&apos;s screen side by side</source>
-        <translation type="unfinished"></translation>
+        <translation>ධාවනය වන සෑම උපාංගයකම තිරය පැත්තෙන් පැත්තට පෙන්වන්න</translation>
     </message>
     <message>
         <source>Accept Google&apos;s Android SDK licence for this download</source>
-        <translation type="unfinished"></translation>
+        <translation>මෙම බාගැනීම සඳහා Google හි Android SDK බලපත්‍රය පිළිගන්න</translation>
     </message>
     <message>
         <source>Android system image</source>
-        <translation type="unfinished"></translation>
+        <translation>Android පද්ධති රූපය</translation>
     </message>
     <message>
         <source>App data removed · %1 freed · the next start boots like a new device</source>
-        <translation type="unfinished"></translation>
+        <translation>යෙදුම් දත්ත ඉවත් කළා · %1 නිදහස් විය · ඊළඟ ආරම්භය නව උපාංගයක් ලෙස බූට් වේ</translation>
     </message>
     <message>
         <source>Cannot start: %1</source>
-        <translation type="unfinished"></translation>
+        <translation>ආරම්භ කළ නොහැක: %1</translation>
     </message>
     <message>
         <source>Checking…</source>
-        <translation type="unfinished"></translation>
+        <translation>පරීක්ෂා කරමින්…</translation>
     </message>
     <message>
         <source>Copying device…</source>
-        <translation type="unfinished"></translation>
+        <translation>උපාංගය පිටපත් කරමින්…</translation>
     </message>
     <message>
         <source>Copying…</source>
-        <translation type="unfinished"></translation>
+        <translation>පිටපත් කරමින්…</translation>
     </message>
     <message>
         <source>Disk: about %1 for the emulator · %2 free</source>
-        <translation type="unfinished"></translation>
+        <translation>තැටිය: ඉමියුලේටරය සඳහා ආසන්න වශයෙන් %1 · %2 නිදහස්</translation>
     </message>
     <message>
         <source>Download about %1 (estimate) · needs Google&apos;s SDK licence: %2</source>
-        <translation type="unfinished"></translation>
+        <translation>ආසන්න වශයෙන් %1 බාගැනීමක් (ඇස්තමේන්තුව) · Google හි SDK බලපත්‍රය අවශ්‍යයි: %2</translation>
     </message>
     <message>
         <source>Download and create</source>
-        <translation type="unfinished"></translation>
+        <translation>බාගෙන සාදන්න</translation>
     </message>
     <message>
         <source>Duplicate</source>
-        <translation type="unfinished"></translation>
+        <translation>අනුපිටපත් කරන්න</translation>
     </message>
     <message>
         <source>Duplicate copies the emulator with its apps and data under the new name, as a job you can cancel. Rename is a real rename of the emulator through the Android SDK; the nickname moves along. A nickname alone is set with the pencil button.</source>
-        <translation type="unfinished"></translation>
+        <translation>අනුපිටපත් කිරීම ඉමියුලේටරය එහි යෙදුම් සහ දත්ත සමඟ නව නමින්, ඔබට අවලංගු කළ හැකි කාර්යයක් ලෙස පිටපත් කරයි. නැවත නම් කිරීම Android SDK හරහා ඉමියුලේටරයේ සැබෑ නම වෙනස් කිරීමකි; අන්වර්ථ නාමයද ඒ සමඟ යයි. අන්වර්ථ නාමයක් පමණක් පැන්සල් බොත්තමෙන් සකසනු ලැබේ.</translation>
     </message>
     <message>
         <source>Duplicate, rename or wipe this emulator</source>
-        <translation type="unfinished"></translation>
+        <translation>මෙම ඉමියුලේටරය අනුපිටපත් කරන්න, නැවත නම් කරන්න හෝ පිසදමන්න</translation>
     </message>
     <message>
         <source>Letters, digits, - and _</source>
-        <translation type="unfinished"></translation>
+        <translation>අකුරු, ඉලක්කම්, - සහ _</translation>
     </message>
     <message>
         <source>Manage</source>
-        <translation type="unfinished"></translation>
+        <translation>කළමනාකරණය කරන්න</translation>
     </message>
     <message>
         <source>Manage emulator</source>
-        <translation type="unfinished"></translation>
+        <translation>ඉමියුලේටරය කළමනාකරණය කරන්න</translation>
     </message>
     <message>
         <source>New name</source>
-        <translation type="unfinished"></translation>
+        <translation>නව නම</translation>
     </message>
     <message>
         <source>On disk: %1 · a wipe frees %2</source>
-        <translation type="unfinished"></translation>
+        <translation>තැටියේ: %1 · පිසදැමීමකින් %2 නිදහස් වේ</translation>
     </message>
     <message>
         <source>Pick an installed image, or type another package: it is downloaded as the first step. Tomacco creates phone, foldable and tablet emulators.</source>
-        <translation type="unfinished"></translation>
+        <translation>ස්ථාපිත රූපයක් තෝරන්න, නැතහොත් වෙනත් පැකේජයක් ටයිප් කරන්න: එය පළමු පියවර ලෙස බාගනු ලැබේ. Tomacco දුරකථන, නැමිය හැකි සහ ටැබ්ලට් ඉමියුලේටර සාදයි.</translation>
     </message>
     <message>
         <source>Reading disk usage…</source>
-        <translation type="unfinished"></translation>
+        <translation>තැටි භාවිතය කියවමින්…</translation>
     </message>
     <message>
         <source>Rename and wipe need the emulator&apos;s name typed here</source>
-        <translation type="unfinished"></translation>
+        <translation>නැවත නම් කිරීමට සහ පිසදැමීමට ඉමියුලේටරයේ නම මෙහි ටයිප් කළ යුතුය</translation>
     </message>
     <message>
         <source>Renamed to %1</source>
-        <translation type="unfinished"></translation>
+        <translation>%1 ලෙස නැවත නම් කළා</translation>
     </message>
     <message>
         <source>Renaming…</source>
-        <translation type="unfinished"></translation>
+        <translation>නැවත නම් කරමින්…</translation>
     </message>
     <message>
         <source>Start the emulator when it is ready</source>
-        <translation type="unfinished"></translation>
+        <translation>ඉමියුලේටරය සූදානම් වූ විට එය ආරම්භ කරන්න</translation>
     </message>
     <message>
         <source>Steps: %1</source>
-        <translation type="unfinished"></translation>
+        <translation>පියවර: %1</translation>
     </message>
     <message>
         <source>System image installed · no download</source>
-        <translation type="unfinished"></translation>
+        <translation>පද්ධති රූපය ස්ථාපිතයි · බාගැනීමක් නැත</translation>
     </message>
     <message>
         <source>TV, Wear, Automotive and XR images are not supported yet</source>
-        <translation type="unfinished"></translation>
+        <translation>TV, Wear, Automotive සහ XR රූප සඳහා තවමත් සහාය නොදක්වයි</translation>
     </message>
     <message>
         <source>The emulator is on or its lock files exist. Turn it off first; nothing here changes a running emulator.</source>
-        <translation type="unfinished"></translation>
+        <translation>ඉමියුලේටරය ක්‍රියාත්මකයි හෝ එහි අගුළු ගොනු පවතී. පළමුව එය ක්‍රියාවිරහිත කරන්න; මෙහි කිසිවක් ධාවනය වන ඉමියුලේටරයක් වෙනස් නොකරයි.</translation>
     </message>
     <message>
         <source>Wipe app data</source>
-        <translation type="unfinished"></translation>
+        <translation>යෙදුම් දත්ත පිසදමන්න</translation>
     </message>
     <message>
         <source>Wipe removes the apps, their data and the snapshots; the next start boots like a new device. The emulator&apos;s model and settings stay.</source>
-        <translation type="unfinished"></translation>
+        <translation>පිසදැමීම යෙදුම්, ඒවායේ දත්ත සහ ස්නැප්ෂොට් ඉවත් කරයි; ඊළඟ ආරම්භය නව උපාංගයක් ලෙස බූට් වේ. ඉමියුලේටරයේ මාදිලිය සහ සැකසුම් රැඳේ.</translation>
     </message>
     <message>
         <source>Wiping…</source>
-        <translation type="unfinished"></translation>
+        <translation>පිසදමමින්…</translation>
     </message>
     <message>
         <source>already accepted</source>
-        <translation type="unfinished"></translation>
+        <translation>දැනටමත් පිළිගෙන ඇත</translation>
     </message>
     <message>
         <source>apply model</source>
-        <translation type="unfinished"></translation>
+        <translation>මාදිලිය යොදන්න</translation>
     </message>
     <message>
         <source>create</source>
-        <translation type="unfinished"></translation>
+        <translation>සාදන්න</translation>
     </message>
     <message>
         <source>install image</source>
-        <translation type="unfinished"></translation>
+        <translation>රූපය ස්ථාපනය කරන්න</translation>
     </message>
     <message>
         <source>is missing</source>
-        <translation type="unfinished"></translation>
+        <translation>අස්ථානගතයි</translation>
     </message>
     <message>
         <source>not enough free space</source>
-        <translation type="unfinished"></translation>
+        <translation>ප්‍රමාණවත් නිදහස් ඉඩක් නැත</translation>
     </message>
     <message>
         <source>not yet accepted</source>
-        <translation type="unfinished"></translation>
+        <translation>තවමත් පිළිගෙන නැත</translation>
     </message>
     <message>
         <source>start</source>
-        <translation type="unfinished"></translation>
+        <translation>ආරම්භ කරන්න</translation>
     </message>
     <message>
         <source>the Android SDK</source>
-        <translation type="unfinished"></translation>
+        <translation>Android SDK</translation>
     </message>
     <message>
         <source>the name is taken</source>
-        <translation type="unfinished"></translation>
+        <translation>මෙම නම දැනටමත් භාවිතයේ ඇත</translation>
     </message>
 </context>
 <context>
     <name>Backend</name>
     <message>
         <source>%1 is not part of this installation.</source>
-        <translation type="unfinished"></translation>
+        <translation>%1 මෙම ස්ථාපනයේ කොටසක් නොවේ.</translation>
     </message>
     <message>
         <source>Check failed</source>
-        <translation type="unfinished"></translation>
+        <translation>පරීක්ෂාව අසාර්ථක විය</translation>
     </message>
     <message>
         <source>Checking…</source>
-        <translation type="unfinished"></translation>
+        <translation>පරීක්ෂා කරමින්…</translation>
     </message>
     <message>
         <source>Copied</source>
-        <translation type="unfinished"></translation>
+        <translation>පිටපත් කළා</translation>
     </message>
     <message>
         <source>Enter a valid http:// or https:// address.</source>
-        <translation type="unfinished"></translation>
+        <translation>වලංගු http:// හෝ https:// ලිපිනයක් ඇතුළත් කරන්න.</translation>
     </message>
     <message>
         <source>No index.html found. Choose a built web folder or open the dev server address.</source>
-        <translation type="unfinished"></translation>
+        <translation>index.html හමු නොවීය. ගොඩනැගූ වෙබ් ෆෝල්ඩරයක් තෝරන්න හෝ සංවර්ධන සේවාදායක ලිපිනය විවෘත කරන්න.</translation>
     </message>
     <message>
         <source>Not installed</source>
-        <translation type="unfinished"></translation>
+        <translation>ස්ථාපනය කර නැත</translation>
     </message>
     <message>
         <source>The local preview server could not start.</source>
-        <translation type="unfinished"></translation>
+        <translation>ස්ථානීය පෙරදසුන් සේවාදායකය ආරම්භ කළ නොහැකි විය.</translation>
     </message>
     <message>
         <source>The screenshot folder could not be created.</source>
-        <translation type="unfinished"></translation>
+        <translation>තිර රුව ෆෝල්ඩරය සෑදිය නොහැකි විය.</translation>
     </message>
     <message>
         <source>Unknown</source>
-        <translation type="unfinished"></translation>
+        <translation>නොදනී</translation>
     </message>
     <message>
         <source>This job has no log file yet.</source>
-        <translation type="unfinished"></translation>
+        <translation>මෙම කාර්යයට තවමත් ලොග් ගොනුවක් නැත.</translation>
     </message>
     <message>
         <source>Open</source>
-        <translation type="unfinished"></translation>
+        <translation>විවෘත කරන්න</translation>
     </message>
     <message>
         <source>%1 cannot be written.</source>
-        <translation type="unfinished"></translation>
+        <translation>%1 වෙත ලිවිය නොහැක.</translation>
     </message>
     <message>
         <source>%1 cannot be read.</source>
-        <translation type="unfinished"></translation>
+        <translation>%1 කියවිය නොහැක.</translation>
     </message>
     <message>
         <source>%1 is too large for a settings file.</source>
-        <translation type="unfinished"></translation>
+        <translation>සැකසුම් ගොනුවක් සඳහා %1 ඉතා විශාලයි.</translation>
     </message>
     <message>
         <source>%1 is not a Tomacco settings file.</source>
-        <translation type="unfinished"></translation>
+        <translation>%1 Tomacco සැකසුම් ගොනුවක් නොවේ.</translation>
     </message>
     <message>
         <source>%1 comes from a newer Tomacco; update this one first.</source>
-        <translation type="unfinished"></translation>
+        <translation>%1 නවතම Tomacco අනුවාදයකින් පැමිණේ; පළමුව මෙය යාවත්කාලීන කරන්න.</translation>
     </message>
     <message>
         <source>The recordings folder could not be created.</source>
-        <translation type="unfinished"></translation>
+        <translation>පටිගත කිරීම් ෆෝල්ඩරය සෑදිය නොහැකි විය.</translation>
     </message>
     <message>
         <source>The session log must be an absolute path.</source>
-        <translation type="unfinished"></translation>
+        <translation>සැසි ලොගය නිරපේක්ෂ මාර්ගයක් විය යුතුය.</translation>
     </message>
     <message>
         <source>No session log at %1 yet. It appears with the agent&apos;s first call.</source>
-        <translation type="unfinished"></translation>
+        <translation>%1 හි තවමත් සැසි ලොගයක් නැත. නියෝජිතයාගේ පළමු ඇමතුම සමඟ එය දිස් වේ.</translation>
     </message>
 </context>
 <context>
     <name>Colors</name>
     <message>
         <source>Cream</source>
-        <translation type="unfinished"></translation>
+        <translation>ක්‍රීම්</translation>
     </message>
     <message>
         <source>Graphite</source>
-        <translation type="unfinished"></translation>
+        <translation>ග්‍රැෆයිට්</translation>
     </message>
     <message>
         <source>Gray</source>
-        <translation type="unfinished"></translation>
+        <translation>අළු</translation>
     </message>
     <message>
         <source>Green Shadow</source>
-        <translation type="unfinished"></translation>
+        <translation>කොළ සෙවණ</translation>
     </message>
     <message>
         <source>Mint</source>
-        <translation type="unfinished"></translation>
+        <translation>මින්ට්</translation>
     </message>
     <message>
         <source>Violet Shadow</source>
-        <translation type="unfinished"></translation>
+        <translation>දම් සෙවණ</translation>
     </message>
     <message>
         <source>Black</source>
-        <translation type="unfinished"></translation>
+        <translation>කළු</translation>
     </message>
     <message>
         <source>Burgundy</source>
-        <translation type="unfinished"></translation>
+        <translation>බර්ගන්ඩි</translation>
     </message>
     <message>
         <source>Canyon</source>
-        <translation type="unfinished"></translation>
+        <translation>කැනියන්</translation>
     </message>
     <message>
         <source>Cloud White</source>
-        <translation type="unfinished"></translation>
+        <translation>වලාකුළු සුදු</translation>
     </message>
     <message>
         <source>Cobalt Violet</source>
-        <translation type="unfinished"></translation>
+        <translation>කොබෝල්ට් දම්</translation>
     </message>
     <message>
         <source>Device</source>
-        <translation type="unfinished"></translation>
+        <translation>උපාංගය</translation>
     </message>
     <message>
         <source>Fog</source>
-        <translation type="unfinished"></translation>
+        <translation>මීදුම</translation>
     </message>
     <message>
         <source>Frost</source>
-        <translation type="unfinished"></translation>
+        <translation>හිම පිදුරු</translation>
     </message>
     <message>
         <source>Glacier</source>
-        <translation type="unfinished"></translation>
+        <translation>ග්ලැසියර</translation>
     </message>
     <message>
         <source>Hibiscus</source>
-        <translation type="unfinished"></translation>
+        <translation>සපත්තු මල්</translation>
     </message>
     <message>
         <source>Lavender</source>
-        <translation type="unfinished"></translation>
+        <translation>ලැවෙන්ඩර්</translation>
     </message>
     <message>
         <source>Light Gold</source>
-        <translation type="unfinished"></translation>
+        <translation>ලා රන්</translation>
     </message>
     <message>
         <source>Mist Blue</source>
-        <translation type="unfinished"></translation>
+        <translation>මීදුම් නිල්</translation>
     </message>
     <message>
         <source>Night Sky</source>
-        <translation type="unfinished"></translation>
+        <translation>රාත්‍රී අහස</translation>
     </message>
     <message>
         <source>Obsidian</source>
-        <translation type="unfinished"></translation>
+        <translation>ඔබ්සිඩියන්</translation>
     </message>
     <message>
         <source>Olive</source>
-        <translation type="unfinished"></translation>
+        <translation>ඔලිව්</translation>
     </message>
     <message>
         <source>Pink</source>
-        <translation type="unfinished"></translation>
+        <translation>රෝස</translation>
     </message>
     <message>
         <source>Pistachio</source>
-        <translation type="unfinished"></translation>
+        <translation>පිස්තා</translation>
     </message>
     <message>
         <source>Sage</source>
-        <translation type="unfinished"></translation>
+        <translation>සේජ්</translation>
     </message>
     <message>
         <source>Silver</source>
-        <translation type="unfinished"></translation>
+        <translation>රිදී</translation>
     </message>
     <message>
         <source>Sky Blue</source>
-        <translation type="unfinished"></translation>
+        <translation>අහස් නිල්</translation>
     </message>
     <message>
         <source>Soft Pink</source>
-        <translation type="unfinished"></translation>
+        <translation>මෘදු රෝස</translation>
     </message>
     <message>
         <source>Space Black</source>
-        <translation type="unfinished"></translation>
+        <translation>අභ්‍යවකාශ කළු</translation>
     </message>
     <message>
         <source>Star White</source>
-        <translation type="unfinished"></translation>
+        <translation>තරු සුදු</translation>
     </message>
     <message>
         <source>Teal</source>
-        <translation type="unfinished"></translation>
+        <translation>නිල්-කොළ</translation>
     </message>
     <message>
         <source>Ultramarine</source>
-        <translation type="unfinished"></translation>
+        <translation>අල්ට්‍රාමරීන්</translation>
     </message>
     <message>
         <source>White</source>
-        <translation type="unfinished"></translation>
+        <translation>සුදු</translation>
     </message>
 </context>
 <context>
     <name>CommandPalette</name>
     <message>
         <source>No matching views or tools</source>
-        <translation type="unfinished"></translation>
+        <translation>ගැළපෙන දසුන් හෝ මෙවලම් නැත</translation>
     </message>
     <message>
         <source>View</source>
-        <translation type="unfinished"></translation>
+        <translation>දසුන</translation>
     </message>
     <message>
         <source>Search views, commands or tools…</source>
-        <translation type="unfinished"></translation>
+        <translation>දසුන්, විධාන හෝ මෙවලම් සොයන්න…</translation>
     </message>
     <message>
         <source>Ctrl</source>
-        <translation type="unfinished"></translation>
+        <translation>Ctrl</translation>
     </message>
     <message>
         <source>Recent</source>
-        <translation type="unfinished"></translation>
+        <translation>මෑත</translation>
     </message>
     <message>
         <source>↑ ↓  Select     PgUp PgDn  Page     ↵  Open     Esc  Close</source>
-        <translation type="unfinished"></translation>
+        <translation>↑ ↓  තෝරන්න     PgUp PgDn  පිටුව     ↵  විවෘත කරන්න     Esc  වසන්න</translation>
     </message>
 </context>
 <context>
     <name>Control</name>
     <message>
         <source>Invalid frame response</source>
-        <translation type="unfinished"></translation>
+        <translation>වලංගු නොවන රාමු ප්‍රතිචාරය</translation>
     </message>
     <message>
         <source>Invalid response from the control plane</source>
-        <translation type="unfinished"></translation>
+        <translation>පාලන තලයෙන් වලංගු නොවන ප්‍රතිචාරයක්</translation>
     </message>
     <message>
         <source>Invalid response from the frame control</source>
-        <translation type="unfinished"></translation>
+        <translation>රාමු පාලනයෙන් වලංගු නොවන ප්‍රතිචාරයක්</translation>
     </message>
     <message>
         <source>Invalid session name</source>
-        <translation type="unfinished"></translation>
+        <translation>වලංගු නොවන සැසි නාමය</translation>
     </message>
     <message>
         <source>Tomacco is already open in another window; agents keep controlling that one. To control this window too, start it with --preview-session and another name.</source>
-        <translation type="unfinished"></translation>
+        <translation>Tomacco දැනටමත් වෙනත් කවුළුවක විවෘතයි; නියෝජිතයන් එයම පාලනය කරයි. මෙම කවුළුවද පාලනය කිරීමට, --preview-session සහ වෙනත් නමක් සමඟ එය ආරම්භ කරන්න.</translation>
     </message>
     <message>
         <source>Tomacco&apos;s control program (tomaccoctl) could not be started. Reinstall Tomacco or run install.py again.</source>
-        <translation type="unfinished"></translation>
+        <translation>Tomacco හි පාලන වැඩසටහන (tomaccoctl) ආරම්භ කළ නොහැකි විය. Tomacco නැවත ස්ථාපනය කරන්න හෝ install.py නැවත ධාවනය කරන්න.</translation>
     </message>
     <message>
         <source>Tomacco&apos;s control program (tomaccoctl) is not working: %1</source>
-        <translation type="unfinished"></translation>
+        <translation>Tomacco හි පාලන වැඩසටහන (tomaccoctl) ක්‍රියා නොකරයි: %1</translation>
     </message>
     <message>
         <source>Tomacco&apos;s control program (tomaccoctl) was not found. Reinstall Tomacco or run install.py again.</source>
-        <translation type="unfinished"></translation>
+        <translation>Tomacco හි පාලන වැඩසටහන (tomaccoctl) හමු නොවීය. Tomacco නැවත ස්ථාපනය කරන්න හෝ install.py නැවත ධාවනය කරන්න.</translation>
     </message>
     <message>
         <source>The agent socket directory belongs to another user</source>
-        <translation type="unfinished"></translation>
+        <translation>නියෝජිත සොකට් නාමාවලිය වෙනත් පරිශීලකයෙකුට අයත්ය</translation>
     </message>
     <message>
         <source>The agent socket directory could not be created</source>
-        <translation type="unfinished"></translation>
+        <translation>නියෝජිත සොකට් නාමාවලිය සෑදිය නොහැකි විය</translation>
     </message>
     <message>
         <source>The control program ended unexpectedly</source>
-        <translation type="unfinished"></translation>
+        <translation>පාලන වැඩසටහන අනපේක්ෂිත ලෙස අවසන් විය</translation>
     </message>
     <message>
         <source>The control program failed: %1</source>
-        <translation type="unfinished"></translation>
+        <translation>පාලන වැඩසටහන අසාර්ථක විය: %1</translation>
     </message>
     <message>
         <source>The frame control could not be initialized</source>
-        <translation type="unfinished"></translation>
+        <translation>රාමු පාලනය ආරම්භ කළ නොහැකි විය</translation>
     </message>
     <message>
         <source>The frame control did not respond in time</source>
-        <translation type="unfinished"></translation>
+        <translation>රාමු පාලනය නියමිත වේලාවට ප්‍රතිචාර නොදැක්වීය</translation>
     </message>
     <message>
         <source>The frame control ended</source>
-        <translation type="unfinished"></translation>
+        <translation>රාමු පාලනය අවසන් විය</translation>
     </message>
     <message>
         <source>The frame control is not reachable</source>
-        <translation type="unfinished"></translation>
+        <translation>රාමු පාලනයට ළඟා විය නොහැක</translation>
     </message>
     <message>
         <source>The frame request could not be sent</source>
-        <translation type="unfinished"></translation>
+        <translation>රාමු ඉල්ලීම යැවිය නොහැකි විය</translation>
     </message>
     <message>
         <source>The frame response is too large</source>
-        <translation type="unfinished"></translation>
+        <translation>රාමු ප්‍රතිචාරය ඉතා විශාලයි</translation>
     </message>
     <message>
         <source>The frame response matches no request</source>
-        <translation type="unfinished"></translation>
+        <translation>රාමු ප්‍රතිචාරය කිසිදු ඉල්ලීමකට නොගැළපේ</translation>
     </message>
     <message>
         <source>Too many concurrent requests</source>
-        <translation type="unfinished"></translation>
+        <translation>එකවර ඉල්ලීම් ඕනෑවට වඩා</translation>
     </message>
     <message>
         <source>tomaccoctl could not be started (%1). Reinstall Tomacco or run install.py again.</source>
-        <translation type="unfinished"></translation>
+        <translation>tomaccoctl ආරම්භ කළ නොහැකි විය (%1). Tomacco නැවත ස්ථාපනය කරන්න හෝ install.py නැවත ධාවනය කරන්න.</translation>
     </message>
 </context>
 <context>
     <name>DebugWorkspace</name>
     <message>
         <source>All files (*)</source>
-        <translation type="unfinished"></translation>
+        <translation>සියලු ගොනු (*)</translation>
     </message>
     <message>
         <source>Android libraries (*.so)</source>
-        <translation type="unfinished"></translation>
+        <translation>Android පුස්තකාල (*.so)</translation>
     </message>
     <message>
         <source>Application ID · e.g. dev.example.app</source>
-        <translation type="unfinished"></translation>
+        <translation>යෙදුම් ID · උදා. dev.example.app</translation>
     </message>
     <message>
         <source>Breakpoints</source>
-        <translation type="unfinished"></translation>
+        <translation>බිඳුම් ලක්ෂ්‍ය</translation>
     </message>
     <message>
         <source>CALL STACK</source>
-        <translation type="unfinished"></translation>
+        <translation>ඇමතුම් තොගය</translation>
     </message>
     <message>
         <source>Choose Android device</source>
-        <translation type="unfinished"></translation>
+        <translation>Android උපාංගය තෝරන්න</translation>
     </message>
     <message>
         <source>Choose debug program</source>
-        <translation type="unfinished"></translation>
+        <translation>නිදොස් වැඩසටහන තෝරන්න</translation>
     </message>
     <message>
         <source>Choose file</source>
-        <translation type="unfinished"></translation>
+        <translation>ගොනුව තෝරන්න</translation>
     </message>
     <message>
         <source>Choose library with debug symbols</source>
-        <translation type="unfinished"></translation>
+        <translation>නිදොස් සංකේත සහිත පුස්තකාලය තෝරන්න</translation>
     </message>
     <message>
         <source>Connect</source>
-        <translation type="unfinished"></translation>
+        <translation>සම්බන්ධ කරන්න</translation>
     </message>
     <message>
         <source>Connecting…</source>
-        <translation type="unfinished"></translation>
+        <translation>සම්බන්ධ වෙමින්…</translation>
     </message>
     <message>
         <source>Continue</source>
-        <translation type="unfinished"></translation>
+        <translation>ඉදිරියට</translation>
     </message>
     <message>
         <source>Debugger exited</source>
-        <translation type="unfinished"></translation>
+        <translation>නිදොස්කරු පිටවිය</translation>
     </message>
     <message>
         <source>Debugger request failed</source>
-        <translation type="unfinished"></translation>
+        <translation>නිදොස්කරු ඉල්ලීම අසාර්ථක විය</translation>
     </message>
     <message>
         <source>Disconnect</source>
-        <translation type="unfinished"></translation>
+        <translation>විසන්ධි කරන්න</translation>
     </message>
     <message>
         <source>Disconnected</source>
-        <translation type="unfinished"></translation>
+        <translation>විසන්ධි විය</translation>
     </message>
     <message>
         <source>Ended</source>
-        <translation type="unfinished"></translation>
+        <translation>අවසන් විය</translation>
     </message>
     <message>
         <source>Enter valid line numbers</source>
-        <translation type="unfinished"></translation>
+        <translation>වලංගු පේළි අංක ඇතුළත් කරන්න</translation>
     </message>
     <message>
         <source>Evaluate expression</source>
-        <translation type="unfinished"></translation>
+        <translation>ප්‍රකාශනය ඇගයීම</translation>
     </message>
     <message>
         <source>Evaluate the expression in the selected frame</source>
-        <translation type="unfinished"></translation>
+        <translation>තෝරාගත් රාමුවේ ප්‍රකාශනය ඇගයීම</translation>
     </message>
     <message>
         <source>Executable with debug symbols</source>
-        <translation type="unfinished"></translation>
+        <translation>නිදොස් සංකේත සහිත ක්‍රියාත්මක කළ හැකි ගොනුව</translation>
     </message>
     <message>
         <source>Hide events</source>
-        <translation type="unfinished"></translation>
+        <translation>සිදුවීම් සඟවන්න</translation>
     </message>
     <message>
         <source>Launch app</source>
-        <translation type="unfinished"></translation>
+        <translation>යෙදුම දියත් කරන්න</translation>
     </message>
     <message>
         <source>Launches the app if it is not running yet.</source>
-        <translation type="unfinished"></translation>
+        <translation>යෙදුම තවමත් ධාවනය නොවේ නම් එය දියත් කරයි.</translation>
     </message>
     <message>
         <source>Library with debug symbols (.so)</source>
-        <translation type="unfinished"></translation>
+        <translation>නිදොස් සංකේත සහිත පුස්තකාලය (.so)</translation>
     </message>
     <message>
         <source>Line %1</source>
-        <translation type="unfinished"></translation>
+        <translation>පේළිය %1</translation>
     </message>
     <message>
         <source>Lines: 12, 24</source>
-        <translation type="unfinished"></translation>
+        <translation>පේළි: 12, 24</translation>
     </message>
     <message>
         <source>Locals</source>
-        <translation type="unfinished"></translation>
+        <translation>ස්ථානීය විචල්‍ය</translation>
     </message>
     <message>
         <source>No debugger events yet.</source>
-        <translation type="unfinished"></translation>
+        <translation>තවමත් නිදොස්කරු සිදුවීම් නැත.</translation>
     </message>
     <message>
         <source>No paused thread yet</source>
-        <translation type="unfinished"></translation>
+        <translation>තවමත් විරාම කළ ත්‍රෙඩ් එකක් නැත</translation>
     </message>
     <message>
         <source>No session</source>
-        <translation type="unfinished"></translation>
+        <translation>සැසියක් නැත</translation>
     </message>
     <message>
         <source>Open existing session</source>
-        <translation type="unfinished"></translation>
+        <translation>පවතින සැසිය විවෘත කරන්න</translation>
     </message>
     <message>
         <source>Open source</source>
-        <translation type="unfinished"></translation>
+        <translation>මූලාශ්‍රය විවෘත කරන්න</translation>
     </message>
     <message>
         <source>Paused</source>
-        <translation type="unfinished"></translation>
+        <translation>විරාම කළා</translation>
     </message>
     <message>
         <source>Refresh</source>
-        <translation type="unfinished"></translation>
+        <translation>නැවුම් කරන්න</translation>
     </message>
     <message>
         <source>Restarts the app and waits for the Java debugger.</source>
-        <translation type="unfinished"></translation>
+        <translation>යෙදුම නැවත ආරම්භ කර Java නිදොස්කරු එනතුරු රැඳී සිටී.</translation>
     </message>
     <message>
         <source>Run the next source line</source>
-        <translation type="unfinished"></translation>
+        <translation>ඊළඟ මූලාශ්‍ර පේළිය ධාවනය කරන්න</translation>
     </message>
     <message>
         <source>Running</source>
-        <translation type="unfinished"></translation>
+        <translation>ධාවනය වෙමින්</translation>
     </message>
     <message>
         <source>Session active</source>
-        <translation type="unfinished"></translation>
+        <translation>සැසිය සක්‍රියයි</translation>
     </message>
     <message>
         <source>Show events</source>
-        <translation type="unfinished"></translation>
+        <translation>සිදුවීම් පෙන්වන්න</translation>
     </message>
     <message>
         <source>Source file or Java class</source>
-        <translation type="unfinished"></translation>
+        <translation>මූලාශ්‍ර ගොනුව හෝ Java පන්තිය</translation>
     </message>
     <message>
         <source>Step in</source>
-        <translation type="unfinished"></translation>
+        <translation>ඇතුළට පියවර</translation>
     </message>
     <message>
         <source>Step out</source>
-        <translation type="unfinished"></translation>
+        <translation>පිටතට පියවර</translation>
     </message>
     <message>
         <source>Step over</source>
-        <translation type="unfinished"></translation>
+        <translation>උඩින් පියවර</translation>
     </message>
     <message>
         <source>VARIABLES</source>
-        <translation type="unfinished"></translation>
+        <translation>විචල්‍ය</translation>
     </message>
     <message>
         <source>ended</source>
-        <translation type="unfinished"></translation>
+        <translation>අවසන් විය</translation>
     </message>
     <message>
         <source>Attach to your app</source>
-        <translation type="unfinished"></translation>
+        <translation>ඔබේ යෙදුමට අමුණන්න</translation>
     </message>
     <message>
         <source>Needs a debug build and the NDK. The library must match your app and its processor.</source>
-        <translation type="unfinished"></translation>
+        <translation>නිදොස් ගොඩනැගීමක් සහ NDK අවශ්‍යයි. පුස්තකාලය ඔබේ යෙදුමට සහ එහි සකසනයට ගැළපිය යුතුය.</translation>
     </message>
     <message>
         <source>Needs a debug build on a connected phone or emulator.</source>
-        <translation type="unfinished"></translation>
+        <translation>සම්බන්ධිත දුරකථනයක හෝ ඉමියුලේටරයක නිදොස් ගොඩනැගීමක් අවශ්‍යයි.</translation>
     </message>
     <message>
         <source>A program on this computer, inspected with LLDB.</source>
-        <translation type="unfinished"></translation>
+        <translation>මෙම පරිගණකයේ ඇති වැඩසටහනක්, LLDB මගින් පරීක්ෂා කෙරේ.</translation>
     </message>
     <message>
         <source>Take over your agent&apos;s session</source>
-        <translation type="unfinished"></translation>
+        <translation>ඔබේ නියෝජිතයාගේ සැසිය භාර ගන්න</translation>
     </message>
     <message>
         <source>Pause your app or set a breakpoint to see the stack and variables.</source>
-        <translation type="unfinished"></translation>
+        <translation>තොගය සහ විචල්‍ය බැලීමට ඔබේ යෙදුම විරාම කරන්න හෝ බිඳුම් ලක්ෂ්‍යයක් සකසන්න.</translation>
     </message>
     <message>
         <source>Attach here, or take over a session your agent started.</source>
-        <translation type="unfinished"></translation>
+        <translation>මෙහි අමුණන්න, නැතහොත් ඔබේ නියෝජිතයා ආරම්භ කළ සැසියක් භාර ගන්න.</translation>
     </message>
 </context>
 <context>
     <name>Device</name>
     <message>
         <source>Device permissions are disabled in this layout preview.</source>
-        <translation type="unfinished"></translation>
+        <translation>මෙම පිරිසැලසුම් පෙරදසුනේ උපාංග අවසර අබල කර ඇත.</translation>
     </message>
     <message>
         <source>No connection</source>
-        <translation type="unfinished"></translation>
+        <translation>සම්බන්ධතාවයක් නැත</translation>
     </message>
     <message>
         <source>Page not reachable. Is your dev server running?</source>
-        <translation type="unfinished"></translation>
+        <translation>පිටුවට ළඟා විය නොහැක. ඔබේ සංවර්ධන සේවාදායකය ධාවනය වේද?</translation>
     </message>
     <message>
         <source>Please open downloads in your browser. Device images can be saved with “Screenshot”.</source>
-        <translation type="unfinished"></translation>
+        <translation>කරුණාකර බාගැනීම් ඔබේ බ්‍රවුසරයේ විවෘත කරන්න. උපාංග රූප “තිර රුව” මගින් සුරැකිය හැක.</translation>
     </message>
     <message>
         <source>Reload</source>
-        <translation type="unfinished"></translation>
+        <translation>නැවත පූරණය කරන්න</translation>
     </message>
     <message>
         <source>SAFE AREA · PREVIEW</source>
-        <translation type="unfinished"></translation>
+        <translation>ආරක්ෂිත ප්‍රදේශය · පෙරදසුන</translation>
     </message>
     <message>
         <source>The web view was terminated. Please reload.</source>
-        <translation type="unfinished"></translation>
+        <translation>වෙබ් දසුන අවසන් කරන ලදී. කරුණාකර නැවත පූරණය කරන්න.</translation>
     </message>
     <message>
         <source>This preview opens web addresses. Use “Open folder” for local builds.</source>
-        <translation type="unfinished"></translation>
+        <translation>මෙම පෙරදසුන වෙබ් ලිපින විවෘත කරයි. ස්ථානීය ගොඩනැගීම් සඳහා “ෆෝල්ඩරය විවෘත කරන්න” භාවිත කරන්න.</translation>
     </message>
 </context>
 <context>
     <name>DeviceWindow</name>
     <message>
         <source>Save and copy a screenshot · Ctrl+Shift+S</source>
-        <translation type="unfinished"></translation>
+        <translation>තිර රුවක් සුරකින්න සහ පිටපත් කරන්න · Ctrl+Shift+S</translation>
     </message>
     <message>
         <source>Back</source>
-        <translation type="unfinished"></translation>
+        <translation>ආපසු</translation>
     </message>
     <message>
         <source>Bring back into the workspace</source>
-        <translation type="unfinished"></translation>
+        <translation>නැවත වැඩ අවකාශයට ගෙන එන්න</translation>
     </message>
     <message>
         <source>Close device window · the device keeps running</source>
-        <translation type="unfinished"></translation>
+        <translation>උපාංග කවුළුව වසන්න · උපාංගය දිගටම ධාවනය වේ</translation>
     </message>
     <message>
         <source>Larger · Ctrl+mouse wheel</source>
-        <translation type="unfinished"></translation>
+        <translation>විශාල කරන්න · Ctrl+මූසික රෝදය</translation>
     </message>
     <message>
         <source>Open in the workspace</source>
-        <translation type="unfinished"></translation>
+        <translation>වැඩ අවකාශයේ විවෘත කරන්න</translation>
     </message>
     <message>
         <source>Tomacco – Device</source>
-        <translation type="unfinished"></translation>
+        <translation>Tomacco – උපාංගය</translation>
     </message>
     <message>
         <source>Rotate</source>
-        <translation type="unfinished"></translation>
+        <translation>කරකවන්න</translation>
     </message>
     <message>
         <source>Show the back</source>
-        <translation type="unfinished"></translation>
+        <translation>පිටුපස පෙන්වන්න</translation>
     </message>
     <message>
         <source>Show the front</source>
-        <translation type="unfinished"></translation>
+        <translation>ඉදිරිපස පෙන්වන්න</translation>
     </message>
     <message>
         <source>Side button</source>
-        <translation type="unfinished"></translation>
+        <translation>පැති බොත්තම</translation>
     </message>
     <message>
         <source>Side button · wake or lock the display</source>
-        <translation type="unfinished"></translation>
+        <translation>පැති බොත්තම · සංදර්ශකය අවදි කරන්න හෝ අගුළු දමන්න</translation>
     </message>
     <message>
         <source>Smaller · Ctrl+mouse wheel</source>
-        <translation type="unfinished"></translation>
+        <translation>කුඩා කරන්න · Ctrl+මූසික රෝදය</translation>
     </message>
     <message>
         <source>Stop keeping this window above the others</source>
-        <translation type="unfinished"></translation>
+        <translation>මෙම කවුළුව අනෙක් ඒවාට ඉහළින් තැබීම නවත්වන්න</translation>
     </message>
     <message>
         <source>Keep this window above the others</source>
-        <translation type="unfinished"></translation>
+        <translation>මෙම කවුළුව අනෙක් ඒවාට ඉහළින් තබන්න</translation>
     </message>
 </context>
 <context>
     <name>FileWorkspace</name>
     <message>
         <source>Choose a file in the project tree</source>
-        <translation type="unfinished"></translation>
+        <translation>ව්‍යාපෘති ගසේ ගොනුවක් තෝරන්න</translation>
     </message>
     <message>
         <source>Close file</source>
-        <translation type="unfinished"></translation>
+        <translation>ගොනුව වසන්න</translation>
     </message>
     <message>
         <source>Discard unsaved changes?</source>
-        <translation type="unfinished"></translation>
+        <translation>නොසුරැකූ වෙනස්කම් ඉවත් කරනවාද?</translation>
     </message>
     <message>
         <source>Folder</source>
-        <translation type="unfinished"></translation>
+        <translation>ෆෝල්ඩරය</translation>
     </message>
     <message>
         <source>Hidden</source>
-        <translation type="unfinished"></translation>
+        <translation>සඟවා ඇත</translation>
     </message>
     <message>
         <source>Line %1 · UTF-8 · changes are checked on save</source>
-        <translation type="unfinished"></translation>
+        <translation>පේළිය %1 · UTF-8 · සුරකින විට වෙනස්කම් පරීක්ෂා කෙරේ</translation>
     </message>
     <message>
         <source>More matches available; narrow the search term.</source>
-        <translation type="unfinished"></translation>
+        <translation>තවත් ගැළපීම් ඇත; සෙවුම් පදය සීමා කරන්න.</translation>
     </message>
     <message>
         <source>New file</source>
-        <translation type="unfinished"></translation>
+        <translation>නව ගොනුව</translation>
     </message>
     <message>
         <source>New folder</source>
-        <translation type="unfinished"></translation>
+        <translation>නව ෆෝල්ඩරය</translation>
     </message>
     <message>
         <source>Open a project first</source>
-        <translation type="unfinished"></translation>
+        <translation>පළමුව ව්‍යාපෘතියක් විවෘත කරන්න</translation>
     </message>
     <message>
         <source>Path relative to the project, e.g. lib/example.dart</source>
-        <translation type="unfinished"></translation>
+        <translation>ව්‍යාපෘතියට සාපේක්ෂ මාර්ගය, උදා. lib/example.dart</translation>
     </message>
     <message>
         <source>Reload</source>
-        <translation type="unfinished"></translation>
+        <translation>නැවත පූරණය කරන්න</translation>
     </message>
     <message>
         <source>Reload files</source>
-        <translation type="unfinished"></translation>
+        <translation>ගොනු නැවත පූරණය කරන්න</translation>
     </message>
     <message>
         <source>Save the file first or discard it with Reload.</source>
-        <translation type="unfinished"></translation>
+        <translation>පළමුව ගොනුව සුරකින්න හෝ නැවත පූරණය කරන්න මගින් එය ඉවත් කරන්න.</translation>
     </message>
     <message>
         <source>Save · Ctrl+S</source>
-        <translation type="unfinished"></translation>
+        <translation>සුරකින්න · Ctrl+S</translation>
     </message>
     <message>
         <source>Saved · %1</source>
-        <translation type="unfinished"></translation>
+        <translation>සුරකින ලදී · %1</translation>
     </message>
     <message>
         <source>Search source code…</source>
-        <translation type="unfinished"></translation>
+        <translation>මූලාශ්‍ර කේතය සොයන්න…</translation>
     </message>
     <message>
         <source>The file is read again from disk.</source>
-        <translation type="unfinished"></translation>
+        <translation>ගොනුව තැටියෙන් නැවත කියවේ.</translation>
     </message>
     <message>
         <source>The link leads outside this project.</source>
-        <translation type="unfinished"></translation>
+        <translation>සබැඳිය මෙම ව්‍යාපෘතියෙන් පිටතට යයි.</translation>
     </message>
     <message>
         <source>This folder contains more than 2,000 entries. Use search for targeted results.</source>
-        <translation type="unfinished"></translation>
+        <translation>මෙම ෆෝල්ඩරයේ ඇතුළත් කිරීම් 2,000 කට වඩා ඇත. ඉලක්ක කළ ප්‍රතිඵල සඳහා සෙවුම භාවිත කරන්න.</translation>
     </message>
     <message>
         <source>Source of %1</source>
-        <translation type="unfinished"></translation>
+        <translation>%1 හි මූලාශ්‍රය</translation>
     </message>
     <message>
         <source>Source editor</source>
-        <translation type="unfinished"></translation>
+        <translation>මූලාශ්‍ර සංස්කාරකය</translation>
     </message>
     <message>
         <source>Search results</source>
-        <translation type="unfinished"></translation>
+        <translation>සෙවුම් ප්‍රතිඵල</translation>
     </message>
     <message>
         <source>Project files</source>
-        <translation type="unfinished"></translation>
+        <translation>ව්‍යාපෘති ගොනු</translation>
     </message>
     <message>
         <source>Choose folder</source>
-        <translation type="unfinished"></translation>
+        <translation>ෆෝල්ඩරය තෝරන්න</translation>
     </message>
 </context>
 <context>
     <name>IosGuestView</name>
     <message>
         <source>Screenshot saved and copied: %1</source>
-        <translation type="unfinished"></translation>
+        <translation>තිර රුව සුරකින ලදී පිටපත් කළා: %1</translation>
     </message>
     <message>
         <source>%1 · outcome unclear, not retried automatically</source>
-        <translation type="unfinished"></translation>
+        <translation>%1 · ප්‍රතිඵලය පැහැදිලි නැත, ස්වයංක්‍රීයව නැවත උත්සාහ නොකළේ</translation>
     </message>
     <message numerus="yes">
         <source>%n new frame(s)/s</source>
-        <translation type="unfinished">
-            <numerusform></numerusform>
-            <numerusform></numerusform>
+        <translation>
+            <numerusform>නව රාමු %n/තත්.</numerusform>
+            <numerusform>නව රාමු %n/තත්.</numerusform>
         </translation>
     </message>
     <message>
         <source>App switcher</source>
-        <translation type="unfinished"></translation>
+        <translation>යෙදුම් මාරකය</translation>
     </message>
     <message>
         <source>Back</source>
-        <translation type="unfinished"></translation>
+        <translation>ආපසු</translation>
     </message>
     <message>
         <source>Capture saved: %1</source>
-        <translation type="unfinished"></translation>
+        <translation>ග්‍රහණය සුරකින ලදී: %1</translation>
     </message>
     <message>
         <source>Control Center</source>
-        <translation type="unfinished"></translation>
+        <translation>පාලන මධ්‍යස්ථානය</translation>
     </message>
     <message>
         <source>Control still busy · input not delivered</source>
-        <translation type="unfinished"></translation>
+        <translation>පාලනය තවමත් කාර්යබහුලයි · ආදානය යවා නැත</translation>
     </message>
     <message>
         <source>Detach the virtual iOS device into its own window</source>
-        <translation type="unfinished"></translation>
+        <translation>අතක්සුවික iOS උපාංගය එහිම කවුළුවකට වෙන් කරන්න</translation>
     </message>
     <message>
         <source>Display output unreachable</source>
-        <translation type="unfinished"></translation>
+        <translation>සංදර්ශක ප්‍රතිදානයට ළඟා විය නොහැක</translation>
     </message>
     <message>
         <source>Dock</source>
-        <translation type="unfinished"></translation>
+        <translation>ඩොක්</translation>
     </message>
     <message>
         <source>Edge swipes start on the frame or at the screen&apos;s edge</source>
-        <translation type="unfinished"></translation>
+        <translation>දාර ස්වයිප් රාමුව මත හෝ තිරයේ දාරයේ ආරම්භ වේ</translation>
     </message>
     <message>
         <source>Home button</source>
-        <translation type="unfinished"></translation>
+        <translation>මුල් බොත්තම</translation>
     </message>
     <message>
         <source>Home button and swipe up from the bottom edge</source>
-        <translation type="unfinished"></translation>
+        <translation>මුල් බොත්තම සහ පහළ දාරයේ සිට ඉහළට ස්වයිප් කරන්න</translation>
     </message>
     <message>
         <source>Input failed</source>
-        <translation type="unfinished"></translation>
+        <translation>ආදානය අසාර්ථක විය</translation>
     </message>
     <message>
         <source>Input queue full · this input was not sent</source>
-        <translation type="unfinished"></translation>
+        <translation>ආදාන පෙලගැසුම පිරී ඇත · මෙම ආදානය යවා නැත</translation>
     </message>
     <message>
         <source>Last frame</source>
-        <translation type="unfinished"></translation>
+        <translation>අවසාන රාමුව</translation>
     </message>
     <message>
         <source>Live frame · %1</source>
-        <translation type="unfinished"></translation>
+        <translation>සජීවී රාමුව · %1</translation>
     </message>
     <message>
         <source>No running interactive iOS session</source>
-        <translation type="unfinished"></translation>
+        <translation>ධාවනය වන අන්තර්ක්‍රියාකාරී iOS සැසියක් නැත</translation>
     </message>
     <message>
         <source>Notification Center</source>
-        <translation type="unfinished"></translation>
+        <translation>දැනුම්දීම් මධ්‍යස්ථානය</translation>
     </message>
     <message>
         <source>Own window</source>
-        <translation type="unfinished"></translation>
+        <translation>ස්වකීය කවුළුව</translation>
     </message>
     <message>
         <source>Real output of the virtual display</source>
-        <translation type="unfinished"></translation>
+        <translation>අතක්සුවික සංදර්ශකයේ සැබෑ ප්‍රතිදානය</translation>
     </message>
     <message>
         <source>Side button</source>
-        <translation type="unfinished"></translation>
+        <translation>පැති බොත්තම</translation>
     </message>
     <message>
         <source>Still frame</source>
-        <translation type="unfinished"></translation>
+        <translation>නිශ්චල රාමුව</translation>
     </message>
     <message>
         <source>Swipe down from the top-left edge</source>
-        <translation type="unfinished"></translation>
+        <translation>ඉහළ-වම් දාරයේ සිට පහළට ස්වයිප් කරන්න</translation>
     </message>
     <message>
         <source>Swipe down from the top-right edge</source>
-        <translation type="unfinished"></translation>
+        <translation>ඉහළ-දකුණු දාරයේ සිට පහළට ස්වයිප් කරන්න</translation>
     </message>
     <message>
         <source>Swipe right from the left edge</source>
-        <translation type="unfinished"></translation>
+        <translation>වම් දාරයේ සිට දකුණට ස්වයිප් කරන්න</translation>
     </message>
     <message>
         <source>Swipe up from the bottom edge and pause</source>
-        <translation type="unfinished"></translation>
+        <translation>පහළ දාරයේ සිට ඉහළට ස්වයිප් කර නවතින්න</translation>
     </message>
     <message>
         <source>The iOS device is running in its own window</source>
-        <translation type="unfinished"></translation>
+        <translation>iOS උපාංගය එහිම කවුළුවක ධාවනය වේ</translation>
     </message>
     <message>
         <source>Virtual iOS device</source>
-        <translation type="unfinished"></translation>
+        <translation>අතක්සුවික iOS උපාංගය</translation>
     </message>
     <message>
         <source>Waiting for the display output of iOS…</source>
-        <translation type="unfinished"></translation>
+        <translation>iOS හි සංදර්ශක ප්‍රතිදානය එනතුරු රැඳී සිටිමින්…</translation>
     </message>
     <message>
         <source>Wake or lock the display</source>
-        <translation type="unfinished"></translation>
+        <translation>සංදර්ශකය අවදි කරන්න හෝ අගුළු දමන්න</translation>
     </message>
     <message>
         <source>Stop recording · %1 s</source>
-        <translation type="unfinished"></translation>
+        <translation>පටිගත කිරීම නවත්වන්න · තත්. %1</translation>
     </message>
     <message>
         <source>Record</source>
-        <translation type="unfinished"></translation>
+        <translation>පටිගත කරන්න</translation>
     </message>
     <message>
         <source>Stop and save the recording</source>
-        <translation type="unfinished"></translation>
+        <translation>පටිගත කිරීම නවත්වා සුරකින්න</translation>
     </message>
     <message>
         <source>Record the screen to a video, at most 10 minutes</source>
-        <translation type="unfinished"></translation>
+        <translation>තිරය වීඩියෝවකට පටිගත කරන්න, උපරිම මිනිත්තු 10</translation>
     </message>
     <message numerus="yes">
         <source>Typing %n character(s) from the clipboard</source>
-        <translation type="unfinished">
-            <numerusform></numerusform>
-            <numerusform></numerusform>
+        <translation>
+            <numerusform>පසුරු පුවරුවෙන් අනුලකුණු %nක් ටයිප් කරමින්</numerusform>
+            <numerusform>පසුරු පුවරුවෙන් අනුලකුණු %nක් ටයිප් කරමින්</numerusform>
         </translation>
     </message>
     <message>
         <source>The clipboard holds no text</source>
-        <translation type="unfinished"></translation>
+        <translation>පසුරු පුවරුවේ පෙළක් නැත</translation>
     </message>
     <message>
         <source>The clipboard holds %1 characters; at most %2 are typed into the phone</source>
-        <translation type="unfinished"></translation>
+        <translation>පසුරු පුවරුවේ අනුලකුණු %1ක් ඇත; දුරකථනයට ටයිප් කරන්නේ උපරිම %2ක් පමණි</translation>
     </message>
     <message>
         <source>Paste</source>
-        <translation type="unfinished"></translation>
+        <translation>අලවන්න</translation>
     </message>
     <message>
         <source>Type the clipboard&apos;s text into the field that has the focus</source>
-        <translation type="unfinished"></translation>
+        <translation>පසුරු පුවරුවේ පෙළ නාභිගත ක්ෂේත්‍රයට ටයිප් කරන්න</translation>
     </message>
     <message>
         <source>Keyboard to phone</source>
-        <translation type="unfinished"></translation>
+        <translation>යතුරුපුවරුව දුරකථනයට</translation>
     </message>
     <message>
         <source>Keyboard to desktop</source>
-        <translation type="unfinished"></translation>
+        <translation>යතුරුපුවරුව ඩෙස්ක්ටොපයට</translation>
     </message>
     <message>
         <source>Typing goes to the phone · Ctrl+Shift+K gives the keyboard back to the desktop</source>
-        <translation type="unfinished"></translation>
+        <translation>ටයිප් කිරීම දුරකථනයට යයි · Ctrl+Shift+K යතුරුපුවරුව ඩෙස්ක්ටොපයට නැවත දෙයි</translation>
     </message>
     <message>
         <source>Click the screen or press Ctrl+Shift+K to type on the phone</source>
-        <translation type="unfinished"></translation>
+        <translation>දුරකථනයේ ටයිප් කිරීමට තිරය ක්ලික් කරන්න හෝ Ctrl+Shift+K ඔබන්න</translation>
     </message>
     <message>
         <source>Speed</source>
-        <translation type="unfinished"></translation>
+        <translation>වේගය</translation>
     </message>
     <message>
         <source>Show frames per second and the time from an input to the picture</source>
-        <translation type="unfinished"></translation>
+        <translation>තත්පරයකට රාමු සහ ආදානයක සිට රූපය දක්වා කාලය පෙන්වන්න</translation>
     </message>
     <message>
         <source>Screenshot with frame</source>
-        <translation type="unfinished"></translation>
+        <translation>රාමුව සහිත තිර රුව</translation>
     </message>
     <message>
         <source>Save and copy a screenshot with a plain device frame and rounded corners</source>
-        <translation type="unfinished"></translation>
+        <translation>සරල උපාංග රාමුවක් සහ වටකළ කළුවර සහිත තිර රුවක් සුරකින්න සහ පිටපත් කරන්න</translation>
     </message>
     <message>
         <source>%1 new · %2 fetched frames/s</source>
-        <translation type="unfinished"></translation>
+        <translation>නව %1 · ලබාගත් රාමු %2/තත්.</translation>
     </message>
     <message>
         <source>Input to picture: %1 ms</source>
-        <translation type="unfinished"></translation>
+        <translation>ආදානයේ සිට රූපයට: %1 ms</translation>
     </message>
     <message>
         <source>Input to picture: not measured yet</source>
-        <translation type="unfinished"></translation>
+        <translation>ආදානයේ සිට රූපයට: තවමත් මැන නැත</translation>
     </message>
     <message>
         <source>The screenshot failed</source>
-        <translation type="unfinished"></translation>
+        <translation>තිර රුව අසාර්ථක විය</translation>
     </message>
     <message>
         <source>Keyboard to phone · Ctrl+Shift+K switches it to the desktop and back</source>
-        <translation type="unfinished"></translation>
+        <translation>යතුරුපුවරුව දුරකථනයට · Ctrl+Shift+K එය ඩෙස්ක්ටොපයට සහ ආපසු මාරු කරයි</translation>
     </message>
 </context>
 <context>
     <name>IosResearch</name>
     <message>
         <source>Another app change is still running.</source>
-        <translation type="unfinished"></translation>
+        <translation>තවත් යෙදුම් වෙනස්කිරීමක් තවමත් ධාවනය වේ.</translation>
     </message>
     <message>
         <source>Checking %1…</source>
-        <translation type="unfinished"></translation>
+        <translation>%1 පරීක්ෂා කරමින්…</translation>
     </message>
     <message>
         <source>%1 added · installing on the running device</source>
-        <translation type="unfinished"></translation>
+        <translation>%1 එක් කළා · ධාවනය වන උපාංගයේ ස්ථාපනය කරමින්</translation>
     </message>
     <message>
         <source>%1 added · the next start installs it</source>
-        <translation type="unfinished"></translation>
+        <translation>%1 එක් කළා · ඊළඟ ආරම්භය එය ස්ථාපනය කරයි</translation>
     </message>
     <message>
         <source>The virtual iOS device takes one .app bundle built for arm64 iOS.</source>
-        <translation type="unfinished"></translation>
+        <translation>අතක්සුවික iOS උපාංගය arm64 iOS සඳහා ගොඩනඟන ලද .app බන්ඩලයක් පිළිගනී.</translation>
     </message>
     <message>
         <source>Set up the virtual iOS device&apos;s profile before adding apps.</source>
-        <translation type="unfinished"></translation>
+        <translation>යෙදුම් එක් කිරීමට පෙර අතක්සුවික iOS උපාංගයේ පැතිකඩ පිහිටුවන්න.</translation>
     </message>
     <message>
         <source>%1 reads · %2 writes · %3 rejected</source>
-        <translation type="unfinished"></translation>
+        <translation>කියවීම් %1 · ලිවීම් %2 · ප්‍රතික්ෂේපිත %3</translation>
     </message>
     <message>
         <source>%1 · Apple variant</source>
-        <translation type="unfinished"></translation>
+        <translation>%1 · Apple ප්‍රභේදය</translation>
     </message>
     <message>
         <source>%1 · derived</source>
-        <translation type="unfinished"></translation>
+        <translation>%1 · ව්‍යුත්පන්න</translation>
     </message>
     <message>
         <source>%1: %2 · state %3</source>
-        <translation type="unfinished"></translation>
+        <translation>%1: %2 · තත්ත්වය %3</translation>
     </message>
     <message numerus="yes">
         <source>%1: %n message(s)</source>
-        <translation type="unfinished">
-            <numerusform></numerusform>
-            <numerusform></numerusform>
+        <translation>
+            <numerusform>%1: පණිවිඩ %nක්</numerusform>
+            <numerusform>%1: පණිවිඩ %nක්</numerusform>
         </translation>
     </message>
     <message numerus="yes">
         <source>%n byte(s) from %1 · checksum verified</source>
-        <translation type="unfinished">
-            <numerusform></numerusform>
-            <numerusform></numerusform>
+        <translation>
+            <numerusform>%1 වෙතින් බයිට %nක් · චෙක්සම් සත්‍යාපිතයි</numerusform>
+            <numerusform>%1 වෙතින් බයිට %nක් · චෙක්සම් සත්‍යාපිතයි</numerusform>
         </translation>
     </message>
     <message>
         <source>Simulated controller with timers · experimental</source>
-        <translation type="unfinished"></translation>
+        <translation>කාල මාපක සහිත අනුකරණය කළ පාලකය · පරීක්ෂණාත්මක</translation>
     </message>
     <message>
         <source>Add app…</source>
-        <translation type="unfinished"></translation>
+        <translation>යෙදුමක් එක් කරන්න…</translation>
     </message>
     <message>
         <source>Core ID</source>
-        <translation type="unfinished"></translation>
+        <translation>හර ID</translation>
     </message>
     <message>
         <source>App to open at start</source>
-        <translation type="unfinished"></translation>
+        <translation>ආරම්භයේදී විවෘත කළ යුතු යෙදුම</translation>
     </message>
     <message>
         <source>Applies from the next start.</source>
-        <translation type="unfinished"></translation>
+        <translation>ඊළඟ ආරම්භයේ සිට අදාළ වේ.</translation>
     </message>
     <message>
         <source>Your own arm64 .app bundles. Each start installs them together with the device&apos;s helper tools. Changes apply from the next start.</source>
-        <translation type="unfinished"></translation>
+        <translation>ඔබේම arm64 .app බන්ඩල. සෑම ආරම්භයක්ම ඒවා උපාංගයේ උපකාරක මෙවලම් සමඟ ස්ථාපනය කරයි. වෙනස්කම් ඊළඟ ආරම්භයේ සිට අදාළ වේ.</translation>
     </message>
     <message>
         <source>Boot image</source>
-        <translation type="unfinished"></translation>
+        <translation>ආරම්භක රූපය</translation>
     </message>
     <message>
         <source>Breakpoint reached</source>
-        <translation type="unfinished"></translation>
+        <translation>බිඳුම් ලක්ෂ්‍යයට ළඟා විය</translation>
     </message>
     <message>
         <source>Processor core ID (MPIDR affinity)</source>
-        <translation type="unfinished"></translation>
+        <translation>සකසන හර ID (MPIDR affinity)</translation>
     </message>
     <message>
         <source>Processor settings</source>
-        <translation type="unfinished"></translation>
+        <translation>සකසන සැකසුම්</translation>
     </message>
     <message>
         <source>Processor register not supported yet: %1 · %2 by code at %3</source>
-        <translation type="unfinished"></translation>
+        <translation>සකසන රෙජිස්ටරය තවමත් සහාය නොදක්වයි: %1 · %3 හි කේතය මගින් %2</translation>
     </message>
     <message>
         <source>Processor: MIDR %1 · core ID %2 · %3</source>
-        <translation type="unfinished"></translation>
+        <translation>සකසනය: MIDR %1 · හර ID %2 · %3</translation>
     </message>
     <message>
         <source>Cancel</source>
-        <translation type="unfinished"></translation>
+        <translation>අවලංගු කරන්න</translation>
     </message>
     <message>
         <source>Cancel the start and stop the device without saving</source>
-        <translation type="unfinished"></translation>
+        <translation>ආරම්භය අවලංගු කර සුරැකීමකින් තොරව උපාංගය නවත්වන්න</translation>
     </message>
     <message>
         <source>Check the bundle and add it to the profile · the next start installs it</source>
-        <translation type="unfinished"></translation>
+        <translation>බන්ඩලය පරීක්ෂා කර පැතිකඩට එක් කරන්න · ඊළඟ ආරම්භය එය ස්ථාපනය කරයි</translation>
     </message>
     <message>
         <source>Checking image…</source>
-        <translation type="unfinished"></translation>
+        <translation>රූපය පරීක්ෂා කරමින්…</translation>
     </message>
     <message>
         <source>Checking…</source>
-        <translation type="unfinished"></translation>
+        <translation>පරීක්ෂා කරමින්…</translation>
     </message>
     <message>
         <source>Choose</source>
-        <translation type="unfinished"></translation>
+        <translation>තෝරන්න</translation>
     </message>
     <message>
         <source>Choose app bundle (.app directory)</source>
-        <translation type="unfinished"></translation>
+        <translation>යෙදුම් බන්ඩලය තෝරන්න (.app නාමාවලිය)</translation>
     </message>
     <message>
         <source>Choose iOS emulator</source>
-        <translation type="unfinished"></translation>
+        <translation>iOS ඉමියුලේටරය තෝරන්න</translation>
     </message>
     <message>
         <source>Choose prepared firmware package</source>
-        <translation type="unfinished"></translation>
+        <translation>සකස් කළ ෆර්ම්වේයාර් පැකේජය තෝරන්න</translation>
     </message>
     <message>
         <source>Choose prepared iOS package</source>
-        <translation type="unfinished"></translation>
+        <translation>සකස් කළ iOS පැකේජය තෝරන්න</translation>
     </message>
     <message>
         <source>Classic (Home button)</source>
-        <translation type="unfinished"></translation>
+        <translation>සම්ප්‍රදායික (මුල් බොත්තම)</translation>
     </message>
     <message>
         <source>Closing the session…</source>
-        <translation type="unfinished"></translation>
+        <translation>සැසිය වසමින්…</translation>
     </message>
     <message>
         <source>Snapshots of the running system: %1 · %2</source>
-        <translation type="unfinished"></translation>
+        <translation>ධාවනය වන පද්ධතියේ ස්නැප්ෂොට්: %1 · %2</translation>
     </message>
     <message>
         <source>Reading the controller state failed: %1</source>
-        <translation type="unfinished"></translation>
+        <translation>පාලක තත්ත්වය කියවීම අසාර්ථක විය: %1</translation>
     </message>
     <message>
         <source>For controller development: Apple&apos;s original firmware runs alone on a simulated ARM processor. The simulated controller still rests on unconfirmed hardware guesses; the firmware&apos;s services and its connection to iOS are not verified.</source>
-        <translation type="unfinished"></translation>
+        <translation>පාලක සංවර්ධනය සඳහා: Apple හි මුල් ෆර්ම්වේයාරය අනුකරණය කළ ARM සකසනයක තනිවම ධාවනය වේ. අනුකරණය කළ පාලකය තවමත් තහවුරු නොකළ දෘඩාංග අනුමාන මත පදනම් වේ; ෆර්ම්වේයාරයේ සේවා සහ iOS වෙත එහි සම්බන්ධතාවය තහවුරු කර නැත.</translation>
     </message>
     <message>
         <source>Controller state</source>
-        <translation type="unfinished"></translation>
+        <translation>පාලක තත්ත්වය</translation>
     </message>
     <message>
         <source>Work in progress: an agent starts the virtual iOS device, then it appears here. Starting takes many minutes. Apart from the built-in test app, apps with a user interface have not been shown to work yet.</source>
-        <translation type="unfinished"></translation>
+        <translation>කරමින් පවතින වැඩ: නියෝජිතයෙක් අතක්සුවික iOS උපාංගය ආරම්භ කරයි, ඉන්පසු එය මෙහි දිස් වේ. ආරම්භ කිරීමට මිනිත්තු කිහිපයක් ගත වේ. ඇතුළත් පරීක්ෂණ යෙදුම හැර, පරිශීලක අතුරුමුහුණත් සහිත යෙදුම් ක්‍රියා කරන බව තවමත් පෙන්වා නැත.</translation>
     </message>
     <message>
         <source>Diagnostics complete</source>
-        <translation type="unfinished"></translation>
+        <translation>දෝෂ විනිශ්චය අවසන්</translation>
     </message>
     <message>
         <source>Diagnostics ended with a finding</source>
-        <translation type="unfinished"></translation>
+        <translation>දෝෂ විනිශ්චය සොයාගැනීමක් සමඟ අවසන් විය</translation>
     </message>
     <message>
         <source>Folder with pmp-research.json</source>
-        <translation type="unfinished"></translation>
+        <translation>pmp-research.json ඇති ෆෝල්ඩරය</translation>
     </message>
     <message>
         <source>Folder with tomacco-ios.json</source>
-        <translation type="unfinished"></translation>
+        <translation>tomacco-ios.json ඇති ෆෝල්ඩරය</translation>
     </message>
     <message>
         <source>Experimental: iOS shows its first system screens. Setup, graphics and native apps do not fully work yet.</source>
-        <translation type="unfinished"></translation>
+        <translation>පරීක්ෂණාත්මක: iOS එහි පළමු පද්ධති තිර පෙන්වයි. පිහිටුවීම, චිත්‍රක සහ ස්වදේශීය යෙදුම් තවමත් සම්පූර්ණයෙන් ක්‍රියා නොකරයි.</translation>
     </message>
     <message>
         <source>First invalid memory access: code at %1 · address %2 · %3</source>
-        <translation type="unfinished"></translation>
+        <translation>පළමු වලංගු නොවන මතක ප්‍රවේශය: %1 හි කේතය · ලිපිනය %2 · %3</translation>
     </message>
     <message>
         <source>Memory contents in hexadecimal</source>
-        <translation type="unfinished"></translation>
+        <translation>ෂොඩශමය මතක අන්තර්ගතය</translation>
     </message>
     <message>
         <source>Hide processor settings</source>
-        <translation type="unfinished"></translation>
+        <translation>සකසන සැකසුම් සඟවන්න</translation>
     </message>
     <message>
         <source>Hide processor registers</source>
-        <translation type="unfinished"></translation>
+        <translation>සකසන රෙජිස්ටර සඟවන්න</translation>
     </message>
     <message>
         <source>Hide boot image</source>
-        <translation type="unfinished"></translation>
+        <translation>ආරම්භක රූපය සඟවන්න</translation>
     </message>
     <message>
         <source>Address of a firmware instruction, e.g. 0x10280d4 · optional</source>
-        <translation type="unfinished"></translation>
+        <translation>ෆර්ම්වේයාර් උපදෙසක ලිපිනය, උදා. 0x10280d4 · විකල්ප</translation>
     </message>
     <message>
         <source>Job &amp; logs</source>
-        <translation type="unfinished"></translation>
+        <translation>කාර්යය සහ ලොග</translation>
     </message>
     <message>
         <source>The processor identity the firmware sees when it starts. Other values make it take other start-up paths; they add no hardware features.</source>
-        <translation type="unfinished"></translation>
+        <translation>ෆර්ම්වේයාරය ආරම්භ වන විට දකින සකසන අනන්‍යතාවය. වෙනත් අගයන් එයට වෙනත් ආරම්භක මාර්ග ගැනීමට සලසයි; ඒවා දෘඩාංග විශේෂාංග එක් නොකරයි.</translation>
     </message>
     <message>
         <source>From the last snapshot · raw 64-bit values</source>
-        <translation type="unfinished"></translation>
+        <translation>අවසාන ස්නැප්ෂොට් එකෙන් · අමු 64-bit අගයන්</translation>
     </message>
     <message>
         <source>Loading…</source>
-        <translation type="unfinished"></translation>
+        <translation>පූරණය වෙමින්…</translation>
     </message>
     <message>
         <source>Maximum run time</source>
-        <translation type="unfinished"></translation>
+        <translation>උපරිම ධාවන කාලය</translation>
     </message>
     <message>
         <source>Maximum run time in seconds</source>
-        <translation type="unfinished"></translation>
+        <translation>තත්පරවලින් උපරිම ධාවන කාලය</translation>
     </message>
     <message>
         <source>Saved memory</source>
-        <translation type="unfinished"></translation>
+        <translation>සුරැකි මතකය</translation>
     </message>
     <message>
         <source>Model</source>
-        <translation type="unfinished"></translation>
+        <translation>මාදිලිය</translation>
     </message>
     <message>
         <source>No controller · baseline for comparison</source>
-        <translation type="unfinished"></translation>
+        <translation>පාලකයක් නැත · සසඳීම සඳහා පදනම</translation>
     </message>
     <message>
         <source>No apps of your own yet · the start opens the built-in test app.</source>
-        <translation type="unfinished"></translation>
+        <translation>තවමත් ඔබේම යෙදුම් නැත · ආරම්භය ඇතුළත් පරීක්ෂණ යෙදුම විවෘත කරයි.</translation>
     </message>
     <message>
         <source>Number of bytes</source>
-        <translation type="unfinished"></translation>
+        <translation>බයිට ගණන</translation>
     </message>
     <message>
         <source>Open at start</source>
-        <translation type="unfinished"></translation>
+        <translation>ආරම්භයේදී විවෘත කරන්න</translation>
     </message>
     <message>
         <source>Open test system</source>
-        <translation type="unfinished"></translation>
+        <translation>පරීක්ෂණ පද්ධතිය විවෘත කරන්න</translation>
     </message>
     <message>
         <source>Your apps</source>
-        <translation type="unfinished"></translation>
+        <translation>ඔබේ යෙදුම්</translation>
     </message>
     <message>
         <source>Built-in test app (diagnostics)</source>
-        <translation type="unfinished"></translation>
+        <translation>ඇතුළත් පරීක්ෂණ යෙදුම (දෝෂ විනිශ්චය)</translation>
     </message>
     <message>
         <source>Own window</source>
-        <translation type="unfinished"></translation>
+        <translation>ස්වකීය කවුළුව</translation>
     </message>
     <message>
         <source>Firmware breakpoint</source>
-        <translation type="unfinished"></translation>
+        <translation>ෆර්ම්වේයාර් බිඳුම් ලක්ෂ්‍යය</translation>
     </message>
     <message>
         <source>Simulated firmware controller</source>
-        <translation type="unfinished"></translation>
+        <translation>අනුකරණය කළ ෆර්ම්වේයාර් පාලකය</translation>
     </message>
     <message>
         <source>Power-management firmware (PMP)</source>
-        <translation type="unfinished"></translation>
+        <translation>බල කළමනාකරණ ෆර්ම්වේයාරය (PMP)</translation>
     </message>
     <message>
         <source>Firmware running</source>
-        <translation type="unfinished"></translation>
+        <translation>ෆර්ම්වේයාරය ධාවනය වෙමින්</translation>
     </message>
     <message>
         <source>Path to an .app directory (arm64)</source>
-        <translation type="unfinished"></translation>
+        <translation>.app නාමාවලියක මාර්ගය (arm64)</translation>
     </message>
     <message>
         <source>Addresses 0x1000000 to 0x11fffff of the firmware&apos;s memory. Reading checks the saved copy; the firmware is not run again for it.</source>
-        <translation type="unfinished"></translation>
+        <translation>ෆර්ම්වේයාරයේ මතකයේ 0x1000000 සිට 0x11fffff දක්වා ලිපින. කියවීම සුරැකි පිටපත පරීක්ෂා කරයි; ඒ සඳහා ෆර්ම්වේයාරය නැවත ධාවනය නොකෙරේ.</translation>
     </message>
     <message>
         <source>Memory address</source>
-        <translation type="unfinished"></translation>
+        <translation>මතක ලිපිනය</translation>
     </message>
     <message>
         <source>Prepare package</source>
-        <translation type="unfinished"></translation>
+        <translation>පැකේජය සකසන්න</translation>
     </message>
     <message>
         <source>Prepare, boot, unlock and open the test app</source>
-        <translation type="unfinished"></translation>
+        <translation>සකස් කර, බූට් කර, අගුළු හරින ලදින් පරීක්ෂණ යෙදුම විවෘත කරන්න</translation>
     </message>
     <message>
         <source>Prepared firmware package</source>
-        <translation type="unfinished"></translation>
+        <translation>සකස් කළ ෆර්ම්වේයාර් පැකේජය</translation>
     </message>
     <message>
         <source>Prepared iOS package</source>
-        <translation type="unfinished"></translation>
+        <translation>සකස් කළ iOS පැකේජය</translation>
     </message>
     <message>
         <source>Preparing working copy</source>
-        <translation type="unfinished"></translation>
+        <translation>වැඩ පිටපත සකසමින්</translation>
     </message>
     <message>
         <source>Memory copy failed: %1</source>
-        <translation type="unfinished"></translation>
+        <translation>මතක පිටපත අසාර්ථක විය: %1</translation>
     </message>
     <message>
         <source>Memory copy: 2 MiB from address %1 · saved in the report folder</source>
-        <translation type="unfinished"></translation>
+        <translation>මතක පිටපත: ලිපිනය %1 සිට 2 MiB · වාර්තා ෆෝල්ඩරයේ සුරකින ලදී</translation>
     </message>
     <message>
         <source>Read</source>
-        <translation type="unfinished"></translation>
+        <translation>කියවන්න</translation>
     </message>
     <message>
         <source>Ready for a test run</source>
-        <translation type="unfinished"></translation>
+        <translation>පරීක්ෂණ ධාවනයකට සූදානම්</translation>
     </message>
     <message>
         <source>Actual image from the start-up screen · not yet the device&apos;s main display</source>
-        <translation type="unfinished"></translation>
+        <translation>ආරම්භක තිරයේ සැබෑ රූපය · තවමත් උපාංගයේ ප්‍රධාන සංදර්ශකය නොවේ</translation>
     </message>
     <message>
         <source>Real iOS directly on Linux. The virtual iOS device shows the lock and Home screens and starts its own test app; general app development is not enabled yet.</source>
-        <translation type="unfinished"></translation>
+        <translation>Linux මත සෘජුවම සැබෑ iOS. අතක්සුවික iOS උපාංගය අගුළු තිරය සහ මුල් තිරය පෙන්වන අතර එහිම පරීක්ෂණ යෙදුම ආරම්භ කරයි; සාමාන්‍ය යෙදුම් සංවර්ධනය තවමත් සබල කර නැත.</translation>
     </message>
     <message>
         <source>Refresh</source>
-        <translation type="unfinished"></translation>
+        <translation>නැවුම් කරන්න</translation>
     </message>
     <message>
         <source>Remove</source>
-        <translation type="unfinished"></translation>
+        <translation>ඉවත් කරන්න</translation>
     </message>
     <message>
         <source>Remove from the profile · an app already installed stays on the device</source>
-        <translation type="unfinished"></translation>
+        <translation>පැතිකඩයෙන් ඉවත් කරන්න · දැනටමත් ස්ථාපනය කළ යෙදුමක් උපාංගයේ රැඳේ</translation>
     </message>
     <message>
         <source>Report folder</source>
-        <translation type="unfinished"></translation>
+        <translation>වාර්තා ෆෝල්ඩරය</translation>
     </message>
     <message>
         <source>Run %1 · %2</source>
-        <translation type="unfinished"></translation>
+        <translation>ධාවනය %1 · %2</translation>
     </message>
     <message>
         <source>Run iOS, or the iPhone&apos;s power-management firmware on its own, directly on Linux. Each run writes its own report; runs started from the command line or by an agent appear here too.</source>
-        <translation type="unfinished"></translation>
+        <translation>iOS, නැතහොත් iPhone හි බල කළමනාකරණ ෆර්ම්වේයාරය තනිවම, Linux මත සෘජුවම ධාවනය කරන්න. සෑම ධාවනයක්ම එහිම වාර්තාවක් ලියයි; විධාන පේළියෙන් හෝ නියෝජිතයෙකු විසින් ආරම්භ කළ ධාවනද මෙහි දිස් වේ.</translation>
     </message>
     <message>
         <source>Run ended</source>
-        <translation type="unfinished"></translation>
+        <translation>ධාවනය අවසන් විය</translation>
     </message>
     <message>
         <source>Save a copy of the firmware&apos;s memory with the report (2 MiB)</source>
-        <translation type="unfinished"></translation>
+        <translation>වාර්තාව සමඟ ෆර්ම්වේයාරයේ මතකයේ පිටපතක් සුරකින්න (2 MiB)</translation>
     </message>
     <message>
         <source>Save storage and shut down cleanly</source>
-        <translation type="unfinished"></translation>
+        <translation>ආචයය සුරකින්න සහ පිරිසිදුව වසන්න</translation>
     </message>
     <message>
         <source>System services not found in the snapshots: %1</source>
-        <translation type="unfinished"></translation>
+        <translation>ස්නැප්ෂොට්වල නොමැති පද්ධති සේවා: %1</translation>
     </message>
     <message>
         <source>Show</source>
-        <translation type="unfinished"></translation>
+        <translation>පෙන්වන්න</translation>
     </message>
     <message>
         <source>Show processor registers</source>
-        <translation type="unfinished"></translation>
+        <translation>සකසන රෙජිස්ටර පෙන්වන්න</translation>
     </message>
     <message>
         <source>Start</source>
-        <translation type="unfinished"></translation>
+        <translation>ආරම්භ කරන්න</translation>
     </message>
     <message>
         <source>Start failed</source>
-        <translation type="unfinished"></translation>
+        <translation>ආරම්භය අසාර්ථක විය</translation>
     </message>
     <message>
         <source>Start test run</source>
-        <translation type="unfinished"></translation>
+        <translation>පරීක්ෂණ ධාවනය ආරම්භ කරන්න</translation>
     </message>
     <message>
         <source>Status currently unknown</source>
-        <translation type="unfinished"></translation>
+        <translation>තත්ත්වය දැනට නොදනී</translation>
     </message>
     <message>
         <source>Stop</source>
-        <translation type="unfinished"></translation>
+        <translation>නවත්වන්න</translation>
     </message>
     <message>
         <source>Stop at a code address</source>
-        <translation type="unfinished"></translation>
+        <translation>කේත ලිපිනයකදී නවත්වන්න</translation>
     </message>
     <message>
         <source>Stop without saving</source>
-        <translation type="unfinished"></translation>
+        <translation>සුරකින්නේ නැතිව නවත්වන්න</translation>
     </message>
     <message>
         <source>Stop without saving · ends the run at once, whatever the device has not saved yet is lost</source>
-        <translation type="unfinished"></translation>
+        <translation>සුරකින්නේ නැතිව නවත්වන්න · ධාවනය වහාම අවසන් කරයි, උපාංගය තවමත් සුරකින නොමැති දේ අහිමි වේ</translation>
     </message>
     <message>
         <source>Stopped before the instruction at %1 · this does not show that the firmware started completely</source>
-        <translation type="unfinished"></translation>
+        <translation>%1 හි උපදෙසට පෙර නවත්වන ලදී · මෙයින් ෆර්ම්වේයාරය සම්පූර්ණයෙන් ආරම්භ වූ බව පෙන්වන්නේ නැත</translation>
     </message>
     <message>
         <source>Stopping…</source>
-        <translation type="unfinished"></translation>
+        <translation>නවත්වමින්…</translation>
     </message>
     <message>
         <source>What to run</source>
-        <translation type="unfinished"></translation>
+        <translation>ධාවනය කළ යුත්ත</translation>
     </message>
     <message>
         <source>Reading this state changes nothing: no message is taken from a queue and no interrupt is answered.</source>
-        <translation type="unfinished"></translation>
+        <translation>මෙම තත්ත්වය කියවීමෙන් කිසිවක් වෙනස් නොවේ: පෙළකින් පණිවිඩයක් ගන්නේ හෝ බාධකයකට පිළිතුරු දෙන්නේ නැත.</translation>
     </message>
     <message>
         <source>The existing run is reused.</source>
-        <translation type="unfinished"></translation>
+        <translation>පවතින ධාවනය නැවත භාවිත කෙරේ.</translation>
     </message>
     <message>
         <source>The device could not save before stopping (%1). “Stop without saving” ends the run at once; the next start uses the last saved state.</source>
-        <translation type="unfinished"></translation>
+        <translation>නවත්වීමට පෙර උපාංගයට සුරැකිය නොහැකි විය (%1). “සුරකින්නේ නැතිව නවත්වන්න” ධාවනය වහාම අවසන් කරයි; ඊළඟ ආරම්භය අවසානයට සුරැකූ තත්ත්වය භාවිත කරයි.</translation>
     </message>
     <message>
         <source>The device is still starting, there is nothing to save. Ending the run…</source>
-        <translation type="unfinished"></translation>
+        <translation>උපාංගය තවමත් ආරම්භ වෙමින් පවතී, සුරැකීමට කිසිවක් නැත. ධාවනය අවසන් කරමින්…</translation>
     </message>
     <message>
         <source>The run stops at that address and reports the processor state. The firmware itself is not modified.</source>
-        <translation type="unfinished"></translation>
+        <translation>ධාවනය එම ලිපිනයේදී නවතින අතර සකසන තත්ත්වය වාර්තා කරයි. ෆර්ම්වේයාරය වෙනස් නොකෙරේ.</translation>
     </message>
     <message>
         <source>Time limit reached</source>
-        <translation type="unfinished"></translation>
+        <translation>කාල සීමාවට ළඟා විය</translation>
     </message>
     <message>
         <source>Time zone %1 applied</source>
-        <translation type="unfinished"></translation>
+        <translation>කාල කලාපය %1 යොදන ලදී</translation>
     </message>
     <message>
         <source>Time zone %1 not applied · %2</source>
-        <translation type="unfinished"></translation>
+        <translation>කාල කලාපය %1 යොදා නැත · %2</translation>
     </message>
     <message>
         <source>Time zone %1 was already set</source>
-        <translation type="unfinished"></translation>
+        <translation>කාල කලාපය %1 දැනටමත් සකසා තිබුණි</translation>
     </message>
     <message>
         <source>Time zone not set · %1</source>
-        <translation type="unfinished"></translation>
+        <translation>කාල කලාපය සකසා නැත · %1</translation>
     </message>
     <message>
         <source>View run</source>
-        <translation type="unfinished"></translation>
+        <translation>ධාවනය බලන්න</translation>
     </message>
     <message>
         <source>Virtual iOS device · started by an agent</source>
-        <translation type="unfinished"></translation>
+        <translation>අතක්සුවික iOS උපාංගය · නියෝජිතයෙකු විසින් ආරම්භ කළා</translation>
     </message>
     <message>
         <source>Virtual iOS device started by your agent · its real screen appears here and you can use it.</source>
-        <translation type="unfinished"></translation>
+        <translation>ඔබේ නියෝජිතයා ආරම්භ කළ අතක්සුවික iOS උපාංගය · එහි සැබෑ තිරය මෙහි දිස් වන අතර ඔබට එය භාවිත කළ හැක.</translation>
     </message>
     <message>
         <source>Virtual iOS device</source>
-        <translation type="unfinished"></translation>
+        <translation>අතක්සුවික iOS උපාංගය</translation>
     </message>
     <message>
         <source>Virtual iOS device · experimental</source>
-        <translation type="unfinished"></translation>
+        <translation>අතක්සුවික iOS උපාංගය · පරීක්ෂණාත්මක</translation>
     </message>
     <message>
         <source>Virtual iOS device · run %1</source>
-        <translation type="unfinished"></translation>
+        <translation>අතක්සුවික iOS උපාංගය · ධාවනය %1</translation>
     </message>
     <message>
         <source>Waiting to start</source>
-        <translation type="unfinished"></translation>
+        <translation>ආරම්භය සඳහා රැඳී සිටිමින්</translation>
     </message>
     <message>
         <source>configuration verified</source>
-        <translation type="unfinished"></translation>
+        <translation>වින්‍යාසය තහවුරු කළා</translation>
     </message>
     <message>
         <source>execute</source>
         <comment>access</comment>
-        <translation type="unfinished"></translation>
+        <translation>ක්‍රියාත්මක කිරීම</translation>
     </message>
     <message>
         <source>data from iOS verified</source>
-        <translation type="unfinished"></translation>
+        <translation>iOS වෙතින් ලැබුණු දත්ත තහවුරු කළා</translation>
     </message>
     <message>
         <source>iOS diagnostics running</source>
-        <translation type="unfinished"></translation>
+        <translation>iOS දෝෂ විනිශ්චය ධාවනය වෙමින්</translation>
     </message>
     <message>
         <source>iOS draws itself for this device; the data stays the same.</source>
-        <translation type="unfinished"></translation>
+        <translation>iOS මෙම උපාංගය සඳහා තමන්ම ඇඳේ; දත්ත එලෙසම පවතී.</translation>
     </message>
     <message>
         <source>iOS is starting… this takes many minutes</source>
-        <translation type="unfinished"></translation>
+        <translation>iOS ආරම්භ වෙමින්… මෙයට මිනිත්තු කිහිපයක් ගත වේ</translation>
     </message>
     <message>
         <source>iOS on Linux</source>
-        <translation type="unfinished"></translation>
+        <translation>Linux මත iOS</translation>
     </message>
     <message>
         <source>iOS</source>
-        <translation type="unfinished"></translation>
+        <translation>iOS</translation>
     </message>
     <message>
         <source>iOS test system</source>
-        <translation type="unfinished"></translation>
+        <translation>iOS පරීක්ෂණ පද්ධතිය</translation>
     </message>
     <message>
         <source>Device status unreachable</source>
-        <translation type="unfinished"></translation>
+        <translation>උපාංග තත්ත්වයට ළඟා විය නොහැක</translation>
     </message>
     <message>
         <source>incomplete run</source>
-        <translation type="unfinished"></translation>
+        <translation>අසම්පූර්ණ ධාවනය</translation>
     </message>
     <message>
         <source>installed in the current run</source>
-        <translation type="unfinished"></translation>
+        <translation>වත්මන් ධාවනයේ ස්ථාපනය කළා</translation>
     </message>
     <message>
         <source>interrupts enabled</source>
-        <translation type="unfinished"></translation>
+        <translation>බාධක සබලයි</translation>
     </message>
     <message>
         <source>interrupts blocked</source>
-        <translation type="unfinished"></translation>
+        <translation>බාධක අවහිරයි</translation>
     </message>
     <message>
         <source>locked · unlock on the device</source>
-        <translation type="unfinished"></translation>
+        <translation>අගුළු දමා ඇත · උපාංගයේ අගුළු හරින්න</translation>
     </message>
     <message>
         <source>no answer</source>
-        <translation type="unfinished"></translation>
+        <translation>පිළිතුරක් නැත</translation>
     </message>
     <message>
         <source>no signal</source>
-        <translation type="unfinished"></translation>
+        <translation>සංඥාවක් නැත</translation>
     </message>
     <message>
         <source>not installed in the current run</source>
-        <translation type="unfinished"></translation>
+        <translation>වත්මන් ධාවනයේ ස්ථාපනය කර නැත</translation>
     </message>
     <message>
         <source>not recorded</source>
-        <translation type="unfinished"></translation>
+        <translation>පටිගත කර නැත</translation>
     </message>
     <message>
         <source>not verified</source>
-        <translation type="unfinished"></translation>
+        <translation>තහවුරු කර නැත</translation>
     </message>
     <message>
         <source>off</source>
-        <translation type="unfinished"></translation>
+        <translation>අක්‍රියයි</translation>
     </message>
     <message>
         <source>off · last run not verified</source>
-        <translation type="unfinished"></translation>
+        <translation>අක්‍රියයි · අවසාන ධාවනය තහවුරු කර නැත</translation>
     </message>
     <message>
         <source>off · session ended without saving, the next start uses the last saved state</source>
-        <translation type="unfinished"></translation>
+        <translation>අක්‍රියයි · සැසිය සුරකින්නේ නැතිව අවසන් විය, ඊළඟ ආරම්භය අවසානයට සුරැකූ තත්ත්වය භාවිත කරයි</translation>
     </message>
     <message>
         <source>off · stopped and saved because the graphics card ran out of memory</source>
-        <translation type="unfinished"></translation>
+        <translation>අක්‍රියයි · චිත්‍රක පත්‍රයේ මතකය අවසන් වූ නිසා නවත්වා සුරකින ලදී</translation>
     </message>
     <message>
         <source>off · stopped because the graphics card ran out of memory, the next start uses the last saved state</source>
-        <translation type="unfinished"></translation>
+        <translation>අක්‍රියයි · චිත්‍රක පත්‍රයේ මතකය අවසන් වූ නිසා නවත්වන ලදී, ඊළඟ ආරම්භය අවසානයට සුරැකූ තත්ත්වය භාවිත කරයි</translation>
     </message>
     <message>
         <source>off · session was saved and ended at its time limit</source>
-        <translation type="unfinished"></translation>
+        <translation>අක්‍රියයි · සැසිය සුරකින ලදින් එහි කාල සීමාවේදී අවසන් කළා</translation>
     </message>
     <message>
         <source>opened at start</source>
-        <translation type="unfinished"></translation>
+        <translation>ආරම්භයේදී විවෘත කළා</translation>
     </message>
     <message>
         <source>preparing…</source>
-        <translation type="unfinished"></translation>
+        <translation>සකසමින්…</translation>
     </message>
     <message>
         <source>read</source>
         <comment>access</comment>
-        <translation type="unfinished"></translation>
+        <translation>කියවීම</translation>
     </message>
     <message>
         <source>running</source>
-        <translation type="unfinished"></translation>
+        <translation>ධාවනය වෙමින්</translation>
     </message>
     <message>
         <source>running · app launch accepted</source>
-        <translation type="unfinished"></translation>
+        <translation>ධාවනය වෙමින් · යෙදුම් දියත් කිරීම පිළිගත්තා</translation>
     </message>
     <message>
         <source>running · app launch unclear</source>
-        <translation type="unfinished"></translation>
+        <translation>ධාවනය වෙමින් · යෙදුම් දියත් කිරීම පැහැදිලි නැත</translation>
     </message>
     <message>
         <source>running · app visible</source>
-        <translation type="unfinished"></translation>
+        <translation>ධාවනය වෙමින් · යෙදුම දිස් වේ</translation>
     </message>
     <message>
         <source>seconds</source>
-        <translation type="unfinished"></translation>
+        <translation>තත්පර</translation>
     </message>
     <message>
         <source>signal active</source>
-        <translation type="unfinished"></translation>
+        <translation>සංඥාව සක්‍රියයි</translation>
     </message>
     <message>
         <source>skipped</source>
-        <translation type="unfinished"></translation>
+        <translation>මඟ හැරියා</translation>
     </message>
     <message>
         <source>stopping…</source>
-        <translation type="unfinished"></translation>
+        <translation>නවත්වමින්…</translation>
     </message>
     <message>
         <source>the device&apos;s helper tools are too old for this (before build 368)</source>
-        <translation type="unfinished"></translation>
+        <translation>මේ සඳහා උපාංගයේ උපකාරක මෙවලම් ඉතා පැරණියි (ගොඩනැගීම 368 ට පෙර)</translation>
     </message>
     <message>
         <source>this computer&apos;s time zone has no standard name such as Europe/Vienna</source>
-        <translation type="unfinished"></translation>
+        <translation>මෙම පරිගණකයේ කාල කලාපයට Europe/Vienna වැනි සම්මත නමක් නැත</translation>
     </message>
     <message>
         <source>transfer waiting</source>
-        <translation type="unfinished"></translation>
+        <translation>මාරුව රැඳී පවතී</translation>
     </message>
     <message>
         <source>trying to unlock…</source>
-        <translation type="unfinished"></translation>
+        <translation>අගුළු හරින්නට උත්සාහ කරමින්…</translation>
     </message>
     <message>
         <source>unverified · only the path is listed, the next start checks the bundle</source>
-        <translation type="unfinished"></translation>
+        <translation>තහවුරු නොකළ · මාර්ගය පමණක් ලැයිස්තුගත කර ඇත, ඊළඟ ආරම්භය බන්ඩලය පරීක්ෂා කරයි</translation>
     </message>
     <message>
         <source>verified</source>
-        <translation type="unfinished"></translation>
+        <translation>තහවුරු කළා</translation>
     </message>
     <message>
         <source>write</source>
         <comment>access</comment>
-        <translation type="unfinished"></translation>
+        <translation>ලිවීම</translation>
     </message>
     <message>
         <source>System</source>
-        <translation type="unfinished"></translation>
+        <translation>පද්ධතිය</translation>
     </message>
     <message>
         <source>Controller</source>
-        <translation type="unfinished"></translation>
+        <translation>පාලකය</translation>
     </message>
     <message>
         <source>Emulator</source>
-        <translation type="unfinished"></translation>
+        <translation>ඉමියුලේටරය</translation>
     </message>
     <message>
         <source>Saved states</source>
-        <translation type="unfinished"></translation>
+        <translation>සුරැකූ තත්ත්ව</translation>
     </message>
     <message>
         <source>Keep the last stopped run under a name and start from it again later. Saving copies nothing.</source>
-        <translation type="unfinished"></translation>
+        <translation>අවසානයට නවත්වූ ධාවනය නමක් යටතේ තබා පසුව එයින් නැවත ආරම්භ කරන්න. සුරැකීම කිසිවක් පිටපත් නොකරයි.</translation>
     </message>
     <message>
         <source>No saved states yet.</source>
-        <translation type="unfinished"></translation>
+        <translation>තවමත් සුරැකූ තත්ත්ව නැත.</translation>
     </message>
     <message>
         <source>Saved state</source>
-        <translation type="unfinished"></translation>
+        <translation>සුරැකූ තත්ත්වය</translation>
     </message>
     <message>
         <source>Start from it</source>
-        <translation type="unfinished"></translation>
+        <translation>එයින් ආරම්භ කරන්න</translation>
     </message>
     <message>
         <source>The next start begins from this state · the phone must be off</source>
-        <translation type="unfinished"></translation>
+        <translation>ඊළඟ ආරම්භය මෙම තත්ත්වයෙන් පටන් ගනී · දුරකථනය අක්‍රිය විය යුතුය</translation>
     </message>
     <message>
         <source>Delete for good</source>
-        <translation type="unfinished"></translation>
+        <translation>සදහටම මකන්න</translation>
     </message>
     <message>
         <source>Delete</source>
-        <translation type="unfinished"></translation>
+        <translation>මකන්න</translation>
     </message>
     <message>
         <source>Remove the name, and its disk copy when nothing else keeps it</source>
-        <translation type="unfinished"></translation>
+        <translation>නම ඉවත් කරන්න, වෙනත් කිසිවක් එය තබා නොගන්නේ නම් එහි තැටි පිටපතද</translation>
     </message>
     <message>
         <source>Name for the last stopped run</source>
-        <translation type="unfinished"></translation>
+        <translation>අවසානයට නවත්වූ ධාවනය සඳහා නම</translation>
     </message>
     <message>
         <source>Save state</source>
-        <translation type="unfinished"></translation>
+        <translation>තත්ත්වය සුරකින්න</translation>
     </message>
     <message>
         <source>Keep the last stopped run under this name</source>
-        <translation type="unfinished"></translation>
+        <translation>අවසානයට නවත්වූ ධාවනය මෙම නමින් තබන්න</translation>
     </message>
     <message>
         <source>run %1</source>
-        <translation type="unfinished"></translation>
+        <translation>ධාවනය %1</translation>
     </message>
     <message>
         <source>next start</source>
-        <translation type="unfinished"></translation>
+        <translation>ඊළඟ ආරම්භය</translation>
     </message>
     <message>
         <source>disks gone</source>
-        <translation type="unfinished"></translation>
+        <translation>තැටි නැති වී ඇත</translation>
     </message>
     <message>
         <source>Saved as %1</source>
-        <translation type="unfinished"></translation>
+        <translation>%1 ලෙස සුරකින ලදී</translation>
     </message>
     <message>
         <source>The next start begins from %1</source>
-        <translation type="unfinished"></translation>
+        <translation>ඊළඟ ආරම්භය %1 වෙතින් පටන් ගනී</translation>
     </message>
     <message>
         <source>%1 deleted with its disk copy</source>
-        <translation type="unfinished"></translation>
+        <translation>%1 එහි තැටි පිටපත සමඟ මකා දැමුණි</translation>
     </message>
     <message>
         <source>%1 deleted · its disk copy stays (%2)</source>
-        <translation type="unfinished"></translation>
+        <translation>%1 මකා දැමුණි · එහි තැටි පිටපත රැඳේ (%2)</translation>
     </message>
 </context>
 <context>
     <name>Main</name>
     <message>
         <source>Screenshot saved and copied · %1</source>
-        <translation type="unfinished"></translation>
+        <translation>තිර රුව සුරකින ලදී පිටපත් කළා · %1</translation>
     </message>
     <message>
         <source>%1 panel pixels</source>
-        <translation type="unfinished"></translation>
+        <translation>පැනල පික්සල %1</translation>
     </message>
     <message numerus="yes">
         <source>%n model(s)</source>
-        <translation type="unfinished">
-            <numerusform></numerusform>
-            <numerusform></numerusform>
+        <translation>
+            <numerusform>මාදිලි %nක්</numerusform>
+            <numerusform>මාදිලි %nක්</numerusform>
         </translation>
     </message>
     <message>
         <source>Apple download ↗</source>
-        <translation type="unfinished"></translation>
+        <translation>Apple බාගැනීම ↗</translation>
     </message>
     <message>
         <source>Back</source>
-        <translation type="unfinished"></translation>
+        <translation>ආපසු</translation>
     </message>
     <message>
         <source>CASE</source>
-        <translation type="unfinished"></translation>
+        <translation>කවරය</translation>
     </message>
     <message>
         <source>Choose a web build</source>
-        <translation type="unfinished"></translation>
+        <translation>වෙබ් ගොඩනැගීමක් තෝරන්න</translation>
     </message>
     <message>
         <source>Close</source>
-        <translation type="unfinished"></translation>
+        <translation>වසන්න</translation>
     </message>
     <message>
         <source>Copy setup</source>
-        <translation type="unfinished"></translation>
+        <translation>සැකසුම පිටපත් කරන්න</translation>
     </message>
     <message>
         <source>Ctrl+L                  Address
@@ -2415,4982 +2418,4995 @@ Ctrl+Shift+R         Rotate
 Ctrl+Shift+S         Screenshot
 F11 / Esc              Full screen / back
 F12                        Web inspector</source>
-        <translation type="unfinished"></translation>
+        <translation>Ctrl+L                  ලිපිනය
+Ctrl+R                  නැවත පූරණය
+Ctrl+Shift+R         කරකවන්න
+Ctrl+Shift+S         තිර රුව
+F11 / Esc              පූර්ණ තිරය / ආපසු
+F12                        වෙබ් පරීක්ෂකය</translation>
     </message>
     <message>
         <source>Ctrl+L  Address     Ctrl+Shift+R  Rotate     F11  Full screen</source>
-        <translation type="unfinished"></translation>
+        <translation>Ctrl+L  ලිපිනය     Ctrl+Shift+R  කරකවන්න     F11  පූර්ණ තිරය</translation>
     </message>
     <message>
         <source>Custom</source>
         <comment>device category</comment>
-        <translation type="unfinished"></translation>
+        <translation>අභිරුචි</translation>
     </message>
     <message>
         <source>Custom size</source>
-        <translation type="unfinished"></translation>
+        <translation>අභිරුචි ප්‍රමාණය</translation>
     </message>
     <message>
         <source>DISPLAY</source>
-        <translation type="unfinished"></translation>
+        <translation>සංදර්ශකය</translation>
     </message>
     <message>
         <source>Developer tools · F12</source>
-        <translation type="unfinished"></translation>
+        <translation>සංවර්ධක මෙවලම් · F12</translation>
     </message>
     <message>
         <source>Device catalog updated</source>
-        <translation type="unfinished"></translation>
+        <translation>උපාංග නාමාවලිය යාවත්කාලීන කළා</translation>
     </message>
     <message>
         <source>Device profiles (*.json)</source>
-        <translation type="unfinished"></translation>
+        <translation>උපාංග පැතිකඩ (*.json)</translation>
     </message>
     <message>
         <source>Export</source>
-        <translation type="unfinished"></translation>
+        <translation>අපනයනය කරන්න</translation>
     </message>
     <message>
         <source>Export device profile</source>
-        <translation type="unfinished"></translation>
+        <translation>උපාංග පැතිකඩය අපනයනය කරන්න</translation>
     </message>
     <message>
         <source>Fit</source>
-        <translation type="unfinished"></translation>
+        <translation>ගැලපීම</translation>
     </message>
     <message>
         <source>Fold</source>
-        <translation type="unfinished"></translation>
+        <translation>නවන්න</translation>
     </message>
     <message>
         <source>Folded · %1</source>
-        <translation type="unfinished"></translation>
+        <translation>නවා ඇත · %1</translation>
     </message>
     <message>
         <source>Folded · Landscape</source>
-        <translation type="unfinished"></translation>
+        <translation>නවා ඇත · තිරස්</translation>
     </message>
     <message>
         <source>Folded · Portrait</source>
-        <translation type="unfinished"></translation>
+        <translation>නවා ඇත · සිරස්</translation>
     </message>
     <message>
         <source>Full screen · F11</source>
-        <translation type="unfinished"></translation>
+        <translation>පූර්ණ තිරය · F11</translation>
     </message>
     <message>
         <source>Got it</source>
-        <translation type="unfinished"></translation>
+        <translation>තේරුණා</translation>
     </message>
     <message>
         <source>Import</source>
-        <translation type="unfinished"></translation>
+        <translation>ආයාත කරන්න</translation>
     </message>
     <message>
         <source>Import device profiles</source>
-        <translation type="unfinished"></translation>
+        <translation>උපාංග පැතිකඩ ආයාත කරන්න</translation>
     </message>
     <message>
         <source>Inner · Under-display camera</source>
-        <translation type="unfinished"></translation>
+        <translation>ඇතුළත · තිරය යට කැමරාව</translation>
     </message>
     <message>
         <source>Interactive demo</source>
-        <translation type="unfinished"></translation>
+        <translation>අන්තර්ක්‍රියාකාරී නිරූපණය</translation>
     </message>
     <message>
         <source>Keyboard shortcuts and tips</source>
-        <translation type="unfinished"></translation>
+        <translation>යතුරුපුවරු කෙටිමඟ සහ ඉගි</translation>
     </message>
     <message>
         <source>Landscape</source>
-        <translation type="unfinished"></translation>
+        <translation>තිරස්</translation>
     </message>
     <message>
         <source>Landscape</source>
         <comment>orientation button</comment>
-        <translation type="unfinished"></translation>
+        <translation>තිරස්</translation>
     </message>
     <message>
         <source>Load a local web build with index.html</source>
-        <translation type="unfinished"></translation>
+        <translation>index.html සහිත ස්ථානීය වෙබ් ගොඩනැගීමක් පූරණය කරන්න</translation>
     </message>
     <message>
         <source>Loading…</source>
-        <translation type="unfinished"></translation>
+        <translation>පූරණය වෙමින්…</translation>
     </message>
     <message>
         <source>Model specifications ↗</source>
-        <translation type="unfinished"></translation>
+        <translation>මාදිලි පිරිවිතර ↗</translation>
     </message>
     <message>
         <source>Native build tools</source>
-        <translation type="unfinished"></translation>
+        <translation>ස්වදේශීය ගොඩනැගීම් මෙවලම්</translation>
     </message>
     <message>
         <source>No matching model</source>
-        <translation type="unfinished"></translation>
+        <translation>ගැළපෙන මාදිලියක් නැත</translation>
     </message>
     <message>
         <source>Open</source>
-        <translation type="unfinished"></translation>
+        <translation>විවෘත කරන්න</translation>
     </message>
     <message>
         <source>Open folder</source>
-        <translation type="unfinished"></translation>
+        <translation>ෆෝල්ඩරය විවෘත කරන්න</translation>
     </message>
     <message>
         <source>Open · %1</source>
-        <translation type="unfinished"></translation>
+        <translation>විවෘතයි · %1</translation>
     </message>
     <message>
         <source>Open · Landscape</source>
-        <translation type="unfinished"></translation>
+        <translation>විවෘතයි · තිරස්</translation>
     </message>
     <message>
         <source>Open · Portrait</source>
-        <translation type="unfinished"></translation>
+        <translation>විවෘතයි · සිරස්</translation>
     </message>
     <message>
         <source>Outer · Round front camera</source>
-        <translation type="unfinished"></translation>
+        <translation>පිටත · වටකළ ඉදිරි කැමරාව</translation>
     </message>
     <message>
         <source>Tomacco · Web inspector</source>
-        <translation type="unfinished"></translation>
+        <translation>Tomacco · වෙබ් පරීක්ෂකය</translation>
     </message>
     <message>
         <source>Portrait</source>
-        <translation type="unfinished"></translation>
+        <translation>සිරස්</translation>
     </message>
     <message>
         <source>Portrait</source>
         <comment>orientation button</comment>
-        <translation type="unfinished"></translation>
+        <translation>සිරස්</translation>
     </message>
     <message>
         <source>QUICK OPEN</source>
-        <translation type="unfinished"></translation>
+        <translation>ඉක්මන් විවෘත කිරීම</translation>
     </message>
     <message>
         <source>Reload · Ctrl+R</source>
-        <translation type="unfinished"></translation>
+        <translation>නැවත පූරණය · Ctrl+R</translation>
     </message>
     <message>
         <source>Rotate · Ctrl+Shift+R</source>
-        <translation type="unfinished"></translation>
+        <translation>කරකවන්න · Ctrl+Shift+R</translation>
     </message>
     <message>
         <source>Safe area</source>
-        <translation type="unfinished"></translation>
+        <translation>ආරක්ෂිත ප්‍රදේශය</translation>
     </message>
     <message>
         <source>Save device as PNG · Ctrl+Shift+S</source>
-        <translation type="unfinished"></translation>
+        <translation>උපාංගය PNG ලෙස සුරකින්න · Ctrl+Shift+S</translation>
     </message>
     <message>
         <source>Screenshot could not be saved.</source>
-        <translation type="unfinished"></translation>
+        <translation>තිර රුව සුරැකිය නොහැකි විය.</translation>
     </message>
     <message>
         <source>Screenshot saved · %1</source>
-        <translation type="unfinished"></translation>
+        <translation>තිර රුව සුරකින ලදී · %1</translation>
     </message>
     <message>
         <source>Search Android devices…</source>
-        <translation type="unfinished"></translation>
+        <translation>Android උපාංග සොයන්න…</translation>
     </message>
     <message>
         <source>Search Apple devices…</source>
-        <translation type="unfinished"></translation>
+        <translation>Apple උපාංග සොයන්න…</translation>
     </message>
     <message>
         <source>Search custom devices…</source>
-        <translation type="unfinished"></translation>
+        <translation>අභිරුචි උපාංග සොයන්න…</translation>
     </message>
     <message>
         <source>Send layout hints to the app; the background always stays edge-to-edge</source>
-        <translation type="unfinished"></translation>
+        <translation>යෙදුමට පිරිසැලසුම් ඉඟි යවන්න; පසුබිම සැමවිටම දාරයේ සිට දාරයට පවතී</translation>
     </message>
     <message>
         <source>Show safe area</source>
-        <translation type="unfinished"></translation>
+        <translation>ආරක්ෂිත ප්‍රදේශය පෙන්වන්න</translation>
     </message>
     <message>
         <source>TOOLS</source>
-        <translation type="unfinished"></translation>
+        <translation>මෙවලම්</translation>
     </message>
     <message>
         <source>The layout preview uses Chromium. Build and run native Android and iOS apps from the workspace on an emulator or a connected device. The profiles contain the manufacturers&apos; resolutions and approximated bodies, cutouts and safe areas. CSS env(safe-area-inset-*) and Safari are not emulated here.</source>
-        <translation type="unfinished"></translation>
+        <translation>පිරිසැලසුම් පෙරදසුන Chromium භාවිත කරයි. ස්වදේශීය Android සහ iOS යෙදුම් වැඩ අවකාශයේ සිට ඉමියුලේටරයක හෝ සම්බන්ධිත උපාංගයක ගොඩනඟා ධාවනය කරන්න. පැතිකඩවල නිෂ්පාදකයන්ගේ විභේදන සහ ආසන්න කළ කත්ර, කට්අවුට් සහ ආරක්ෂිත ප්‍රදේශ ඇත. CSS env(safe-area-inset-*) සහ Safari මෙහි අනුකරණය නොකෙරේ.</translation>
     </message>
     <message>
         <source>The web preview works independently of this. Credentials are entered only in the interactive xtool setup.</source>
-        <translation type="unfinished"></translation>
+        <translation>වෙබ් පෙරදසුන මෙයින් ස්වාධීනව ක්‍රියා කරයි. අක්තපත්‍ර ඇතුළත් කරන්නේ අන්තර්ක්‍රියාකාරී xtool පිහිටුවීමේදී පමණි.</translation>
     </message>
     <message>
         <source>The workspace has unsaved changes.</source>
-        <translation type="unfinished"></translation>
+        <translation>වැඩ අවකාශයේ නොසුරැකූ වෙනස්කම් ඇත.</translation>
     </message>
     <message>
         <source>Unfold</source>
-        <translation type="unfinished"></translation>
+        <translation>දිගහරින්න</translation>
     </message>
     <message>
         <source>Unreachable</source>
-        <translation type="unfinished"></translation>
+        <translation>ළඟා විය නොහැක</translation>
     </message>
     <message>
         <source>VIEW</source>
-        <translation type="unfinished"></translation>
+        <translation>දසුන</translation>
     </message>
     <message>
         <source>View at 100 %</source>
-        <translation type="unfinished"></translation>
+        <translation>100 % කින් බලන්න</translation>
     </message>
     <message>
         <source>View build tools →</source>
-        <translation type="unfinished"></translation>
+        <translation>ගොඩනැගීම් මෙවලම් බලන්න →</translation>
     </message>
     <message>
         <source>Web app connected</source>
-        <translation type="unfinished"></translation>
+        <translation>වෙබ් යෙදුම සම්බන්ධයි</translation>
     </message>
     <message>
         <source>Web preview</source>
-        <translation type="unfinished"></translation>
+        <translation>වෙබ් පෙරදසුන</translation>
     </message>
     <message>
         <source>Workspace</source>
-        <translation type="unfinished"></translation>
+        <translation>වැඩ අවකාශය</translation>
     </message>
     <message>
         <source>Zoom in</source>
-        <translation type="unfinished"></translation>
+        <translation>විශාලනය කරන්න</translation>
     </message>
     <message>
         <source>Zoom out</source>
-        <translation type="unfinished"></translation>
+        <translation>කුඩා කරන්න</translation>
     </message>
     <message>
         <source>iOS SDK not set up yet</source>
-        <translation type="unfinished"></translation>
+        <translation>iOS SDK තවමත් පිහිටුවා නැත</translation>
     </message>
     <message>
         <source>xtool builds and signs SwiftPM apps for iOS. This needs Apple&apos;s SDK from Xcode and a separate sign-in for signing.</source>
-        <translation type="unfinished"></translation>
+        <translation>xtool iOS සඳහා SwiftPM යෙදුම් ගොඩනඟා අත්සන් කරයි. මේ සඳහා Xcode වෙතින් Apple හි SDK සහ අත්සන් කිරීම සඳහා වෙනම පුරනය වීමක් අවශ්‍යයි.</translation>
     </message>
     <message>
         <source>xtool sdk install /path/to/Xcode.xip
 xtool setup</source>
-        <translation type="unfinished"></translation>
+        <translation>xtool sdk install /මාර්ගය/Xcode.xip
+xtool setup</translation>
     </message>
     <message>
         <source>Safe area metadata</source>
-        <translation type="unfinished"></translation>
+        <translation>ආරක්ෂිත ප්‍රදේශ පාරදත්ත</translation>
     </message>
     <message>
         <source>System bars</source>
-        <translation type="unfinished"></translation>
+        <translation>පද්ධති තීරු</translation>
     </message>
     <message>
         <source>Sound</source>
-        <translation type="unfinished"></translation>
+        <translation>ශබ්දය</translation>
     </message>
     <message>
         <source>Custom</source>
-        <translation type="unfinished"></translation>
+        <translation>අභිරුචි</translation>
     </message>
     <message>
         <source>Fast 3G</source>
-        <translation type="unfinished"></translation>
+        <translation>වේගවත් 3G</translation>
     </message>
     <message>
         <source>Network</source>
-        <translation type="unfinished"></translation>
+        <translation>ජාලය</translation>
     </message>
     <message>
         <source>No throttling</source>
-        <translation type="unfinished"></translation>
+        <translation>වේග සීමාවක් නැත</translation>
     </message>
     <message>
         <source>Offline</source>
-        <translation type="unfinished"></translation>
+        <translation>නැති අතරින</translation>
     </message>
     <message>
         <source>Page color scheme</source>
-        <translation type="unfinished"></translation>
+        <translation>පිටු වර්ණ ලක්ෂණය</translation>
     </message>
     <message>
         <source>Reduce motion</source>
-        <translation type="unfinished"></translation>
+        <translation>චලනය අඩු කරන්න</translation>
     </message>
     <message>
         <source>Slow 3G</source>
-        <translation type="unfinished"></translation>
+        <translation>සෙමින් 3G</translation>
     </message>
     <message>
         <source>System</source>
-        <translation type="unfinished"></translation>
+        <translation>පද්ධතිය</translation>
     </message>
     <message>
         <source>The page sees prefers-reduced-motion: reduce</source>
-        <translation type="unfinished"></translation>
+        <translation>පිටුවට prefers-reduced-motion: reduce දිස් වේ</translation>
     </message>
     <message>
         <source>System bar color</source>
-        <translation type="unfinished"></translation>
+        <translation>පද්ධති තීරු වර්ණය</translation>
     </message>
     <message>
         <source>Auto</source>
-        <translation type="unfinished"></translation>
+        <translation>ස්වයංක්‍රීය</translation>
     </message>
     <message>
         <source>Light</source>
-        <translation type="unfinished"></translation>
+        <translation>ආලෝකය</translation>
     </message>
     <message>
         <source>Dark</source>
-        <translation type="unfinished"></translation>
+        <translation>අඳුරු</translation>
     </message>
     <message>
         <source>Web inspector</source>
-        <translation type="unfinished"></translation>
+        <translation>වෙබ් පරීක්ෂකය</translation>
     </message>
     <message>
         <source>Builds &amp; devices</source>
-        <translation type="unfinished"></translation>
+        <translation>ගොඩනැගීම් සහ උපාංග</translation>
     </message>
     <message>
         <source>Screenshots</source>
-        <translation type="unfinished"></translation>
+        <translation>තිර රුව</translation>
     </message>
     <message>
         <source>Live device</source>
-        <translation type="unfinished"></translation>
+        <translation>සජීවී උපාංගය</translation>
     </message>
     <message>
         <source>Chromium preview. Frames are approximate.</source>
-        <translation type="unfinished"></translation>
+        <translation>Chromium පෙරදසුන. රාමු ආසන්න අගයන් වේ.</translation>
     </message>
     <message>
         <source>Your web app, on every phone.</source>
-        <translation type="unfinished"></translation>
+        <translation>ඔබේ වෙබ් යෙදුම, සෑම දුරකථනයකම.</translation>
     </message>
     <message>
         <source>Open it by URL, or load a finished build as a folder. Switch phone, color and orientation without reloading.</source>
-        <translation type="unfinished"></translation>
+        <translation>URL හරහා විවෘත කරන්න, නැතහොත් නිම කළ ගොඩනැගීමක් ෆෝල්ඩරයක් ලෙස පූරණය කරන්න. නැවත පූරණය නොකර දුරකථනය, වර්ණය සහ දිශාව මාරු කරන්න.</translation>
     </message>
     <message>
         <source>Unsaved changes</source>
-        <translation type="unfinished"></translation>
+        <translation>නොසුරැකූ වෙනස්කම්</translation>
     </message>
 </context>
 <context>
     <name>NativeView</name>
     <message>
         <source>Click the text field in the app first</source>
-        <translation type="unfinished"></translation>
+        <translation>පළමුව යෙදුමේ පෙළ ක්ෂේත්‍රය ක්ලික් කරන්න</translation>
     </message>
     <message>
         <source>Connection to the runtime ended</source>
-        <translation type="unfinished"></translation>
+        <translation>ධාවන කාලය වෙත සම්බන්ධතාවය අවසන් විය</translation>
     </message>
     <message>
         <source>Frame resolution outside the limits</source>
-        <translation type="unfinished"></translation>
+        <translation>රාමු විභේදනය සීමාවෙන් පිටත</translation>
     </message>
     <message>
         <source>Input failed</source>
-        <translation type="unfinished"></translation>
+        <translation>ආදානය අසාර්ථක විය</translation>
     </message>
     <message>
         <source>Invalid video packet size</source>
-        <translation type="unfinished"></translation>
+        <translation>වලංගු නොවන වීඩියෝ පැකට් ප්‍රමාණය</translation>
     </message>
     <message>
         <source>Not enough memory for the video frame</source>
-        <translation type="unfinished"></translation>
+        <translation>වීඩියෝ රාමුව සඳහා ප්‍රමාණවත් මතකයක් නැත</translation>
     </message>
     <message>
         <source>The H.264 data could not be read</source>
-        <translation type="unfinished"></translation>
+        <translation>H.264 දත්ත කියවිය නොහැකි විය</translation>
     </message>
     <message>
         <source>The input was not confirmed</source>
-        <translation type="unfinished"></translation>
+        <translation>ආදානය තහවුරු නොකළේය</translation>
     </message>
     <message>
         <source>The runtime response is too large</source>
-        <translation type="unfinished"></translation>
+        <translation>ධාවන කාල ප්‍රතිචාරය ඉතා විශාලයි</translation>
     </message>
     <message>
         <source>The video decoder could not be initialized</source>
-        <translation type="unfinished"></translation>
+        <translation>වීඩියෝ විකේතකය ආරම්භ කළ නොහැකි විය</translation>
     </message>
     <message>
         <source>The video frame could not be converted</source>
-        <translation type="unfinished"></translation>
+        <translation>වීඩියෝ රාමුව පරිවර්තනය කළ නොහැකි විය</translation>
     </message>
     <message>
         <source>Too many pending inputs</source>
-        <translation type="unfinished"></translation>
+        <translation>බලාපොරොත්තුවෙන් ඇති ආදාන ඉතා වැඩිය</translation>
     </message>
     <message>
         <source>Video decoder not available</source>
-        <translation type="unfinished"></translation>
+        <translation>වීඩියෝ විකේතකය නොමැත</translation>
     </message>
 </context>
 <context>
     <name>NativeWorkspace</name>
     <message>
         <source>Interface size</source>
-        <translation type="unfinished"></translation>
+        <translation>අතුරුමුහුණත් ප්‍රමාණය</translation>
     </message>
     <message>
         <source>Larger interface</source>
-        <translation type="unfinished"></translation>
+        <translation>විශාල අතුරුමුහුණත</translation>
     </message>
     <message>
         <source>Smaller interface</source>
-        <translation type="unfinished"></translation>
+        <translation>කුඩා අතුරුමුහුණත</translation>
     </message>
     <message>
         <source>Reset interface size</source>
-        <translation type="unfinished"></translation>
+        <translation>අතුරුමුහුණත් ප්‍රමාණය යළි සකසන්න</translation>
     </message>
     <message>
         <source>Text, controls and spacing in Tomacco. Device zoom and screenshots keep their own size.</source>
-        <translation type="unfinished"></translation>
+        <translation>Tomacco හි පෙළ, පාලක සහ ඉඩසර. උපාංග පිළිබිම්බ විශාලනය සහ තිර රුව තමන්ගේම ප්‍රමාණය රකියි.</translation>
     </message>
     <message>
         <source>Reset</source>
-        <translation type="unfinished"></translation>
+        <translation>යළි සකසන්න</translation>
     </message>
     <message>
         <source>Drop to open %1 as the project</source>
-        <translation type="unfinished"></translation>
+        <translation>%1 ව්‍යාපෘතිය ලෙස විවෘත කිරීමට මෙහි හෙළන්න</translation>
     </message>
     <message>
         <source>Open recent project %1</source>
-        <translation type="unfinished"></translation>
+        <translation>මෑත ව්‍යාපෘතිය %1 විවෘත කරන්න</translation>
     </message>
     <message>
         <source>Connect a device to take a screenshot.</source>
-        <translation type="unfinished"></translation>
+        <translation>තිර රුවක් ගැනීමට උපාංගයක් සම්බන්ධ කරන්න.</translation>
     </message>
     <message>
         <source>Screenshot saved and copied · %1</source>
-        <translation type="unfinished"></translation>
+        <translation>තිර රුව සුරකින ලදී පිටපත් කළා · %1</translation>
     </message>
     <message>
         <source>Save and copy a device screenshot</source>
-        <translation type="unfinished"></translation>
+        <translation>උපාංග තිර රුවක් සුරකින්න සහ පිටපත් කරන්න</translation>
     </message>
     <message>
         <source>Save and copy a screenshot</source>
-        <translation type="unfinished"></translation>
+        <translation>තිර රුවක් සුරකින්න සහ පිටපත් කරන්න</translation>
     </message>
     <message>
         <source>Choose a device first, then drop the app on it.</source>
-        <translation type="unfinished"></translation>
+        <translation>පළමුව උපාංගයක් තෝරා, ඉන්පසු යෙදුම එය මත හෙළන්න.</translation>
     </message>
     <message>
         <source>Android devices install .apk files.</source>
-        <translation type="unfinished"></translation>
+        <translation>Android උපාංග .apk ගොනු ස්ථාපනය කරයි.</translation>
     </message>
     <message>
         <source>An iPhone installs one signed .ipa file.</source>
-        <translation type="unfinished"></translation>
+        <translation>iPhone එකක් අත්සන් කළ .ipa ගොනුවක් ස්ථාපනය කරයි.</translation>
     </message>
     <message>
         <source>Apps for the Mac&apos;s simulator are installed with Apple&apos;s tools.</source>
-        <translation type="unfinished"></translation>
+        <translation>Mac හි අනුකරණය සඳහා යෙදුම් Apple හි මෙවලම් මගින් ස්ථාපනය කෙරේ.</translation>
     </message>
     <message>
         <source>Installing %1 on %2…</source>
-        <translation type="unfinished"></translation>
+        <translation>%2 මත %1 ස්ථාපනය කරමින්…</translation>
     </message>
     <message>
         <source>Installing · progress under Builds &amp; jobs</source>
-        <translation type="unfinished"></translation>
+        <translation>ස්ථාපනය කරමින් · ප්‍රගතිය ගොඩනැගීම් සහ කාර්ය යටතේ</translation>
     </message>
     <message numerus="yes">
         <source>%n tool(s) available to agents through the CLI and MCP</source>
-        <translation type="unfinished">
-            <numerusform></numerusform>
-            <numerusform></numerusform>
+        <translation>
+            <numerusform>CLI සහ MCP හරහා නියෝජිතයන්ට මෙවලම් %nක් ලබා ගත හැක</numerusform>
+            <numerusform>CLI සහ MCP හරහා නියෝජිතයන්ට මෙවලම් %nක් ලබා ගත හැක</numerusform>
         </translation>
     </message>
     <message>
         <source>A job is already running for this project. You can open or stop it under Builds &amp; jobs.</source>
-        <translation type="unfinished"></translation>
+        <translation>මෙම ව්‍යාපෘතිය සඳහා දැනටමත් කාර්යයක් ධාවනය වේ. ඔබට එය ගොඩනැගීම් සහ කාර්ය යටතේ විවෘත කළ හැක හෝ නවත්විය හැක.</translation>
     </message>
     <message>
         <source>AUTOMATION</source>
-        <translation type="unfinished"></translation>
+        <translation>ස්වයංක්‍රීයකරණය</translation>
     </message>
     <message>
         <source>About Tomacco</source>
-        <translation type="unfinished"></translation>
+        <translation>Tomacco ගැන</translation>
     </message>
     <message>
         <source>About Tomacco · version, license and source code</source>
-        <translation type="unfinished"></translation>
+        <translation>Tomacco ගැන · අනුවාදය, බලපත්‍රය සහ මූලාශ්‍ර කේතය</translation>
     </message>
     <message>
         <source>Agent API not ready</source>
-        <translation type="unfinished"></translation>
+        <translation>නියෝජිත API සූදානම් නැත</translation>
     </message>
     <message>
         <source>Agents</source>
-        <translation type="unfinished"></translation>
+        <translation>නියෝජිතයන්</translation>
     </message>
     <message>
         <source>All files (*)</source>
-        <translation type="unfinished"></translation>
+        <translation>සියලු ගොනු (*)</translation>
     </message>
     <message>
         <source>Android is starting…</source>
-        <translation type="unfinished"></translation>
+        <translation>Android ආරම්භ වෙමින්…</translation>
     </message>
     <message>
         <source>App launch: %1. Details under Builds &amp; jobs.</source>
-        <translation type="unfinished"></translation>
+        <translation>යෙදුම් දියත් කිරීම: %1. විස්තර ගොඩනැගීම් සහ කාර්ය යටතේ.</translation>
     </message>
     <message>
         <source>App launched</source>
-        <translation type="unfinished"></translation>
+        <translation>යෙදුම දියත් කළා</translation>
     </message>
     <message>
         <source>App running on %1 · end the session before switching targets</source>
-        <translation type="unfinished"></translation>
+        <translation>%1 මත යෙදුම ධාවනය වේ · ඉලක්ක මාරු කිරීමට පෙර සැසිය අවසන් කරන්න</translation>
     </message>
     <message>
         <source>App running · apply changes with Hot Reload</source>
-        <translation type="unfinished"></translation>
+        <translation>යෙදුම ධාවනය වේ · Hot Reload මගින් වෙනස්කම් යොදන්න</translation>
     </message>
     <message>
         <source>Apple SDK</source>
-        <translation type="unfinished"></translation>
+        <translation>Apple SDK</translation>
     </message>
     <message>
         <source>Apple sign-in</source>
-        <translation type="unfinished"></translation>
+        <translation>Apple පුරනය වීම</translation>
     </message>
     <message>
         <source>Apple sign-in opened in the local terminal</source>
-        <translation type="unfinished"></translation>
+        <translation>Apple පුරනය වීම ස්ථානීය ටර්මිනලයේ විවෘත කළා</translation>
     </message>
     <message>
         <source>Applying changes to the running app…</source>
-        <translation type="unfinished"></translation>
+        <translation>ධාවනය වන යෙදුමට වෙනස්කම් යොදමින්…</translation>
     </message>
     <message>
         <source>Back</source>
-        <translation type="unfinished"></translation>
+        <translation>ආපසු</translation>
     </message>
     <message>
         <source>Build running…</source>
-        <translation type="unfinished"></translation>
+        <translation>ගොඩනැගීම ධාවනය වෙමින්…</translation>
     </message>
     <message>
         <source>Build, run and test native Android and iOS apps on Linux, by hand or with your agents.</source>
-        <translation type="unfinished"></translation>
+        <translation>Linux මත ස්වදේශීය Android සහ iOS යෙදුම් ගොඩනඟන්න, ධාවනය කරන්න සහ පරීක්ෂා කරන්න — අතින් හෝ ඔබේ නියෝජිතයන් සමඟ.</translation>
     </message>
     <message>
         <source>Builds &amp; jobs</source>
-        <translation type="unfinished"></translation>
+        <translation>ගොඩනැගීම් සහ කාර්ය</translation>
     </message>
     <message>
         <source>Capture saved · %1</source>
-        <translation type="unfinished"></translation>
+        <translation>ග්‍රහණය සුරකින ලදී · %1</translation>
     </message>
     <message>
         <source>Case color</source>
-        <translation type="unfinished"></translation>
+        <translation>කවර වර්ණය</translation>
     </message>
     <message>
         <source>Check again</source>
-        <translation type="unfinished"></translation>
+        <translation>නැවත පරීක්ෂා කරන්න</translation>
     </message>
     <message>
         <source>Choose a Mac</source>
-        <translation type="unfinished"></translation>
+        <translation>Mac එකක් තෝරන්න</translation>
     </message>
     <message>
         <source>Choose a device</source>
-        <translation type="unfinished"></translation>
+        <translation>උපාංගයක් තෝරන්න</translation>
     </message>
     <message>
         <source>Choose ‘Sign in to Apple’ and finish signing in in the local terminal.</source>
-        <translation type="unfinished"></translation>
+        <translation>‘Apple වෙත පුරනය වන්න’ තෝරා ස්ථානීය ටර්මිනලයේ පුරනය වීම අවසන් කරන්න.</translation>
     </message>
     <message>
         <source>Color</source>
-        <translation type="unfinished"></translation>
+        <translation>වර්ණය</translation>
     </message>
     <message>
         <source>Connect</source>
-        <translation type="unfinished"></translation>
+        <translation>සම්බන්ධ කරන්න</translation>
     </message>
     <message>
         <source>Connect Mac</source>
-        <translation type="unfinished"></translation>
+        <translation>Mac සම්බන්ධ කරන්න</translation>
     </message>
     <message>
         <source>Connect an iPhone or iPad via USB and confirm ‘Trust This Computer’.</source>
-        <translation type="unfinished"></translation>
+        <translation>USB හරහා iPhone හෝ iPad එකක් සම්බන්ධ කර ‘මෙම පරිගණකය විශ්වාස කරන්න’ තහවුරු කරන්න.</translation>
     </message>
     <message>
         <source>Connect the Apple simulator to Linux</source>
-        <translation type="unfinished"></translation>
+        <translation>Apple අනුකරණය Linux වෙත සම්බන්ධ කරන්න</translation>
     </message>
     <message>
         <source>Connect the unlocked iPhone. The usbmuxd service must be available.</source>
-        <translation type="unfinished"></translation>
+        <translation>අගුළු හරින ලද iPhone එක සම්බන්ධ කරන්න. usbmuxd සේවාව ලබා ගත හැකි විය යුතුය.</translation>
     </message>
     <message>
         <source>Connected</source>
-        <translation type="unfinished"></translation>
+        <translation>සම්බන්ධයි</translation>
     </message>
     <message>
         <source>Connecting</source>
-        <translation type="unfinished"></translation>
+        <translation>සම්බන්ධ වෙමින්</translation>
     </message>
     <message>
         <source>Connecting the picture…</source>
-        <translation type="unfinished"></translation>
+        <translation>රූපය සම්බන්ධ කරමින්…</translation>
     </message>
     <message>
         <source>Not mirroring</source>
-        <translation type="unfinished"></translation>
+        <translation>දර්පණය නොකරයි</translation>
     </message>
     <message>
         <source>On the iPhone, open Control Center, tap Screen Mirroring and choose %1.</source>
-        <translation type="unfinished"></translation>
+        <translation>iPhone එකේ පාලන මධ්‍යස්ථානය විවෘත කර, තිර දර්පණය තට්ටු කර %1 තෝරන්න.</translation>
     </message>
     <message>
         <source>Connecting…</source>
-        <translation type="unfinished"></translation>
+        <translation>සම්බන්ධ වෙමින්…</translation>
     </message>
     <message>
         <source>Connection name, e.g. build-mac</source>
-        <translation type="unfinished"></translation>
+        <translation>සම්බන්ධතා නාමය, උදා. build-mac</translation>
     </message>
     <message>
         <source>Control program</source>
-        <translation type="unfinished"></translation>
+        <translation>පාලන වැඩසටහන</translation>
     </message>
     <message>
         <source>Control program unavailable</source>
-        <translation type="unfinished"></translation>
+        <translation>පාලන වැඩසටහන නොමැත</translation>
     </message>
     <message>
         <source>Copy companion command</source>
-        <translation type="unfinished"></translation>
+        <translation>සහකරු විධානය පිටපත් කරන්න</translation>
     </message>
     <message>
         <source>Copy context</source>
-        <translation type="unfinished"></translation>
+        <translation>සන්දර්භය පිටපත් කරන්න</translation>
     </message>
     <message>
         <source>DEVELOPMENT</source>
-        <translation type="unfinished"></translation>
+        <translation>සංවර්ධනය</translation>
     </message>
     <message>
         <source>Detach the device into its own window</source>
-        <translation type="unfinished"></translation>
+        <translation>උපාංගය එහිම කවුළුවකට වෙන් කරන්න</translation>
     </message>
     <message>
         <source>Device pairing</source>
-        <translation type="unfinished"></translation>
+        <translation>උපාංග යුගල කිරීම</translation>
     </message>
     <message>
         <source>Devices</source>
-        <translation type="unfinished"></translation>
+        <translation>උපාංග</translation>
     </message>
     <message>
         <source>Disconnect</source>
-        <translation type="unfinished"></translation>
+        <translation>විසන්ධි කරන්න</translation>
     </message>
     <message>
         <source>Dismiss notice</source>
-        <translation type="unfinished"></translation>
+        <translation>දැන්වීම වසන්න</translation>
     </message>
     <message>
         <source>Dock</source>
-        <translation type="unfinished"></translation>
+        <translation>ඩොක් කරන්න</translation>
     </message>
     <message>
         <source>Download SDK from Apple</source>
-        <translation type="unfinished"></translation>
+        <translation>Apple වෙතින් SDK බාගන්න</translation>
     </message>
     <message>
         <source>Download control package</source>
-        <translation type="unfinished"></translation>
+        <translation>පාලන පැකේජය බාගන්න</translation>
     </message>
     <message>
         <source>Download the Xcode archive from Apple, then choose ‘Import SDK’. Processing runs on Linux.</source>
-        <translation type="unfinished"></translation>
+        <translation>Apple වෙතින් Xcode සංරක්ෂිතය බාගෙන, ‘SDK ආයාත කරන්න’ තෝරන්න. සැකසීම Linux මත ධාවනය වේ.</translation>
     </message>
     <message>
         <source>Ending the session…</source>
-        <translation type="unfinished"></translation>
+        <translation>සැසිය අවසන් කරමින්…</translation>
     </message>
     <message>
         <source>Enter text</source>
-        <translation type="unfinished"></translation>
+        <translation>පෙළ ඇතුළත් කරන්න</translation>
     </message>
     <message>
         <source>Files</source>
-        <translation type="unfinished"></translation>
+        <translation>ගොනු</translation>
     </message>
     <message>
         <source>First click into the app&apos;s text field. This text is pasted through the device clipboard.</source>
-        <translation type="unfinished"></translation>
+        <translation>පළමුව යෙදුමේ පෙළ ක්ෂේත්‍රයට ක්ලික් කරන්න. මෙම පෙළ උපාංගයේ පසුරු පුවරුව හරහා අලවයි.</translation>
     </message>
     <message>
         <source>First click the text field you want in the app. Its entire accessible value is replaced, umlauts and emoji included.</source>
-        <translation type="unfinished"></translation>
+        <translation>පළමුව යෙදුමේ ඔබට අවශ්‍ය පෙළ ක්ෂේත්‍රය ක්ලික් කරන්න. එහි සම්පූර්ණ ප්‍රවේශ්‍ය අගය umlaut සහ ඉමෝජි ඇතුළුව ප්‍රතිස්ථාපනය කෙරේ.</translation>
     </message>
     <message>
         <source>Frame</source>
-        <translation type="unfinished"></translation>
+        <translation>රාමුව</translation>
     </message>
     <message>
         <source>Import SDK</source>
-        <translation type="unfinished"></translation>
+        <translation>SDK ආයාත කරන්න</translation>
     </message>
     <message>
         <source>Import the Apple SDK from Xcode</source>
-        <translation type="unfinished"></translation>
+        <translation>Xcode වෙතින් Apple SDK ආයාත කරන්න</translation>
     </message>
     <message>
         <source>Insert text</source>
-        <translation type="unfinished"></translation>
+        <translation>පෙළ ඇතුළු කරන්න</translation>
     </message>
     <message>
         <source>Install libimobiledevice for device pairing.</source>
-        <translation type="unfinished"></translation>
+        <translation>උපාංග යුගල කිරීම සඳහා libimobiledevice ස්ථාපනය කරන්න.</translation>
     </message>
     <message>
         <source>Install libusbmuxd for the USB connection.</source>
-        <translation type="unfinished"></translation>
+        <translation>USB සම්බන්ධතාව සඳහා libusbmuxd ස්ථාපනය කරන්න.</translation>
     </message>
     <message>
         <source>Install the Swift toolchain that matches your Apple SDK.</source>
-        <translation type="unfinished"></translation>
+        <translation>ඔබේ Apple SDK ට ගැළපෙන Swift මෙවලම් කට්ටලය ස්ථාපනය කරන්න.</translation>
     </message>
     <message>
         <source>Install xtool for Linux.</source>
-        <translation type="unfinished"></translation>
+        <translation>Linux සඳහා xtool ස්ථාපනය කරන්න.</translation>
     </message>
     <message>
         <source>Installed WebDriverAgent bundle ID</source>
-        <translation type="unfinished"></translation>
+        <translation>ස්ථාපිත WebDriverAgent බන්ඩල ID</translation>
     </message>
     <message>
         <source>Interface language; System follows the desktop language</source>
-        <translation type="unfinished"></translation>
+        <translation>අතුරුමුහුණත් භාෂාව; පද්ධතිය ඩෙස්ක්ටොප් භාෂාව අනුගමනය කරයි</translation>
     </message>
     <message>
         <source>Language</source>
-        <translation type="unfinished"></translation>
+        <translation>භාෂාව</translation>
     </message>
     <message>
         <source>Sponsor</source>
-        <translation type="unfinished"></translation>
+        <translation>අනුග්‍රාහකයා</translation>
     </message>
     <message>
         <source>Legal notes</source>
-        <translation type="unfinished"></translation>
+        <translation>නීතිමය සටහන්</translation>
     </message>
     <message>
         <source>License</source>
-        <translation type="unfinished"></translation>
+        <translation>බලපත්‍රය</translation>
     </message>
     <message>
         <source>Linux builds your SwiftPM/xtool app. The connected iPhone runs it. Set up the Apple SDK and signing here once.</source>
-        <translation type="unfinished"></translation>
+        <translation>Linux ඔබේ SwiftPM/xtool යෙදුම ගොඩනඟයි. සම්බන්ධිත iPhone එක එය ධාවනය කරයි. Apple SDK සහ අත්සන් කිරීම මෙහි එක් වතාවක් පිහිටුවන්න.</translation>
     </message>
     <message>
         <source>Live device</source>
-        <translation type="unfinished"></translation>
+        <translation>සජීවී උපාංගය</translation>
     </message>
     <message>
         <source>Load developer image</source>
-        <translation type="unfinished"></translation>
+        <translation>සංවර්ධක රූපය පූරණය කරන්න</translation>
     </message>
     <message>
         <source>Mac terminal: brew install facebook/fb/idb
 SSH uses your existing keys and the known host identity.</source>
-        <translation type="unfinished"></translation>
+        <translation>Mac ටර්මිනලය: brew install facebook/fb/idb
+SSH ඔබේ පවතින යතුරු සහ දන්නා සත්කාරක අනන්‍යතාව භාවිත කරයි.</translation>
     </message>
     <message>
         <source>No iOS simulator runtime is installed on this Mac yet. Install one in Xcode → Settings → Components.</source>
-        <translation type="unfinished"></translation>
+        <translation>මෙම Mac එකේ තවමත් iOS අනුකරණ ධාවන කාලයක් ස්ථාපනය කර නැත. Xcode → Settings → Components තුළ එකක් ස්ථාපනය කරන්න.</translation>
     </message>
     <message>
         <source>No project open</source>
-        <translation type="unfinished"></translation>
+        <translation>විවෘත ව්‍යාපෘතියක් නැත</translation>
     </message>
     <message>
         <source>No project yet</source>
-        <translation type="unfinished"></translation>
+        <translation>තවමත් ව්‍යාපෘතියක් නැත</translation>
     </message>
     <message>
         <source>Not available</source>
-        <translation type="unfinished"></translation>
+        <translation>නොමැත</translation>
     </message>
     <message>
         <source>Open a project folder · Ctrl+O</source>
-        <translation type="unfinished"></translation>
+        <translation>ව්‍යාපෘති ෆෝල්ඩරයක් විවෘත කරන්න · Ctrl+O</translation>
     </message>
     <message>
         <source>Open job</source>
-        <translation type="unfinished"></translation>
+        <translation>කාර්යය විවෘත කරන්න</translation>
     </message>
     <message>
         <source>Open project</source>
-        <translation type="unfinished"></translation>
+        <translation>ව්‍යාපෘතිය විවෘත කරන්න</translation>
     </message>
     <message>
         <source>Overview</source>
-        <translation type="unfinished"></translation>
+        <translation>දළ විශ්ලේෂණය</translation>
     </message>
     <message>
         <source>Own window</source>
-        <translation type="unfinished"></translation>
+        <translation>ස්වකීය කවුළුව</translation>
     </message>
     <message>
         <source>Pair device</source>
-        <translation type="unfinished"></translation>
+        <translation>උපාංගය යුගල කරන්න</translation>
     </message>
     <message>
         <source>Play the app&apos;s sound on this computer</source>
-        <translation type="unfinished"></translation>
+        <translation>යෙදුමේ ශබ්දය මෙම පරිගණකයේ වාදනය කරන්න</translation>
     </message>
     <message>
         <source>Tomacco is free software under the GNU General Public License. Source: GPL-2.0-or-later. Distributed binaries: GPL-3.0-or-later, because they include Apache-2.0 components. It comes with ABSOLUTELY NO WARRANTY.</source>
-        <translation type="unfinished"></translation>
+        <translation>Tomacco යනු GNU General Public License යටතේ නිදහස් මෘදුකාංගයකි. මූලාශ්‍රය: GPL-2.0-or-later. බෙදා හරින ද්විමය ගොනු: Apache-2.0 සංරචක ඇතුළත් බැවින් GPL-3.0-or-later. එයට කිසිදු වගකීමක් නොමැත.</translation>
     </message>
     <message>
         <source>Project and runtime context copied</source>
-        <translation type="unfinished"></translation>
+        <translation>ව්‍යාපෘති සහ ධාවන කාල සන්දර්භය පිටපත් කළා</translation>
     </message>
     <message>
         <source>Project busy</source>
-        <translation type="unfinished"></translation>
+        <translation>ව්‍යාපෘතිය කාර්යබහුලයි</translation>
     </message>
     <message>
         <source>Project directory on the Mac, e.g. /Users/me/Projects/app</source>
-        <translation type="unfinished"></translation>
+        <translation>Mac එකේ ව්‍යාපෘති නාමාවලිය, උදා. /Users/me/Projects/app</translation>
     </message>
     <message>
         <source>Project format</source>
-        <translation type="unfinished"></translation>
+        <translation>ව්‍යාපෘති ආකෘතිය</translation>
     </message>
     <message>
         <source>Reference frame recognized from the display size; the frame geometry is approximated</source>
-        <translation type="unfinished"></translation>
+        <translation>සංදර්ශක ප්‍රමාණයෙන් යොමු රාමුව හඳුනා ගත්තා; රාමු ජ්‍යාමිතිය ආසන්න අගයකි</translation>
     </message>
     <message>
         <source>Replace text field</source>
-        <translation type="unfinished"></translation>
+        <translation>පෙළ ක්ෂේත්‍රය ප්‍රතිස්ථාපනය කරන්න</translation>
     </message>
     <message>
         <source>Reused the running session</source>
-        <translation type="unfinished"></translation>
+        <translation>ධාවනය වන සැසිය නැවත භාවිතා කළා</translation>
     </message>
     <message>
         <source>Rotate</source>
-        <translation type="unfinished"></translation>
+        <translation>කරකවන්න</translation>
     </message>
     <message>
         <source>Run app</source>
-        <translation type="unfinished"></translation>
+        <translation>යෙදුම ධාවනය කරන්න</translation>
     </message>
     <message>
         <source>SSH target, e.g. user@mac.local</source>
-        <translation type="unfinished"></translation>
+        <translation>SSH ඉලක්කය, උදා. user@mac.local</translation>
     </message>
     <message>
         <source>Save &amp; load simulators</source>
-        <translation type="unfinished"></translation>
+        <translation>අනුකරණ සුරකින්න සහ පූරණය කරන්න</translation>
     </message>
     <message>
         <source>Search</source>
-        <translation type="unfinished"></translation>
+        <translation>සොයන්න</translation>
     </message>
     <message>
         <source>Search for devices again</source>
-        <translation type="unfinished"></translation>
+        <translation>උපාංග නැවත සොයන්න</translation>
     </message>
     <message>
         <source>Search navigation and all tools · Ctrl+K</source>
-        <translation type="unfinished"></translation>
+        <translation>සංචාලනය සහ සියලු මෙවලම් සොයන්න · Ctrl+K</translation>
     </message>
     <message>
         <source>Session ended</source>
-        <translation type="unfinished"></translation>
+        <translation>සැසිය අවසන් විය</translation>
     </message>
     <message>
         <source>Session ended · %1</source>
-        <translation type="unfinished"></translation>
+        <translation>සැසිය අවසන් විය · %1</translation>
     </message>
     <message>
         <source>Set up Mac</source>
-        <translation type="unfinished"></translation>
+        <translation>Mac පිහිටුවන්න</translation>
     </message>
     <message>
         <source>Set up another Android model</source>
-        <translation type="unfinished"></translation>
+        <translation>වෙනත් Android මාදිලියක් පිහිටුවන්න</translation>
     </message>
     <message>
         <source>Set up go-ios for the iPhone developer services.</source>
-        <translation type="unfinished"></translation>
+        <translation>iPhone සංවර්ධක සේවා සඳහා go-ios පිහිටුවන්න.</translation>
     </message>
     <message>
         <source>Set up iPhone</source>
-        <translation type="unfinished"></translation>
+        <translation>iPhone පිහිටුවන්න</translation>
     </message>
     <message>
         <source>Setup started · progress under Builds &amp; jobs</source>
-        <translation type="unfinished"></translation>
+        <translation>පිහිටුවීම ආරම්භ විය · ප්‍රගතිය ගොඩනැගීම් සහ කාර්ය යටතේ</translation>
     </message>
     <message>
         <source>Show installed apps</source>
-        <translation type="unfinished"></translation>
+        <translation>ස්ථාපිත යෙදුම් පෙන්වන්න</translation>
     </message>
     <message>
         <source>Show the device frame; Android provides the real status bar</source>
-        <translation type="unfinished"></translation>
+        <translation>උපාංග රාමුව පෙන්වන්න; Android සැබෑ තත්ත්ව තීරුව සපයයි</translation>
     </message>
     <message>
         <source>Sign &amp; install control</source>
-        <translation type="unfinished"></translation>
+        <translation>පාලනය අත්සන් කර ස්ථාපනය කරන්න</translation>
     </message>
     <message>
         <source>Sign in to Apple</source>
-        <translation type="unfinished"></translation>
+        <translation>Apple වෙත පුරනය වන්න</translation>
     </message>
     <message>
         <source>Signing can change the bundle ID. Then enter the ID of the installed WebDriverAgent runner. A modern local iOS emulator is not included at present.</source>
-        <translation type="unfinished"></translation>
+        <translation>අත්සන් කිරීමෙන් බන්ඩල ID වෙනස් විය හැක. එවිට ස්ථාපිත WebDriverAgent ධාවකයේ ID ඇතුළත් කරන්න. දැනට නවීන ස්ථානීය iOS ඉමියුලේටරයක් ඇතුළත් නොවේ.</translation>
     </message>
     <message>
         <source>Simulator on a Mac</source>
-        <translation type="unfinished"></translation>
+        <translation>Mac එකක අනුකරණය</translation>
     </message>
     <message>
         <source>Sound</source>
-        <translation type="unfinished"></translation>
+        <translation>ශබ්දය</translation>
     </message>
     <message>
         <source>Sound error</source>
-        <translation type="unfinished"></translation>
+        <translation>ශබ්ද දෝෂය</translation>
     </message>
     <message>
         <source>Sound…</source>
-        <translation type="unfinished"></translation>
+        <translation>ශබ්දය…</translation>
     </message>
     <message>
         <source>Source code ↗</source>
-        <translation type="unfinished"></translation>
+        <translation>මූලාශ්‍ර කේතය ↗</translation>
     </message>
     <message>
         <source>Start iOS tunnel</source>
-        <translation type="unfinished"></translation>
+        <translation>iOS උමඟ ආරම්භ කරන්න</translation>
     </message>
     <message>
         <source>Stop</source>
-        <translation type="unfinished"></translation>
+        <translation>නවත්වන්න</translation>
     </message>
     <message>
         <source>Stop forwarding sound; restore output on the device</source>
-        <translation type="unfinished"></translation>
+        <translation>ශබ්දය යැවීම නවත්වන්න; උපාංගයේ ප්‍රතිදානය යළි පිහිටුවන්න</translation>
     </message>
     <message>
         <source>Switch workspace</source>
-        <translation type="unfinished"></translation>
+        <translation>වැඩ අවකාශය මාරු කරන්න</translation>
     </message>
     <message>
         <source>System</source>
-        <translation type="unfinished"></translation>
+        <translation>පද්ධතිය</translation>
     </message>
     <message>
         <source>Text…</source>
-        <translation type="unfinished"></translation>
+        <translation>පෙළ…</translation>
     </message>
     <message>
         <source>The Mac needs Xcode with an iOS simulator runtime, SSH access and idb_companion. Your own Mac or a rented one works.</source>
-        <translation type="unfinished"></translation>
+        <translation>Mac එකට iOS අනුකරණ ධාවන කාලයක් සහිත Xcode, SSH ප්‍රවේශය සහ idb_companion අවශ්‍යයි. ඔබේම Mac එකක් හෝ කුලියට ගත් එකක් ක්‍රියා කරයි.</translation>
     </message>
     <message>
         <source>The desktop and its control program come from different versions. Install both from the same build.</source>
-        <translation type="unfinished"></translation>
+        <translation>ඩෙස්ක්ටොපය සහ එහි පාලන වැඩසටහන වෙනස් අනුවාදවලින් පැමිණේ. දෙකම එකම ගොඩනැගීමකින් ස්ථාපනය කරන්න.</translation>
     </message>
     <message>
         <source>The device did not become ready in time.</source>
-        <translation type="unfinished"></translation>
+        <translation>උපාංගය නියමිත වේලාවට සූදානම් නොවීය.</translation>
     </message>
     <message>
         <source>The runtime is still starting…</source>
-        <translation type="unfinished"></translation>
+        <translation>ධාවන කාලය තවමත් ආරම්භ වෙමින්…</translation>
     </message>
     <message>
         <source>Third-party components keep their own licenses: THIRD_PARTY_NOTICES.md lists them, and docs/legal.md has further legal notes.</source>
-        <translation type="unfinished"></translation>
+        <translation>තෙවන පාර්ශව සංරචක තමන්ගේම බලපත්‍ර රකියි: THIRD_PARTY_NOTICES.md ඒවා ලැයිස්තුගත කරන අතර docs/legal.md හි තවත් නීතිමය සටහන් ඇත.</translation>
     </message>
     <message>
         <source>Release notes</source>
-        <translation type="unfinished"></translation>
+        <translation>නිකුතු සටහන්</translation>
     </message>
     <message>
         <source>Third-party notices</source>
-        <translation type="unfinished"></translation>
+        <translation>තෙවන පාර්ශව දැන්වීම්</translation>
     </message>
     <message>
         <source>This Linux build path needs a SwiftPM/xtool project. Flutter and Xcode projects are not converted automatically yet.</source>
-        <translation type="unfinished"></translation>
+        <translation>මෙම Linux ගොඩනැගීම් මාර්ගයට SwiftPM/xtool ව්‍යාපෘතියක් අවශ්‍යයි. Flutter සහ Xcode ව්‍යාපෘති තවමත් ස්වයංක්‍රීයව පරිවර්තනය නොකෙරේ.</translation>
     </message>
     <message>
         <source>Turn on Developer Mode on the iPhone and confirm the pairing. The Apple sign-in opens a local terminal; passwords are not entered in Tomacco or MCP.</source>
-        <translation type="unfinished"></translation>
+        <translation>iPhone එකේ Developer Mode සක්‍රිය කර යුගල කිරීම තහවුරු කරන්න. Apple පුරනය වීම ස්ථානීය ටර්මිනලයක් විවෘත කරයි; මුරපද Tomacco හෝ MCP තුළ ඇතුළත් නොකෙරේ.</translation>
     </message>
     <message>
         <source>UI tests</source>
-        <translation type="unfinished"></translation>
+        <translation>UI පරීක්ෂණ</translation>
     </message>
     <message>
         <source>USB connection</source>
-        <translation type="unfinished"></translation>
+        <translation>USB සම්බන්ධතාවය</translation>
     </message>
     <message>
         <source>USB picture transfer</source>
-        <translation type="unfinished"></translation>
+        <translation>USB රූප මාරුව</translation>
     </message>
     <message>
         <source>Version %1</source>
-        <translation type="unfinished"></translation>
+        <translation>අනුවාදය %1</translation>
     </message>
     <message>
         <source>View the sound forwarding error</source>
-        <translation type="unfinished"></translation>
+        <translation>ශබ්ද යොමු කිරීමේ දෝෂය බලන්න</translation>
     </message>
     <message>
         <source>WORKSPACE</source>
-        <translation type="unfinished"></translation>
+        <translation>වැඩ අවකාශය</translation>
     </message>
     <message>
         <source>Web preview</source>
-        <translation type="unfinished"></translation>
+        <translation>වෙබ් පෙරදසුන</translation>
     </message>
     <message>
         <source>Xcode archive (*.xip)</source>
-        <translation type="unfinished"></translation>
+        <translation>Xcode සංරක්ෂිතය (*.xip)</translation>
     </message>
     <message>
         <source>iPhone development without a Mac</source>
-        <translation type="unfinished"></translation>
+        <translation>Mac එකක් නොමැතිව iPhone සංවර්ධනය</translation>
     </message>
     <message>
         <source>iPhone services</source>
-        <translation type="unfinished"></translation>
+        <translation>iPhone සේවා</translation>
     </message>
     <message>
         <source>iPhone via USB</source>
-        <translation type="unfinished"></translation>
+        <translation>USB හරහා iPhone</translation>
     </message>
     <message>
         <source>Command</source>
-        <translation type="unfinished"></translation>
+        <translation>විධානය</translation>
     </message>
     <message>
         <source>Hide activity</source>
-        <translation type="unfinished"></translation>
+        <translation>ක්‍රියාකාරකම් සඟවන්න</translation>
     </message>
     <message>
         <source>Show activity</source>
-        <translation type="unfinished"></translation>
+        <translation>ක්‍රියාකාරකම් පෙන්වන්න</translation>
     </message>
     <message>
         <source>Switch to light appearance</source>
-        <translation type="unfinished"></translation>
+        <translation>ආලෝක පෙනුමට මාරු වන්න</translation>
     </message>
     <message>
         <source>Switch to dark appearance</source>
-        <translation type="unfinished"></translation>
+        <translation>අඳුරු පෙනුමට මාරු වන්න</translation>
     </message>
     <message>
         <source>Settings</source>
-        <translation type="unfinished"></translation>
+        <translation>සැකසුම්</translation>
     </message>
     <message>
         <source>Keyboard shortcuts</source>
-        <translation type="unfinished"></translation>
+        <translation>යතුරුපුවරු කෙටිමඟ</translation>
     </message>
     <message>
         <source>Booting</source>
-        <translation type="unfinished"></translation>
+        <translation>බූට් වෙමින්</translation>
     </message>
     <message>
         <source>Live</source>
-        <translation type="unfinished"></translation>
+        <translation>සජීවී</translation>
     </message>
     <message>
         <source>Failed</source>
-        <translation type="unfinished"></translation>
+        <translation>අසාර්ථකයි</translation>
     </message>
     <message>
         <source>Disconnected</source>
-        <translation type="unfinished"></translation>
+        <translation>විසන්ධි විය</translation>
     </message>
     <message>
         <source>No device</source>
-        <translation type="unfinished"></translation>
+        <translation>උපාංගයක් නැත</translation>
     </message>
     <message>
         <source>Activity</source>
-        <translation type="unfinished"></translation>
+        <translation>ක්‍රියාකාරකම්</translation>
     </message>
     <message>
         <source>Jobs and agent calls · Ctrl+J</source>
-        <translation type="unfinished"></translation>
+        <translation>කාර්ය සහ නියෝජිත ඇමතුම් · Ctrl+J</translation>
     </message>
     <message>
         <source>Appearance and language · Ctrl+,</source>
-        <translation type="unfinished"></translation>
+        <translation>පෙනුම සහ භාෂාව · Ctrl+,</translation>
     </message>
     <message numerus="yes">
         <source>%n job(s) running</source>
-        <translation type="unfinished">
-            <numerusform></numerusform>
-            <numerusform></numerusform>
+        <translation>
+            <numerusform>කාර්ය %nක් ධාවනය වේ</numerusform>
+            <numerusform>කාර්ය %nක් ධාවනය වේ</numerusform>
         </translation>
     </message>
     <message>
         <source>Ctrl+K search · F1 keys</source>
-        <translation type="unfinished"></translation>
+        <translation>Ctrl+K සෙවුම · F1 යතුරු</translation>
     </message>
     <message>
         <source>Appearance</source>
-        <translation type="unfinished"></translation>
+        <translation>පෙනුම</translation>
     </message>
     <message>
         <source>Dark</source>
-        <translation type="unfinished"></translation>
+        <translation>අඳුරු</translation>
     </message>
     <message>
         <source>Light</source>
-        <translation type="unfinished"></translation>
+        <translation>ආලෝකය</translation>
     </message>
     <message>
         <source>Search views, commands and tools</source>
-        <translation type="unfinished"></translation>
+        <translation>දසුන්, විධාන සහ මෙවලම් සොයන්න</translation>
     </message>
     <message>
         <source>Show or hide activity</source>
-        <translation type="unfinished"></translation>
+        <translation>ක්‍රියාකාරකම් පෙන්වන්න හෝ සඟවන්න</translation>
     </message>
     <message>
         <source>Save the current file</source>
-        <translation type="unfinished"></translation>
+        <translation>වත්මන් ගොනුව සුරකින්න</translation>
     </message>
     <message>
         <source>Search the project&apos;s source code</source>
-        <translation type="unfinished"></translation>
+        <translation>ව්‍යාපෘතියේ මූලාශ්‍ර කේතය සොයන්න</translation>
     </message>
     <message>
         <source>Full screen · web preview</source>
-        <translation type="unfinished"></translation>
+        <translation>පූර්ණ තිරය · වෙබ් පෙරදසුන</translation>
     </message>
     <message>
         <source>Project</source>
-        <translation type="unfinished"></translation>
+        <translation>ව්‍යාපෘතිය</translation>
     </message>
     <message>
         <source>Device</source>
-        <translation type="unfinished"></translation>
+        <translation>උපාංගය</translation>
     </message>
     <message>
         <source>Run</source>
-        <translation type="unfinished"></translation>
+        <translation>ධාවනය කරන්න</translation>
     </message>
     <message>
         <source>Ctrl</source>
-        <translation type="unfinished"></translation>
+        <translation>Ctrl</translation>
     </message>
     <message>
         <source>Building and starting your app…</source>
-        <translation type="unfinished"></translation>
+        <translation>ඔබේ යෙදුම ගොඩනඟා ආරම්භ කරමින්…</translation>
     </message>
     <message>
         <source>Copy what your agent needs: this project and the live device</source>
-        <translation type="unfinished"></translation>
+        <translation>ඔබේ නියෝජිතයාට අවශ්‍ය දේ පිටපත් කරන්න: මෙම ව්‍යාපෘතිය සහ සජීවී උපාංගය</translation>
     </message>
     <message>
         <source>Ready for agents</source>
-        <translation type="unfinished"></translation>
+        <translation>නියෝජිතයන් සඳහා සූදානම්</translation>
     </message>
     <message>
         <source>Your device is in its own window.</source>
-        <translation type="unfinished"></translation>
+        <translation>ඔබේ උපාංගය එහිම කවුළුවක ඇත.</translation>
     </message>
     <message>
         <source>Drag it by its body. Ctrl+wheel resizes it. Close it to bring it back.</source>
-        <translation type="unfinished"></translation>
+        <translation>එහි කත්‍රයෙන් ඇදගෙන යන්න. Ctrl+රෝදය ප්‍රමාණය වෙනස් කරයි. නැවත ගෙන එයිමට එය වසන්න.</translation>
     </message>
     <message>
         <source>Bring it back</source>
-        <translation type="unfinished"></translation>
+        <translation>නැවත ගෙන එන්න</translation>
     </message>
     <message>
         <source>Plug in your iPhone.</source>
-        <translation type="unfinished"></translation>
+        <translation>ඔබේ iPhone එක සම්බන්ධ කරන්න.</translation>
     </message>
     <message>
         <source>Connect a Mac.</source>
-        <translation type="unfinished"></translation>
+        <translation>Mac එකක් සම්බන්ධ කරන්න.</translation>
     </message>
     <message>
         <source>Give your agent a phone.</source>
-        <translation type="unfinished"></translation>
+        <translation>ඔබේ නියෝජිතයාට දුරකථනයක් දෙන්න.</translation>
     </message>
     <message>
         <source>Plug it in and unlock it. Build Swift apps on Linux and control them from here.</source>
-        <translation type="unfinished"></translation>
+        <translation>එය සම්බන්ධ කර අගුළු හරින්න. Linux මත Swift යෙදුම් ගොඩනඟා මෙතැන සිට පාලනය කරන්න.</translation>
     </message>
     <message>
         <source>The Apple simulator needs a Mac with Xcode. Yours or a rented one, over SSH.</source>
-        <translation type="unfinished"></translation>
+        <translation>Apple අනුකරණයට Xcode සහිත Mac එකක් අවශ්‍යයි. ඔබේම එකක් හෝ කුලියට ගත් එකක්, SSH හරහා.</translation>
     </message>
     <message>
         <source>It builds, runs, taps through and debugs iOS and Android apps. On Linux. No Mac needed.</source>
-        <translation type="unfinished"></translation>
+        <translation>එය iOS සහ Android යෙදුම් ගොඩනඟයි, ධාවනය කරයි, තට්ටු කර පරීක්ෂා කරයි, නිදොස් කරයි. Linux මත. Mac එකක් අවශ්‍ය නැත.</translation>
     </message>
     <message>
         <source>Connect %1</source>
-        <translation type="unfinished"></translation>
+        <translation>%1 සම්බන්ධ කරන්න</translation>
     </message>
     <message>
         <source>Add a device</source>
-        <translation type="unfinished"></translation>
+        <translation>උපාංගයක් එක් කරන්න</translation>
     </message>
     <message>
         <source>Open a project</source>
-        <translation type="unfinished"></translation>
+        <translation>ව්‍යාපෘතියක් විවෘත කරන්න</translation>
     </message>
     <message>
         <source>Completed after %1</source>
-        <translation type="unfinished"></translation>
+        <translation>%1 කට පසු අවසන් විය</translation>
     </message>
     <message>
         <source>Failed after %1</source>
-        <translation type="unfinished"></translation>
+        <translation>%1 කට පසු අසාර්ථක විය</translation>
     </message>
     <message>
         <source>Timed out after %1</source>
-        <translation type="unfinished"></translation>
+        <translation>%1 කට පසු කල් ඉකුත් විය</translation>
     </message>
     <message>
         <source>Notifications</source>
-        <translation type="unfinished"></translation>
+        <translation>දැනුම්දීම්</translation>
     </message>
     <message>
         <source>When a job ends in the background</source>
-        <translation type="unfinished"></translation>
+        <translation>පසුබිමේ කාර්යයක් අවසන් වන විට</translation>
     </message>
     <message>
         <source>Touches and coordinates</source>
-        <translation type="unfinished"></translation>
+        <translation>ස්පර්ශ සහ ඛණ්ඩාංක</translation>
     </message>
     <message>
         <source>Hide touches and pointer coordinates</source>
-        <translation type="unfinished"></translation>
+        <translation>ස්පර්ශ සහ දර්ශක ඛණ්ඩාංක සඟවන්න</translation>
     </message>
     <message>
         <source>Show touches and pointer coordinates, for writing UI tests</source>
-        <translation type="unfinished"></translation>
+        <translation>UI පරීක්ෂණ ලිවීම සඳහා ස්පර්ශ සහ දර්ශක ඛණ්ඩාංක පෙන්වන්න</translation>
     </message>
     <message>
         <source>Show touches and pointer coordinates</source>
-        <translation type="unfinished"></translation>
+        <translation>ස්පර්ශ සහ දර්ශක ඛණ්ඩාංක පෙන්වන්න</translation>
     </message>
     <message>
         <source>Another computer</source>
-        <translation type="unfinished"></translation>
+        <translation>වෙනත් පරිගණකයක්</translation>
     </message>
     <message>
         <source>Appearance, language, notifications, updates and the device view&apos;s choices, as a JSON file. Paths, window sizes and history stay on this computer.</source>
-        <translation type="unfinished"></translation>
+        <translation>පෙනුම, භාෂාව, දැනුම්දීම්, යාවත්කාලීන කිරීම් සහ උපාංග දසුනේ තේරීම්, JSON ගොනුවක් ලෙස. මාර්ග, කවුළු ප්‍රමාණ සහ ඉතිහාසය මෙම පරිගණකයේම රැඳේ.</translation>
     </message>
     <message>
         <source>Export settings…</source>
-        <translation type="unfinished"></translation>
+        <translation>සැකසුම් අපනයනය කරන්න…</translation>
     </message>
     <message>
         <source>Import settings…</source>
-        <translation type="unfinished"></translation>
+        <translation>සැකසුම් ආයාත කරන්න…</translation>
     </message>
     <message>
         <source>Export settings</source>
-        <translation type="unfinished"></translation>
+        <translation>සැකසුම් අපනයනය කරන්න</translation>
     </message>
     <message>
         <source>Import settings</source>
-        <translation type="unfinished"></translation>
+        <translation>සැකසුම් ආයාත කරන්න</translation>
     </message>
     <message>
         <source>Tomacco settings (*.json)</source>
-        <translation type="unfinished"></translation>
+        <translation>Tomacco සැකසුම් (*.json)</translation>
     </message>
     <message>
         <source>Settings saved to %1</source>
-        <translation type="unfinished"></translation>
+        <translation>සැකසුම් %1 වෙත සුරකින ලදී</translation>
     </message>
     <message numerus="yes">
         <source>%n setting(s) imported</source>
-        <translation type="unfinished">
-            <numerusform></numerusform>
-            <numerusform></numerusform>
+        <translation>
+            <numerusform>සැකසුම් %nක් ආයාත කළා</numerusform>
+            <numerusform>සැකසුම් %nක් ආයාත කළා</numerusform>
         </translation>
     </message>
     <message numerus="yes">
         <source>%n ignored</source>
-        <translation type="unfinished">
-            <numerusform></numerusform>
-            <numerusform></numerusform>
+        <translation>
+            <numerusform>%nක් නොසලකා හැරියා</numerusform>
+            <numerusform>%nක් නොසලකා හැරියා</numerusform>
         </translation>
     </message>
     <message>
         <source>Tomacco %1 is available</source>
-        <translation type="unfinished"></translation>
+        <translation>Tomacco %1 ලබා ගත හැක</translation>
     </message>
     <message>
         <source>Open Tomacco to see what&apos;s new and install it.</source>
-        <translation type="unfinished"></translation>
+        <translation>අලුත් දේ බැලීමට සහ ස්ථාපනය කිරීමට Tomacco විවෘත කරන්න.</translation>
     </message>
     <message>
         <source>Tomacco could not be started again. Close it and open it from the application menu.</source>
-        <translation type="unfinished"></translation>
+        <translation>Tomacco නැවත ආරම්භ කළ නොහැකි විය. එය වසා යෙදුම් මෙනුවෙන් විවෘත කරන්න.</translation>
     </message>
     <message>
         <source>What&apos;s new in %1</source>
-        <translation type="unfinished"></translation>
+        <translation>%1 හි අලුත් දේ</translation>
     </message>
     <message>
         <source>Tomacco is now version %1. The release notes list what changed.</source>
-        <translation type="unfinished"></translation>
+        <translation>Tomacco දැන් අනුවාදය %1 ය. වෙනස් වූ දේ නිකුතු සටහන් ලැයිස්තුගත කරයි.</translation>
     </message>
     <message>
         <source>On GitHub ↗</source>
-        <translation type="unfinished"></translation>
+        <translation>GitHub මත ↗</translation>
     </message>
     <message>
         <source>Get started</source>
-        <translation type="unfinished"></translation>
+        <translation>ආරම්භ කරන්න</translation>
     </message>
     <message>
         <source>Connect your coding agent</source>
-        <translation type="unfinished"></translation>
+        <translation>ඔබේ කේතන නියෝජිතයා සම්බන්ධ කරන්න</translation>
     </message>
     <message>
         <source>Connect an Android device to record its screen.</source>
-        <translation type="unfinished"></translation>
+        <translation>තිරය පටිගත කිරීමට Android උපාංගයක් සම්බන්ධ කරන්න.</translation>
     </message>
     <message>
         <source>Stop recording</source>
-        <translation type="unfinished"></translation>
+        <translation>පටිගත කිරීම නවත්වන්න</translation>
     </message>
     <message>
         <source>Record the screen</source>
-        <translation type="unfinished"></translation>
+        <translation>තිරය පටිගත කරන්න</translation>
     </message>
     <message>
         <source>Stop and save the recording · %1 s</source>
-        <translation type="unfinished"></translation>
+        <translation>පටිගත කිරීම නවත්වා සුරකින්න · තත්. %1</translation>
     </message>
     <message>
         <source>Record the screen to a video, at most 3 minutes</source>
-        <translation type="unfinished"></translation>
+        <translation>තිරය වීඩියෝවකට පටිගත කරන්න, උපරිම මිනිත්තු 3</translation>
     </message>
     <message>
         <source>Hide the log beside the device</source>
-        <translation type="unfinished"></translation>
+        <translation>උපාංගය අසල ලොගය සඟවන්න</translation>
     </message>
     <message>
         <source>Show the log beside the device</source>
-        <translation type="unfinished"></translation>
+        <translation>උපාංගය අසල ලොගය පෙන්වන්න</translation>
     </message>
     <message>
         <source>Split view</source>
-        <translation type="unfinished"></translation>
+        <translation>බෙදුණු දසුන</translation>
     </message>
     <message>
         <source>Log beside the device</source>
-        <translation type="unfinished"></translation>
+        <translation>උපාංගය අසල ලොගය</translation>
     </message>
     <message>
         <source>Show the device&apos;s or a job&apos;s log beside the device</source>
-        <translation type="unfinished"></translation>
+        <translation>උපාංගයේ හෝ කාර්යයක ලොගය උපාංගය අසල පෙන්වන්න</translation>
     </message>
     <message>
         <source>Agent activity</source>
-        <translation type="unfinished"></translation>
+        <translation>නියෝජිත ක්‍රියාකාරකම්</translation>
     </message>
     <message>
         <source>Session log, e.g. %1</source>
-        <translation type="unfinished"></translation>
+        <translation>සැසි ලොගය, උදා. %1</translation>
     </message>
     <message>
         <source>Set TOMACCO_SESSION_LOG to this file in your agent&apos;s MCP settings, and the activity panel lists every operation it calls, with its duration and result.</source>
-        <translation type="unfinished"></translation>
+        <translation>ඔබේ නියෝජිතයාගේ MCP සැකසුම්වල TOMACCO_SESSION_LOG මෙම ගොනුවට සකසන්න; එවිට ක්‍රියාකාරකම් පැනලය එය ඇමතන සෑම මෙහෙයුමක්ම එහි කාලය සහ ප්‍රතිඵලය සමඟ ලැයිස්තුගත කරයි.</translation>
     </message>
     <message>
         <source>Try again</source>
-        <translation type="unfinished"></translation>
+        <translation>නැවත උත්සාහ කරන්න</translation>
     </message>
     <message>
         <source>What to do: %1</source>
-        <translation type="unfinished"></translation>
+        <translation>කළ යුතු දේ: %1</translation>
     </message>
     <message>
         <source>Open the update settings to install it.</source>
-        <translation type="unfinished"></translation>
+        <translation>එය ස්ථාපනය කිරීමට යාවත්කාලීන කිරීම් සැකසුම් විවෘත කරන්න.</translation>
     </message>
     <message>
         <source>Version %1 is installed. Restart to use it.</source>
-        <translation type="unfinished"></translation>
+        <translation>අනුවාදය %1 ස්ථාපිතයි. එය භාවිතයට නැවත ආරම්භ කරන්න.</translation>
     </message>
     <message>
         <source>Updates</source>
-        <translation type="unfinished"></translation>
+        <translation>යාවත්කාලීන කිරීම්</translation>
     </message>
     <message>
         <source>Cancelled after %1</source>
-        <translation type="unfinished"></translation>
+        <translation>%1 කට පසු අවලංගු කළා</translation>
     </message>
     <message>
         <source>Save the current layout</source>
-        <translation type="unfinished"></translation>
+        <translation>වත්මන් පිරිසැලසුම සුරකින්න</translation>
     </message>
     <message>
         <source>Window layouts</source>
-        <translation type="unfinished"></translation>
+        <translation>කවුළු පිරිසැලසුම්</translation>
     </message>
     <message>
         <source>Use window layout %1</source>
-        <translation type="unfinished"></translation>
+        <translation>කවුළු පිරිසැලසුම %1 භාවිත කරන්න</translation>
     </message>
     <message>
         <source>At most %1 window layouts are kept. Delete one first.</source>
-        <translation type="unfinished"></translation>
+        <translation>කවුළු පිරිසැලසුම් උපරිම %1ක් පමණක් තබා ගනී. පළමුව එකක් මකන්න.</translation>
     </message>
     <message>
         <source>Window layout “%1” saved</source>
-        <translation type="unfinished"></translation>
+        <translation>කවුළු පිරිසැලසුම “%1” සුරකින ලදී</translation>
     </message>
     <message>
         <source>Window layout “%1”</source>
-        <translation type="unfinished"></translation>
+        <translation>කවුළු පිරිසැලසුම “%1”</translation>
     </message>
     <message>
         <source>Search settings</source>
-        <translation type="unfinished"></translation>
+        <translation>සැකසුම් සොයන්න</translation>
     </message>
     <message>
         <source>No setting matches “%1”.</source>
-        <translation type="unfinished"></translation>
+        <translation>“%1” සමඟ ගැළපෙන සැකසුමක් නැත.</translation>
     </message>
     <message>
         <source>Use the Omarchy theme&apos;s accent</source>
-        <translation type="unfinished"></translation>
+        <translation>Omarchy තේමාවේ උච්චාරණ වර්ණය භාවිත කරන්න</translation>
     </message>
     <message>
         <source>Theme</source>
-        <translation type="unfinished"></translation>
+        <translation>තේමාව</translation>
     </message>
     <message>
         <source>The accent of %1 does not read clearly on this background, so Tomacco keeps its own.</source>
-        <translation type="unfinished"></translation>
+        <translation>%1 හි උච්චාරණ වර්ණය මෙම පසුබිම මත පැහැදිලිව නොපෙනේ, එබැවින් Tomacco එහිම වර්ණය තබා ගනී.</translation>
     </message>
     <message>
         <source>Accent from the Omarchy theme %1.</source>
-        <translation type="unfinished"></translation>
+        <translation>Omarchy තේමාව %1 වෙතින් උච්චාරණ වර්ණය.</translation>
     </message>
     <message>
         <source>A layout keeps the open view, the activity panel, the log beside the device and its width, the device windows and the window&apos;s size.</source>
-        <translation type="unfinished"></translation>
+        <translation>පිරිසැලසුමක් විවෘත දසුන, ක්‍රියාකාරකම් පැනලය, උපාංගය අසල ලොගය සහ එහි පළල, උපාංග කවුළු සහ කවුළුවේ ප්‍රමාණය රකියි.</translation>
     </message>
     <message>
         <source>Use</source>
-        <translation type="unfinished"></translation>
+        <translation>භාවිත කරන්න</translation>
     </message>
     <message>
         <source>Delete</source>
-        <translation type="unfinished"></translation>
+        <translation>මකන්න</translation>
     </message>
     <message>
         <source>Delete window layout %1</source>
-        <translation type="unfinished"></translation>
+        <translation>කවුළු පිරිසැලසුම %1 මකන්න</translation>
     </message>
     <message>
         <source>Name, e.g. testing or debugging</source>
-        <translation type="unfinished"></translation>
+        <translation>නම, උදා. පරීක්ෂණ හෝ නිදොස්කරණය</translation>
     </message>
     <message>
         <source>Restarting AirPlay. Then choose Tomacco again in the iPhone&apos;s Screen Mirroring.</source>
-        <translation type="unfinished"></translation>
+        <translation>AirPlay නැවත ආරම්භ කරමින්. ඉන්පසු iPhone එකේ තිර දර්පණයේ Tomacco නැවත තෝරන්න.</translation>
     </message>
     <message>
         <source>iPhone over Wi-Fi</source>
-        <translation type="unfinished"></translation>
+        <translation>Wi-Fi හරහා iPhone</translation>
     </message>
     <message>
         <source>Waiting for a new iPhone picture</source>
-        <translation type="unfinished"></translation>
+        <translation>නව iPhone රූපයක් එනතුරු රැඳී සිටිමින්</translation>
     </message>
     <message>
         <source>Ready for your iPhone</source>
-        <translation type="unfinished"></translation>
+        <translation>ඔබේ iPhone සඳහා සූදානම්</translation>
     </message>
     <message>
         <source>Connect your iPhone over Wi-Fi</source>
-        <translation type="unfinished"></translation>
+        <translation>ඔබේ iPhone එක Wi-Fi හරහා සම්බන්ධ කරන්න</translation>
     </message>
     <message>
         <source>If no picture appears, stop Screen Mirroring on the iPhone and select Tomacco again. Restart AirPlay below if the receiver stopped responding.</source>
-        <translation type="unfinished"></translation>
+        <translation>රූපයක් නොපෙනේ නම්, iPhone එකේ තිර දර්පණය නවත්වා Tomacco නැවත තෝරන්න. ග්‍රාහකය ප්‍රතිචාර දැක්වීම නතර කළේ නම් පහත AirPlay නැවත ආරම්භ කරන්න.</translation>
     </message>
     <message>
         <source>Open Control Center on the iPhone, choose Screen Mirroring, then Tomacco. Both devices must be on the same network.</source>
-        <translation type="unfinished"></translation>
+        <translation>iPhone එකේ පාලන මධ්‍යස්ථානය විවෘත කර, තිර දර්පණය තෝරා, ඉන්පසු Tomacco තෝරන්න. උපාංග දෙකම එකම ජාලයේ තිබිය යුතුය.</translation>
     </message>
     <message>
         <source>Restart AirPlay</source>
-        <translation type="unfinished"></translation>
+        <translation>AirPlay නැවත ආරම්භ කරන්න</translation>
     </message>
     <message>
         <source>Start AirPlay</source>
-        <translation type="unfinished"></translation>
+        <translation>AirPlay ආරම්භ කරන්න</translation>
     </message>
     <message>
         <source>An agent is waiting for you: %1</source>
-        <translation type="unfinished"></translation>
+        <translation>නියෝජිතයෙක් ඔබ එනතුරු රැඳී සිටී: %1</translation>
     </message>
     <message>
         <source>In use elsewhere</source>
-        <translation type="unfinished"></translation>
+        <translation>වෙනත් තැනක භාවිතයේ</translation>
     </message>
     <message>
         <source>Reconnecting</source>
-        <translation type="unfinished"></translation>
+        <translation>නැවත සම්බන්ධ වෙමින්</translation>
     </message>
     <message>
         <source>Screenshot saved</source>
-        <translation type="unfinished"></translation>
+        <translation>තිර රුව සුරකින ලදී</translation>
     </message>
     <message>
         <source>Show file</source>
-        <translation type="unfinished"></translation>
+        <translation>ගොනුව පෙන්වන්න</translation>
     </message>
     <message>
         <source>Your turn</source>
-        <translation type="unfinished"></translation>
+        <translation>ඔබේ වාරය</translation>
     </message>
     <message>
         <source>Claude Code Codex Gemini Cursor VS Code Zed OpenCode Grok Hermes omp MCP</source>
-        <translation type="unfinished"></translation>
+        <translation>Claude Code Codex Gemini Cursor VS Code Zed OpenCode Grok Hermes omp MCP නියෝජිත සම්බන්ධ කරන්න</translation>
     </message>
 </context>
 <context>
     <name>Operations</name>
     <message>
         <source>Check for updates</source>
-        <translation type="unfinished"></translation>
+        <translation>යාවත්කාලීන කිරීම් පරීක්ෂා කරන්න</translation>
     </message>
     <message>
         <source>Install update</source>
-        <translation type="unfinished"></translation>
+        <translation>යාවත්කාලීන කිරීම ස්ථාපනය කරන්න</translation>
     </message>
     <message>
         <source>Update status</source>
-        <translation type="unfinished"></translation>
+        <translation>යාවත්කාලීන කිරීමේ තත්ත්වය</translation>
     </message>
     <message>
         <source>Roll back update</source>
-        <translation type="unfinished"></translation>
+        <translation>යාවත්කාලීන කිරීම ආපසු හරවන්න</translation>
     </message>
     <message>
         <source>Analyze performance profile</source>
-        <translation type="unfinished"></translation>
+        <translation>කාර්ය සාධන පැතිකඩය විශ්ලේෂණය කරන්න</translation>
     </message>
     <message>
         <source>Android emulators</source>
-        <translation type="unfinished"></translation>
+        <translation>Android ඉමියුලේටර</translation>
     </message>
     <message>
         <source>Android over Wi-Fi</source>
-        <translation type="unfinished"></translation>
+        <translation>Wi-Fi හරහා Android</translation>
     </message>
     <message>
         <source>App data files</source>
-        <translation type="unfinished"></translation>
+        <translation>යෙදුම් දත්ත ගොනු</translation>
     </message>
     <message>
         <source>App permission</source>
-        <translation type="unfinished"></translation>
+        <translation>යෙදුම් අවසරය</translation>
     </message>
     <message>
         <source>Apple devices on the Mac</source>
-        <translation type="unfinished"></translation>
+        <translation>Mac එකේ Apple උපාංග</translation>
     </message>
     <message>
         <source>Browser console</source>
-        <translation type="unfinished"></translation>
+        <translation>බ්‍රවුසර කන්සෝලය</translation>
     </message>
     <message>
         <source>Page errors</source>
-        <translation type="unfinished"></translation>
+        <translation>පිටු දෝෂ</translation>
     </message>
     <message>
         <source>Build &amp; run on device</source>
-        <translation type="unfinished"></translation>
+        <translation>උපාංගය මත ගොඩනඟා ධාවනය කරන්න</translation>
     </message>
     <message>
         <source>Watch and rerun app</source>
-        <translation type="unfinished"></translation>
+        <translation>යෙදුම නිරීක්ෂණය කර නැවත ධාවනය කරන්න</translation>
     </message>
     <message>
         <source>Build iOS graphics compiler plugin</source>
-        <translation type="unfinished"></translation>
+        <translation>iOS චිත්‍රක සම්පාදක ප්ලගිනය ගොඩනඟන්න</translation>
     </message>
     <message>
         <source>Build native iOS app</source>
-        <translation type="unfinished"></translation>
+        <translation>ස්වදේශීය iOS යෙදුම ගොඩනඟන්න</translation>
     </message>
     <message>
         <source>Build native iOS guest tools</source>
-        <translation type="unfinished"></translation>
+        <translation>ස්වදේශීය iOS අතිථි මෙවලම් ගොඩනඟන්න</translation>
     </message>
     <message>
         <source>Cancel job</source>
-        <translation type="unfinished"></translation>
+        <translation>කාර්යය අවලංගු කරන්න</translation>
     </message>
     <message>
         <source>Capture Android profile</source>
-        <translation type="unfinished"></translation>
+        <translation>Android පැතිකඩයක් ග්‍රහණය කරන්න</translation>
     </message>
     <message>
         <source>Capture device matrix</source>
-        <translation type="unfinished"></translation>
+        <translation>උපාංග න්‍යාසය ග්‍රහණය කරන්න</translation>
     </message>
     <message>
         <source>Capture preview</source>
-        <translation type="unfinished"></translation>
+        <translation>පෙරදසුන ග්‍රහණය කරන්න</translation>
     </message>
     <message>
         <source>Check Mac</source>
-        <translation type="unfinished"></translation>
+        <translation>Mac පරීක්ෂා කරන්න</translation>
     </message>
     <message>
         <source>Check PMP execution</source>
-        <translation type="unfinished"></translation>
+        <translation>PMP ක්‍රියාත්මක කිරීම පරීක්ෂා කරන්න</translation>
     </message>
     <message>
         <source>Check iOS emulator</source>
-        <translation type="unfinished"></translation>
+        <translation>iOS ඉමියුලේටරය පරීක්ෂා කරන්න</translation>
     </message>
     <message>
         <source>Check iPhone development on Linux</source>
-        <translation type="unfinished"></translation>
+        <translation>Linux මත iPhone සංවර්ධනය පරීක්ෂා කරන්න</translation>
     </message>
     <message>
         <source>Check layout</source>
-        <translation type="unfinished"></translation>
+        <translation>පිරිසැලසුම පරීක්ෂා කරන්න</translation>
     </message>
     <message>
         <source>Check performance budget</source>
-        <translation type="unfinished"></translation>
+        <translation>කාර්ය සාධන සීමාව පරීක්ෂා කරන්න</translation>
     </message>
     <message>
         <source>Run Macrobenchmark</source>
-        <translation type="unfinished"></translation>
+        <translation>Macrobenchmark ධාවනය කරන්න</translation>
     </message>
     <message>
         <source>Read Macrobenchmark results</source>
-        <translation type="unfinished"></translation>
+        <translation>Macrobenchmark ප්‍රතිඵල කියවන්න</translation>
     </message>
     <message>
         <source>Generate Baseline Profile</source>
-        <translation type="unfinished"></translation>
+        <translation>Baseline Profile ජනනය කරන්න</translation>
     </message>
     <message>
         <source>Read Baseline Profile rules</source>
-        <translation type="unfinished"></translation>
+        <translation>Baseline Profile නීති කියවන්න</translation>
     </message>
     <message>
         <source>Install Baseline Profile</source>
-        <translation type="unfinished"></translation>
+        <translation>Baseline Profile ස්ථාපනය කරන්න</translation>
     </message>
     <message>
         <source>Compare startup with and without Baseline Profile</source>
-        <translation type="unfinished"></translation>
+        <translation>Baseline Profile සහිතව සහ රහිතව ආරම්භය සසඳන්න</translation>
     </message>
     <message>
         <source>Compare performance reports</source>
-        <translation type="unfinished"></translation>
+        <translation>කාර්ය සාධන වාර්තා සසඳන්න</translation>
     </message>
     <message>
         <source>Measure app startup</source>
-        <translation type="unfinished"></translation>
+        <translation>යෙදුම් ආරම්භය මනින්න</translation>
     </message>
     <message>
         <source>Measure frame rendering</source>
-        <translation type="unfinished"></translation>
+        <translation>රාමු විදැහුම මනින්න</translation>
     </message>
     <message>
         <source>Measure app memory</source>
-        <translation type="unfinished"></translation>
+        <translation>යෙදුම් මතකය මනින්න</translation>
     </message>
     <message>
         <source>Measure CPU and battery use</source>
-        <translation type="unfinished"></translation>
+        <translation>CPU සහ බැටරි භාවිතය මනින්න</translation>
     </message>
     <message>
         <source>Check toolchain</source>
-        <translation type="unfinished"></translation>
+        <translation>මෙවලම් කට්ටලය පරීක්ෂා කරන්න</translation>
     </message>
     <message>
         <source>What this computer can do</source>
-        <translation type="unfinished"></translation>
+        <translation>මෙම පරිගණකයට කළ හැකි දේ</translation>
     </message>
     <message>
         <source>Click element</source>
-        <translation type="unfinished"></translation>
+        <translation>අංගය ක්ලික් කරන්න</translation>
     </message>
     <message>
         <source>Commit Google Play change</source>
-        <translation type="unfinished"></translation>
+        <translation>Google Play වෙනස්කම තහවුරු කරන්න</translation>
     </message>
     <message>
         <source>Compile / test Swift</source>
-        <translation type="unfinished"></translation>
+        <translation>Swift සම්පාදනය / පරීක්ෂා කරන්න</translation>
     </message>
     <message>
         <source>Configure preview</source>
-        <translation type="unfinished"></translation>
+        <translation>පෙරදසුන වින්‍යාස කරන්න</translation>
     </message>
     <message>
         <source>Configure project</source>
-        <translation type="unfinished"></translation>
+        <translation>ව්‍යාපෘතිය වින්‍යාස කරන්න</translation>
     </message>
     <message>
         <source>Connect Mac</source>
-        <translation type="unfinished"></translation>
+        <translation>Mac සම්බන්ධ කරන්න</translation>
     </message>
     <message>
         <source>Connect Swift to the Android NDK</source>
-        <translation type="unfinished"></translation>
+        <translation>Swift Android NDK වෙත සම්බන්ධ කරන්න</translation>
     </message>
     <message>
         <source>Connect dev server</source>
-        <translation type="unfinished"></translation>
+        <translation>සංවර්ධන සේවාදායකය සම්බන්ධ කරන්න</translation>
     </message>
     <message>
         <source>Connect native runtime</source>
-        <translation type="unfinished"></translation>
+        <translation>ස්වදේශීය ධාවන කාලය සම්බන්ධ කරන්න</translation>
     </message>
     <message>
         <source>Control Apple Simulator</source>
-        <translation type="unfinished"></translation>
+        <translation>Apple අනුකරණය පාලනය කරන්න</translation>
     </message>
     <message>
         <source>Control app</source>
-        <translation type="unfinished"></translation>
+        <translation>යෙදුම පාලනය කරන්න</translation>
     </message>
     <message>
         <source>Control debugger</source>
-        <translation type="unfinished"></translation>
+        <translation>නිදොස්කරු පාලනය කරන්න</translation>
     </message>
     <message>
         <source>Control emulator</source>
-        <translation type="unfinished"></translation>
+        <translation>ඉමියුලේටරය පාලනය කරන්න</translation>
     </message>
     <message>
         <source>Control iPhone on the Mac</source>
-        <translation type="unfinished"></translation>
+        <translation>Mac එකේ iPhone පාලනය කරන්න</translation>
     </message>
     <message>
         <source>Control native iOS guest programs</source>
-        <translation type="unfinished"></translation>
+        <translation>ස්වදේශීය iOS අතිථි වැඩසටහන් පාලනය කරන්න</translation>
     </message>
     <message>
         <source>Create emulator</source>
-        <translation type="unfinished"></translation>
+        <translation>ඉමියුලේටරයක් සාදන්න</translation>
     </message>
     <message>
         <source>Create iOS archive</source>
-        <translation type="unfinished"></translation>
+        <translation>iOS සංරක්ෂිතයක් සාදන්න</translation>
     </message>
     <message>
         <source>Create project</source>
-        <translation type="unfinished"></translation>
+        <translation>ව්‍යාපෘතියක් සාදන්න</translation>
     </message>
     <message>
         <source>Create project folder</source>
-        <translation type="unfinished"></translation>
+        <translation>ව්‍යාපෘති ෆෝල්ඩරයක් සාදන්න</translation>
     </message>
     <message>
         <source>Create signing key</source>
-        <translation type="unfinished"></translation>
+        <translation>අත්සන් යතුරක් සාදන්න</translation>
     </message>
     <message>
         <source>Debug sessions</source>
-        <translation type="unfinished"></translation>
+        <translation>නිදොස්කරණ සැසි</translation>
     </message>
     <message>
         <source>Debugger events</source>
-        <translation type="unfinished"></translation>
+        <translation>නිදොස්කරු සිදුවීම්</translation>
     </message>
     <message>
         <source>Debugger status</source>
-        <translation type="unfinished"></translation>
+        <translation>නිදොස්කරු තත්ත්වය</translation>
     </message>
     <message>
         <source>Desktop status</source>
-        <translation type="unfinished"></translation>
+        <translation>ඩෙස්ක්ටොප් තත්ත්වය</translation>
     </message>
     <message>
         <source>Device catalog</source>
-        <translation type="unfinished"></translation>
+        <translation>උපාංග නාමාවලිය</translation>
     </message>
     <message>
         <source>Device image for agents</source>
-        <translation type="unfinished"></translation>
+        <translation>නියෝජිතයන් සඳහා උපාංග රූපය</translation>
     </message>
     <message>
         <source>Device information</source>
-        <translation type="unfinished"></translation>
+        <translation>උපාංග තොරතුරු</translation>
     </message>
     <message>
         <source>Device logs</source>
-        <translation type="unfinished"></translation>
+        <translation>උපාංග ලොග</translation>
     </message>
     <message>
         <source>Device screenshot</source>
-        <translation type="unfinished"></translation>
+        <translation>උපාංග තිර රුව</translation>
     </message>
     <message>
         <source>Device settings for tests</source>
-        <translation type="unfinished"></translation>
+        <translation>පරීක්ෂණ සඳහා උපාංග සැකසුම්</translation>
     </message>
     <message>
         <source>Discard Google Play draft</source>
-        <translation type="unfinished"></translation>
+        <translation>Google Play කෙටුම්පත ඉවත් කරන්න</translation>
     </message>
     <message>
         <source>Disconnect runtime</source>
-        <translation type="unfinished"></translation>
+        <translation>ධාවන කාලය විසන්ධි කරන්න</translation>
     </message>
     <message>
         <source>Display orientation and size</source>
-        <translation type="unfinished"></translation>
+        <translation>සංදර්ශක දිශාව සහ ප්‍රමාණය</translation>
     </message>
     <message>
         <source>Download Mac artifact</source>
-        <translation type="unfinished"></translation>
+        <translation>Mac ප්‍රතිදානය බාගන්න</translation>
     </message>
     <message>
         <source>Evaluate expression</source>
-        <translation type="unfinished"></translation>
+        <translation>ප්‍රකාශනය ඇගයීම</translation>
     </message>
     <message>
         <source>Examine iOS kernel boot</source>
-        <translation type="unfinished"></translation>
+        <translation>iOS කර්නල ආරම්භය පරීක්ෂා කරන්න</translation>
     </message>
     <message>
         <source>Export and fetch IPA</source>
-        <translation type="unfinished"></translation>
+        <translation>IPA අපනයනය කර ලබා ගන්න</translation>
     </message>
     <message>
         <source>Export model</source>
-        <translation type="unfinished"></translation>
+        <translation>මාදිලිය අපනයනය කරන්න</translation>
     </message>
     <message>
         <source>Fetch result of an iOS guest job</source>
-        <translation type="unfinished"></translation>
+        <translation>iOS අතිථි කාර්යයක ප්‍රතිඵලය ලබා ගන්න</translation>
     </message>
     <message>
         <source>Fill in form</source>
-        <translation type="unfinished"></translation>
+        <translation>පෝරමය පුරවන්න</translation>
     </message>
     <message>
         <source>Find Android element</source>
-        <translation type="unfinished"></translation>
+        <translation>Android අංගය සොයන්න</translation>
     </message>
     <message>
         <source>Find devices</source>
-        <translation type="unfinished"></translation>
+        <translation>උපාංග සොයන්න</translation>
     </message>
     <message>
         <source>Send a command to a job</source>
-        <translation type="unfinished"></translation>
+        <translation>කාර්යයකට විධානයක් යවන්න</translation>
     </message>
     <message>
         <source>Inspect APK or AAB</source>
-        <translation type="unfinished"></translation>
+        <translation>APK හෝ AAB පරීක්ෂා කරන්න</translation>
     </message>
     <message>
         <source>Report APK or AAB size</source>
-        <translation type="unfinished"></translation>
+        <translation>APK හෝ AAB ප්‍රමාණය වාර්තා කරන්න</translation>
     </message>
     <message>
         <source>Emulator sensors</source>
-        <translation type="unfinished"></translation>
+        <translation>ඉමියුලේටර සංවේදක</translation>
     </message>
     <message>
         <source>App Links</source>
-        <translation type="unfinished"></translation>
+        <translation>App Links</translation>
     </message>
     <message>
         <source>Network capture</source>
-        <translation type="unfinished"></translation>
+        <translation>ජාල ග්‍රහණය</translation>
     </message>
     <message>
         <source>Install iOS toolkit</source>
-        <translation type="unfinished"></translation>
+        <translation>iOS මෙවලම් කට්ටලය ස්ථාපනය කරන්න</translation>
     </message>
     <message>
         <source>Notifications</source>
-        <translation type="unfinished"></translation>
+        <translation>දැනුම්දීම්</translation>
     </message>
     <message>
         <source>Prepare Flutter for iOS</source>
-        <translation type="unfinished"></translation>
+        <translation>iOS සඳහා Flutter සකසන්න</translation>
     </message>
     <message>
         <source>Build Flutter app for iOS</source>
-        <translation type="unfinished"></translation>
+        <translation>iOS සඳහා Flutter යෙදුම ගොඩනඟන්න</translation>
     </message>
     <message>
         <source>iPhone crash reports</source>
-        <translation type="unfinished"></translation>
+        <translation>iPhone අසාර්ථකතා වාර්තා</translation>
     </message>
     <message>
         <source>Record iPhone screen</source>
-        <translation type="unfinished"></translation>
+        <translation>iPhone තිරය පටිගත කරන්න</translation>
     </message>
     <message>
         <source>iPhone app files</source>
-        <translation type="unfinished"></translation>
+        <translation>iPhone යෙදුම් ගොනු</translation>
     </message>
     <message>
         <source>iPhone readiness</source>
-        <translation type="unfinished"></translation>
+        <translation>iPhone සූදානම්භාවය</translation>
     </message>
     <message>
         <source>iPhone signing overview</source>
-        <translation type="unfinished"></translation>
+        <translation>iPhone අත්සන් කිරීමේ දළ විශ්ලේෂණය</translation>
     </message>
     <message>
         <source>Read crash report</source>
-        <translation type="unfinished"></translation>
+        <translation>අසාර්ථකතා වාර්තාව කියවන්න</translation>
     </message>
     <message>
         <source>Inspect iOS app</source>
-        <translation type="unfinished"></translation>
+        <translation>iOS යෙදුම පරීක්ෂා කරන්න</translation>
     </message>
     <message>
         <source>Prepare for App Store</source>
-        <translation type="unfinished"></translation>
+        <translation>App Store සඳහා සූදානම් කරන්න</translation>
     </message>
     <message>
         <source>Import Xcode project</source>
-        <translation type="unfinished"></translation>
+        <translation>Xcode ව්‍යාපෘතිය ආයාත කරන්න</translation>
     </message>
     <message>
         <source>Find built iOS app</source>
-        <translation type="unfinished"></translation>
+        <translation>ගොඩනඟන ලද iOS යෙදුම සොයන්න</translation>
     </message>
     <message>
         <source>Import Apple SDK</source>
-        <translation type="unfinished"></translation>
+        <translation>Apple SDK ආයාත කරන්න</translation>
     </message>
     <message>
         <source>Import models</source>
-        <translation type="unfinished"></translation>
+        <translation>මාදිලි ආයාත කරන්න</translation>
     </message>
     <message>
         <source>Import original iOS system</source>
-        <translation type="unfinished"></translation>
+        <translation>මුල් iOS පද්ධතිය ආයාත කරන්න</translation>
     </message>
     <message>
         <source>Inspect DOM</source>
-        <translation type="unfinished"></translation>
+        <translation>DOM පරීක්ෂා කරන්න</translation>
     </message>
     <message>
         <source>Install SDK packages</source>
-        <translation type="unfinished"></translation>
+        <translation>SDK පැකේජ ස්ථාපනය කරන්න</translation>
     </message>
     <message>
         <source>Install Swift SDK</source>
-        <translation type="unfinished"></translation>
+        <translation>Swift SDK ස්ථාපනය කරන්න</translation>
     </message>
     <message>
         <source>Install app</source>
-        <translation type="unfinished"></translation>
+        <translation>යෙදුම ස්ථාපනය කරන්න</translation>
     </message>
     <message>
         <source>Install iOS cryptex files</source>
-        <translation type="unfinished"></translation>
+        <translation>iOS cryptex ගොනු ස්ථාපනය කරන්න</translation>
     </message>
     <message>
         <source>Install native iOS guest tools</source>
-        <translation type="unfinished"></translation>
+        <translation>ස්වදේශීය iOS අතිථි මෙවලම් ස්ථාපනය කරන්න</translation>
     </message>
     <message>
         <source>Instruments recording</source>
-        <translation type="unfinished"></translation>
+        <translation>Instruments පටිගත කිරීම</translation>
     </message>
     <message>
         <source>Job status</source>
-        <translation type="unfinished"></translation>
+        <translation>කාර්ය තත්ත්වය</translation>
     </message>
     <message>
         <source>Jobs</source>
-        <translation type="unfinished"></translation>
+        <translation>කාර්ය</translation>
     </message>
     <message>
         <source>Live logs</source>
-        <translation type="unfinished"></translation>
+        <translation>සජීවී ලොග</translation>
     </message>
     <message>
         <source>Load agent context</source>
-        <translation type="unfinished"></translation>
+        <translation>නියෝජිත සන්දර්භය පූරණය කරන්න</translation>
     </message>
     <message>
         <source>Mac workspaces</source>
-        <translation type="unfinished"></translation>
+        <translation>Mac වැඩ අවකාශ</translation>
     </message>
     <message>
         <source>Native accessibility tree</source>
-        <translation type="unfinished"></translation>
+        <translation>ස්වදේශීය ප්‍රවේශ්‍යතා ගස</translation>
     </message>
     <message>
         <source>Native capture</source>
-        <translation type="unfinished"></translation>
+        <translation>ස්වදේශීය ග්‍රහණය</translation>
     </message>
     <message>
         <source>Native input</source>
-        <translation type="unfinished"></translation>
+        <translation>ස්වදේශීය ආදානය</translation>
     </message>
     <message>
         <source>Native sessions</source>
-        <translation type="unfinished"></translation>
+        <translation>ස්වදේශීය සැසි</translation>
     </message>
     <message>
         <source>Open Tomacco</source>
-        <translation type="unfinished"></translation>
+        <translation>Tomacco විවෘත කරන්න</translation>
     </message>
     <message>
         <source>Open URL</source>
-        <translation type="unfinished"></translation>
+        <translation>URL විවෘත කරන්න</translation>
     </message>
     <message>
         <source>Open deep link</source>
-        <translation type="unfinished"></translation>
+        <translation>ගැඹුරු සබැඳිය විවෘත කරන්න</translation>
     </message>
     <message>
         <source>Open project</source>
-        <translation type="unfinished"></translation>
+        <translation>ව්‍යාපෘතිය විවෘත කරන්න</translation>
     </message>
     <message>
         <source>Open source file</source>
-        <translation type="unfinished"></translation>
+        <translation>මූලාශ්‍ර ගොනුව විවෘත කරන්න</translation>
     </message>
     <message>
         <source>Operate Android element</source>
-        <translation type="unfinished"></translation>
+        <translation>Android අංගය ක්‍රියාත්මක කරන්න</translation>
     </message>
     <message>
         <source>Operate running virtual iOS</source>
-        <translation type="unfinished"></translation>
+        <translation>ධාවනය වන අතක්සුවික iOS හසුරවන්න</translation>
     </message>
     <message>
         <source>Performance report</source>
-        <translation type="unfinished"></translation>
+        <translation>කාර්ය සාධන වාර්තාව</translation>
     </message>
     <message>
         <source>Plan Swift build</source>
-        <translation type="unfinished"></translation>
+        <translation>Swift ගොඩනැගීම සැලසුම් කරන්න</translation>
     </message>
     <message>
         <source>Prepare Google Play release</source>
-        <translation type="unfinished"></translation>
+        <translation>Google Play නිකුතුව සකසන්න</translation>
     </message>
     <message>
         <source>Prepare PMP firmware</source>
-        <translation type="unfinished"></translation>
+        <translation>PMP ෆර්ම්වේයාරය සකසන්න</translation>
     </message>
     <message>
         <source>Prepare iOS test system</source>
-        <translation type="unfinished"></translation>
+        <translation>iOS පරීක්ෂණ පද්ධතිය සකසන්න</translation>
     </message>
     <message>
         <source>Prepare iPhone control</source>
-        <translation type="unfinished"></translation>
+        <translation>iPhone පාලනය සකසන්න</translation>
     </message>
     <message>
         <source>Prepare virtual iOS restore runtime</source>
-        <translation type="unfinished"></translation>
+        <translation>අතක්සුවික iOS ප්‍රතිස්ථාපන ධාවන කාලය සකසන්න</translation>
     </message>
     <message>
         <source>Preview sessions</source>
-        <translation type="unfinished"></translation>
+        <translation>පෙරදසුන් සැසි</translation>
     </message>
     <message>
         <source>Preview status</source>
-        <translation type="unfinished"></translation>
+        <translation>පෙරදසුන් තත්ත්වය</translation>
     </message>
     <message>
         <source>Read PMP memory</source>
-        <translation type="unfinished"></translation>
+        <translation>PMP මතකය කියවන්න</translation>
     </message>
     <message>
         <source>Read UI tree</source>
-        <translation type="unfinished"></translation>
+        <translation>UI ගස කියවන්න</translation>
     </message>
     <message>
         <source>Read Xcode project</source>
-        <translation type="unfinished"></translation>
+        <translation>Xcode ව්‍යාපෘතිය කියවන්න</translation>
     </message>
     <message>
         <source>Read call stack</source>
-        <translation type="unfinished"></translation>
+        <translation>ඇමතුම් තොගය කියවන්න</translation>
     </message>
     <message>
         <source>Read iOS test run</source>
-        <translation type="unfinished"></translation>
+        <translation>iOS පරීක්ෂණ ධාවනය කියවන්න</translation>
     </message>
     <message>
         <source>Read model from device</source>
-        <translation type="unfinished"></translation>
+        <translation>උපාංගයෙන් මාදිලිය කියවන්න</translation>
     </message>
     <message>
         <source>Read threads</source>
-        <translation type="unfinished"></translation>
+        <translation>ත්‍රෙඩ් කියවන්න</translation>
     </message>
     <message>
         <source>Read variables</source>
-        <translation type="unfinished"></translation>
+        <translation>විචල්‍ය කියවන්න</translation>
     </message>
     <message>
         <source>Read workspaces</source>
-        <translation type="unfinished"></translation>
+        <translation>වැඩ අවකාශ කියවන්න</translation>
     </message>
     <message>
         <source>Record display</source>
-        <translation type="unfinished"></translation>
+        <translation>සංදර්ශකය පටිගත කරන්න</translation>
     </message>
     <message>
         <source>Reload catalog</source>
-        <translation type="unfinished"></translation>
+        <translation>නාමාවලිය නැවත පූරණය කරන්න</translation>
     </message>
     <message>
         <source>Reload page</source>
-        <translation type="unfinished"></translation>
+        <translation>පිටුව නැවත පූරණය කරන්න</translation>
     </message>
     <message>
         <source>Remove custom model</source>
-        <translation type="unfinished"></translation>
+        <translation>අභිරුචි මාදිලිය ඉවත් කරන්න</translation>
     </message>
     <message>
         <source>Remove workspace</source>
-        <translation type="unfinished"></translation>
+        <translation>වැඩ අවකාශය ඉවත් කරන්න</translation>
     </message>
     <message>
         <source>Restore virtual iOS system</source>
-        <translation type="unfinished"></translation>
+        <translation>අතක්සුවික iOS පද්ධතිය ප්‍රතිස්ථාපනය කරන්න</translation>
     </message>
     <message>
         <source>Run JavaScript</source>
-        <translation type="unfinished"></translation>
+        <translation>JavaScript ධාවනය කරන්න</translation>
     </message>
     <message>
         <source>Run PMP firmware</source>
-        <translation type="unfinished"></translation>
+        <translation>PMP ෆර්ම්වේයාරය ධාවනය කරන්න</translation>
     </message>
     <message>
         <source>Run XCTest / XCUITest</source>
-        <translation type="unfinished"></translation>
+        <translation>XCTest / XCUITest ධාවනය කරන්න</translation>
     </message>
     <message>
         <source>Run iOS guest command</source>
-        <translation type="unfinished"></translation>
+        <translation>iOS අතිථි විධානය ධාවනය කරන්න</translation>
     </message>
     <message>
         <source>Run native tests</source>
-        <translation type="unfinished"></translation>
+        <translation>ස්වදේශීය පරීක්ෂණ ධාවනය කරන්න</translation>
     </message>
     <message>
         <source>Record UI test</source>
-        <translation type="unfinished"></translation>
+        <translation>UI පරීක්ෂණයක් පටිගත කරන්න</translation>
     </message>
     <message>
         <source>Mark tappable elements</source>
-        <translation type="unfinished"></translation>
+        <translation>තට්ටු කළ හැකි අංග සලකුණු කරන්න</translation>
     </message>
     <message>
         <source>Tap a mark</source>
-        <translation type="unfinished"></translation>
+        <translation>සලකුණක් තට්ටු කරන්න</translation>
     </message>
     <message>
         <source>Read UI tree as text</source>
-        <translation type="unfinished"></translation>
+        <translation>UI ගස පෙළක් ලෙස කියවන්න</translation>
     </message>
     <message>
         <source>Read text on screen</source>
-        <translation type="unfinished"></translation>
+        <translation>තිරයේ පෙළ කියවන්න</translation>
     </message>
     <message>
         <source>Compare two screens</source>
-        <translation type="unfinished"></translation>
+        <translation>තිර දෙකක් සසඳන්න</translation>
     </message>
     <message>
         <source>Wait for text or a steady screen</source>
-        <translation type="unfinished"></translation>
+        <translation>පෙළක් හෝ ස්ථාවර තිරයක් එනතුරු රැඳී සිටින්න</translation>
     </message>
     <message>
         <source>Export a screen</source>
-        <translation type="unfinished"></translation>
+        <translation>තිරයක් අපනයනය කරන්න</translation>
     </message>
     <message>
         <source>Export screens of several devices</source>
-        <translation type="unfinished"></translation>
+        <translation>උපාංග කිහිපයක තිර අපනයනය කරන්න</translation>
     </message>
     <message>
         <source>Check UI test scenario</source>
-        <translation type="unfinished"></translation>
+        <translation>UI පරීක්ෂණ සිදුවීම පරීක්ෂා කරන්න</translation>
     </message>
     <message>
         <source>Set up Android text input</source>
-        <translation type="unfinished"></translation>
+        <translation>Android පෙළ ආදානය පිහිටුවන්න</translation>
     </message>
     <message>
         <source>Check Android text input</source>
-        <translation type="unfinished"></translation>
+        <translation>Android පෙළ ආදානය පරීක්ෂා කරන්න</translation>
     </message>
     <message>
         <source>Clean up old jobs and reports</source>
-        <translation type="unfinished"></translation>
+        <translation>පැරණි කාර්ය සහ වාර්තා පිරිසිදු කරන්න</translation>
     </message>
     <message>
         <source>Write a bug report bundle</source>
-        <translation type="unfinished"></translation>
+        <translation>දෝෂ වාර්තා බන්ඩලයක් ලියන්න</translation>
     </message>
     <message>
         <source>Read test results</source>
-        <translation type="unfinished"></translation>
+        <translation>පරීක්ෂණ ප්‍රතිඵල කියවන්න</translation>
     </message>
     <message>
         <source>Read code coverage</source>
-        <translation type="unfinished"></translation>
+        <translation>කේත ආවරණය කියවන්න</translation>
     </message>
     <message>
         <source>Write HTML test report</source>
-        <translation type="unfinished"></translation>
+        <translation>HTML පරීක්ෂණ වාර්තාවක් ලියන්න</translation>
     </message>
     <message>
         <source>Test pass-rate history</source>
-        <translation type="unfinished"></translation>
+        <translation>පරීක්ෂණ සාර්ථකතා අනුපාත ඉතිහාසය</translation>
     </message>
     <message>
         <source>Select affected tests</source>
-        <translation type="unfinished"></translation>
+        <translation>බලපෑමට ලක් වූ පරීක්ෂණ තෝරන්න</translation>
     </message>
     <message>
         <source>Review screenshot baselines</source>
-        <translation type="unfinished"></translation>
+        <translation>තිර රුව පදනම් සමාලෝචනය කරන්න</translation>
     </message>
     <message>
         <source>Find app crashes</source>
-        <translation type="unfinished"></translation>
+        <translation>යෙදුම් අසාර්ථකතා සොයන්න</translation>
     </message>
     <message>
         <source>Check Android accessibility</source>
-        <translation type="unfinished"></translation>
+        <translation>Android ප්‍රවේශ්‍යතාව පරීක්ෂා කරන්න</translation>
     </message>
     <message>
         <source>Compare with baseline image</source>
-        <translation type="unfinished"></translation>
+        <translation>පදනම් රූපය සමඟ සසඳන්න</translation>
     </message>
     <message>
         <source>Run on Mac</source>
-        <translation type="unfinished"></translation>
+        <translation>Mac මත ධාවනය කරන්න</translation>
     </message>
     <message>
         <source>Run steps in order</source>
-        <translation type="unfinished"></translation>
+        <translation>පියවර අනුපිළිවෙලට ධාවනය කරන්න</translation>
     </message>
     <message>
         <source>Run on every Android device</source>
-        <translation type="unfinished"></translation>
+        <translation>සෑම Android උපාංගයකම ධාවනය කරන්න</translation>
     </message>
     <message>
         <source>Run workspace</source>
-        <translation type="unfinished"></translation>
+        <translation>වැඩ අවකාශය ධාවනය කරන්න</translation>
     </message>
     <message>
         <source>Runtime status</source>
-        <translation type="unfinished"></translation>
+        <translation>ධාවන කාල තත්ත්වය</translation>
     </message>
     <message>
         <source>SDK packages</source>
-        <translation type="unfinished"></translation>
+        <translation>SDK පැකේජ</translation>
     </message>
     <message>
         <source>Save source file</source>
-        <translation type="unfinished"></translation>
+        <translation>මූලාශ්‍ර ගොනුව සුරකින්න</translation>
     </message>
     <message>
         <source>Save workspace</source>
-        <translation type="unfinished"></translation>
+        <translation>වැඩ අවකාශය සුරකින්න</translation>
     </message>
     <message>
         <source>Search project</source>
-        <translation type="unfinished"></translation>
+        <translation>ව්‍යාපෘතිය සොයන්න</translation>
     </message>
     <message>
         <source>Set app version</source>
-        <translation type="unfinished"></translation>
+        <translation>යෙදුම් අනුවාදය සකසන්න</translation>
     </message>
     <message>
         <source>Check Android release readiness</source>
-        <translation type="unfinished"></translation>
+        <translation>Android නිකුතු සූදානම්භාවය පරීක්ෂා කරන්න</translation>
     </message>
     <message>
         <source>Write Play release notes</source>
-        <translation type="unfinished"></translation>
+        <translation>Play නිකුතු සටහන් ලියන්න</translation>
     </message>
     <message>
         <source>Set breakpoints</source>
-        <translation type="unfinished"></translation>
+        <translation>බිඳුම් ලක්ෂ්‍ය සකසන්න</translation>
     </message>
     <message>
         <source>Set emulator display</source>
-        <translation type="unfinished"></translation>
+        <translation>ඉමියුලේටර සංදර්ශකය සකසන්න</translation>
     </message>
     <message>
         <source>Set emulator performance</source>
-        <translation type="unfinished"></translation>
+        <translation>ඉමියුලේටර කාර්ය සාධනය සකසන්න</translation>
     </message>
     <message>
         <source>Set up iPhone connection</source>
-        <translation type="unfinished"></translation>
+        <translation>iPhone සම්බන්ධතාව පිහිටුවන්න</translation>
     </message>
     <message>
         <source>Set up toolchain</source>
-        <translation type="unfinished"></translation>
+        <translation>මෙවලම් කට්ටලය පිහිටුවන්න</translation>
     </message>
     <message>
         <source>Set up virtual iOS device</source>
-        <translation type="unfinished"></translation>
+        <translation>අතක්සුවික iOS උපාංගය පිහිටුවන්න</translation>
     </message>
     <message>
         <source>Settings</source>
-        <translation type="unfinished"></translation>
+        <translation>සැකසුම්</translation>
     </message>
     <message>
         <source>Show Android live</source>
-        <translation type="unfinished"></translation>
+        <translation>Android සජීවීව පෙන්වන්න</translation>
     </message>
     <message>
         <source>Show iPhone apps</source>
-        <translation type="unfinished"></translation>
+        <translation>iPhone යෙදුම් පෙන්වන්න</translation>
     </message>
     <message>
         <source>Show project files</source>
-        <translation type="unfinished"></translation>
+        <translation>ව්‍යාපෘති ගොනු පෙන්වන්න</translation>
     </message>
     <message>
         <source>Sign Android release</source>
-        <translation type="unfinished"></translation>
+        <translation>Android නිකුතුව අත්සන් කරන්න</translation>
     </message>
     <message>
         <source>Start Android activity</source>
-        <translation type="unfinished"></translation>
+        <translation>Android activity ආරම්භ කරන්න</translation>
     </message>
     <message>
         <source>Start build / test</source>
-        <translation type="unfinished"></translation>
+        <translation>ගොඩනැගීම / පරීක්ෂණය ආරම්භ කරන්න</translation>
     </message>
     <message>
         <source>Start debugger</source>
-        <translation type="unfinished"></translation>
+        <translation>නිදොස්කරු ආරම්භ කරන්න</translation>
     </message>
     <message>
         <source>Start emulator</source>
-        <translation type="unfinished"></translation>
+        <translation>ඉමියුලේටරය ආරම්භ කරන්න</translation>
     </message>
     <message>
         <source>Start iOS test run</source>
-        <translation type="unfinished"></translation>
+        <translation>iOS පරීක්ෂණ ධාවනය ආරම්භ කරන්න</translation>
     </message>
     <message>
         <source>Start virtual iOS USB access</source>
-        <translation type="unfinished"></translation>
+        <translation>අතක්සුවික iOS USB ප්‍රවේශය ආරම්භ කරන්න</translation>
     </message>
     <message>
         <source>Start virtual iOS platform</source>
-        <translation type="unfinished"></translation>
+        <translation>අතක්සුවික iOS වේදිකාව ආරම්භ කරන්න</translation>
     </message>
     <message>
         <source>Start virtual iOS device</source>
-        <translation type="unfinished"></translation>
+        <translation>අතක්සුවික iOS උපාංගය ආරම්භ කරන්න</translation>
     </message>
     <message>
         <source>Stop virtual iOS device</source>
-        <translation type="unfinished"></translation>
+        <translation>අතක්සුවික iOS උපාංගය නවත්වන්න</translation>
     </message>
     <message>
         <source>Unlock virtual iOS device</source>
-        <translation type="unfinished"></translation>
+        <translation>අතක්සුවික iOS උපාංගයේ අගුළු හරින්න</translation>
     </message>
     <message>
         <source>Install app on running virtual iOS device</source>
-        <translation type="unfinished"></translation>
+        <translation>ධාවනය වන අතක්සුවික iOS උපාංගයේ යෙදුම ස්ථාපනය කරන්න</translation>
     </message>
     <message>
         <source>Debug process on virtual iOS device</source>
-        <translation type="unfinished"></translation>
+        <translation>අතක්සුවික iOS උපාංගයේ ක්‍රියාවලිය නිදොස් කරන්න</translation>
     </message>
     <message>
         <source>Screenshot of virtual iOS device</source>
-        <translation type="unfinished"></translation>
+        <translation>අතක්සුවික iOS උපාංගයේ තිර රුව</translation>
     </message>
     <message>
         <source>Apps of virtual iOS device</source>
-        <translation type="unfinished"></translation>
+        <translation>අතක්සුවික iOS උපාංගයේ යෙදුම්</translation>
     </message>
     <message>
         <source>Save crash reports of virtual iOS device</source>
-        <translation type="unfinished"></translation>
+        <translation>අතක්සුවික iOS උපාංගයේ අසාර්ථකතා වාර්තා සුරකින්න</translation>
     </message>
     <message>
         <source>Clean up virtual iOS device disk copies</source>
-        <translation type="unfinished"></translation>
+        <translation>අතක්සුවික iOS උපාංගයේ තැටි පිටපත් පිරිසිදු කරන්න</translation>
     </message>
     <message>
         <source>Record virtual iOS device screen</source>
-        <translation type="unfinished"></translation>
+        <translation>අතක්සුවික iOS උපාංග තිරය පටිගත කරන්න</translation>
     </message>
     <message>
         <source>Stream device audio</source>
-        <translation type="unfinished"></translation>
+        <translation>උපාංග ශබ්දය ස්ට්‍රීම් කරන්න</translation>
     </message>
     <message>
         <source>Swift toolchain</source>
-        <translation type="unfinished"></translation>
+        <translation>Swift මෙවලම් කට්ටලය</translation>
     </message>
     <message>
         <source>Tap / swipe / input</source>
-        <translation type="unfinished"></translation>
+        <translation>තට්ටු / ස්වයිප් / ආදානය</translation>
     </message>
     <message>
         <source>Transfer project to Mac</source>
-        <translation type="unfinished"></translation>
+        <translation>ව්‍යාපෘතිය Mac වෙත මාරු කරන්න</translation>
     </message>
     <message>
         <source>Upload App Store build</source>
-        <translation type="unfinished"></translation>
+        <translation>App Store ගොඩනැගීම උඩුගත කරන්න</translation>
     </message>
     <message>
         <source>Verify release signature</source>
-        <translation type="unfinished"></translation>
+        <translation>නිකුතු අත්සන තහවුරු කරන්න</translation>
     </message>
     <message>
         <source>Check signing keys</source>
-        <translation type="unfinished"></translation>
+        <translation>අත්සන් යතුරු පරීක්ෂා කරන්න</translation>
     </message>
     <message>
         <source>View build plan</source>
-        <translation type="unfinished"></translation>
+        <translation>ගොඩනැගීමේ සැලසුම බලන්න</translation>
     </message>
     <message>
         <source>Check dependency updates</source>
-        <translation type="unfinished"></translation>
+        <translation>යැපෙන්වල යාවත්කාලීන කිරීම් පරීක්ෂා කරන්න</translation>
     </message>
     <message>
         <source>Analyze project code</source>
-        <translation type="unfinished"></translation>
+        <translation>ව්‍යාපෘති කේතය විශ්ලේෂණය කරන්න</translation>
     </message>
     <message>
         <source>Virtual iOS device: status</source>
-        <translation type="unfinished"></translation>
+        <translation>අතක්සුවික iOS උපාංගය: තත්ත්වය</translation>
     </message>
     <message>
         <source>Set up the virtual iOS device</source>
-        <translation type="unfinished"></translation>
+        <translation>අතක්සුවික iOS උපාංගය පිහිටුවන්න</translation>
     </message>
     <message>
         <source>Check this machine for the virtual iOS device</source>
-        <translation type="unfinished"></translation>
+        <translation>අතක්සුවික iOS උපාංගය සඳහා මෙම යන්ත්‍රය පරීක්ෂා කරන්න</translation>
     </message>
     <message>
         <source>Check the virtual iOS device</source>
-        <translation type="unfinished"></translation>
+        <translation>අතක්සුවික iOS උපාංගය පරීක්ෂා කරන්න</translation>
     </message>
     <message>
         <source>Wait for job</source>
-        <translation type="unfinished"></translation>
+        <translation>කාර්යය එනතුරු රැඳී සිටින්න</translation>
     </message>
     <message>
         <source>Job timeline</source>
-        <translation type="unfinished"></translation>
+        <translation>කාර්ය කාලරේඛාව</translation>
     </message>
     <message>
         <source>Wait for rendering</source>
-        <translation type="unfinished"></translation>
+        <translation>විදැහුම එනතුරු රැඳී සිටින්න</translation>
     </message>
     <message>
         <source>Name or pin a device</source>
-        <translation type="unfinished"></translation>
+        <translation>උපාංගයකට නමක් දෙන්න හෝ අමුණන්න</translation>
     </message>
     <message>
         <source>Pair over Wi-Fi by QR code</source>
-        <translation type="unfinished"></translation>
+        <translation>QR කේතය මගින් Wi-Fi හරහා යුගල කරන්න</translation>
     </message>
     <message>
         <source>Android screen preview</source>
-        <translation type="unfinished"></translation>
+        <translation>Android තිර පෙරදසුන</translation>
     </message>
     <message>
         <source>Capture store screenshots</source>
-        <translation type="unfinished"></translation>
+        <translation>වෙළඳසැල තිර රුව ග්‍රහණය කරන්න</translation>
     </message>
     <message>
         <source>Saved states of virtual iOS device</source>
-        <translation type="unfinished"></translation>
+        <translation>අතක්සුවික iOS උපාංගයේ සුරැකූ තත්ත්ව</translation>
     </message>
     <message>
         <source>Save state of virtual iOS device</source>
-        <translation type="unfinished"></translation>
+        <translation>අතක්සුවික iOS උපාංගයේ තත්ත්වය සුරකින්න</translation>
     </message>
     <message>
         <source>Delete saved state of virtual iOS device</source>
-        <translation type="unfinished"></translation>
+        <translation>අතක්සුවික iOS උපාංගයේ සුරැකූ තත්ත්වය මකන්න</translation>
     </message>
     <message>
         <source>Start virtual iOS device from saved state</source>
-        <translation type="unfinished"></translation>
+        <translation>සුරැකූ තත්ත්වයකින් අතක්සුවික iOS උපාංගය ආරම්භ කරන්න</translation>
     </message>
     <message>
         <source>Profiles of virtual iOS device</source>
-        <translation type="unfinished"></translation>
+        <translation>අතක්සුවික iOS උපාංගයේ පැතිකඩ</translation>
     </message>
     <message>
         <source>Log of virtual iOS device</source>
-        <translation type="unfinished"></translation>
+        <translation>අතක්සුවික iOS උපාංගයේ ලොගය</translation>
     </message>
     <message>
         <source>Agent policy</source>
-        <translation type="unfinished"></translation>
+        <translation>නියෝජිත ප්‍රතිපත්තිය</translation>
     </message>
     <message>
         <source>Audit log</source>
-        <translation type="unfinished"></translation>
+        <translation>විගණන ලොගය</translation>
     </message>
     <message>
         <source>Read a saved result</source>
-        <translation type="unfinished"></translation>
+        <translation>සුරැකූ ප්‍රතිඵලයක් කියවන්න</translation>
     </message>
     <message>
         <source>Inspect Demo Studio capabilities</source>
-        <translation type="unfinished"></translation>
+        <translation>Demo Studio හැකියාවන් පරීක්ෂා කරන්න</translation>
     </message>
     <message>
         <source>Inspect local demo recording</source>
-        <translation type="unfinished"></translation>
+        <translation>ස්ථානීය නිරූපණ පටිගත කිරීම පරීක්ෂා කරන්න</translation>
     </message>
     <message>
         <source>Create demo scene</source>
-        <translation type="unfinished"></translation>
+        <translation>නිරූපණ දර්ශනයක් සාදන්න</translation>
     </message>
     <message>
         <source>Read demo scene</source>
-        <translation type="unfinished"></translation>
+        <translation>නිරූපණ දර්ශනය කියවන්න</translation>
     </message>
     <message>
         <source>Update demo scene</source>
-        <translation type="unfinished"></translation>
+        <translation>නිරූපණ දර්ශනය යාවත්කාලීන කරන්න</translation>
     </message>
     <message>
         <source>Render demo preview</source>
-        <translation type="unfinished"></translation>
+        <translation>නිරූපණ පෙරදසුන විදැහුම් කරන්න</translation>
     </message>
     <message>
         <source>Export demo video</source>
-        <translation type="unfinished"></translation>
+        <translation>නිරූපණ වීඩියෝව අපනයනය කරන්න</translation>
     </message>
     <message>
         <source>Validate demo export</source>
-        <translation type="unfinished"></translation>
+        <translation>නිරූපණ අපනයනය වලංගු කරන්න</translation>
     </message>
     <message>
         <source>QA environment settings</source>
-        <translation type="unfinished"></translation>
+        <translation>QA පරිසර සැකසුම්</translation>
     </message>
     <message>
         <source>List QA environments</source>
-        <translation type="unfinished"></translation>
+        <translation>QA පරිසර ලැයිස්තුගත කරන්න</translation>
     </message>
     <message>
         <source>Read QA environment</source>
-        <translation type="unfinished"></translation>
+        <translation>QA පරිසරය කියවන්න</translation>
     </message>
     <message>
         <source>Save QA environment</source>
-        <translation type="unfinished"></translation>
+        <translation>QA පරිසරය සුරකින්න</translation>
     </message>
     <message>
         <source>Delete QA environment</source>
-        <translation type="unfinished"></translation>
+        <translation>QA පරිසරය මකන්න</translation>
     </message>
     <message>
         <source>Export QA environment</source>
-        <translation type="unfinished"></translation>
+        <translation>QA පරිසරය අපනයනය කරන්න</translation>
     </message>
     <message>
         <source>Import QA environment</source>
-        <translation type="unfinished"></translation>
+        <translation>QA පරිසරය ආයාත කරන්න</translation>
     </message>
     <message>
         <source>Read QA environment of device</source>
-        <translation type="unfinished"></translation>
+        <translation>උපාංගයේ QA පරිසරය කියවන්න</translation>
     </message>
     <message>
         <source>Plan QA environment</source>
-        <translation type="unfinished"></translation>
+        <translation>QA පරිසරය සැලසුම් කරන්න</translation>
     </message>
     <message>
         <source>Apply QA environment</source>
-        <translation type="unfinished"></translation>
+        <translation>QA පරිසරය යොදන්න</translation>
     </message>
     <message>
         <source>Restore device settings</source>
-        <translation type="unfinished"></translation>
+        <translation>උපාංග සැකසුම් ප්‍රතිස්ථාපනය කරන්න</translation>
     </message>
     <message>
         <source>List restore points</source>
-        <translation type="unfinished"></translation>
+        <translation>ප්‍රතිස්ථාපන ලක්ෂ්‍ය ලැයිස්තුගත කරන්න</translation>
     </message>
     <message>
         <source>Emulator disk usage</source>
-        <translation type="unfinished"></translation>
+        <translation>ඉමියුලේටර තැටි භාවිතය</translation>
     </message>
     <message>
         <source>Duplicate, rename or wipe emulator</source>
-        <translation type="unfinished"></translation>
+        <translation>ඉමියුලේටරය අනුපිටපත් කරන්න, නැවත නම් කරන්න හෝ පිසදමන්න</translation>
     </message>
     <message>
         <source>Plan emulator setup</source>
-        <translation type="unfinished"></translation>
+        <translation>ඉමියුලේටර පිහිටුවීම සැලසුම් කරන්න</translation>
     </message>
     <message>
         <source>Set up emulator</source>
-        <translation type="unfinished"></translation>
+        <translation>ඉමියුලේටරය පිහිටුවන්න</translation>
     </message>
     <message>
         <source>Ask the person to act</source>
-        <translation type="unfinished"></translation>
+        <translation>පුද්ගලයාට ක්‍රියා කරන්නැයි ඉල්ලන්න</translation>
     </message>
     <message>
         <source>Draft a bug report</source>
-        <translation type="unfinished"></translation>
+        <translation>දෝෂ වාර්තාවක කෙටුමක් සකසන්න</translation>
     </message>
     <message>
         <source>List handoffs</source>
-        <translation type="unfinished"></translation>
+        <translation>භාරදීම් ලැයිස්තුගත කරන්න</translation>
     </message>
     <message>
         <source>Observe a session</source>
-        <translation type="unfinished"></translation>
+        <translation>සැසියක් නිරීක්ෂණය කරන්න</translation>
     </message>
     <message>
         <source>Ordered input batch</source>
-        <translation type="unfinished"></translation>
+        <translation>අනුපිළිවෙලකට සකස් කළ ආදාන කාණ්ඩය</translation>
     </message>
     <message>
         <source>Read a handoff</source>
-        <translation type="unfinished"></translation>
+        <translation>භාරදීමක් කියවන්න</translation>
     </message>
     <message>
         <source>The person is done</source>
-        <translation type="unfinished"></translation>
+        <translation>පුද්ගලයා අවසන් කළේය</translation>
     </message>
     <message>
         <source>Timestamped gesture trace</source>
-        <translation type="unfinished"></translation>
+        <translation>කාල සටහන් සහිත ඉඟි සලකුණ</translation>
     </message>
     <message>
         <source>Wait for the person</source>
-        <translation type="unfinished"></translation>
+        <translation>පුද්ගලයා එනතුරු රැඳී සිටින්න</translation>
     </message>
     <message>
         <source>Withdraw a handoff</source>
-        <translation type="unfinished"></translation>
+        <translation>භාරදීමක් ආපසු ගන්න</translation>
     </message>
     <message>
         <source>Find a device by name</source>
-        <translation type="unfinished"></translation>
+        <translation>නමින් උපාංගයක් සොයන්න</translation>
     </message>
     <message>
         <source>Play a GPX route</source>
-        <translation type="unfinished"></translation>
+        <translation>GPX මාර්ගයක් ධාවනය කරන්න</translation>
     </message>
     <message>
         <source>Read a GPX route</source>
-        <translation type="unfinished"></translation>
+        <translation>GPX මාර්ගයක් කියවන්න</translation>
     </message>
     <message>
         <source>Route playback status</source>
-        <translation type="unfinished"></translation>
+        <translation>මාර්ග ධාවන තත්ත්වය</translation>
     </message>
 </context>
 <context>
     <name>ProfileWorkspace</name>
     <message>
         <source>% maximum increase</source>
-        <translation type="unfinished"></translation>
+        <translation>% උපරිම වැඩිවීම</translation>
     </message>
     <message>
         <source>Analyze</source>
-        <translation type="unfinished"></translation>
+        <translation>විශ්ලේෂණය කරන්න</translation>
     </message>
     <message>
         <source>Application ID · e.g. com.example.app</source>
-        <translation type="unfinished"></translation>
+        <translation>යෙදුම් ID · උදා. com.example.app</translation>
     </message>
     <message>
         <source>Choose file</source>
-        <translation type="unfinished"></translation>
+        <translation>ගොනුව තෝරන්න</translation>
     </message>
     <message>
         <source>Compare</source>
-        <translation type="unfinished"></translation>
+        <translation>සසඳන්න</translation>
     </message>
     <message>
         <source>Duration (seconds)</source>
-        <translation type="unfinished"></translation>
+        <translation>කාලය (තත්පර)</translation>
     </message>
     <message>
         <source>Frame time</source>
-        <translation type="unfinished"></translation>
+        <translation>රාමු කාලය</translation>
     </message>
     <message>
         <source>Memory</source>
-        <translation type="unfinished"></translation>
+        <translation>මතකය</translation>
     </message>
     <message>
         <source>Path to the Perfetto trace (.pftrace)</source>
-        <translation type="unfinished"></translation>
+        <translation>Perfetto ලුහුබැඳීමේ මාර්ගය (.pftrace)</translation>
     </message>
     <message>
         <source>Previous JSON report</source>
-        <translation type="unfinished"></translation>
+        <translation>පෙර JSON වාර්තාව</translation>
     </message>
     <message>
         <source>Record</source>
-        <translation type="unfinished"></translation>
+        <translation>පටිගත කරන්න</translation>
     </message>
     <message>
         <source>Save JSON report as…</source>
-        <translation type="unfinished"></translation>
+        <translation>JSON වාර්තාව ලෙස සුරකින්න…</translation>
     </message>
     <message>
         <source>not available</source>
-        <translation type="unfinished"></translation>
+        <translation>නොමැත</translation>
     </message>
     <message>
         <source>Record a trace</source>
-        <translation type="unfinished"></translation>
+        <translation>ලුහුබැඳීමක් පටිගත කරන්න</translation>
     </message>
     <message>
         <source>Use your app while it records. You get its CPU time, memory and frame times.</source>
-        <translation type="unfinished"></translation>
+        <translation>පටිගත කරන අතරතුර ඔබේ යෙදුම භාවිත කරන්න. එහි CPU කාලය, මතකය සහ රාමු කාල ඔබට ලැබේ.</translation>
     </message>
     <message>
         <source>Pick a phone under Devices first.</source>
-        <translation type="unfinished"></translation>
+        <translation>පළමුව උපාංග යටතේ දුරකථනයක් තෝරන්න.</translation>
     </message>
     <message>
         <source>Catch regressions</source>
-        <translation type="unfinished"></translation>
+        <translation>පසුබැසීම් හඳුනා ගන්න</translation>
     </message>
 </context>
 <context>
     <name>ReleaseWorkspace</name>
     <message>
         <source>APK / AAB to sign</source>
-        <translation type="unfinished"></translation>
+        <translation>අත්සන් කළ යුතු APK / AAB</translation>
     </message>
     <message>
         <source>Build iOS archive</source>
-        <translation type="unfinished"></translation>
+        <translation>iOS සංරක්ෂිතය ගොඩනඟන්න</translation>
     </message>
     <message>
         <source>Commit Play change</source>
-        <translation type="unfinished"></translation>
+        <translation>Play වෙනස්කම තහවුරු කරන්න</translation>
     </message>
     <message>
         <source>Create new keystore</source>
-        <translation type="unfinished"></translation>
+        <translation>නව keystore එකක් සාදන්න</translation>
     </message>
     <message>
         <source>Export IPA</source>
-        <translation type="unfinished"></translation>
+        <translation>IPA අපනයනය කරන්න</translation>
     </message>
     <message>
         <source>Key alias</source>
-        <translation type="unfinished"></translation>
+        <translation>යතුරු අන්වර්ථ නාමය</translation>
     </message>
     <message>
         <source>New signed output file</source>
-        <translation type="unfinished"></translation>
+        <translation>නව අත්සන් කළ ප්‍රතිදාන ගොනුව</translation>
     </message>
     <message>
         <source>Prepare Play upload</source>
-        <translation type="unfinished"></translation>
+        <translation>Play උඩුගත කිරීම සකසන්න</translation>
     </message>
     <message>
         <source>Protected password file · readable by its owner only</source>
-        <translation type="unfinished"></translation>
+        <translation>ආරක්ෂිත මුරපද ගොනුව · එහි හිමිකරුට පමණක් කියවිය හැක</translation>
     </message>
     <message>
         <source>Set in the open project</source>
-        <translation type="unfinished"></translation>
+        <translation>විවෘත ව්‍යාපෘතියේ සකසන්න</translation>
     </message>
     <message>
         <source>Sign &amp; verify</source>
-        <translation type="unfinished"></translation>
+        <translation>අත්සන් කර තහවුරු කරන්න</translation>
     </message>
     <message>
         <source>Verify signature</source>
-        <translation type="unfinished"></translation>
+        <translation>අත්සන තහවුරු කරන්න</translation>
     </message>
     <message>
         <source>Version &amp; build number</source>
-        <translation type="unfinished"></translation>
+        <translation>අනුවාදය සහ ගොඩනැගීම් අංකය</translation>
     </message>
     <message>
         <source>Sign your app</source>
-        <translation type="unfinished"></translation>
+        <translation>ඔබේ යෙදුම අත්සන් කරන්න</translation>
     </message>
     <message>
         <source>Your keys stay on this computer. Nothing is released until the check passes.</source>
-        <translation type="unfinished"></translation>
+        <translation>ඔබේ යතුරු මෙම පරිගණකයේම රැඳේ. පරීක්ෂාව සාර්ථක වනතුරු කිසිවක් නිකුත් නොකෙරේ.</translation>
     </message>
     <message>
         <source>Google Play needs an authorized service account. Apple needs a Mac with Xcode and your signing keys.</source>
-        <translation type="unfinished"></translation>
+        <translation>Google Play වලට බලය ලත් සේවා ගිණුමක් අවශ්‍යයි. Apple වලට Xcode සහිත Mac එකක් සහ ඔබේ අත්සන් යතුරු අවශ්‍යයි.</translation>
     </message>
     <message>
         <source>Build number</source>
-        <translation type="unfinished"></translation>
+        <translation>ගොඩනැගීම් අංකය</translation>
     </message>
 </context>
 <context>
     <name>StageLogPane</name>
     <message>
         <source>Device log</source>
-        <translation type="unfinished"></translation>
+        <translation>උපාංග ලොගය</translation>
     </message>
     <message>
         <source>Job log</source>
-        <translation type="unfinished"></translation>
+        <translation>කාර්ය ලොගය</translation>
     </message>
     <message>
         <source>Open under Builds &amp; jobs</source>
-        <translation type="unfinished"></translation>
+        <translation>ගොඩනැගීම් සහ කාර්ය යටතේ විවෘත කරන්න</translation>
     </message>
     <message>
         <source>Hide the log</source>
-        <translation type="unfinished"></translation>
+        <translation>ලොගය සඟවන්න</translation>
     </message>
     <message>
         <source>No device is live.</source>
-        <translation type="unfinished"></translation>
+        <translation>කිසිදු උපාංගයක් සජීවී නොවේ.</translation>
     </message>
     <message>
         <source>Connect a device and its log runs here, beside its screen.</source>
-        <translation type="unfinished"></translation>
+        <translation>උපාංගයක් සම්බන්ධ කරන්න; එහි ලොගය එහි තිරය අසල මෙහි දිවයි.</translation>
     </message>
     <message>
         <source>No job yet.</source>
-        <translation type="unfinished"></translation>
+        <translation>තවමත් කාර්යයක් නැත.</translation>
     </message>
     <message>
         <source>Run your app or start a build, and its log follows here.</source>
-        <translation type="unfinished"></translation>
+        <translation>ඔබේ යෙදුම ධාවනය කරන්න හෝ ගොඩනැගීමක් ආරම්භ කරන්න; එහි ලොගය මෙහි අනුගමනය වේ.</translation>
     </message>
     <message>
         <source>Waiting for log lines…</source>
-        <translation type="unfinished"></translation>
+        <translation>ලොග පේළි එනතුරු රැඳී සිටිමින්…</translation>
     </message>
     <message>
         <source>Try again</source>
-        <translation type="unfinished"></translation>
+        <translation>නැවත උත්සාහ කරන්න</translation>
     </message>
     <message>
         <source>App launch</source>
-        <translation type="unfinished"></translation>
+        <translation>යෙදුම් දියත් කිරීම</translation>
     </message>
 </context>
 <context>
     <name>StudioDialog</name>
     <message>
         <source>Apply</source>
-        <translation type="unfinished"></translation>
+        <translation>යොදන්න</translation>
     </message>
     <message>
         <source>Cancel</source>
-        <translation type="unfinished"></translation>
+        <translation>අවලංගු කරන්න</translation>
     </message>
     <message>
         <source>Close</source>
-        <translation type="unfinished"></translation>
+        <translation>වසන්න</translation>
     </message>
     <message>
         <source>Discard</source>
-        <translation type="unfinished"></translation>
+        <translation>ඉවත් කරන්න</translation>
     </message>
     <message>
         <source>No</source>
-        <translation type="unfinished"></translation>
+        <translation>නැත</translation>
     </message>
     <message>
         <source>Open</source>
-        <translation type="unfinished"></translation>
+        <translation>විවෘත කරන්න</translation>
     </message>
     <message>
         <source>Reset</source>
-        <translation type="unfinished"></translation>
+        <translation>යළි සකසන්න</translation>
     </message>
     <message>
         <source>Save</source>
-        <translation type="unfinished"></translation>
+        <translation>සුරකින්න</translation>
     </message>
     <message>
         <source>Yes</source>
-        <translation type="unfinished"></translation>
+        <translation>ඔව්</translation>
     </message>
 </context>
 <context>
     <name>TestWorkspace</name>
     <message>
         <source>Accessibility description · exact</source>
-        <translation type="unfinished"></translation>
+        <translation>ප්‍රවේශ්‍යතා විස්තරය · නිවැරදිව</translation>
     </message>
     <message>
         <source>Choose</source>
-        <translation type="unfinished"></translation>
+        <translation>තෝරන්න</translation>
     </message>
     <message>
         <source>Device IDs separated by commas; empty = selected device</source>
-        <translation type="unfinished"></translation>
+        <translation>කොමාවලින් වෙන් කළ උපාංග ID; හිස් = තෝරාගත් උපාංගය</translation>
     </message>
     <message>
         <source>Enter a text, resource ID or description</source>
-        <translation type="unfinished"></translation>
+        <translation>පෙළක්, සම්පත් ID එකක් හෝ විස්තරයක් ඇතුළත් කරන්න</translation>
     </message>
     <message>
         <source>Fill in</source>
-        <translation type="unfinished"></translation>
+        <translation>පුරවන්න</translation>
     </message>
     <message>
         <source>Find &amp; wait</source>
-        <translation type="unfinished"></translation>
+        <translation>සොයා රැඳී සිටින්න</translation>
     </message>
     <message>
         <source>Input text</source>
-        <translation type="unfinished"></translation>
+        <translation>පෙළ ඇතුළත් කරන්න</translation>
     </message>
     <message>
         <source>JSON scenario</source>
-        <translation type="unfinished"></translation>
+        <translation>JSON සිදුවීම</translation>
     </message>
     <message>
         <source>Long press</source>
-        <translation type="unfinished"></translation>
+        <translation>දිගු ඔබ්බාලීම</translation>
     </message>
     <message>
         <source>New, empty directory for JUnit, JSON and screenshots</source>
-        <translation type="unfinished"></translation>
+        <translation>JUnit, JSON සහ තිර රුව සඳහා නව, හිස් නාමාවලියක්</translation>
     </message>
     <message>
         <source>Resource ID · e.g. app.example:id/submit</source>
-        <translation type="unfinished"></translation>
+        <translation>සම්පත් ID · උදා. app.example:id/submit</translation>
     </message>
     <message>
         <source>Start scenario</source>
-        <translation type="unfinished"></translation>
+        <translation>සිදුවීම ආරම්භ කරන්න</translation>
     </message>
     <message>
         <source>Tap</source>
-        <translation type="unfinished"></translation>
+        <translation>තට්ටු කරන්න</translation>
     </message>
     <message>
         <source>Visible text · exact</source>
-        <translation type="unfinished"></translation>
+        <translation>දිස්වන පෙළ · නිවැරදිව</translation>
     </message>
     <message>
         <source>Test your Android app</source>
-        <translation type="unfinished"></translation>
+        <translation>ඔබේ Android යෙදුම පරීක්ෂා කරන්න</translation>
     </message>
     <message>
         <source>Pick an emulator or phone under Devices first.</source>
-        <translation type="unfinished"></translation>
+        <translation>පළමුව උපාංග යටතේ ඉමියුලේටරයක් හෝ දුරකථනයක් තෝරන්න.</translation>
     </message>
     <message>
         <source>Set up text input on the device</source>
-        <translation type="unfinished"></translation>
+        <translation>උපාංගයේ පෙළ ආදානය පිහිටුවන්න</translation>
     </message>
     <message>
         <source>Run on several devices</source>
-        <translation type="unfinished"></translation>
+        <translation>උපාංග කිහිපයක ධාවනය කරන්න</translation>
     </message>
     <message>
         <source>JUnit results and the failure screenshot stay, even when a step fails.</source>
-        <translation type="unfinished"></translation>
+        <translation>පියවරක් අසාර්ථක වූවද JUnit ප්‍රතිඵල සහ අසාර්ථකතා තිර රුව රැඳේ.</translation>
     </message>
 </context>
 <context>
     <name>Workspace</name>
     <message>
         <source>%1 is missing</source>
-        <translation type="unfinished"></translation>
+        <translation>%1 අස්ථානගතයි</translation>
     </message>
     <message>
         <source>A job is already running for this project. Use the running session or end it first.</source>
-        <translation type="unfinished"></translation>
+        <translation>මෙම ව්‍යාපෘතිය සඳහා දැනටමත් කාර්යයක් ධාවනය වේ. ධාවනය වන සැසිය භාවිත කරන්න හෝ පළමුව එය අවසන් කරන්න.</translation>
     </message>
     <message>
         <source>Agents &amp; tools</source>
-        <translation type="unfinished"></translation>
+        <translation>නියෝජිතයන් සහ මෙවලම්</translation>
     </message>
     <message>
         <source>App running</source>
-        <translation type="unfinished"></translation>
+        <translation>යෙදුම ධාවනය වේ</translation>
     </message>
     <message>
         <source>App session running</source>
-        <translation type="unfinished"></translation>
+        <translation>යෙදුම් සැසිය ධාවනය වේ</translation>
     </message>
     <message>
         <source>Application ID, e.g. com.example.app</source>
-        <translation type="unfinished"></translation>
+        <translation>යෙදුම් ID, උදා. com.example.app</translation>
     </message>
     <message>
         <source>Build &amp; run</source>
-        <translation type="unfinished"></translation>
+        <translation>ගොඩනඟා ධාවනය කරන්න</translation>
     </message>
     <message>
         <source>Building</source>
-        <translation type="unfinished"></translation>
+        <translation>ගොඩනඟමින්</translation>
     </message>
     <message>
         <source>Builds &amp; jobs</source>
-        <translation type="unfinished"></translation>
+        <translation>ගොඩනැගීම් සහ කාර්ය</translation>
     </message>
     <message>
         <source>Calibrate model</source>
-        <translation type="unfinished"></translation>
+        <translation>මාදිලිය සම්මතනය කරන්න</translation>
     </message>
     <message>
         <source>Cancel</source>
-        <translation type="unfinished"></translation>
+        <translation>අවලංගු කරන්න</translation>
     </message>
     <message>
         <source>Check code</source>
-        <translation type="unfinished"></translation>
+        <translation>කේතය පරීක්ෂා කරන්න</translation>
     </message>
     <message>
         <source>Choose a smartphone or emulator</source>
-        <translation type="unfinished"></translation>
+        <translation>ස්මාට්ෆෝනයක් හෝ ඉමියුලේටරයක් තෝරන්න</translation>
     </message>
     <message>
         <source>Choose folder</source>
-        <translation type="unfinished"></translation>
+        <translation>ෆෝල්ඩරය තෝරන්න</translation>
     </message>
     <message>
         <source>Choose project</source>
-        <translation type="unfinished"></translation>
+        <translation>ව්‍යාපෘතිය තෝරන්න</translation>
     </message>
     <message>
         <source>Completed</source>
-        <translation type="unfinished"></translation>
+        <translation>අවසන්</translation>
     </message>
     <message>
         <source>Configuration</source>
-        <translation type="unfinished"></translation>
+        <translation>වින්‍යාසය</translation>
     </message>
     <message>
         <source>Connect via Wi-Fi</source>
-        <translation type="unfinished"></translation>
+        <translation>Wi-Fi හරහා සම්බන්ධ කරන්න</translation>
     </message>
     <message>
         <source>Copy path</source>
-        <translation type="unfinished"></translation>
+        <translation>මාර්ගය පිටපත් කරන්න</translation>
     </message>
     <message>
         <source>Devices</source>
-        <translation type="unfinished"></translation>
+        <translation>උපාංග</translation>
     </message>
     <message>
         <source>Ended</source>
-        <translation type="unfinished"></translation>
+        <translation>අවසන් විය</translation>
     </message>
     <message>
         <source>Failed</source>
-        <translation type="unfinished"></translation>
+        <translation>අසාර්ථකයි</translation>
     </message>
     <message>
         <source>Files</source>
-        <translation type="unfinished"></translation>
+        <translation>ගොනු</translation>
     </message>
     <message>
         <source>Find devices</source>
-        <translation type="unfinished"></translation>
+        <translation>උපාංග සොයන්න</translation>
     </message>
     <message>
         <source>Go to project</source>
-        <translation type="unfinished"></translation>
+        <translation>ව්‍යාපෘතියට යන්න</translation>
     </message>
     <message>
         <source>Information</source>
-        <translation type="unfinished"></translation>
+        <translation>තොරතුරු</translation>
     </message>
     <message>
         <source>Install</source>
-        <translation type="unfinished"></translation>
+        <translation>ස්ථාපනය කරන්න</translation>
     </message>
     <message>
         <source>Install APK</source>
-        <translation type="unfinished"></translation>
+        <translation>APK ස්ථාපනය කරන්න</translation>
     </message>
     <message>
         <source>Install IPA</source>
-        <translation type="unfinished"></translation>
+        <translation>IPA ස්ථාපනය කරන්න</translation>
     </message>
     <message>
         <source>Install app on device</source>
-        <translation type="unfinished"></translation>
+        <translation>උපාංගයේ යෙදුම ස්ථාපනය කරන්න</translation>
     </message>
     <message>
         <source>Job running</source>
-        <translation type="unfinished"></translation>
+        <translation>කාර්යය ධාවනය වේ</translation>
     </message>
     <message>
         <source>Job started · %1</source>
-        <translation type="unfinished"></translation>
+        <translation>කාර්යය ආරම්භ විය · %1</translation>
     </message>
     <message>
         <source>Load saved workspace</source>
-        <translation type="unfinished"></translation>
+        <translation>සුරැකූ වැඩ අවකාශය පූරණය කරන්න</translation>
     </message>
     <message>
         <source>Manage devices</source>
-        <translation type="unfinished"></translation>
+        <translation>උපාංග කළමනාකරණය කරන්න</translation>
     </message>
     <message>
         <source>Mobile apps (*.apk *.ipa)</source>
-        <translation type="unfinished"></translation>
+        <translation>ජංගම යෙදුම් (*.apk *.ipa)</translation>
     </message>
     <message>
         <source>New project</source>
-        <translation type="unfinished"></translation>
+        <translation>නව ව්‍යාපෘතිය</translation>
     </message>
     <message>
         <source>No</source>
-        <translation type="unfinished"></translation>
+        <translation>නැත</translation>
     </message>
     <message>
         <source>No devices connected. Enable USB debugging or trust on the device.</source>
-        <translation type="unfinished"></translation>
+        <translation>කිසිදු උපාංගයක් සම්බන්ධ කර නැත. USB නිදොස්කරණය සක්‍රිය කරන්න හෝ උපාංගයේ විශ්වාසය තහවුරු කරන්න.</translation>
     </message>
     <message>
         <source>Open</source>
-        <translation type="unfinished"></translation>
+        <translation>විවෘත කරන්න</translation>
     </message>
     <message>
         <source>Open a project, connect a device and start a build.</source>
-        <translation type="unfinished"></translation>
+        <translation>ව්‍යාපෘතියක් විවෘත කර, උපාංගයක් සම්බන්ධ කර, ගොඩනැගීමක් ආරම්භ කරන්න.</translation>
     </message>
     <message>
         <source>Open files</source>
-        <translation type="unfinished"></translation>
+        <translation>ගොනු විවෘත කරන්න</translation>
     </message>
     <message>
         <source>Open live device</source>
-        <translation type="unfinished"></translation>
+        <translation>සජීවී උපාංගය විවෘත කරන්න</translation>
     </message>
     <message>
         <source>Package format</source>
-        <translation type="unfinished"></translation>
+        <translation>පැකේජ ආකෘතිය</translation>
     </message>
     <message>
         <source>Path to your Swift, Kotlin or Flutter project</source>
-        <translation type="unfinished"></translation>
+        <translation>ඔබේ Swift, Kotlin හෝ Flutter ව්‍යාපෘතියේ මාර්ගය</translation>
     </message>
     <message>
         <source>Platform</source>
-        <translation type="unfinished"></translation>
+        <translation>වේදිකාව</translation>
     </message>
     <message>
         <source>Project</source>
-        <translation type="unfinished"></translation>
+        <translation>ව්‍යාපෘතිය</translation>
     </message>
     <message>
         <source>Ready · %1</source>
-        <translation type="unfinished"></translation>
+        <translation>සූදානම් · %1</translation>
     </message>
     <message>
         <source>Result</source>
-        <translation type="unfinished"></translation>
+        <translation>ප්‍රතිඵලය</translation>
     </message>
     <message>
         <source>Reused running job · %1</source>
-        <translation type="unfinished"></translation>
+        <translation>ධාවනය වන කාර්යය නැවත භාවිතා කළා · %1</translation>
     </message>
     <message>
         <source>Run</source>
-        <translation type="unfinished"></translation>
+        <translation>ධාවනය කරන්න</translation>
     </message>
     <message>
         <source>Run on device</source>
-        <translation type="unfinished"></translation>
+        <translation>උපාංගය මත ධාවනය කරන්න</translation>
     </message>
     <message>
         <source>Running</source>
-        <translation type="unfinished"></translation>
+        <translation>ධාවනය වෙමින්</translation>
     </message>
     <message>
         <source>Running…</source>
-        <translation type="unfinished"></translation>
+        <translation>ධාවනය වෙමින්…</translation>
     </message>
     <message>
         <source>SDK &amp; tool paths</source>
-        <translation type="unfinished"></translation>
+        <translation>SDK සහ මෙවලම් මාර්ග</translation>
     </message>
     <message>
         <source>Save</source>
-        <translation type="unfinished"></translation>
+        <translation>සුරකින්න</translation>
     </message>
     <message>
         <source>Save device screenshot</source>
-        <translation type="unfinished"></translation>
+        <translation>උපාංග තිර රුව සුරකින්න</translation>
     </message>
     <message>
         <source>Save workspace</source>
-        <translation type="unfinished"></translation>
+        <translation>වැඩ අවකාශය සුරකින්න</translation>
     </message>
     <message>
         <source>Search tools…</source>
-        <translation type="unfinished"></translation>
+        <translation>මෙවලම් සොයන්න…</translation>
     </message>
     <message>
         <source>Set up iPhone</source>
-        <translation type="unfinished"></translation>
+        <translation>iPhone පිහිටුවන්න</translation>
     </message>
     <message>
         <source>Sign build</source>
-        <translation type="unfinished"></translation>
+        <translation>ගොඩනැගීම අත්සන් කරන්න</translation>
     </message>
     <message>
         <source>Signing &amp; release</source>
-        <translation type="unfinished"></translation>
+        <translation>අත්සන් කිරීම සහ නිකුතුව</translation>
     </message>
     <message>
         <source>Start with a project</source>
-        <translation type="unfinished"></translation>
+        <translation>ව්‍යාපෘතියකින් ආරම්භ කරන්න</translation>
     </message>
     <message>
         <source>Stopping</source>
-        <translation type="unfinished"></translation>
+        <translation>නවත්වමින්</translation>
     </message>
     <message>
         <source>Streaming sound</source>
-        <translation type="unfinished"></translation>
+        <translation>ශබ්දය ස්ට්‍රීම් කරමින්</translation>
     </message>
     <message>
         <source>Timed out</source>
-        <translation type="unfinished"></translation>
+        <translation>කල් ඉකුත් විය</translation>
     </message>
     <message>
         <source>UI tests</source>
-        <translation type="unfinished"></translation>
+        <translation>UI පරීක්ෂණ</translation>
     </message>
     <message>
         <source>Waiting</source>
-        <translation type="unfinished"></translation>
+        <translation>රැඳී සිටිමින්</translation>
     </message>
     <message>
         <source>Waiting for project</source>
-        <translation type="unfinished"></translation>
+        <translation>ව්‍යාපෘතිය එනතුරු රැඳී සිටිමින්</translation>
     </message>
     <message>
         <source>Workspace name</source>
-        <translation type="unfinished"></translation>
+        <translation>වැඩ අවකාශයේ නම</translation>
     </message>
     <message>
         <source>Yes</source>
-        <translation type="unfinished"></translation>
+        <translation>ඔව්</translation>
     </message>
     <message>
         <source>Your next build starts here</source>
-        <translation type="unfinished"></translation>
+        <translation>ඔබේ ඊළඟ ගොඩනැගීම මෙතැනින් ආරම්භ වේ</translation>
     </message>
     <message>
         <source>Choose a job to read its log.</source>
-        <translation type="unfinished"></translation>
+        <translation>ලොගය කියවීමට කාර්යයක් තෝරන්න.</translation>
     </message>
     <message>
         <source>Open your app, build it and run it on a device.</source>
-        <translation type="unfinished"></translation>
+        <translation>ඔබේ යෙදුම විවෘත කර, ගොඩනඟා, උපාංගයක ධාවනය කරන්න.</translation>
     </message>
     <message>
         <source>Phones and emulators, ready to run your app.</source>
-        <translation type="unfinished"></translation>
+        <translation>ඔබේ යෙදුම ධාවනය කිරීමට සූදානම් දුරකථන සහ ඉමියුලේටර.</translation>
     </message>
     <message>
         <source>Every build and agent job, with its logs and results.</source>
-        <translation type="unfinished"></translation>
+        <translation>සෑම ගොඩනැගීමක්ම සහ නියෝජිත කාර්යයක්ම, ඒවායේ ලොග සහ ප්‍රතිඵල සමඟ.</translation>
     </message>
     <message>
         <source>Everything your agent can do, as a form you can fill in.</source>
-        <translation type="unfinished"></translation>
+        <translation>ඔබේ නියෝජිතයාට කළ හැකි සියල්ල, ඔබට පුරවිය හැකි පෝරමයක් ලෙස.</translation>
     </message>
     <message>
         <source>Pause your app and see what it&apos;s doing.</source>
-        <translation type="unfinished"></translation>
+        <translation>ඔබේ යෙදුම විරාම කර එය කරන්නේ කුමක්දැයි බලන්න.</translation>
     </message>
     <message>
         <source>Find anything in your running app and tap it.</source>
-        <translation type="unfinished"></translation>
+        <translation>ධාවනය වන ඔබේ යෙදුමේ ඕනෑම දෙයක් සොයා එය තට්ටු කරන්න.</translation>
     </message>
     <message>
         <source>See where the time goes and catch regressions.</source>
-        <translation type="unfinished"></translation>
+        <translation>කාලය යන්නේ කොහේද බලා පසුබැසීම් හඳුනා ගන්න.</translation>
     </message>
     <message>
         <source>Search, edit and save your project&apos;s files.</source>
-        <translation type="unfinished"></translation>
+        <translation>ඔබේ ව්‍යාපෘතියේ ගොනු සොයන්න, සංස්කරණය කරන්න, සුරකින්න.</translation>
     </message>
     <message>
         <source>Sign it, version it and ship it.</source>
-        <translation type="unfinished"></translation>
+        <translation>එය අත්සන් කර, අනුවාදය සකසා, නිකුත් කරන්න.</translation>
     </message>
     <message>
         <source>Build</source>
-        <translation type="unfinished"></translation>
+        <translation>ගොඩනඟන්න</translation>
     </message>
     <message>
         <source>Show build steps</source>
-        <translation type="unfinished"></translation>
+        <translation>ගොඩනැගීමේ පියවර පෙන්වන්න</translation>
     </message>
     <message>
         <source>Plug in a phone or start an emulator under Devices.</source>
-        <translation type="unfinished"></translation>
+        <translation>උපාංග යටතේ දුරකථනයක් සම්බන්ධ කරන්න හෝ ඉමියුලේටරයක් ආරම්භ කරන්න.</translation>
     </message>
     <message>
         <source>Remember this project, platform and device together.</source>
-        <translation type="unfinished"></translation>
+        <translation>මෙම ව්‍යාපෘතිය, වේදිකාව සහ උපාංගය එකට මතක තබා ගන්න.</translation>
     </message>
     <message>
         <source>No iPhone yet.</source>
-        <translation type="unfinished"></translation>
+        <translation>තවමත් iPhone එකක් නැත.</translation>
     </message>
     <message>
         <source>No phone yet.</source>
-        <translation type="unfinished"></translation>
+        <translation>තවමත් දුරකථනයක් නැත.</translation>
     </message>
     <message>
         <source>Plug it in, unlock it and trust this computer. Setup takes you through the rest.</source>
-        <translation type="unfinished"></translation>
+        <translation>එය සම්බන්ධ කර, අගුළු හරින්න, මෙම පරිගණකය විශ්වාස කරන්න. ඉතිරි කොටස පිහිටුවීම මඟ පෙන්වයි.</translation>
     </message>
     <message>
         <source>Plug in a phone with USB debugging on, or start an emulator.</source>
-        <translation type="unfinished"></translation>
+        <translation>USB නිදොස්කරණය සක්‍රිය දුරකථනයක් සම්බන්ධ කරන්න, නැතහොත් ඉමියුලේටරයක් ආරම්භ කරන්න.</translation>
     </message>
     <message>
         <source>Build or test from the project. Your agent&apos;s jobs show up here too, with logs and results.</source>
-        <translation type="unfinished"></translation>
+        <translation>ව්‍යාපෘතියෙන් ගොඩනඟන්න හෝ පරීක්ෂා කරන්න. ඔබේ නියෝජිතයාගේ කාර්යද ලොග සහ ප්‍රතිඵල සමඟ මෙහි දිස් වේ.</translation>
     </message>
     <message>
         <source>Your agent can call every one of these over MCP or the command line.</source>
-        <translation type="unfinished"></translation>
+        <translation>ඔබේ නියෝජිතයාට මේ සෑම එකක්ම MCP හෝ විධාන පේළිය හරහා ඇමතිය හැක.</translation>
     </message>
     <message>
         <source>The result shows up here.</source>
-        <translation type="unfinished"></translation>
+        <translation>ප්‍රතිඵලය මෙහි දිස් වේ.</translation>
     </message>
     <message>
         <source>Filter the log</source>
-        <translation type="unfinished"></translation>
+        <translation>ලොගය පෙරන්න</translation>
     </message>
     <message>
         <source>All lines</source>
-        <translation type="unfinished"></translation>
+        <translation>සියලු පේළි</translation>
     </message>
     <message>
         <source>Warnings</source>
-        <translation type="unfinished"></translation>
+        <translation>අනතුරු ඇඟවීම්</translation>
     </message>
     <message>
         <source>Errors</source>
-        <translation type="unfinished"></translation>
+        <translation>දෝෂ</translation>
     </message>
     <message numerus="yes">
         <source>%n line(s)</source>
-        <translation type="unfinished">
-            <numerusform></numerusform>
-            <numerusform></numerusform>
+        <translation>
+            <numerusform>පේළි %nක්</numerusform>
+            <numerusform>පේළි %nක්</numerusform>
         </translation>
     </message>
     <message>
         <source>Copy these lines</source>
-        <translation type="unfinished"></translation>
+        <translation>මෙම පේළි පිටපත් කරන්න</translation>
     </message>
     <message>
         <source>Copy log</source>
-        <translation type="unfinished"></translation>
+        <translation>ලොගය පිටපත් කරන්න</translation>
     </message>
     <message>
         <source>No line of this log matches.</source>
-        <translation type="unfinished"></translation>
+        <translation>මෙම ලොගයේ කිසිදු පේළියක් ගැළපෙන්නේ නැත.</translation>
     </message>
     <message>
         <source>%1 s</source>
-        <translation type="unfinished"></translation>
+        <translation>තත්. %1</translation>
     </message>
     <message>
         <source>%1 min %2 s</source>
-        <translation type="unfinished"></translation>
+        <translation>මිනි. %1 තත්. %2</translation>
     </message>
     <message>
         <source>%1 h %2 min</source>
-        <translation type="unfinished"></translation>
+        <translation>පැය %1 මිනි. %2</translation>
     </message>
     <message>
         <source>All</source>
-        <translation type="unfinished"></translation>
+        <translation>සියල්ල</translation>
     </message>
     <message>
         <source>Nothing running.</source>
-        <translation type="unfinished"></translation>
+        <translation>කිසිවක් ධාවනය නොවේ.</translation>
     </message>
     <message>
         <source>No failed job.</source>
-        <translation type="unfinished"></translation>
+        <translation>අසාර්ථක කාර්යයක් නැත.</translation>
     </message>
     <message>
         <source>Open log file</source>
-        <translation type="unfinished"></translation>
+        <translation>ලොග ගොනුව විවෘත කරන්න</translation>
     </message>
     <message>
         <source>Run again</source>
-        <translation type="unfinished"></translation>
+        <translation>නැවත ධාවනය කරන්න</translation>
     </message>
     <message>
         <source>Run again · only for jobs this window started</source>
-        <translation type="unfinished"></translation>
+        <translation>නැවත ධාවනය කරන්න · මෙම කවුළුව ආරම්භ කළ කාර්ය සඳහා පමණි</translation>
     </message>
     <message>
         <source>Running</source>
         <comment>jobs filter</comment>
-        <translation type="unfinished"></translation>
+        <translation>ධාවනය වන</translation>
     </message>
     <message>
         <source>Failed</source>
         <comment>jobs filter</comment>
-        <translation type="unfinished"></translation>
+        <translation>අසාර්ථක</translation>
     </message>
     <message>
         <source>Jobs</source>
-        <translation type="unfinished"></translation>
+        <translation>කාර්ය</translation>
     </message>
     <message>
         <source>Tools</source>
-        <translation type="unfinished"></translation>
+        <translation>මෙවලම්</translation>
     </message>
     <message>
         <source>Log of %1</source>
-        <translation type="unfinished"></translation>
+        <translation>%1 හි ලොගය</translation>
     </message>
     <message>
         <source>Job log</source>
-        <translation type="unfinished"></translation>
+        <translation>කාර්ය ලොගය</translation>
     </message>
     <message>
         <source>Live log</source>
-        <translation type="unfinished"></translation>
+        <translation>සජීවී ලොගය</translation>
     </message>
     <message>
         <source>%1 must be a number</source>
-        <translation type="unfinished"></translation>
+        <translation>%1 අංකයක් විය යුතුය</translation>
     </message>
     <message>
         <source>%1 is out of range: %2</source>
-        <translation type="unfinished"></translation>
+        <translation>%1 පරාසයෙන් පිටත: %2</translation>
     </message>
     <message>
         <source>Command copied</source>
-        <translation type="unfinished"></translation>
+        <translation>විධානය පිටපත් කළා</translation>
     </message>
     <message>
         <source>This tool changes or removes something and cannot be undone. Run it?</source>
-        <translation type="unfinished"></translation>
+        <translation>මෙම මෙවලම යමක් වෙනස් කරයි හෝ ඉවත් කරයි, එය අහෝසි කළ නොහැක. ධාවනය කරන්නද?</translation>
     </message>
     <message>
         <source>Run anyway</source>
-        <translation type="unfinished"></translation>
+        <translation>කෙසේ වෙතත් ධාවනය කරන්න</translation>
     </message>
     <message>
         <source>Asks before it runs: this tool changes or removes something</source>
-        <translation type="unfinished"></translation>
+        <translation>ධාවනය කිරීමට පෙර අසයි: මෙම මෙවලම යමක් වෙනස් කරයි හෝ ඉවත් කරයි</translation>
     </message>
     <message>
         <source>Copy as command</source>
-        <translation type="unfinished"></translation>
+        <translation>විධානයක් ලෙස පිටපත් කරන්න</translation>
     </message>
     <message>
         <source>Copy this call as a tomaccoctl command for a terminal or a script</source>
-        <translation type="unfinished"></translation>
+        <translation>මෙම ඇමතුම ටර්මිනලයකට හෝ ස්ක්‍රිප්ටයකට tomaccoctl විධානයක් ලෙස පිටපත් කරන්න</translation>
     </message>
     <message>
         <source>Try again</source>
-        <translation type="unfinished"></translation>
+        <translation>නැවත උත්සාහ කරන්න</translation>
     </message>
     <message>
         <source>Dismiss</source>
-        <translation type="unfinished"></translation>
+        <translation>වසන්න</translation>
     </message>
     <message>
         <source>What to do: %1</source>
-        <translation type="unfinished"></translation>
+        <translation>කළ යුතු දේ: %1</translation>
     </message>
     <message>
         <source>No tools yet.</source>
-        <translation type="unfinished"></translation>
+        <translation>තවමත් මෙවලම් නැත.</translation>
     </message>
     <message>
         <source>The control program has not listed its tools yet.</source>
-        <translation type="unfinished"></translation>
+        <translation>පාලන වැඩසටහන තවමත් එහි මෙවලම් ලැයිස්තුගත කර නැත.</translation>
     </message>
     <message>
         <source>No tool matches “%1”.</source>
-        <translation type="unfinished"></translation>
+        <translation>“%1” සමඟ ගැළපෙන මෙවලමක් නැත.</translation>
     </message>
     <message>
         <source>Demo Studio</source>
-        <translation type="unfinished"></translation>
+        <translation>Demo Studio</translation>
     </message>
     <message>
         <source>Turn a screen recording into a video with a 3D device.</source>
-        <translation type="unfinished"></translation>
+        <translation>තිර පටිගත කිරීමක් 3D උපාංගයක් සහිත වීඩියෝවක් බවට පත් කරන්න.</translation>
     </message>
     <message>
         <source>All jobs</source>
-        <translation type="unfinished"></translation>
+        <translation>සියලු කාර්ය</translation>
     </message>
     <message>
         <source>Agent</source>
-        <translation type="unfinished"></translation>
+        <translation>නියෝජිතයා</translation>
     </message>
     <message>
         <source>Connect your coding agent</source>
-        <translation type="unfinished"></translation>
+        <translation>ඔබේ කේතන නියෝජිතයා සම්බන්ධ කරන්න</translation>
     </message>
 </context>
 <context>
     <name>main</name>
     <message>
         <source>Device profile ID from tomaccoctl call catalog.list</source>
-        <translation type="unfinished"></translation>
+        <translation>tomaccoctl call catalog.list වෙතින් උපාංග පැතිකඩ ID</translation>
     </message>
     <message>
         <source>Duo display: closed or open</source>
-        <translation type="unfinished"></translation>
+        <translation>Duo සංදර්ශකය: වසා හෝ විවෘත</translation>
     </message>
     <message>
         <source>Invalid orientation or fold position.
 </source>
-        <translation type="unfinished"></translation>
+        <translation>වලංගු නොවන දිශාවක් හෝ නැමුම් ස්ථානයක්.
+</translation>
     </message>
     <message>
         <source>Name of the agent preview session</source>
-        <translation type="unfinished"></translation>
+        <translation>නියෝජිත පෙරදසුන් සැසියේ නම</translation>
     </message>
     <message>
         <source>No web build with index.html found.
 </source>
-        <translation type="unfinished"></translation>
+        <translation>index.html සහිත වෙබ් ගොඩනැගීමක් හමු නොවීය.
+</translation>
     </message>
     <message>
         <source>Open a local web build</source>
-        <translation type="unfinished"></translation>
+        <translation>ස්ථානීය වෙබ් ගොඩනැගීමක් විවෘත කරන්න</translation>
     </message>
     <message>
         <source>Open a project in the native workspace</source>
-        <translation type="unfinished"></translation>
+        <translation>ස්වදේශීය වැඩ අවකාශයේ ව්‍යාපෘතියක් විවෘත කරන්න</translation>
     </message>
     <message>
         <source>Open a web address at startup</source>
-        <translation type="unfinished"></translation>
+        <translation>ආරම්භයේදී වෙබ් ලිපිනයක් විවෘත කරන්න</translation>
     </message>
     <message>
         <source>Orientation: portrait or landscape</source>
-        <translation type="unfinished"></translation>
+        <translation>දිශාව: සිරස් හෝ තිරස්</translation>
     </message>
     <message>
         <source>Tomacco: build, run and test native Android and iOS apps on Linux.
 Licensed under the GNU General Public License, version 2 or later.</source>
-        <translation type="unfinished"></translation>
+        <translation>Tomacco: Linux මත ස්වදේශීය Android සහ iOS යෙදුම් ගොඩනඟන්න, ධාවනය කරන්න සහ පරීක්ෂා කරන්න.
+GNU General Public License, අනුවාදය 2 හෝ පසු අනුවාදයක් යටතේ බලපත්‍රලත්.</translation>
     </message>
     <message>
         <source>Run the preview&apos;s interactive checks</source>
-        <translation type="unfinished"></translation>
+        <translation>පෙරදසුනේ අන්තර්ක්‍රියාකාරී පරීක්ෂා ධාවනය කරන්න</translation>
     </message>
     <message>
         <source>Save the window as a PNG for visual review and quit</source>
-        <translation type="unfinished"></translation>
+        <translation>දෘශ්‍ය සමාලෝචනය සඳහා කවුළුව PNG ලෙස සුරකිමෙන් පසු ඉවත් වන්න</translation>
     </message>
     <message>
         <source>Show only the detached device window; the main window stays hidden</source>
-        <translation type="unfinished"></translation>
+        <translation>වෙන් කළ උපාංග කවුළුව පමණක් පෙන්වන්න; ප්‍රධාන කවුළුව සැඟවී පවතී</translation>
     </message>
     <message>
         <source>Unknown device profile.
 </source>
-        <translation type="unfinished"></translation>
+        <translation>නොදන්නා උපාංග පැතිකඩයක්.
+</translation>
     </message>
     <message>
         <source>Show the live session with this ID, from tomaccoctl call runtime.list</source>
-        <translation type="unfinished"></translation>
+        <translation>tomaccoctl call runtime.list වෙතින් මෙම ID සහිත සජීවී සැසිය පෙන්වන්න</translation>
     </message>
     <message>
         <source>Invalid session ID.
 </source>
-        <translation type="unfinished"></translation>
+        <translation>වලංගු නොවන සැසි ID.
+</translation>
     </message>
     <message>
         <source>Unknown workspace. See --help for the available workspaces.
 </source>
-        <translation type="unfinished"></translation>
+        <translation>නොදන්නා වැඩ අවකාශයක්. ලබා ගත හැකි වැඩ අවකාශ සඳහා --help බලන්න.
+</translation>
     </message>
     <message>
         <source>Open a workspace: runtime, project, devices, ios-research, jobs, tools, debug, testing, profiling, files, release, demo or preview</source>
-        <translation type="unfinished"></translation>
+        <translation>වැඩ අවකාශයක් විවෘත කරන්න: runtime, project, devices, ios-research, jobs, tools, debug, testing, profiling, files, release, demo හෝ preview</translation>
     </message>
 </context>
 <context>
     <name>UpdateModel</name>
     <message>
         <source>Updated · restart</source>
-        <translation type="unfinished"></translation>
+        <translation>යාවත්කාලීන කළා · නැවත ආරම්භ කරන්න</translation>
     </message>
     <message>
         <source>Installing update</source>
-        <translation type="unfinished"></translation>
+        <translation>යාවත්කාලීන කිරීම ස්ථාපනය කරමින්</translation>
     </message>
     <message>
         <source>Update %1</source>
-        <translation type="unfinished"></translation>
+        <translation>%1 වෙත යාවත්කාලීන කරන්න</translation>
     </message>
     <message>
         <source>Version %1 is up to date.</source>
-        <translation type="unfinished"></translation>
+        <translation>අනුවාදය %1 යාවත්කාලීනයි.</translation>
     </message>
     <message>
         <source>Version %1 is available. You have %2.</source>
-        <translation type="unfinished"></translation>
+        <translation>අනුවාදය %1 ලබා ගත හැක. ඔබ සතුව %2 ඇත.</translation>
     </message>
     <message>
         <source>No release is available yet.</source>
-        <translation type="unfinished"></translation>
+        <translation>තවමත් නිකුතුවක් නොමැත.</translation>
     </message>
     <message>
         <source>Version %1 has no package for this system.</source>
-        <translation type="unfinished"></translation>
+        <translation>අනුවාදය %1 හි මෙම පද්ධතිය සඳහා පැකේජයක් නැත.</translation>
     </message>
     <message>
         <source>GitHub could not be reached. This computer may be offline.</source>
-        <translation type="unfinished"></translation>
+        <translation>GitHub වෙත ළඟා විය නොහැකි විය. මෙම පරිගණකය නොබැඳි විය හැක.</translation>
     </message>
     <message>
         <source>The check failed: %1</source>
-        <translation type="unfinished"></translation>
+        <translation>පරීක්ෂාව අසාර්ථක විය: %1</translation>
     </message>
     <message>
         <source>Version %1. Not checked yet.</source>
-        <translation type="unfinished"></translation>
+        <translation>අනුවාදය %1. තවම පරීක්ෂා කර නැත.</translation>
     </message>
     <message>
         <source>Updates are turned off for this build or by the environment.</source>
-        <translation type="unfinished"></translation>
+        <translation>මෙම ගොඩනැගීම සඳහා හෝ පරිසරය මගින් යාවත්කාලීන කිරීම් අක්‍රිය කර ඇත.</translation>
     </message>
     <message>
         <source>This copy runs from a source checkout. Update it with Git and a new build.</source>
-        <translation type="unfinished"></translation>
+        <translation>මෙම පිටපත මූලාශ්‍ර කේත පිටපතකින් ධාවනය වේ. එය Git සහ නව ගොඩනැගීමක් මගින් යාවත්කාලීන කරන්න.</translation>
     </message>
     <message>
         <source>This copy belongs to a system package. Update it with your package manager.</source>
-        <translation type="unfinished"></translation>
+        <translation>මෙම පිටපත පද්ධති පැකේජයකට අයත් වේ. එය ඔබේ පැකේජ කළමනාකරු මගින් යාවත්කාලීන කරන්න.</translation>
     </message>
     <message>
         <source>The installation cannot be written, so it cannot be updated here.</source>
-        <translation type="unfinished"></translation>
+        <translation>ස්ථාපනයට ලිවිය නොහැක, එබැවින් එය මෙහි යාවත්කාලීන කළ නොහැක.</translation>
     </message>
     <message>
         <source>This copy was not installed by its installer, so it is left alone.</source>
-        <translation type="unfinished"></translation>
+        <translation>මෙම පිටපත එහි ස්ථාපකය මගින් ස්ථාපනය කර නැත, එබැවින් එය නොවෙනස්ව තබයි.</translation>
     </message>
     <message>
         <source>This build has no release signing key, so it cannot verify or install updates.</source>
-        <translation type="unfinished"></translation>
+        <translation>මෙම ගොඩනැගීමට නිකුතු අත්සන් යතුරක් නැත, එබැවින් එයට යාවත්කාලීන කිරීම් සත්‍යාපනය හෝ ස්ථාපනය කළ නොහැක.</translation>
     </message>
     <message>
         <source>Version %1 is installed. Restart to use it.</source>
-        <translation type="unfinished"></translation>
+        <translation>අනුවාදය %1 ස්ථාපනය කර ඇත. එය භාවිත කිරීමට නැවත අරඹන්න.</translation>
     </message>
     <message>
         <source>Downloading, verifying and installing the update.</source>
-        <translation type="unfinished"></translation>
+        <translation>යාවත්කාලීනය බාගනිමින්, සත්‍යාපනය කරමින් සහ ස්ථාපනය කරමින්.</translation>
     </message>
     <message>
         <source>An update was interrupted. It is undone before the next installation.</source>
-        <translation type="unfinished"></translation>
+        <translation>යාවත්කාලීනයකට බාධා විය. ඊළඟ ස්ථාපනයට පෙර එය අහෝසි කෙරේ.</translation>
     </message>
     <message>
         <source>The last installation failed: %1</source>
-        <translation type="unfinished"></translation>
+        <translation>අවසාන ස්ථාපනය අසාර්ථක විය: %1</translation>
     </message>
     <message>
         <source>Installing has to wait until jobs, device sessions and the virtual iOS device have ended.</source>
-        <translation type="unfinished"></translation>
+        <translation>කාර්ය, උපාංග සැසි සහ අතථ්‍ය iOS උපාංගය අවසන් වන තුරු ස්ථාපනයට රැඳී සිටීමට සිදු වේ.</translation>
     </message>
 </context>
 <context>
     <name>UpdateNotice</name>
     <message>
         <source>Open the update settings</source>
-        <translation type="unfinished"></translation>
+        <translation>යාවත්කාලීන සැකසුම් විවෘත කරන්න</translation>
     </message>
 </context>
 <context>
     <name>UpdateSection</name>
     <message>
         <source>Updates</source>
-        <translation type="unfinished"></translation>
+        <translation>යාවත්කාලීන</translation>
     </message>
     <message>
         <source>Off</source>
-        <translation type="unfinished"></translation>
+        <translation>අක්‍රිය</translation>
     </message>
     <message>
         <source>Notify</source>
-        <translation type="unfinished"></translation>
+        <translation>දැනුම් දෙන්න</translation>
     </message>
     <message>
         <source>Automatic</source>
-        <translation type="unfinished"></translation>
+        <translation>ස්වයංක්‍රීය</translation>
     </message>
     <message>
         <source>Check now</source>
-        <translation type="unfinished"></translation>
+        <translation>දැන් පරීක්ෂා කරන්න</translation>
     </message>
     <message>
         <source>What&apos;s new ↗</source>
-        <translation type="unfinished"></translation>
+        <translation>අලුත් දේ ↗</translation>
     </message>
     <message>
         <source>Install</source>
-        <translation type="unfinished"></translation>
+        <translation>ස්ථාපනය කරන්න</translation>
     </message>
     <message>
         <source>Restart</source>
-        <translation type="unfinished"></translation>
+        <translation>නැවත අරඹන්න</translation>
     </message>
     <message>
         <source>Roll back</source>
-        <translation type="unfinished"></translation>
+        <translation>පෙර අනුවාදයට ආපසු යන්න</translation>
     </message>
     <message>
         <source>Channel</source>
-        <translation type="unfinished"></translation>
+        <translation>නාලිකාව</translation>
     </message>
     <message>
         <source>Stable</source>
-        <translation type="unfinished"></translation>
+        <translation>ස්ථායී</translation>
     </message>
     <message>
         <source>Pre-release</source>
-        <translation type="unfinished"></translation>
+        <translation>පූර්ව නිකුතුව</translation>
     </message>
     <message>
         <source>Also offers test versions before their release. They can have more bugs.</source>
-        <translation type="unfinished"></translation>
+        <translation>නිකුත් කිරීමට පෙර පරීක්ෂණ අනුවාදද ලබා දෙයි. ඒවායේ දෝෂ වැඩි විය හැක.</translation>
     </message>
     <message>
         <source>Offers only finished releases.</source>
-        <translation type="unfinished"></translation>
+        <translation>අවසන් කළ නිකුතු පමණක් ලබා දෙයි.</translation>
     </message>
     <message>
         <source>Off: nothing is sent unless you check now.</source>
-        <translation type="unfinished"></translation>
+        <translation>අක්‍රිය: ඔබ දැන් පරීක්ෂා නොකරන්නේ නම් කිසිවක් යවනු නොලැබේ.</translation>
     </message>
     <message>
         <source>Notify: checks GitHub once a day and shows a new version at the top of the window.</source>
-        <translation type="unfinished"></translation>
+        <translation>දැනුම් දෙන්න: දිනකට වරක් GitHub පරීක්ෂා කර නව අනුවාදයක් කවුළුවේ ඉහළින් පෙන්වයි.</translation>
     </message>
     <message>
         <source>Automatic: also installs it by itself when nothing is running, then offers a restart.</source>
-        <translation type="unfinished"></translation>
+        <translation>ස්වයංක්‍රීය: කිසිවක් ධාවනය නොවන විට එය ස්වයංක්‍රීයව ස්ථාපනය කර, පසුව නැවත ඇරඹීමක් යෝජනා කරයි.</translation>
     </message>
 </context>
 <context>
     <name>AppDropArea</name>
     <message>
         <source>Drop to install on %1</source>
-        <translation type="unfinished"></translation>
+        <translation>%1 මත ස්ථාපනය කිරීමට මෙහි දමන්න</translation>
     </message>
 </context>
 <context>
     <name>DeviceHero</name>
     <message>
         <source>Recent</source>
-        <translation type="unfinished"></translation>
+        <translation>මෑත</translation>
     </message>
 </context>
 <context>
     <name>UpdateBanner</name>
     <message>
         <source>Updated to %1 · Restart to use it</source>
-        <translation type="unfinished"></translation>
+        <translation>%1 වෙත යාවත්කාලීන කළා · භාවිත කිරීමට නැවත අරඹන්න</translation>
     </message>
     <message>
         <source>Installing Tomacco %1…</source>
-        <translation type="unfinished"></translation>
+        <translation>Tomacco %1 ස්ථාපනය කරමින්…</translation>
     </message>
     <message>
         <source>Tomacco %1 is available</source>
-        <translation type="unfinished"></translation>
+        <translation>Tomacco %1 ලබා ගත හැක</translation>
     </message>
     <message>
         <source>What&apos;s new ↗</source>
-        <translation type="unfinished"></translation>
+        <translation>අලුත් දේ ↗</translation>
     </message>
     <message>
         <source>Install</source>
-        <translation type="unfinished"></translation>
+        <translation>ස්ථාපනය කරන්න</translation>
     </message>
     <message>
         <source>Restart now</source>
-        <translation type="unfinished"></translation>
+        <translation>දැන් නැවත අරඹන්න</translation>
     </message>
     <message>
         <source>Later</source>
-        <translation type="unfinished"></translation>
+        <translation>පසුව</translation>
     </message>
 </context>
 <context>
     <name>OnboardingSheet</name>
     <message>
         <source>Welcome to Tomacco</source>
-        <translation type="unfinished"></translation>
+        <translation>Tomacco වෙත සාදරයෙන් පිළිගනිමු</translation>
     </message>
     <message>
         <source>This system lacks libraries the desktop needs. Your agent can still use Tomacco through tomaccoctl.</source>
-        <translation type="unfinished"></translation>
+        <translation>ඩෙස්ක්ටොප් යෙදුමට අවශ්‍ය පුස්තකාල මෙම පද්ධතියේ නැත. ඔබේ නියෝජිතයාට තවමත් tomaccoctl හරහා Tomacco භාවිත කළ හැක.</translation>
     </message>
     <message>
         <source>Install Java (JDK 17 or newer) and Gradle to build Android apps.</source>
-        <translation type="unfinished"></translation>
+        <translation>Android යෙදුම් ගොඩනැගීමට Java (JDK 17 හෝ නවතම) සහ Gradle ස්ථාපනය කරන්න.</translation>
     </message>
     <message>
         <source>Install the Android SDK and an emulator. This downloads about 5 GB.</source>
-        <translation type="unfinished"></translation>
+        <translation>Android SDK සහ ඉමියුලේටරයක් ස්ථාපනය කරන්න. මෙය 5 GB පමණ බාගනී.</translation>
     </message>
     <message>
         <source>Set up iOS builds. This needs an Apple account.</source>
-        <translation type="unfinished"></translation>
+        <translation>iOS ගොඩනැගීම් පිහිටුවන්න. මේ සඳහා Apple ගිණුමක් අවශ්‍යයි.</translation>
     </message>
     <message>
         <source>Optional: the virtual iPhone. It needs your own iPhone restore image, about 100 GiB of disk space and a graphics card with 16 GiB.</source>
-        <translation type="unfinished"></translation>
+        <translation>විකල්ප: අතථ්‍ය iPhone. එයට ඔබේම iPhone ප්‍රතිසාධන රූපයක්, 100 GiB පමණ තැටි ඉඩක් සහ 16 GiB සහිත ග්‍රැෆික්ස් කාඩ්පතක් අවශ්‍යයි.</translation>
     </message>
     <message>
         <source>Tomacco lets your coding agent build, run and test Android and iOS apps on this computer.</source>
-        <translation type="unfinished"></translation>
+        <translation>Tomacco ඔබේ කේතන නියෝජිතයාට මෙම පරිගණකයේ Android සහ iOS යෙදුම් ගොඩනැගීමට, ධාවනය කිරීමට සහ පරීක්ෂා කිරීමට ඉඩ දෙයි.</translation>
     </message>
     <message>
         <source>Checking this computer…</source>
-        <translation type="unfinished"></translation>
+        <translation>මෙම පරිගණකය පරීක්ෂා කරමින්…</translation>
     </message>
     <message>
         <source>What is left to set up:</source>
-        <translation type="unfinished"></translation>
+        <translation>පිහිටුවීමට ඉතිරිව ඇත්තේ:</translation>
     </message>
     <message>
         <source>Everything for Android and iOS builds is in place.</source>
-        <translation type="unfinished"></translation>
+        <translation>Android සහ iOS ගොඩනැගීම් සඳහා සියල්ල සූදානම්.</translation>
     </message>
     <message>
         <source>Your agent can do these steps for you. Connect it, then ask it to set Tomacco up.</source>
-        <translation type="unfinished"></translation>
+        <translation>ඔබේ නියෝජිතයාට මෙම පියවර ඔබ වෙනුවෙන් කළ හැක. එය සම්බන්ධ කර, Tomacco පිහිටුවන ලෙස ඉල්ලන්න.</translation>
     </message>
     <message>
         <source>Connect your coding agent</source>
-        <translation type="unfinished"></translation>
+        <translation>ඔබේ කේතන නියෝජිතයා සම්බන්ධ කරන්න</translation>
     </message>
     <message>
         <source>Skip</source>
-        <translation type="unfinished"></translation>
+        <translation>මඟ හරින්න</translation>
     </message>
 </context>
 <context>
     <name>ScreenRecorder</name>
     <message>
         <source>Starting the recording…</source>
-        <translation type="unfinished"></translation>
+        <translation>පටිගත කිරීම අරඹමින්…</translation>
     </message>
     <message>
         <source>Saving the recording…</source>
-        <translation type="unfinished"></translation>
+        <translation>පටිගත කිරීම සුරකිමින්…</translation>
     </message>
     <message>
         <source>Recording saved · %1</source>
-        <translation type="unfinished"></translation>
+        <translation>පටිගත කිරීම සුරැකිණි · %1</translation>
     </message>
     <message>
         <source>The recording did not finish · details under Builds &amp; jobs</source>
-        <translation type="unfinished"></translation>
+        <translation>පටිගත කිරීම අවසන් නොවීය · විස්තර ගොඩනැගීම් සහ කාර්ය යටතේ</translation>
     </message>
     <message>
         <source>Recording · press again to stop</source>
-        <translation type="unfinished"></translation>
+        <translation>පටිගත කරමින් · නැවැත්වීමට නැවත ඔබන්න</translation>
     </message>
 </context>
 <context>
     <name>DeviceGrid</name>
     <message>
         <source>Waiting for the screen…</source>
-        <translation type="unfinished"></translation>
+        <translation>තිරය සඳහා රැඳී සිටිමින්…</translation>
     </message>
     <message>
         <source>No device running.</source>
-        <translation type="unfinished"></translation>
+        <translation>කිසිදු උපාංගයක් ධාවනය නොවේ.</translation>
     </message>
     <message>
         <source>Start an emulator or plug in a phone with USB debugging on; each one shows here with its screen.</source>
-        <translation type="unfinished"></translation>
+        <translation>ඉමියුලේටරයක් අරඹන්න හෝ USB නිදොස්කරණය සක්‍රිය දුරකථනයක් සම්බන්ධ කරන්න; සෑම එකක්ම එහි තිරය සමඟ මෙහි පෙන්වයි.</translation>
     </message>
 </context>
 <context>
     <name>DeviceLogPane</name>
     <message>
         <source>App ID, all apps when empty</source>
-        <translation type="unfinished"></translation>
+        <translation>යෙදුම් ID, හිස් නම් සියලු යෙදුම්</translation>
     </message>
     <message>
         <source>All</source>
-        <translation type="unfinished"></translation>
+        <translation>සියල්ල</translation>
     </message>
     <message>
         <source>Info</source>
-        <translation type="unfinished"></translation>
+        <translation>තොරතුරු</translation>
     </message>
     <message>
         <source>Warnings</source>
-        <translation type="unfinished"></translation>
+        <translation>අනතුරු ඇඟවීම්</translation>
     </message>
     <message>
         <source>Errors</source>
-        <translation type="unfinished"></translation>
+        <translation>දෝෂ</translation>
     </message>
     <message>
         <source>Find in the log</source>
-        <translation type="unfinished"></translation>
+        <translation>ලොගයේ සොයන්න</translation>
     </message>
     <message>
         <source>Resume</source>
-        <translation type="unfinished"></translation>
+        <translation>දිගටම කරගෙන යන්න</translation>
     </message>
     <message>
         <source>Pause</source>
-        <translation type="unfinished"></translation>
+        <translation>විරාම කරන්න</translation>
     </message>
     <message>
         <source>Clear</source>
-        <translation type="unfinished"></translation>
+        <translation>හිස් කරන්න</translation>
     </message>
     <message>
         <source>Clear the lines shown</source>
-        <translation type="unfinished"></translation>
+        <translation>පෙන්වන පේළි හිස් කරන්න</translation>
     </message>
     <message>
         <source>Paused</source>
-        <translation type="unfinished"></translation>
+        <translation>විරාම කළා</translation>
     </message>
     <message>
         <source>No line contains this text.</source>
-        <translation type="unfinished"></translation>
+        <translation>කිසිදු පේළියක මෙම පාඨය නැත.</translation>
     </message>
     <message>
         <source>Waiting for log lines…</source>
-        <translation type="unfinished"></translation>
+        <translation>ලොග පේළි සඳහා රැඳී සිටිමින්…</translation>
     </message>
     <message>
         <source>Try again</source>
-        <translation type="unfinished"></translation>
+        <translation>නැවත උත්සාහ කරන්න</translation>
     </message>
 </context>
 <context>
     <name>ApprovalDialog</name>
     <message>
         <source>Allow this agent action?</source>
-        <translation type="unfinished"></translation>
+        <translation>මෙම නියෝජිත ක්‍රියාවට ඉඩ දෙන්නද?</translation>
     </message>
     <message>
         <source>An agent</source>
-        <translation type="unfinished"></translation>
+        <translation>නියෝජිතයෙක්</translation>
     </message>
     <message>
         <source>%1 asks to run %2 (%3). Tomacco marks it as destructive: it may delete or overwrite data.</source>
-        <translation type="unfinished"></translation>
+        <translation>%1 විසින් %2 (%3) ධාවනය කිරීමට ඉල්ලයි. Tomacco එය විනාශකාරී ලෙස සලකුණු කරයි: එය දත්ත මකා දැමීමට හෝ උඩින් ලිවීමට ඉඩ ඇත.</translation>
     </message>
     <message>
         <source>Its arguments, with secrets masked:</source>
-        <translation type="unfinished"></translation>
+        <translation>එහි තර්ක, රහස් වසා:</translation>
     </message>
     <message>
         <source>Arguments</source>
-        <translation type="unfinished"></translation>
+        <translation>තර්ක</translation>
     </message>
     <message>
         <source>Seconds left before it is denied: %1</source>
-        <translation type="unfinished"></translation>
+        <translation>ප්‍රතික්ෂේප වීමට පෙර ඉතිරි තත්පර: %1</translation>
     </message>
     <message>
         <source>Deny</source>
-        <translation type="unfinished"></translation>
+        <translation>ප්‍රතික්ෂේප කරන්න</translation>
     </message>
     <message>
         <source>Approve</source>
-        <translation type="unfinished"></translation>
+        <translation>අනුමත කරන්න</translation>
     </message>
 </context>
 <context>
     <name>DemoWorkspace</name>
     <message>
         <source>Save your changes before opening another scene.</source>
-        <translation type="unfinished"></translation>
+        <translation>වෙනත් දර්ශනයක් විවෘත කිරීමට පෙර ඔබේ වෙනස්කම් සුරකින්න.</translation>
     </message>
     <message>
         <source>App demo</source>
-        <translation type="unfinished"></translation>
+        <translation>යෙදුම් නිරූපණය</translation>
     </message>
     <message>
         <source>Enter a valid number.</source>
-        <translation type="unfinished"></translation>
+        <translation>වලංගු අංකයක් ඇතුළත් කරන්න.</translation>
     </message>
     <message>
         <source>Choose a different time for the new pose.</source>
-        <translation type="unfinished"></translation>
+        <translation>නව ඉරියව්ව සඳහා වෙනත් වේලාවක් තෝරන්න.</translation>
     </message>
     <message>
         <source>Save changes before rendering.</source>
-        <translation type="unfinished"></translation>
+        <translation>රෙන්ඩර් කිරීමට පෙර වෙනස්කම් සුරකින්න.</translation>
     </message>
     <message>
         <source>Render complete.</source>
-        <translation type="unfinished"></translation>
+        <translation>රෙන්ඩර් කිරීම සම්පූර්ණයි.</translation>
     </message>
     <message>
         <source>Rendering did not complete. Your scene is unchanged.</source>
-        <translation type="unfinished"></translation>
+        <translation>රෙන්ඩර් කිරීම සම්පූර්ණ නොවීය. ඔබේ දර්ශනය නොවෙනස්ව පවතී.</translation>
     </message>
     <message>
         <source>Your draft has changes. Reload explicitly to replace it.</source>
-        <translation type="unfinished"></translation>
+        <translation>ඔබේ කෙටුම්පතේ වෙනස්කම් ඇත. එය ප්‍රතිස්ථාපනය කිරීමට පැහැදිලිවම නැවත පූරණය කරන්න.</translation>
     </message>
     <message>
         <source>Scene opened.</source>
-        <translation type="unfinished"></translation>
+        <translation>දර්ශනය විවෘත කළා.</translation>
     </message>
     <message>
         <source>Changes saved.</source>
-        <translation type="unfinished"></translation>
+        <translation>වෙනස්කම් සුරැකිණි.</translation>
     </message>
     <message>
         <source>Saved. Your newer edits are still unsaved.</source>
-        <translation type="unfinished"></translation>
+        <translation>සුරැකිණි. ඔබේ නවතම සංස්කරණ තවමත් සුරැකී නැත.</translation>
     </message>
     <message>
         <source>The render job could not be followed.</source>
-        <translation type="unfinished"></translation>
+        <translation>රෙන්ඩර් කාර්යය අනුගමනය කළ නොහැකි විය.</translation>
     </message>
     <message>
         <source>A recording, made into a demo</source>
-        <translation type="unfinished"></translation>
+        <translation>නිරූපණයක් බවට පත් කළ පටිගත කිරීමක්</translation>
     </message>
     <message>
         <source>Choose a local video, place it in a device and set its motion. Your source stays unchanged.</source>
-        <translation type="unfinished"></translation>
+        <translation>ස්ථානීය වීඩියෝවක් තෝරා, එය උපාංගයක තබා, එහි චලනය සකසන්න. ඔබේ මූලාශ්‍රය නොවෙනස්ව පවතී.</translation>
     </message>
     <message>
         <source>Source video</source>
-        <translation type="unfinished"></translation>
+        <translation>මූලාශ්‍ර වීඩියෝව</translation>
     </message>
     <message>
         <source>Choose video</source>
-        <translation type="unfinished"></translation>
+        <translation>වීඩියෝව තෝරන්න</translation>
     </message>
     <message>
         <source>Inspect video</source>
-        <translation type="unfinished"></translation>
+        <translation>වීඩියෝව පරීක්ෂා කරන්න</translation>
     </message>
     <message>
         <source>Scene file (.json)</source>
-        <translation type="unfinished"></translation>
+        <translation>දර්ශන ගොනුව (.json)</translation>
     </message>
     <message>
         <source>Choose scene path</source>
-        <translation type="unfinished"></translation>
+        <translation>දර්ශන මාර්ගය තෝරන්න</translation>
     </message>
     <message>
         <source>Scene title</source>
-        <translation type="unfinished"></translation>
+        <translation>දර්ශනයේ මාතෘකාව</translation>
     </message>
     <message>
         <source>Create scene</source>
-        <translation type="unfinished"></translation>
+        <translation>දර්ශනය සාදන්න</translation>
     </message>
     <message>
         <source>Open scene</source>
-        <translation type="unfinished"></translation>
+        <translation>දර්ශනය විවෘත කරන්න</translation>
     </message>
     <message>
         <source>The video renderer is not ready. Check the rendering tools under Agents &amp; tools.</source>
-        <translation type="unfinished"></translation>
+        <translation>වීඩියෝ රෙන්ඩරරය සූදානම් නැත. නියෝජිතයන් සහ මෙවලම් යටතේ රෙන්ඩර් මෙවලම් පරීක්ෂා කරන්න.</translation>
     </message>
     <message>
         <source>Scene</source>
-        <translation type="unfinished"></translation>
+        <translation>දර්ශනය</translation>
     </message>
     <message>
         <source>Keep the original recording or crop its time. Canvas size changes the exported video.</source>
-        <translation type="unfinished"></translation>
+        <translation>මුල් පටිගත කිරීම තබා ගන්න හෝ එහි කාලය කපා හරින්න. කැන්වස ප්‍රමාණය අපනයනය කළ වීඩියෝව වෙනස් කරයි.</translation>
     </message>
     <message>
         <source>Title</source>
-        <translation type="unfinished"></translation>
+        <translation>මාතෘකාව</translation>
     </message>
     <message>
         <source>Duration (seconds)</source>
-        <translation type="unfinished"></translation>
+        <translation>කාලසීමාව (තත්පර)</translation>
     </message>
     <message>
         <source>Canvas width</source>
-        <translation type="unfinished"></translation>
+        <translation>කැන්වස පළල</translation>
     </message>
     <message>
         <source>Canvas height</source>
-        <translation type="unfinished"></translation>
+        <translation>කැන්වස උස</translation>
     </message>
     <message>
         <source>Frames per second</source>
-        <translation type="unfinished"></translation>
+        <translation>තත්පරයකට රාමු</translation>
     </message>
     <message>
         <source>Clip start (seconds)</source>
-        <translation type="unfinished"></translation>
+        <translation>ඛණ්ඩයේ ආරම්භය (තත්පර)</translation>
     </message>
     <message>
         <source>Background color</source>
-        <translation type="unfinished"></translation>
+        <translation>පසුබිම් වර්ණය</translation>
     </message>
     <message>
         <source>Second background color</source>
-        <translation type="unfinished"></translation>
+        <translation>දෙවන පසුබිම් වර්ණය</translation>
     </message>
     <message>
         <source>Background</source>
-        <translation type="unfinished"></translation>
+        <translation>පසුබිම</translation>
     </message>
     <message>
         <source>Device finish</source>
-        <translation type="unfinished"></translation>
+        <translation>උපාංග නිමාව</translation>
     </message>
     <message>
         <source>Device model</source>
-        <translation type="unfinished"></translation>
+        <translation>උපාංග මාදිලිය</translation>
     </message>
     <message>
         <source>Shadow opacity</source>
-        <translation type="unfinished"></translation>
+        <translation>සෙවණැල්ලේ පාරාන්ධතාව</translation>
     </message>
     <message>
         <source>Shadow</source>
-        <translation type="unfinished"></translation>
+        <translation>සෙවණැල්ල</translation>
     </message>
     <message>
         <source>Motion</source>
-        <translation type="unfinished"></translation>
+        <translation>චලනය</translation>
     </message>
     <message>
         <source>Each pose sets the device at a moment in the video. The motion runs between them.</source>
-        <translation type="unfinished"></translation>
+        <translation>සෑම ඉරියව්වක්ම වීඩියෝවේ එක් මොහොතක උපාංගය සකසයි. චලනය ඒවා අතර ධාවනය වේ.</translation>
     </message>
     <message>
         <source>Pose %1 · %2 s</source>
-        <translation type="unfinished"></translation>
+        <translation>ඉරියව්ව %1 · තත්. %2</translation>
     </message>
     <message>
         <source>Add pose</source>
-        <translation type="unfinished"></translation>
+        <translation>ඉරියව්වක් එක් කරන්න</translation>
     </message>
     <message>
         <source>Remove pose</source>
-        <translation type="unfinished"></translation>
+        <translation>ඉරියව්ව ඉවත් කරන්න</translation>
     </message>
     <message>
         <source>Time (seconds)</source>
-        <translation type="unfinished"></translation>
+        <translation>වේලාව (තත්පර)</translation>
     </message>
     <message>
         <source>Turn · yaw (degrees)</source>
-        <translation type="unfinished"></translation>
+        <translation>හැරවීම · yaw (අංශක)</translation>
     </message>
     <message>
         <source>Tilt · pitch (degrees)</source>
-        <translation type="unfinished"></translation>
+        <translation>ඇලවීම · pitch (අංශක)</translation>
     </message>
     <message>
         <source>Spin · roll (degrees)</source>
-        <translation type="unfinished"></translation>
+        <translation>භ්‍රමණය · roll (අංශක)</translation>
     </message>
     <message>
         <source>Scale</source>
-        <translation type="unfinished"></translation>
+        <translation>පරිමාණය</translation>
     </message>
     <message>
         <source>Horizontal position (0–1)</source>
-        <translation type="unfinished"></translation>
+        <translation>තිරස් පිහිටීම (0–1)</translation>
     </message>
     <message>
         <source>Vertical position (0–1)</source>
-        <translation type="unfinished"></translation>
+        <translation>සිරස් පිහිටීම (0–1)</translation>
     </message>
     <message>
         <source>Motion curve</source>
-        <translation type="unfinished"></translation>
+        <translation>චලන වක්‍රය</translation>
     </message>
     <message>
         <source>Saving…</source>
-        <translation type="unfinished"></translation>
+        <translation>සුරකිමින්…</translation>
     </message>
     <message>
         <source>Save changes</source>
-        <translation type="unfinished"></translation>
+        <translation>වෙනස්කම් සුරකින්න</translation>
     </message>
     <message>
         <source>Reload saved scene</source>
-        <translation type="unfinished"></translation>
+        <translation>සුරැකි දර්ශනය නැවත පූරණය කරන්න</translation>
     </message>
     <message>
         <source>Unsaved changes · save before rendering.</source>
-        <translation type="unfinished"></translation>
+        <translation>නොසුරැකි වෙනස්කම් · රෙන්ඩර් කිරීමට පෙර සුරකින්න.</translation>
     </message>
     <message>
         <source>Preview &amp; export</source>
-        <translation type="unfinished"></translation>
+        <translation>පෙරදසුන සහ අපනයනය</translation>
     </message>
     <message>
         <source>Preview one frame, then export a silent MP4. A poster and a render record are saved beside it.</source>
-        <translation type="unfinished"></translation>
+        <translation>එක් රාමුවක් පෙරදසුන් කර, පසුව නිහඬ MP4 එකක් අපනයනය කරන්න. පෝස්ටරයක් සහ රෙන්ඩර් වාර්තාවක් එය අසල සුරැකේ.</translation>
     </message>
     <message>
         <source>Your rendered preview appears here.</source>
-        <translation type="unfinished"></translation>
+        <translation>ඔබේ රෙන්ඩර් කළ පෙරදසුන මෙහි දිස් වේ.</translation>
     </message>
     <message>
         <source>This image shows the last completed render.</source>
-        <translation type="unfinished"></translation>
+        <translation>මෙම රූපය අවසන් වරට සම්පූර්ණ කළ රෙන්ඩරය පෙන්වයි.</translation>
     </message>
     <message>
         <source>Preview time (seconds)</source>
-        <translation type="unfinished"></translation>
+        <translation>පෙරදසුන් වේලාව (තත්පර)</translation>
     </message>
     <message>
         <source>Render preview</source>
-        <translation type="unfinished"></translation>
+        <translation>පෙරදසුන රෙන්ඩර් කරන්න</translation>
     </message>
     <message>
         <source>Export MP4</source>
-        <translation type="unfinished"></translation>
+        <translation>MP4 අපනයනය කරන්න</translation>
     </message>
     <message>
         <source>Show exported video</source>
-        <translation type="unfinished"></translation>
+        <translation>අපනයනය කළ වීඩියෝව පෙන්වන්න</translation>
     </message>
     <message>
         <source>Waiting to render…</source>
-        <translation type="unfinished"></translation>
+        <translation>රෙන්ඩර් කිරීමට රැඳී සිටිමින්…</translation>
     </message>
     <message>
         <source>Rendering…</source>
-        <translation type="unfinished"></translation>
+        <translation>රෙන්ඩර් කරමින්…</translation>
     </message>
     <message>
         <source>Render failed.</source>
-        <translation type="unfinished"></translation>
+        <translation>රෙන්ඩර් කිරීම අසාර්ථක විය.</translation>
     </message>
     <message>
         <source>Render cancelled.</source>
-        <translation type="unfinished"></translation>
+        <translation>රෙන්ඩර් කිරීම අවලංගු කළා.</translation>
     </message>
     <message>
         <source>Render timed out.</source>
-        <translation type="unfinished"></translation>
+        <translation>රෙන්ඩර් කිරීමේ කාලය ඉක්මවිය.</translation>
     </message>
     <message>
         <source>Videos (*.mp4 *.mov *.mkv *.webm)</source>
-        <translation type="unfinished"></translation>
+        <translation>වීඩියෝ (*.mp4 *.mov *.mkv *.webm)</translation>
     </message>
     <message>
         <source>Scenes (*.json)</source>
-        <translation type="unfinished"></translation>
+        <translation>දර්ශන (*.json)</translation>
     </message>
     <message>
         <source>PNG image (*.png)</source>
-        <translation type="unfinished"></translation>
+        <translation>PNG රූපය (*.png)</translation>
     </message>
     <message>
         <source>MP4 video (*.mp4)</source>
-        <translation type="unfinished"></translation>
+        <translation>MP4 වීඩියෝව (*.mp4)</translation>
     </message>
     <message>
         <source>Discard unsaved changes?</source>
-        <translation type="unfinished"></translation>
+        <translation>නොසුරැකි වෙනස්කම් ඉවතලන්නද?</translation>
     </message>
     <message>
         <source>Reload the saved scene and replace your draft. The video source stays unchanged.</source>
-        <translation type="unfinished"></translation>
+        <translation>සුරැකි දර්ශනය නැවත පූරණය කර ඔබේ කෙටුම්පත ප්‍රතිස්ථාපනය කරන්න. වීඩියෝ මූලාශ්‍රය නොවෙනස්ව පවතී.</translation>
     </message>
     <message>
         <source>Keep editing</source>
-        <translation type="unfinished"></translation>
+        <translation>දිගටම සංස්කරණය කරන්න</translation>
     </message>
     <message>
         <source>Discard and reload</source>
-        <translation type="unfinished"></translation>
+        <translation>ඉවතලා නැවත පූරණය කරන්න</translation>
     </message>
 </context>
 <context>
     <name>EnvironmentPanel</name>
     <message>
         <source>Dark mode</source>
-        <translation type="unfinished"></translation>
+        <translation>අඳුරු ප්‍රකාරය</translation>
     </message>
     <message>
         <source>Font size</source>
-        <translation type="unfinished"></translation>
+        <translation>අකුරු ප්‍රමාණය</translation>
     </message>
     <message>
         <source>Animations</source>
-        <translation type="unfinished"></translation>
+        <translation>සජීවිකරණ</translation>
     </message>
     <message>
         <source>Airplane mode</source>
-        <translation type="unfinished"></translation>
+        <translation>ගුවන් යානා ප්‍රකාරය</translation>
     </message>
     <message>
         <source>App language</source>
-        <translation type="unfinished"></translation>
+        <translation>යෙදුම් භාෂාව</translation>
     </message>
     <message>
         <source>GPS location</source>
-        <translation type="unfinished"></translation>
+        <translation>GPS ස්ථානය</translation>
     </message>
     <message>
         <source>TalkBack</source>
-        <translation type="unfinished"></translation>
+        <translation>TalkBack</translation>
     </message>
     <message>
         <source>On</source>
-        <translation type="unfinished"></translation>
+        <translation>සක්‍රිය</translation>
     </message>
     <message>
         <source>Off</source>
-        <translation type="unfinished"></translation>
+        <translation>අක්‍රිය</translation>
     </message>
     <message>
         <source>Automatic</source>
-        <translation type="unfinished"></translation>
+        <translation>ස්වයංක්‍රීය</translation>
     </message>
     <message>
         <source>Device language</source>
-        <translation type="unfinished"></translation>
+        <translation>උපාංග භාෂාව</translation>
     </message>
     <message>
         <source>Will change</source>
-        <translation type="unfinished"></translation>
+        <translation>වෙනස් වනු ඇත</translation>
     </message>
     <message>
         <source>Already set</source>
-        <translation type="unfinished"></translation>
+        <translation>දැනටමත් සකසා ඇත</translation>
     </message>
     <message>
         <source>Not supported here</source>
-        <translation type="unfinished"></translation>
+        <translation>මෙහි සහාය නොදක්වයි</translation>
     </message>
     <message>
         <source>Applied and read back</source>
-        <translation type="unfinished"></translation>
+        <translation>යොදා නැවත කියවන ලදී</translation>
     </message>
     <message>
         <source>Applied, not read back</source>
-        <translation type="unfinished"></translation>
+        <translation>යෙදුවා, නැවත කියවා නැත</translation>
     </message>
     <message>
         <source>Android did not apply it</source>
-        <translation type="unfinished"></translation>
+        <translation>Android එය යෙදුවේ නැත</translation>
     </message>
     <message>
         <source>Restored</source>
-        <translation type="unfinished"></translation>
+        <translation>ප්‍රතිසාධනය කළා</translation>
     </message>
     <message>
         <source>Cannot be restored</source>
-        <translation type="unfinished"></translation>
+        <translation>ප්‍රතිසාධනය කළ නොහැක</translation>
     </message>
     <message>
         <source>Not restored</source>
-        <translation type="unfinished"></translation>
+        <translation>ප්‍රතිසාධනය කර නැත</translation>
     </message>
     <message>
         <source>Preset saved.</source>
-        <translation type="unfinished"></translation>
+        <translation>පෙරසැකසුම සුරැකිණි.</translation>
     </message>
     <message>
         <source>Preset updated to revision %1.</source>
-        <translation type="unfinished"></translation>
+        <translation>පෙරසැකසුම සංශෝධනය %1 වෙත යාවත්කාලීන කළා.</translation>
     </message>
     <message>
         <source>Preset deleted.</source>
-        <translation type="unfinished"></translation>
+        <translation>පෙරසැකසුම මකා දැමුවා.</translation>
     </message>
     <message>
         <source>Preset exported to %1.</source>
-        <translation type="unfinished"></translation>
+        <translation>පෙරසැකසුම %1 වෙත අපනයනය කළා.</translation>
     </message>
     <message>
         <source>Plan ready. This device does not support: %1.</source>
-        <translation type="unfinished"></translation>
+        <translation>සැලැස්ම සූදානම්. මෙම උපාංගය සහාය නොදක්වන්නේ: %1.</translation>
     </message>
     <message>
         <source>Plan ready. Nothing has changed on the device yet.</source>
-        <translation type="unfinished"></translation>
+        <translation>සැලැස්ම සූදානම්. උපාංගයේ තවම කිසිවක් වෙනස් වී නැත.</translation>
     </message>
     <message>
         <source>Applied and read back. You can restore the previous settings.</source>
-        <translation type="unfinished"></translation>
+        <translation>යොදා නැවත කියවන ලදී. ඔබට පෙර සැකසුම් ප්‍රතිසාධනය කළ හැක.</translation>
     </message>
     <message>
         <source>Previous settings restored.</source>
-        <translation type="unfinished"></translation>
+        <translation>පෙර සැකසුම් ප්‍රතිසාධනය කළා.</translation>
     </message>
     <message>
         <source>QA environments</source>
-        <translation type="unfinished"></translation>
+        <translation>QA පරිසර</translation>
     </message>
     <message>
         <source>Save a combination of theme, font size, animations, airplane mode, app language, GPS and TalkBack under a name, then apply it to one device you choose.</source>
-        <translation type="unfinished"></translation>
+        <translation>තේමාව, අකුරු ප්‍රමාණය, සජීවිකරණ, ගුවන් යානා ප්‍රකාරය, යෙදුම් භාෂාව, GPS සහ TalkBack යන සංයෝජනයක් නමක් යටතේ සුරකින්න, පසුව ඔබ තෝරන එක් උපාංගයකට එය යොදන්න.</translation>
     </message>
     <message>
         <source>New preset</source>
-        <translation type="unfinished"></translation>
+        <translation>නව පෙරසැකසුම</translation>
     </message>
     <message>
         <source>ID · e.g. dark-large-text</source>
-        <translation type="unfinished"></translation>
+        <translation>ID · උදා. dark-large-text</translation>
     </message>
     <message>
         <source>Name</source>
-        <translation type="unfinished"></translation>
+        <translation>නම</translation>
     </message>
     <message>
         <source>Leave as it is</source>
-        <translation type="unfinished"></translation>
+        <translation>එලෙසම තබන්න</translation>
     </message>
     <message>
         <source>Set</source>
-        <translation type="unfinished"></translation>
+        <translation>සකසන්න</translation>
     </message>
     <message>
         <source>Latitude, longitude</source>
-        <translation type="unfinished"></translation>
+        <translation>අක්ෂාංශය, දේශාංශය</translation>
     </message>
     <message>
         <source>0.5 to 2</source>
-        <translation type="unfinished"></translation>
+        <translation>0.5 සිට 2 දක්වා</translation>
     </message>
     <message>
         <source>Language tags · e.g. de-DE</source>
-        <translation type="unfinished"></translation>
+        <translation>භාෂා ටැග · උදා. de-DE</translation>
     </message>
     <message>
         <source>GPS works on emulators only and cannot be read back or restored. App language needs Android 13; airplane mode needs Android 11.</source>
-        <translation type="unfinished"></translation>
+        <translation>GPS ක්‍රියා කරන්නේ ඉමියුලේටර මත පමණක් වන අතර එය නැවත කියවීමට හෝ ප්‍රතිසාධනය කිරීමට නොහැක. යෙදුම් භාෂාවට Android 13 අවශ්‍යයි; ගුවන් යානා ප්‍රකාරයට Android 11 අවශ්‍යයි.</translation>
     </message>
     <message>
         <source>Save preset</source>
-        <translation type="unfinished"></translation>
+        <translation>පෙරසැකසුම සුරකින්න</translation>
     </message>
     <message>
         <source>Import…</source>
-        <translation type="unfinished"></translation>
+        <translation>ආයාත කරන්න…</translation>
     </message>
     <message>
         <source>Export…</source>
-        <translation type="unfinished"></translation>
+        <translation>අපනයනය කරන්න…</translation>
     </message>
     <message>
         <source>Delete preset</source>
-        <translation type="unfinished"></translation>
+        <translation>පෙරසැකසුම මකන්න</translation>
     </message>
     <message numerus="yes">
         <source>%n preset file(s) could not be read and are not listed.</source>
-        <translation type="unfinished">
-            <numerusform></numerusform>
-            <numerusform></numerusform>
+        <translation>
+            <numerusform>පෙරසැකසුම් ගොනු %n ක් කියවිය නොහැකි වූ අතර එය ලැයිස්තුගත කර නැත.</numerusform>
+            <numerusform>පෙරසැකසුම් ගොනු %n ක් කියවිය නොහැකි වූ අතර ඒවා ලැයිස්තුගත කර නැත.</numerusform>
         </translation>
     </message>
     <message>
         <source>Apply to a device</source>
-        <translation type="unfinished"></translation>
+        <translation>උපාංගයකට යොදන්න</translation>
     </message>
     <message>
         <source>Choose the device here. Tomacco reads it first, shows what would change, and applies only that plan to that device.</source>
-        <translation type="unfinished"></translation>
+        <translation>උපාංගය මෙහි තෝරන්න. Tomacco පළමුව එය කියවා, වෙනස් වන දේ පෙන්වා, එම සැලැස්ම පමණක් එම උපාංගයට යොදයි.</translation>
     </message>
     <message>
         <source>Choose the target device</source>
-        <translation type="unfinished"></translation>
+        <translation>ඉලක්ක උපාංගය තෝරන්න</translation>
     </message>
     <message>
         <source>App ID for the app language · optional</source>
-        <translation type="unfinished"></translation>
+        <translation>යෙදුම් භාෂාව සඳහා යෙදුම් ID · විකල්ප</translation>
     </message>
     <message>
         <source>Read device</source>
-        <translation type="unfinished"></translation>
+        <translation>උපාංගය කියවන්න</translation>
     </message>
     <message>
         <source>Plan</source>
-        <translation type="unfinished"></translation>
+        <translation>සැලැස්ම</translation>
     </message>
     <message>
         <source>Apply plan</source>
-        <translation type="unfinished"></translation>
+        <translation>සැලැස්ම යොදන්න</translation>
     </message>
     <message>
         <source>Restore previous settings</source>
-        <translation type="unfinished"></translation>
+        <translation>පෙර සැකසුම් ප්‍රතිසාධනය කරන්න</translation>
     </message>
     <message>
         <source>Skip the settings this device does not support</source>
-        <translation type="unfinished"></translation>
+        <translation>මෙම උපාංගය සහාය නොදක්වන සැකසුම් මඟ හරින්න</translation>
     </message>
     <message>
         <source>Plan for %1 (%2) · preset revision %3</source>
-        <translation type="unfinished"></translation>
+        <translation>%1 (%2) සඳහා සැලැස්ම · පෙරසැකසුම් සංශෝධනය %3</translation>
     </message>
     <message>
         <source>TalkBack here switches the screen reader on the device and keeps your other accessibility services. It does not show that your app works with a screen reader; the accessibility audit only checks the screen&apos;s structure.</source>
-        <translation type="unfinished"></translation>
+        <translation>මෙහි TalkBack උපාංගයේ තිර කියවනය සක්‍රිය කර ඔබේ අනෙකුත් ප්‍රවේශ්‍යතා සේවා තබා ගනී. ඔබේ යෙදුම තිර කියවනයක් සමඟ ක්‍රියා කරන බව එය නොපෙන්වයි; ප්‍රවේශ්‍යතා විගණනය තිරයේ ව්‍යුහය පමණක් පරීක්ෂා කරයි.</translation>
     </message>
     <message>
         <source>QA environment (*.json)</source>
-        <translation type="unfinished"></translation>
+        <translation>QA පරිසරය (*.json)</translation>
     </message>
     <message>
         <source>Delete this preset?</source>
-        <translation type="unfinished"></translation>
+        <translation>මෙම පෙරසැකසුම මකන්නද?</translation>
     </message>
     <message>
         <source>The preset is removed from this computer. Devices keep their settings, and restore points stay.</source>
-        <translation type="unfinished"></translation>
+        <translation>පෙරසැකසුම මෙම පරිගණකයෙන් ඉවත් කෙරේ. උපාංග ඒවායේ සැකසුම් තබා ගන්නා අතර ප්‍රතිසාධන ලක්ෂ්‍ය පවතී.</translation>
     </message>
     <message>
         <source>Keep preset</source>
-        <translation type="unfinished"></translation>
+        <translation>පෙරසැකසුම තබා ගන්න</translation>
     </message>
     <message>
         <source>%1 points, %2 km, %3 min recorded</source>
-        <translation type="unfinished"></translation>
+        <translation>ලක්ෂ්‍ය %1, කි.මී. %2, මිනි. %3 සටහන් කළා</translation>
     </message>
     <message>
         <source>%1 points, %2 km, no times: one point per second</source>
-        <translation type="unfinished"></translation>
+        <translation>ලක්ෂ්‍ය %1, කි.මී. %2, වේලාවන් නැත: තත්පරයකට එක් ලක්ෂ්‍යයක්</translation>
     </message>
     <message>
         <source>Change route…</source>
-        <translation type="unfinished"></translation>
+        <translation>මාර්ගය වෙනස් කරන්න…</translation>
     </message>
     <message>
         <source>Choose a GPX file…</source>
-        <translation type="unfinished"></translation>
+        <translation>GPX ගොනුවක් තෝරන්න…</translation>
     </message>
     <message>
         <source>Finished. The last position stays on the emulator.</source>
-        <translation type="unfinished"></translation>
+        <translation>අවසන්. අවසාන පිහිටීම ඉමියුලේටරයේ පවතී.</translation>
     </message>
     <message>
         <source>GPX route (*.gpx)</source>
-        <translation type="unfinished"></translation>
+        <translation>GPX මාර්ගය (*.gpx)</translation>
     </message>
     <message>
         <source>No route chosen</source>
-        <translation type="unfinished"></translation>
+        <translation>මාර්ගයක් තෝරා නැත</translation>
     </message>
     <message>
         <source>Pause</source>
-        <translation type="unfinished"></translation>
+        <translation>විරාම කරන්න</translation>
     </message>
     <message>
         <source>Paused at %1</source>
-        <translation type="unfinished"></translation>
+        <translation>%1 හිදී විරාම කළා</translation>
     </message>
     <message>
         <source>Play a GPX route on the chosen emulator&apos;s location. Timed points keep their timing; untimed points play one per second.</source>
-        <translation type="unfinished"></translation>
+        <translation>තෝරාගත් ඉමියුලේටරයේ ස්ථානය මත GPX මාර්ගයක් වාදනය කරන්න. කාලය සහිත ලක්ෂ්‍ය ඒවායේ කාලය රකියි; කාලය නොමැති ලක්ෂ්‍ය තත්පරයකට එකක් ලෙස වාදනය වේ.</translation>
     </message>
     <message>
         <source>Play route</source>
-        <translation type="unfinished"></translation>
+        <translation>මාර්ගය වාදනය කරන්න</translation>
     </message>
     <message>
         <source>Playback ended: %1</source>
-        <translation type="unfinished"></translation>
+        <translation>වාදනය අවසන් විය: %1</translation>
     </message>
     <message>
         <source>Playing %1</source>
-        <translation type="unfinished"></translation>
+        <translation>%1 වාදනය වෙමින්</translation>
     </message>
     <message>
         <source>Playing the route on %1. The previous position is not known and will not be restored.</source>
-        <translation type="unfinished"></translation>
+        <translation>%1 මත මාර්ගය වාදනය වෙමින්. පෙර පිහිටීම නොදන්නා අතර එය ප්‍රතිසාධනය නොකෙරේ.</translation>
     </message>
     <message>
         <source>Playing…</source>
-        <translation type="unfinished"></translation>
+        <translation>වාදනය වෙමින්…</translation>
     </message>
     <message>
         <source>Reading the route…</source>
-        <translation type="unfinished"></translation>
+        <translation>මාර්ගය කියවමින්…</translation>
     </message>
     <message>
         <source>Repeat the route</source>
-        <translation type="unfinished"></translation>
+        <translation>මාර්ගය නැවත කරන්න</translation>
     </message>
     <message>
         <source>Resume</source>
-        <translation type="unfinished"></translation>
+        <translation>දිගටම කරගෙන යන්න</translation>
     </message>
     <message>
         <source>Route playback</source>
-        <translation type="unfinished"></translation>
+        <translation>මාර්ග වාදනය</translation>
     </message>
     <message>
         <source>Route playback reaches emulators only. A phone takes no mock location from here.</source>
-        <translation type="unfinished"></translation>
+        <translation>මාර්ග වාදනය ඉමියුලේටර වෙත පමණක් ළඟා වේ. දුරකථනයක් මෙතැනින් ව්‍යාජ ස්ථානයක් නොගනී.</translation>
     </message>
     <message>
         <source>Speed · 1 is real time</source>
-        <translation type="unfinished"></translation>
+        <translation>වේගය · 1 යනු සැබෑ කාලයයි</translation>
     </message>
     <message>
         <source>Starting playback…</source>
-        <translation type="unfinished"></translation>
+        <translation>වාදනය අරඹමින්…</translation>
     </message>
     <message>
         <source>Stop</source>
-        <translation type="unfinished"></translation>
+        <translation>නවත්වන්න</translation>
     </message>
     <message>
         <source>Stopped. The last position stays on the emulator.</source>
-        <translation type="unfinished"></translation>
+        <translation>නැවැත්තුවා. අවසාන පිහිටීම ඉමියුලේටරයේ පවතී.</translation>
     </message>
     <message>
         <source>The emulator does not report its position, so the position before playback is unknown and is not restored. Set one in the preset&apos;s GPS field afterwards if you need it.</source>
-        <translation type="unfinished"></translation>
+        <translation>ඉමියුලේටරය එහි පිහිටීම වාර්තා නොකරයි, එබැවින් වාදනයට පෙර පිහිටීම නොදන්නා අතර එය ප්‍රතිසාධනය නොකෙරේ. ඔබට අවශ්‍ය නම් පසුව පෙරසැකසුමේ GPS ක්ෂේත්‍රයේ එකක් සකසන්න.</translation>
     </message>
     <message>
         <source>point %1 of %2</source>
-        <translation type="unfinished"></translation>
+        <translation>ලක්ෂ්‍ය %1 / %2</translation>
     </message>
 </context>
 <context>
     <name>HandoffBanner</name>
     <message>
         <source>%1 · an agent is waiting for you</source>
-        <translation type="unfinished"></translation>
+        <translation>%1 · නියෝජිතයෙක් ඔබ එනතුරු බලා සිටියි</translation>
     </message>
     <message>
         <source>%1 · an agent is waiting for you (%2 more)</source>
-        <translation type="unfinished"></translation>
+        <translation>%1 · නියෝජිතයෙක් ඔබ එනතුරු බලා සිටියි (තවත් %2)</translation>
     </message>
     <message>
         <source>Cancel</source>
-        <translation type="unfinished"></translation>
+        <translation>අවලංගු කරන්න</translation>
     </message>
     <message>
         <source>Do it on the device itself. Tomacco never asks for your passcode or password.</source>
-        <translation type="unfinished"></translation>
+        <translation>එය උපාංගයේම කරන්න. Tomacco කිසිවිටෙක ඔබේ මුරකේතය හෝ මුරපදය ඉල්ලන්නේ නැත.</translation>
     </message>
     <message>
         <source>Done</source>
-        <translation type="unfinished"></translation>
+        <translation>අවසන්</translation>
     </message>
     <message>
         <source>Done: I did it on the device</source>
-        <translation type="unfinished"></translation>
+        <translation>අවසන්: මම එය උපාංගයේ කළා</translation>
     </message>
 </context>
 <context>
     <name>HandoffModel</name>
     <message>
         <source>Face ID or Touch ID</source>
-        <translation type="unfinished"></translation>
+        <translation>Face ID හෝ Touch ID</translation>
     </message>
     <message>
         <source>Passcode</source>
-        <translation type="unfinished"></translation>
+        <translation>මුරකේතය</translation>
     </message>
     <message>
         <source>Permission</source>
-        <translation type="unfinished"></translation>
+        <translation>අවසරය</translation>
     </message>
     <message>
         <source>Purchase</source>
-        <translation type="unfinished"></translation>
+        <translation>මිලදී ගැනීම</translation>
     </message>
     <message>
         <source>Sign-in</source>
-        <translation type="unfinished"></translation>
+        <translation>පුරනය වීම</translation>
     </message>
     <message>
         <source>Your turn on the device</source>
-        <translation type="unfinished"></translation>
+        <translation>උපාංගයේ ඔබේ වාරය</translation>
     </message>
 </context>
 <context>
     <name>MobileNav</name>
     <message>
         <source>Ctrl</source>
-        <translation type="unfinished"></translation>
+        <translation>Ctrl</translation>
     </message>
     <message>
         <source>More</source>
         <comment>navigation</comment>
-        <translation type="unfinished"></translation>
+        <translation>තවත්</translation>
     </message>
 </context>
 <context>
     <name>AgentClientDialog</name>
     <message>
         <source>Connect your coding agent</source>
-        <translation type="unfinished"></translation>
+        <translation>ඔබේ කේතන නියෝජිතයා සම්බන්ධ කරන්න</translation>
     </message>
     <message>
         <source>Done</source>
-        <translation type="unfinished"></translation>
+        <translation>අවසන්</translation>
     </message>
     <message>
         <source>Pick your agent. Tomacco shows whether it is connected and the exact setting it reads.</source>
-        <translation type="unfinished"></translation>
+        <translation>ඔබේ නියෝජිතයා තෝරන්න. එය සම්බන්ධ වී ඇත්දැයි සහ එය කියවන නිශ්චිත සැකසුම Tomacco පෙන්වයි.</translation>
     </message>
 </context>
 <context>
     <name>AgentClientPicker</name>
     <message>
         <source>%1 is not installed here. Install it first, or copy the text for another computer.</source>
-        <translation type="unfinished"></translation>
+        <translation>%1 මෙහි ස්ථාපනය කර නැත. පළමුව එය ස්ථාපනය කරන්න, නැතහොත් වෙනත් පරිගණකයක් සඳහා පාඨය පිටපත් කරන්න.</translation>
     </message>
     <message>
         <source>%1 starts Tomacco when it needs it. Nothing to do.</source>
-        <translation type="unfinished"></translation>
+        <translation>%1 අවශ්‍ය විට Tomacco අරඹයි. කිරීමට කිසිවක් නැත.</translation>
     </message>
     <message>
         <source>Add it by hand</source>
         <comment>agent client</comment>
-        <translation type="unfinished"></translation>
+        <translation>අතින් එක් කරන්න</translation>
     </message>
     <message>
         <source>Add this to %1:</source>
-        <translation type="unfinished"></translation>
+        <translation>මෙය %1 වෙත එක් කරන්න:</translation>
     </message>
     <message>
         <source>Another entry is in the way</source>
         <comment>agent client</comment>
-        <translation type="unfinished"></translation>
+        <translation>වෙනත් ඇතුළත් කිරීමක් බාධා කරයි</translation>
     </message>
     <message>
         <source>Check again</source>
-        <translation type="unfinished"></translation>
+        <translation>නැවත පරීක්ෂා කරන්න</translation>
     </message>
     <message>
         <source>Connect</source>
-        <translation type="unfinished"></translation>
+        <translation>සම්බන්ධ කරන්න</translation>
     </message>
     <message>
         <source>Connected</source>
         <comment>agent client</comment>
-        <translation type="unfinished"></translation>
+        <translation>සම්බන්ධයි</translation>
     </message>
     <message>
         <source>Connected.</source>
-        <translation type="unfinished"></translation>
+        <translation>සම්බන්ධ කළා.</translation>
     </message>
     <message>
         <source>Connected. The previous file is saved as %1.</source>
-        <translation type="unfinished"></translation>
+        <translation>සම්බන්ධ කළා. පෙර ගොනුව %1 ලෙස සුරැකිණි.</translation>
     </message>
     <message>
         <source>Connecting…</source>
-        <translation type="unfinished"></translation>
+        <translation>සම්බන්ධ කරමින්…</translation>
     </message>
     <message>
         <source>Copied</source>
-        <translation type="unfinished"></translation>
+        <translation>පිටපත් කළා</translation>
     </message>
     <message>
         <source>Copy command</source>
-        <translation type="unfinished"></translation>
+        <translation>විධානය පිටපත් කරන්න</translation>
     </message>
     <message>
         <source>Copy text</source>
-        <translation type="unfinished"></translation>
+        <translation>පාඨය පිටපත් කරන්න</translation>
     </message>
     <message>
         <source>Left unchanged</source>
         <comment>agent client</comment>
-        <translation type="unfinished"></translation>
+        <translation>නොවෙනස්ව තැබුවා</translation>
     </message>
     <message>
         <source>Looking for coding agents…</source>
-        <translation type="unfinished"></translation>
+        <translation>කේතන නියෝජිතයන් සොයමින්…</translation>
     </message>
     <message>
         <source>Needs an update</source>
         <comment>agent client</comment>
-        <translation type="unfinished"></translation>
+        <translation>යාවත්කාලීනයක් අවශ්‍යයි</translation>
     </message>
     <message>
         <source>Not connected</source>
         <comment>agent client</comment>
-        <translation type="unfinished"></translation>
+        <translation>සම්බන්ධ නැත</translation>
     </message>
     <message>
         <source>Not found on this computer</source>
         <comment>agent client</comment>
-        <translation type="unfinished"></translation>
+        <translation>මෙම පරිගණකයේ හමු නොවීය</translation>
     </message>
     <message>
         <source>Or run this in a terminal:</source>
-        <translation type="unfinished"></translation>
+        <translation>නැතහොත් මෙය ටර්මිනලයක ධාවනය කරන්න:</translation>
     </message>
     <message>
         <source>Remove Tomacco</source>
-        <translation type="unfinished"></translation>
+        <translation>Tomacco ඉවත් කරන්න</translation>
     </message>
     <message>
         <source>Removed</source>
         <comment>agent client</comment>
-        <translation type="unfinished"></translation>
+        <translation>ඉවත් කළා</translation>
     </message>
     <message>
         <source>Removes only the entry setup added; the rest of the file stays.</source>
-        <translation type="unfinished"></translation>
+        <translation>පිහිටුම එක් කළ ඇතුළත් කිරීම පමණක් ඉවත් කරයි; ගොනුවේ ඉතිරි කොටස පවතී.</translation>
     </message>
     <message>
         <source>Setup adds Tomacco to %1&apos;s settings and keeps a backup of the file.</source>
-        <translation type="unfinished"></translation>
+        <translation>පිහිටුම Tomacco %1 හි සැකසුම් වෙත එක් කර ගොනුවේ උපස්ථයක් තබා ගනී.</translation>
     </message>
     <message>
         <source>Setup did not report on this agent.</source>
-        <translation type="unfinished"></translation>
+        <translation>පිහිටුම මෙම නියෝජිතයා ගැන වාර්තා කළේ නැත.</translation>
     </message>
     <message>
         <source>Setup failed</source>
         <comment>agent client</comment>
-        <translation type="unfinished"></translation>
+        <translation>පිහිටුම අසාර්ථකයි</translation>
     </message>
     <message>
         <source>Setup failed.</source>
-        <translation type="unfinished"></translation>
+        <translation>පිහිටුම අසාර්ථක විය.</translation>
     </message>
     <message>
         <source>Something else in %1&apos;s settings uses the name. Setup leaves it alone; add Tomacco by hand under another name.</source>
-        <translation type="unfinished"></translation>
+        <translation>%1 හි සැකසුම්වල වෙනත් දෙයක් මෙම නම භාවිත කරයි. පිහිටුම එයට අත නොතබයි; Tomacco වෙනත් නමක් යටතේ අතින් එක් කරන්න.</translation>
     </message>
     <message>
         <source>The agent list could not be requested.</source>
-        <translation type="unfinished"></translation>
+        <translation>නියෝජිත ලැයිස්තුව ඉල්ලා සිටිය නොහැකි විය.</translation>
     </message>
     <message>
         <source>This file is not one Tomacco rewrites. Add the text below yourself.</source>
-        <translation type="unfinished"></translation>
+        <translation>මෙම ගොනුව Tomacco නැවත ලියන එකක් නොවේ. පහත පාඨය ඔබම එක් කරන්න.</translation>
     </message>
     <message>
         <source>This version of tomaccoctl cannot list coding agents.</source>
-        <translation type="unfinished"></translation>
+        <translation>tomaccoctl හි මෙම අනුවාදයට කේතන නියෝජිතයන් ලැයිස්තුගත කළ නොහැක.</translation>
     </message>
     <message>
         <source>Tomacco could not tell which settings layout %1 reads. Add the text below yourself, or run setup in a terminal with the version.</source>
-        <translation type="unfinished"></translation>
+        <translation>%1 කියවන්නේ කුමන සැකසුම් පිරිසැලසුමදැයි Tomacco හට කිව නොහැකි විය. පහත පාඨය ඔබම එක් කරන්න, නැතහොත් අනුවාදය සමඟ ටර්මිනලයක පිහිටුම ධාවනය කරන්න.</translation>
     </message>
     <message>
         <source>Tomacco&apos;s entry is switched off in %1. Setup leaves your choice alone; switch it on there.</source>
-        <translation type="unfinished"></translation>
+        <translation>%1 හි Tomacco ඇතුළත් කිරීම අක්‍රිය කර ඇත. පිහිටුම ඔබේ තේරීම වෙනස් නොකරයි; එය එහි සක්‍රිය කරන්න.</translation>
     </message>
     <message>
         <source>Tomacco&apos;s entry points to another program or older settings. Update rewrites only that entry and keeps a backup.</source>
-        <translation type="unfinished"></translation>
+        <translation>Tomacco ඇතුළත් කිරීම වෙනත් වැඩසටහනකට හෝ පැරණි සැකසුම් වෙත යොමු කරයි. යාවත්කාලීනය එම ඇතුළත් කිරීම පමණක් නැවත ලියා උපස්ථයක් තබා ගනී.</translation>
     </message>
     <message>
         <source>Tomacco&apos;s entry was removed; the rest of the file is unchanged.</source>
-        <translation type="unfinished"></translation>
+        <translation>Tomacco ඇතුළත් කිරීම ඉවත් කළා; ගොනුවේ ඉතිරි කොටස නොවෙනස්ව පවතී.</translation>
     </message>
     <message>
         <source>Turned off in its settings</source>
         <comment>agent client</comment>
-        <translation type="unfinished"></translation>
+        <translation>එහි සැකසුම්වල අක්‍රිය කර ඇත</translation>
     </message>
     <message>
         <source>Update entry</source>
-        <translation type="unfinished"></translation>
+        <translation>ඇතුළත් කිරීම යාවත්කාලීන කරන්න</translation>
     </message>
     <message>
         <source>Version unclear</source>
         <comment>agent client</comment>
-        <translation type="unfinished"></translation>
+        <translation>අනුවාදය අපැහැදිලියි</translation>
     </message>
 </context>
 </TS>

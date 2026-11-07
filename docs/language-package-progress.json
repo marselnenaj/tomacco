@@ -63,6 +63,22 @@
       "conflicts_resolved": [
         "docs/language-package-progress.json"
       ],
+      "catalogs_1800_complete_verified": true,
+      "merge_commit": "8354fd432af09d907746646c20bb890a3d0cf461"
+    },
+    {
+      "name": "asian",
+      "head": "6df7b3c074786ab94b5a326128d0a4bb55e3e7e1",
+      "codes": [
+        "ta",
+        "si",
+        "ko",
+        "th",
+        "vi"
+      ],
+      "conflicts_resolved": [
+        "docs/language-package-progress.json"
+      ],
       "catalogs_1800_complete_verified": true
     }
   ]
