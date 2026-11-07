@@ -2056,360 +2056,360 @@ Malli määrää näytön ja kehyksen. Android tulee valitusta järjestelmäkuva
     </message>
     <message>
         <source>Time limit reached</source>
-        <translation type="unfinished"></translation>
+        <translation>Aikaraja saavutettu</translation>
     </message>
     <message>
         <source>Time zone %1 applied</source>
-        <translation type="unfinished"></translation>
+        <translation>Aikavyöhyke %1 otettu käyttöön</translation>
     </message>
     <message>
         <source>Time zone %1 not applied · %2</source>
-        <translation type="unfinished"></translation>
+        <translation>Aikavyöhykettä %1 ei otettu käyttöön · %2</translation>
     </message>
     <message>
         <source>Time zone %1 was already set</source>
-        <translation type="unfinished"></translation>
+        <translation>Aikavyöhyke %1 oli jo asetettu</translation>
     </message>
     <message>
         <source>Time zone not set · %1</source>
-        <translation type="unfinished"></translation>
+        <translation>Aikavyöhykettä ei asetettu · %1</translation>
     </message>
     <message>
         <source>View run</source>
-        <translation type="unfinished"></translation>
+        <translation>Näytä ajo</translation>
     </message>
     <message>
         <source>Virtual iOS device · started by an agent</source>
-        <translation type="unfinished"></translation>
+        <translation>Virtuaalinen iOS-laite · agentin käynnistämä</translation>
     </message>
     <message>
         <source>Virtual iOS device started by your agent · its real screen appears here and you can use it.</source>
-        <translation type="unfinished"></translation>
+        <translation>Agenttisi käynnistämä virtuaalinen iOS-laite · sen todellinen näyttö näkyy tässä ja voit käyttää sitä.</translation>
     </message>
     <message>
         <source>Virtual iOS device</source>
-        <translation type="unfinished"></translation>
+        <translation>Virtuaalinen iOS-laite</translation>
     </message>
     <message>
         <source>Virtual iOS device · experimental</source>
-        <translation type="unfinished"></translation>
+        <translation>Virtuaalinen iOS-laite · kokeellinen</translation>
     </message>
     <message>
         <source>Virtual iOS device · run %1</source>
-        <translation type="unfinished"></translation>
+        <translation>Virtuaalinen iOS-laite · ajo %1</translation>
     </message>
     <message>
         <source>Waiting to start</source>
-        <translation type="unfinished"></translation>
+        <translation>Odottaa käynnistystä</translation>
     </message>
     <message>
         <source>configuration verified</source>
-        <translation type="unfinished"></translation>
+        <translation>määritys vahvistettu</translation>
     </message>
     <message>
         <source>execute</source>
         <comment>access</comment>
-        <translation type="unfinished"></translation>
+        <translation>suoritus</translation>
     </message>
     <message>
         <source>data from iOS verified</source>
-        <translation type="unfinished"></translation>
+        <translation>iOS:n tiedot vahvistettu</translation>
     </message>
     <message>
         <source>iOS diagnostics running</source>
-        <translation type="unfinished"></translation>
+        <translation>iOS-diagnostiikka käynnissä</translation>
     </message>
     <message>
         <source>iOS draws itself for this device; the data stays the same.</source>
-        <translation type="unfinished"></translation>
+        <translation>iOS piirtää itsensä tälle laitteelle; tiedot pysyvät samoina.</translation>
     </message>
     <message>
         <source>iOS is starting… this takes many minutes</source>
-        <translation type="unfinished"></translation>
+        <translation>iOS käynnistyy… tämä kestää monta minuuttia</translation>
     </message>
     <message>
         <source>iOS on Linux</source>
-        <translation type="unfinished"></translation>
+        <translation>iOS Linuxissa</translation>
     </message>
     <message>
         <source>iOS</source>
-        <translation type="unfinished"></translation>
+        <translation>iOS</translation>
     </message>
     <message>
         <source>iOS test system</source>
-        <translation type="unfinished"></translation>
+        <translation>iOS-testijärjestelmä</translation>
     </message>
     <message>
         <source>Device status unreachable</source>
-        <translation type="unfinished"></translation>
+        <translation>Laitteen tilaa ei tavoiteta</translation>
     </message>
     <message>
         <source>incomplete run</source>
-        <translation type="unfinished"></translation>
+        <translation>keskeneräinen ajo</translation>
     </message>
     <message>
         <source>installed in the current run</source>
-        <translation type="unfinished"></translation>
+        <translation>asennettu nykyisessä ajossa</translation>
     </message>
     <message>
         <source>interrupts enabled</source>
-        <translation type="unfinished"></translation>
+        <translation>keskeytykset sallittu</translation>
     </message>
     <message>
         <source>interrupts blocked</source>
-        <translation type="unfinished"></translation>
+        <translation>keskeytykset estetty</translation>
     </message>
     <message>
         <source>locked · unlock on the device</source>
-        <translation type="unfinished"></translation>
+        <translation>lukittu · avaa lukitus laitteessa</translation>
     </message>
     <message>
         <source>no answer</source>
-        <translation type="unfinished"></translation>
+        <translation>ei vastausta</translation>
     </message>
     <message>
         <source>no signal</source>
-        <translation type="unfinished"></translation>
+        <translation>ei signaalia</translation>
     </message>
     <message>
         <source>not installed in the current run</source>
-        <translation type="unfinished"></translation>
+        <translation>ei asennettu nykyisessä ajossa</translation>
     </message>
     <message>
         <source>not recorded</source>
-        <translation type="unfinished"></translation>
+        <translation>ei tallennettu</translation>
     </message>
     <message>
         <source>not verified</source>
-        <translation type="unfinished"></translation>
+        <translation>ei vahvistettu</translation>
     </message>
     <message>
         <source>off</source>
-        <translation type="unfinished"></translation>
+        <translation>pois</translation>
     </message>
     <message>
         <source>off · last run not verified</source>
-        <translation type="unfinished"></translation>
+        <translation>pois · viimeisintä ajoa ei vahvistettu</translation>
     </message>
     <message>
         <source>off · session ended without saving, the next start uses the last saved state</source>
-        <translation type="unfinished"></translation>
+        <translation>pois · istunto päättyi tallentamatta, seuraava käynnistys käyttää viimeksi tallennettua tilaa</translation>
     </message>
     <message>
         <source>off · stopped and saved because the graphics card ran out of memory</source>
-        <translation type="unfinished"></translation>
+        <translation>pois · pysäytetty ja tallennettu, koska näytönohjaimen muisti loppui</translation>
     </message>
     <message>
         <source>off · stopped because the graphics card ran out of memory, the next start uses the last saved state</source>
-        <translation type="unfinished"></translation>
+        <translation>pois · pysäytetty, koska näytönohjaimen muisti loppui, seuraava käynnistys käyttää viimeksi tallennettua tilaa</translation>
     </message>
     <message>
         <source>off · session was saved and ended at its time limit</source>
-        <translation type="unfinished"></translation>
+        <translation>pois · istunto tallennettiin ja päättyi aikarajaansa</translation>
     </message>
     <message>
         <source>opened at start</source>
-        <translation type="unfinished"></translation>
+        <translation>avattu käynnistyksessä</translation>
     </message>
     <message>
         <source>preparing…</source>
-        <translation type="unfinished"></translation>
+        <translation>valmistellaan…</translation>
     </message>
     <message>
         <source>read</source>
         <comment>access</comment>
-        <translation type="unfinished"></translation>
+        <translation>luku</translation>
     </message>
     <message>
         <source>running</source>
-        <translation type="unfinished"></translation>
+        <translation>käynnissä</translation>
     </message>
     <message>
         <source>running · app launch accepted</source>
-        <translation type="unfinished"></translation>
+        <translation>käynnissä · sovelluksen käynnistys hyväksytty</translation>
     </message>
     <message>
         <source>running · app launch unclear</source>
-        <translation type="unfinished"></translation>
+        <translation>käynnissä · sovelluksen käynnistys epäselvä</translation>
     </message>
     <message>
         <source>running · app visible</source>
-        <translation type="unfinished"></translation>
+        <translation>käynnissä · sovellus näkyvissä</translation>
     </message>
     <message>
         <source>seconds</source>
-        <translation type="unfinished"></translation>
+        <translation>sekuntia</translation>
     </message>
     <message>
         <source>signal active</source>
-        <translation type="unfinished"></translation>
+        <translation>signaali aktiivinen</translation>
     </message>
     <message>
         <source>skipped</source>
-        <translation type="unfinished"></translation>
+        <translation>ohitettu</translation>
     </message>
     <message>
         <source>stopping…</source>
-        <translation type="unfinished"></translation>
+        <translation>pysäytetään…</translation>
     </message>
     <message>
         <source>the device&apos;s helper tools are too old for this (before build 368)</source>
-        <translation type="unfinished"></translation>
+        <translation>laitteen apuohjelmat ovat tähän liian vanhoja (ennen koontiversiota 368)</translation>
     </message>
     <message>
         <source>this computer&apos;s time zone has no standard name such as Europe/Vienna</source>
-        <translation type="unfinished"></translation>
+        <translation>tämän tietokoneen aikavyöhykkeellä ei ole vakionimeä, kuten Europe/Vienna</translation>
     </message>
     <message>
         <source>transfer waiting</source>
-        <translation type="unfinished"></translation>
+        <translation>siirto odottaa</translation>
     </message>
     <message>
         <source>trying to unlock…</source>
-        <translation type="unfinished"></translation>
+        <translation>yritetään avata lukitusta…</translation>
     </message>
     <message>
         <source>unverified · only the path is listed, the next start checks the bundle</source>
-        <translation type="unfinished"></translation>
+        <translation>vahvistamaton · vain polku on luettelossa, seuraava käynnistys tarkistaa paketin</translation>
     </message>
     <message>
         <source>verified</source>
-        <translation type="unfinished"></translation>
+        <translation>vahvistettu</translation>
     </message>
     <message>
         <source>write</source>
         <comment>access</comment>
-        <translation type="unfinished"></translation>
+        <translation>kirjoitus</translation>
     </message>
     <message>
         <source>System</source>
-        <translation type="unfinished"></translation>
+        <translation>Järjestelmä</translation>
     </message>
     <message>
         <source>Controller</source>
-        <translation type="unfinished"></translation>
+        <translation>Ohjain</translation>
     </message>
     <message>
         <source>Emulator</source>
-        <translation type="unfinished"></translation>
+        <translation>Emulaattori</translation>
     </message>
     <message>
         <source>Saved states</source>
-        <translation type="unfinished"></translation>
+        <translation>Tallennetut tilat</translation>
     </message>
     <message>
         <source>Keep the last stopped run under a name and start from it again later. Saving copies nothing.</source>
-        <translation type="unfinished"></translation>
+        <translation>Säilytä viimeksi pysäytetty ajo nimellä ja käynnistä siitä myöhemmin uudelleen. Tallentaminen ei kopioi mitään.</translation>
     </message>
     <message>
         <source>No saved states yet.</source>
-        <translation type="unfinished"></translation>
+        <translation>Ei vielä tallennettuja tiloja.</translation>
     </message>
     <message>
         <source>Saved state</source>
-        <translation type="unfinished"></translation>
+        <translation>Tallennettu tila</translation>
     </message>
     <message>
         <source>Start from it</source>
-        <translation type="unfinished"></translation>
+        <translation>Käynnistä tästä</translation>
     </message>
     <message>
         <source>The next start begins from this state · the phone must be off</source>
-        <translation type="unfinished"></translation>
+        <translation>Seuraava käynnistys alkaa tästä tilasta · puhelimen on oltava sammutettuna</translation>
     </message>
     <message>
         <source>Delete for good</source>
-        <translation type="unfinished"></translation>
+        <translation>Poista lopullisesti</translation>
     </message>
     <message>
         <source>Delete</source>
-        <translation type="unfinished"></translation>
+        <translation>Poista</translation>
     </message>
     <message>
         <source>Remove the name, and its disk copy when nothing else keeps it</source>
-        <translation type="unfinished"></translation>
+        <translation>Poista nimi ja sen levykopio, kun mikään muu ei sitä säilytä</translation>
     </message>
     <message>
         <source>Name for the last stopped run</source>
-        <translation type="unfinished"></translation>
+        <translation>Nimi viimeksi pysäytetylle ajolle</translation>
     </message>
     <message>
         <source>Save state</source>
-        <translation type="unfinished"></translation>
+        <translation>Tallenna tila</translation>
     </message>
     <message>
         <source>Keep the last stopped run under this name</source>
-        <translation type="unfinished"></translation>
+        <translation>Säilytä viimeksi pysäytetty ajo tällä nimellä</translation>
     </message>
     <message>
         <source>run %1</source>
-        <translation type="unfinished"></translation>
+        <translation>ajo %1</translation>
     </message>
     <message>
         <source>next start</source>
-        <translation type="unfinished"></translation>
+        <translation>seuraava käynnistys</translation>
     </message>
     <message>
         <source>disks gone</source>
-        <translation type="unfinished"></translation>
+        <translation>levyt poissa</translation>
     </message>
     <message>
         <source>Saved as %1</source>
-        <translation type="unfinished"></translation>
+        <translation>Tallennettu nimellä %1</translation>
     </message>
     <message>
         <source>The next start begins from %1</source>
-        <translation type="unfinished"></translation>
+        <translation>Seuraava käynnistys alkaa tilasta %1</translation>
     </message>
     <message>
         <source>%1 deleted with its disk copy</source>
-        <translation type="unfinished"></translation>
+        <translation>%1 poistettu levykopioineen</translation>
     </message>
     <message>
         <source>%1 deleted · its disk copy stays (%2)</source>
-        <translation type="unfinished"></translation>
+        <translation>%1 poistettu · sen levykopio säilyy (%2)</translation>
     </message>
 </context>
 <context>
     <name>Main</name>
     <message>
         <source>Screenshot saved and copied · %1</source>
-        <translation type="unfinished"></translation>
+        <translation>Kuvakaappaus tallennettu ja kopioitu · %1</translation>
     </message>
     <message>
         <source>%1 panel pixels</source>
-        <translation type="unfinished"></translation>
+        <translation>%1 paneelin pikseliä</translation>
     </message>
     <message numerus="yes">
         <source>%n model(s)</source>
-        <translation type="unfinished">
-            <numerusform></numerusform>
-            <numerusform></numerusform>
+        <translation>
+            <numerusform>%n malli</numerusform>
+            <numerusform>%n mallia</numerusform>
         </translation>
     </message>
     <message>
         <source>Apple download ↗</source>
-        <translation type="unfinished"></translation>
+        <translation>Applen lataus ↗</translation>
     </message>
     <message>
         <source>Back</source>
-        <translation type="unfinished"></translation>
+        <translation>Takaisin</translation>
     </message>
     <message>
         <source>CASE</source>
-        <translation type="unfinished"></translation>
+        <translation>KUORI</translation>
     </message>
     <message>
         <source>Choose a web build</source>
-        <translation type="unfinished"></translation>
+        <translation>Valitse verkkokäännös</translation>
     </message>
     <message>
         <source>Close</source>
-        <translation type="unfinished"></translation>
+        <translation>Sulje</translation>
     </message>
     <message>
         <source>Copy setup</source>
-        <translation type="unfinished"></translation>
+        <translation>Kopioi asetus</translation>
     </message>
     <message>
         <source>Ctrl+L                  Address
@@ -2418,465 +2418,471 @@ Ctrl+Shift+R         Rotate
 Ctrl+Shift+S         Screenshot
 F11 / Esc              Full screen / back
 F12                        Web inspector</source>
-        <translation type="unfinished"></translation>
+        <translation>Ctrl+L                  Osoite
+Ctrl+R                  Lataa uudelleen
+Ctrl+Shift+R         Kierrä
+Ctrl+Shift+S         Kuvakaappaus
+F11 / Esc              Koko näyttö / takaisin
+F12                        Verkkotarkastin</translation>
     </message>
     <message>
         <source>Ctrl+L  Address     Ctrl+Shift+R  Rotate     F11  Full screen</source>
-        <translation type="unfinished"></translation>
+        <translation>Ctrl+L  Osoite     Ctrl+Shift+R  Kierrä     F11  Koko näyttö</translation>
     </message>
     <message>
         <source>Custom</source>
         <comment>device category</comment>
-        <translation type="unfinished"></translation>
+        <translation>Mukautettu</translation>
     </message>
     <message>
         <source>Custom size</source>
-        <translation type="unfinished"></translation>
+        <translation>Mukautettu koko</translation>
     </message>
     <message>
         <source>DISPLAY</source>
-        <translation type="unfinished"></translation>
+        <translation>NÄYTTÖ</translation>
     </message>
     <message>
         <source>Developer tools · F12</source>
-        <translation type="unfinished"></translation>
+        <translation>Kehittäjätyökalut · F12</translation>
     </message>
     <message>
         <source>Device catalog updated</source>
-        <translation type="unfinished"></translation>
+        <translation>Laiteluettelo päivitetty</translation>
     </message>
     <message>
         <source>Device profiles (*.json)</source>
-        <translation type="unfinished"></translation>
+        <translation>Laiteprofiilit (*.json)</translation>
     </message>
     <message>
         <source>Export</source>
-        <translation type="unfinished"></translation>
+        <translation>Vie</translation>
     </message>
     <message>
         <source>Export device profile</source>
-        <translation type="unfinished"></translation>
+        <translation>Vie laiteprofiili</translation>
     </message>
     <message>
         <source>Fit</source>
-        <translation type="unfinished"></translation>
+        <translation>Sovita</translation>
     </message>
     <message>
         <source>Fold</source>
-        <translation type="unfinished"></translation>
+        <translation>Taita</translation>
     </message>
     <message>
         <source>Folded · %1</source>
-        <translation type="unfinished"></translation>
+        <translation>Taitettu · %1</translation>
     </message>
     <message>
         <source>Folded · Landscape</source>
-        <translation type="unfinished"></translation>
+        <translation>Taitettu · Vaaka</translation>
     </message>
     <message>
         <source>Folded · Portrait</source>
-        <translation type="unfinished"></translation>
+        <translation>Taitettu · Pysty</translation>
     </message>
     <message>
         <source>Full screen · F11</source>
-        <translation type="unfinished"></translation>
+        <translation>Koko näyttö · F11</translation>
     </message>
     <message>
         <source>Got it</source>
-        <translation type="unfinished"></translation>
+        <translation>Selvä</translation>
     </message>
     <message>
         <source>Import</source>
-        <translation type="unfinished"></translation>
+        <translation>Tuo</translation>
     </message>
     <message>
         <source>Import device profiles</source>
-        <translation type="unfinished"></translation>
+        <translation>Tuo laiteprofiileja</translation>
     </message>
     <message>
         <source>Inner · Under-display camera</source>
-        <translation type="unfinished"></translation>
+        <translation>Sisänäyttö · Näytön alla oleva kamera</translation>
     </message>
     <message>
         <source>Interactive demo</source>
-        <translation type="unfinished"></translation>
+        <translation>Interaktiivinen esittely</translation>
     </message>
     <message>
         <source>Keyboard shortcuts and tips</source>
-        <translation type="unfinished"></translation>
+        <translation>Pikanäppäimet ja vinkit</translation>
     </message>
     <message>
         <source>Landscape</source>
-        <translation type="unfinished"></translation>
+        <translation>Vaaka</translation>
     </message>
     <message>
         <source>Landscape</source>
         <comment>orientation button</comment>
-        <translation type="unfinished"></translation>
+        <translation>Vaaka</translation>
     </message>
     <message>
         <source>Load a local web build with index.html</source>
-        <translation type="unfinished"></translation>
+        <translation>Lataa paikallinen verkkokäännös, jossa on index.html</translation>
     </message>
     <message>
         <source>Loading…</source>
-        <translation type="unfinished"></translation>
+        <translation>Ladataan…</translation>
     </message>
     <message>
         <source>Model specifications ↗</source>
-        <translation type="unfinished"></translation>
+        <translation>Mallin tekniset tiedot ↗</translation>
     </message>
     <message>
         <source>Native build tools</source>
-        <translation type="unfinished"></translation>
+        <translation>Natiivit käännöstyökalut</translation>
     </message>
     <message>
         <source>No matching model</source>
-        <translation type="unfinished"></translation>
+        <translation>Ei vastaavaa mallia</translation>
     </message>
     <message>
         <source>Open</source>
-        <translation type="unfinished"></translation>
+        <translation>Avaa</translation>
     </message>
     <message>
         <source>Open folder</source>
-        <translation type="unfinished"></translation>
+        <translation>Avaa kansio</translation>
     </message>
     <message>
         <source>Open · %1</source>
-        <translation type="unfinished"></translation>
+        <translation>Auki · %1</translation>
     </message>
     <message>
         <source>Open · Landscape</source>
-        <translation type="unfinished"></translation>
+        <translation>Auki · Vaaka</translation>
     </message>
     <message>
         <source>Open · Portrait</source>
-        <translation type="unfinished"></translation>
+        <translation>Auki · Pysty</translation>
     </message>
     <message>
         <source>Outer · Round front camera</source>
-        <translation type="unfinished"></translation>
+        <translation>Ulkonäyttö · Pyöreä etukamera</translation>
     </message>
     <message>
         <source>Tomacco · Web inspector</source>
-        <translation type="unfinished"></translation>
+        <translation>Tomacco · Verkkotarkastin</translation>
     </message>
     <message>
         <source>Portrait</source>
-        <translation type="unfinished"></translation>
+        <translation>Pysty</translation>
     </message>
     <message>
         <source>Portrait</source>
         <comment>orientation button</comment>
-        <translation type="unfinished"></translation>
+        <translation>Pysty</translation>
     </message>
     <message>
         <source>QUICK OPEN</source>
-        <translation type="unfinished"></translation>
+        <translation>PIKA-AVAUS</translation>
     </message>
     <message>
         <source>Reload · Ctrl+R</source>
-        <translation type="unfinished"></translation>
+        <translation>Lataa uudelleen · Ctrl+R</translation>
     </message>
     <message>
         <source>Rotate · Ctrl+Shift+R</source>
-        <translation type="unfinished"></translation>
+        <translation>Kierrä · Ctrl+Shift+R</translation>
     </message>
     <message>
         <source>Safe area</source>
-        <translation type="unfinished"></translation>
+        <translation>Turva-alue</translation>
     </message>
     <message>
         <source>Save device as PNG · Ctrl+Shift+S</source>
-        <translation type="unfinished"></translation>
+        <translation>Tallenna laite PNG-kuvana · Ctrl+Shift+S</translation>
     </message>
     <message>
         <source>Screenshot could not be saved.</source>
-        <translation type="unfinished"></translation>
+        <translation>Kuvakaappausta ei voitu tallentaa.</translation>
     </message>
     <message>
         <source>Screenshot saved · %1</source>
-        <translation type="unfinished"></translation>
+        <translation>Kuvakaappaus tallennettu · %1</translation>
     </message>
     <message>
         <source>Search Android devices…</source>
-        <translation type="unfinished"></translation>
+        <translation>Hae Android-laitteita…</translation>
     </message>
     <message>
         <source>Search Apple devices…</source>
-        <translation type="unfinished"></translation>
+        <translation>Hae Apple-laitteita…</translation>
     </message>
     <message>
         <source>Search custom devices…</source>
-        <translation type="unfinished"></translation>
+        <translation>Hae mukautettuja laitteita…</translation>
     </message>
     <message>
         <source>Send layout hints to the app; the background always stays edge-to-edge</source>
-        <translation type="unfinished"></translation>
+        <translation>Lähetä asetteluvihjeet sovellukselle; tausta ulottuu aina reunasta reunaan</translation>
     </message>
     <message>
         <source>Show safe area</source>
-        <translation type="unfinished"></translation>
+        <translation>Näytä turva-alue</translation>
     </message>
     <message>
         <source>TOOLS</source>
-        <translation type="unfinished"></translation>
+        <translation>TYÖKALUT</translation>
     </message>
     <message>
         <source>The layout preview uses Chromium. Build and run native Android and iOS apps from the workspace on an emulator or a connected device. The profiles contain the manufacturers&apos; resolutions and approximated bodies, cutouts and safe areas. CSS env(safe-area-inset-*) and Safari are not emulated here.</source>
-        <translation type="unfinished"></translation>
+        <translation>Asettelun esikatselu käyttää Chromiumia. Käännä ja aja natiiveja Android- ja iOS-sovelluksia työtilasta emulaattorissa tai yhdistetyssä laitteessa. Profiilit sisältävät valmistajien resoluutiot sekä likimääräiset rungot, lovet ja turva-alueet. CSS:n env(safe-area-inset-*) ja Safaria ei emuloida täällä.</translation>
     </message>
     <message>
         <source>The web preview works independently of this. Credentials are entered only in the interactive xtool setup.</source>
-        <translation type="unfinished"></translation>
+        <translation>Verkkoesikatselu toimii tästä riippumatta. Tunnistetiedot syötetään vain interaktiivisessa xtool-asennuksessa.</translation>
     </message>
     <message>
         <source>The workspace has unsaved changes.</source>
-        <translation type="unfinished"></translation>
+        <translation>Työtilassa on tallentamattomia muutoksia.</translation>
     </message>
     <message>
         <source>Unfold</source>
-        <translation type="unfinished"></translation>
+        <translation>Avaa taitto</translation>
     </message>
     <message>
         <source>Unreachable</source>
-        <translation type="unfinished"></translation>
+        <translation>Ei tavoitettavissa</translation>
     </message>
     <message>
         <source>VIEW</source>
-        <translation type="unfinished"></translation>
+        <translation>NÄKYMÄ</translation>
     </message>
     <message>
         <source>View at 100 %</source>
-        <translation type="unfinished"></translation>
+        <translation>Näytä 100 %:n koossa</translation>
     </message>
     <message>
         <source>View build tools →</source>
-        <translation type="unfinished"></translation>
+        <translation>Näytä käännöstyökalut →</translation>
     </message>
     <message>
         <source>Web app connected</source>
-        <translation type="unfinished"></translation>
+        <translation>Verkkosovellus yhdistetty</translation>
     </message>
     <message>
         <source>Web preview</source>
-        <translation type="unfinished"></translation>
+        <translation>Verkkoesikatselu</translation>
     </message>
     <message>
         <source>Workspace</source>
-        <translation type="unfinished"></translation>
+        <translation>Työtila</translation>
     </message>
     <message>
         <source>Zoom in</source>
-        <translation type="unfinished"></translation>
+        <translation>Lähennä</translation>
     </message>
     <message>
         <source>Zoom out</source>
-        <translation type="unfinished"></translation>
+        <translation>Loitonna</translation>
     </message>
     <message>
         <source>iOS SDK not set up yet</source>
-        <translation type="unfinished"></translation>
+        <translation>iOS SDK:ta ei ole vielä määritetty</translation>
     </message>
     <message>
         <source>xtool builds and signs SwiftPM apps for iOS. This needs Apple&apos;s SDK from Xcode and a separate sign-in for signing.</source>
-        <translation type="unfinished"></translation>
+        <translation>xtool kääntää ja allekirjoittaa SwiftPM-sovelluksia iOS:lle. Tähän tarvitaan Applen SDK Xcodesta ja erillinen kirjautuminen allekirjoitusta varten.</translation>
     </message>
     <message>
         <source>xtool sdk install /path/to/Xcode.xip
 xtool setup</source>
-        <translation type="unfinished"></translation>
+        <translation>xtool sdk install /path/to/Xcode.xip
+xtool setup</translation>
     </message>
     <message>
         <source>Safe area metadata</source>
-        <translation type="unfinished"></translation>
+        <translation>Turva-alueen metatiedot</translation>
     </message>
     <message>
         <source>System bars</source>
-        <translation type="unfinished"></translation>
+        <translation>Järjestelmäpalkit</translation>
     </message>
     <message>
         <source>Sound</source>
-        <translation type="unfinished"></translation>
+        <translation>Ääni</translation>
     </message>
     <message>
         <source>Custom</source>
-        <translation type="unfinished"></translation>
+        <translation>Mukautettu</translation>
     </message>
     <message>
         <source>Fast 3G</source>
-        <translation type="unfinished"></translation>
+        <translation>Nopea 3G</translation>
     </message>
     <message>
         <source>Network</source>
-        <translation type="unfinished"></translation>
+        <translation>Verkko</translation>
     </message>
     <message>
         <source>No throttling</source>
-        <translation type="unfinished"></translation>
+        <translation>Ei rajoitusta</translation>
     </message>
     <message>
         <source>Offline</source>
-        <translation type="unfinished"></translation>
+        <translation>Offline</translation>
     </message>
     <message>
         <source>Page color scheme</source>
-        <translation type="unfinished"></translation>
+        <translation>Sivun värimaailma</translation>
     </message>
     <message>
         <source>Reduce motion</source>
-        <translation type="unfinished"></translation>
+        <translation>Vähennä liikettä</translation>
     </message>
     <message>
         <source>Slow 3G</source>
-        <translation type="unfinished"></translation>
+        <translation>Hidas 3G</translation>
     </message>
     <message>
         <source>System</source>
-        <translation type="unfinished"></translation>
+        <translation>Järjestelmä</translation>
     </message>
     <message>
         <source>The page sees prefers-reduced-motion: reduce</source>
-        <translation type="unfinished"></translation>
+        <translation>Sivu näkee asetuksen prefers-reduced-motion: reduce</translation>
     </message>
     <message>
         <source>System bar color</source>
-        <translation type="unfinished"></translation>
+        <translation>Järjestelmäpalkin väri</translation>
     </message>
     <message>
         <source>Auto</source>
-        <translation type="unfinished"></translation>
+        <translation>Automaattinen</translation>
     </message>
     <message>
         <source>Light</source>
-        <translation type="unfinished"></translation>
+        <translation>Vaalea</translation>
     </message>
     <message>
         <source>Dark</source>
-        <translation type="unfinished"></translation>
+        <translation>Tumma</translation>
     </message>
     <message>
         <source>Web inspector</source>
-        <translation type="unfinished"></translation>
+        <translation>Verkkotarkastin</translation>
     </message>
     <message>
         <source>Builds &amp; devices</source>
-        <translation type="unfinished"></translation>
+        <translation>Käännökset ja laitteet</translation>
     </message>
     <message>
         <source>Screenshots</source>
-        <translation type="unfinished"></translation>
+        <translation>Kuvakaappaukset</translation>
     </message>
     <message>
         <source>Live device</source>
-        <translation type="unfinished"></translation>
+        <translation>Live-laite</translation>
     </message>
     <message>
         <source>Chromium preview. Frames are approximate.</source>
-        <translation type="unfinished"></translation>
+        <translation>Chromium-esikatselu. Kehykset ovat likimääräisiä.</translation>
     </message>
     <message>
         <source>Your web app, on every phone.</source>
-        <translation type="unfinished"></translation>
+        <translation>Verkkosovelluksesi jokaisessa puhelimessa.</translation>
     </message>
     <message>
         <source>Open it by URL, or load a finished build as a folder. Switch phone, color and orientation without reloading.</source>
-        <translation type="unfinished"></translation>
+        <translation>Avaa se URL-osoitteella tai lataa valmis käännös kansiona. Vaihda puhelinta, väriä ja suuntaa lataamatta uudelleen.</translation>
     </message>
     <message>
         <source>Unsaved changes</source>
-        <translation type="unfinished"></translation>
+        <translation>Tallentamattomia muutoksia</translation>
     </message>
 </context>
 <context>
     <name>NativeView</name>
     <message>
         <source>Click the text field in the app first</source>
-        <translation type="unfinished"></translation>
+        <translation>Napsauta ensin sovelluksen tekstikenttää</translation>
     </message>
     <message>
         <source>Connection to the runtime ended</source>
-        <translation type="unfinished"></translation>
+        <translation>Yhteys ajoympäristöön päättyi</translation>
     </message>
     <message>
         <source>Frame resolution outside the limits</source>
-        <translation type="unfinished"></translation>
+        <translation>Kuvan resoluutio rajojen ulkopuolella</translation>
     </message>
     <message>
         <source>Input failed</source>
-        <translation type="unfinished"></translation>
+        <translation>Syöte epäonnistui</translation>
     </message>
     <message>
         <source>Invalid video packet size</source>
-        <translation type="unfinished"></translation>
+        <translation>Virheellinen videopaketin koko</translation>
     </message>
     <message>
         <source>Not enough memory for the video frame</source>
-        <translation type="unfinished"></translation>
+        <translation>Muisti ei riitä videokuvalle</translation>
     </message>
     <message>
         <source>The H.264 data could not be read</source>
-        <translation type="unfinished"></translation>
+        <translation>H.264-dataa ei voitu lukea</translation>
     </message>
     <message>
         <source>The input was not confirmed</source>
-        <translation type="unfinished"></translation>
+        <translation>Syötettä ei vahvistettu</translation>
     </message>
     <message>
         <source>The runtime response is too large</source>
-        <translation type="unfinished"></translation>
+        <translation>Ajoympäristön vastaus on liian suuri</translation>
     </message>
     <message>
         <source>The video decoder could not be initialized</source>
-        <translation type="unfinished"></translation>
+        <translation>Videodekooderia ei voitu alustaa</translation>
     </message>
     <message>
         <source>The video frame could not be converted</source>
-        <translation type="unfinished"></translation>
+        <translation>Videokuvaa ei voitu muuntaa</translation>
     </message>
     <message>
         <source>Too many pending inputs</source>
-        <translation type="unfinished"></translation>
+        <translation>Liian monta odottavaa syötettä</translation>
     </message>
     <message>
         <source>Video decoder not available</source>
-        <translation type="unfinished"></translation>
+        <translation>Videodekooderi ei ole käytettävissä</translation>
     </message>
 </context>
 <context>
     <name>NativeWorkspace</name>
     <message>
         <source>Interface size</source>
-        <translation type="unfinished"></translation>
+        <translation>Käyttöliittymän koko</translation>
     </message>
     <message>
         <source>Larger interface</source>
-        <translation type="unfinished"></translation>
+        <translation>Suurempi käyttöliittymä</translation>
     </message>
     <message>
         <source>Smaller interface</source>
-        <translation type="unfinished"></translation>
+        <translation>Pienempi käyttöliittymä</translation>
     </message>
     <message>
         <source>Reset interface size</source>
-        <translation type="unfinished"></translation>
+        <translation>Palauta käyttöliittymän koko</translation>
     </message>
     <message>
         <source>Text, controls and spacing in Tomacco. Device zoom and screenshots keep their own size.</source>
-        <translation type="unfinished"></translation>
+        <translation>Tomaccon teksti, säätimet ja välistys. Laitteen zoomaus ja kuvakaappaukset säilyttävät oman kokonsa.</translation>
     </message>
     <message>
         <source>Reset</source>
-        <translation type="unfinished"></translation>
+        <translation>Palauta</translation>
     </message>
     <message>
         <source>Drop to open %1 as the project</source>
-        <translation type="unfinished"></translation>
+        <translation>Pudota avataksesi kohteen %1 projektina</translation>
     </message>
     <message>
         <source>Open recent project %1</source>
-        <translation type="unfinished"></translation>
+        <translation>Avaa viimeaikainen projekti %1</translation>
     </message>
     <message>
         <source>Connect a device to take a screenshot.</source>
