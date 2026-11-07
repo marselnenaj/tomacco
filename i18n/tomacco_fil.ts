@@ -7742,4 +7742,19 @@ Lisensyado sa ilalim ng GNU General Public License, bersyon 2 o mas bago.</trans
         <translation>Bumalik</translation>
     </message>
 </context>
+<context>
+    <name>ProjectFolderDialog</name>
+    <message>
+        <source>Home folder</source>
+        <translation>Pangunahing folder</translation>
+    </message>
+    <message>
+        <source>No folders here</source>
+        <translation>Walang folder dito</translation>
+    </message>
+    <message>
+        <source>Parent folder</source>
+        <translation>Folder sa itaas</translation>
+    </message>
+</context>
 </TS>

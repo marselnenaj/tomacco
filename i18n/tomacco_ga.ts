@@ -7742,4 +7742,19 @@ Faoi cheadúnas Cheadúnas Poiblí Ginearálta GNU, leagan 2 nó aon leagan nío
         <translation>Siar</translation>
     </message>
 </context>
+<context>
+    <name>ProjectFolderDialog</name>
+    <message>
+        <source>Home folder</source>
+        <translation>Fillteán baile</translation>
+    </message>
+    <message>
+        <source>No folders here</source>
+        <translation>Níl aon fhillteán anseo</translation>
+    </message>
+    <message>
+        <source>Parent folder</source>
+        <translation>Máthairfhillteán</translation>
+    </message>
+</context>
 </TS>

@@ -7754,4 +7754,19 @@ Licencirano pod GNU General Public License, različica 2 ali novejša.</translat
         <translation>Nazaj</translation>
     </message>
 </context>
+<context>
+    <name>ProjectFolderDialog</name>
+    <message>
+        <source>Home folder</source>
+        <translation>Domača mapa</translation>
+    </message>
+    <message>
+        <source>No folders here</source>
+        <translation>Tukaj ni map</translation>
+    </message>
+    <message>
+        <source>Parent folder</source>
+        <translation>Nadrejena mapa</translation>
+    </message>
+</context>
 </TS>

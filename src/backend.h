@@ -112,6 +112,17 @@ public:
     // The folder a dropped path names, to open as a project: its canonical
     // path when it is a directory and no app bundle, otherwise an empty string.
     Q_INVOKABLE QString projectFolder(const QString &path) const;
+    // A folder path as typed or pasted into the project chooser (qml/ProjectFolderDialog.qml),
+    // absolute and cleaned but not resolved: "~" and "~/..." are in the home folder, a file:
+    // URL is its local path, a relative path starts at `base` (the home folder when empty),
+    // line breaks are dropped and an empty text is `base`. Symbolic links stay in the path.
+    Q_INVOKABLE QString resolveFolderPath(const QString &typed,const QString &base={}) const;
+    // The subfolders the project chooser lists for a typed path (resolveFolderPath):
+    // {path, parent, home, error, folders}. error is "" or "missing", "not-folder" or
+    // "unreadable"; parent is "" at the root. Each folder is {name, path, link, target}:
+    // a symbolic link to a folder keeps its own path and names its resolved target. Sorted by
+    // name as people read numbers and letters; names starting with a dot only when `hidden`.
+    Q_INVOKABLE QVariantMap folderListing(const QString &typed,const QString &base={},bool hidden=false) const;
     // The release this build's version names, where its corresponding source
     // is offered (docs/SOURCE.md.in); the repository when no version is set.
     QUrl sourceUrl() const;

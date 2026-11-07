@@ -7730,4 +7730,19 @@ GNU जनरल पब्लिक लाइसेंस, संस्करण
         <translation>वापस</translation>
     </message>
 </context>
+<context>
+    <name>ProjectFolderDialog</name>
+    <message>
+        <source>Home folder</source>
+        <translation>होम फ़ोल्डर</translation>
+    </message>
+    <message>
+        <source>No folders here</source>
+        <translation>यहाँ कोई फ़ोल्डर नहीं है</translation>
+    </message>
+    <message>
+        <source>Parent folder</source>
+        <translation>ऊपर वाला फ़ोल्डर</translation>
+    </message>
+</context>
 </TS>

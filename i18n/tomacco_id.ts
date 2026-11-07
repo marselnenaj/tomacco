@@ -7718,4 +7718,19 @@ Dilisensikan di bawah GNU General Public License, versi 2 atau yang lebih baru.<
         <translation>Kembali</translation>
     </message>
 </context>
+<context>
+    <name>ProjectFolderDialog</name>
+    <message>
+        <source>Home folder</source>
+        <translation>Folder beranda</translation>
+    </message>
+    <message>
+        <source>No folders here</source>
+        <translation>Tidak ada folder di sini</translation>
+    </message>
+    <message>
+        <source>Parent folder</source>
+        <translation>Folder induk</translation>
+    </message>
+</context>
 </TS>

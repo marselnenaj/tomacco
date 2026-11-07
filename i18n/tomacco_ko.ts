@@ -7718,4 +7718,19 @@ GNU General Public License 버전 2 또는 그 이후 버전에 따라 라이선
         <translation>뒤로</translation>
     </message>
 </context>
+<context>
+    <name>ProjectFolderDialog</name>
+    <message>
+        <source>Home folder</source>
+        <translation>홈 폴더</translation>
+    </message>
+    <message>
+        <source>No folders here</source>
+        <translation>여기에는 폴더가 없습니다</translation>
+    </message>
+    <message>
+        <source>Parent folder</source>
+        <translation>상위 폴더</translation>
+    </message>
+</context>
 </TS>

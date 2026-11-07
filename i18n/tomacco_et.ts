@@ -7730,4 +7730,19 @@ Litsentsitud GNU General Public License&apos;i versiooni 2 või hilisema alusel.
         <translation>Tagasi</translation>
     </message>
 </context>
+<context>
+    <name>ProjectFolderDialog</name>
+    <message>
+        <source>Home folder</source>
+        <translation>Kodukaust</translation>
+    </message>
+    <message>
+        <source>No folders here</source>
+        <translation>Siin pole kaustu</translation>
+    </message>
+    <message>
+        <source>Parent folder</source>
+        <translation>Ülemkaust</translation>
+    </message>
+</context>
 </TS>

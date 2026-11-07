@@ -7730,4 +7730,19 @@ Með leyfi samkvæmt GNU General Public License, útgáfu 2 eða nýrri.</transl
         <translation>Til baka</translation>
     </message>
 </context>
+<context>
+    <name>ProjectFolderDialog</name>
+    <message>
+        <source>Home folder</source>
+        <translation>Heimamappa</translation>
+    </message>
+    <message>
+        <source>No folders here</source>
+        <translation>Engar möppur hér</translation>
+    </message>
+    <message>
+        <source>Parent folder</source>
+        <translation>Yfirmappa</translation>
+    </message>
+</context>
 </TS>

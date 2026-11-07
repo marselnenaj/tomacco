@@ -7810,4 +7810,19 @@ Licensed under the GNU General Public License, version 2 or later.</source>
         <translation>رجوع</translation>
     </message>
 </context>
+<context>
+    <name>ProjectFolderDialog</name>
+    <message>
+        <source>Home folder</source>
+        <translation>مجلد المنزل</translation>
+    </message>
+    <message>
+        <source>No folders here</source>
+        <translation>لا توجد مجلدات هنا</translation>
+    </message>
+    <message>
+        <source>Parent folder</source>
+        <translation>المجلد الأعلى</translation>
+    </message>
+</context>
 </TS>

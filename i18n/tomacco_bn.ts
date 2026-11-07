@@ -7730,4 +7730,19 @@ GNU জেনারেল পাবলিক লাইসেন্স, সংস
         <translation>ফিরে যান</translation>
     </message>
 </context>
+<context>
+    <name>ProjectFolderDialog</name>
+    <message>
+        <source>Home folder</source>
+        <translation>হোম ফোল্ডার</translation>
+    </message>
+    <message>
+        <source>No folders here</source>
+        <translation>এখানে কোনো ফোল্ডার নেই</translation>
+    </message>
+    <message>
+        <source>Parent folder</source>
+        <translation>উপরের ফোল্ডার</translation>
+    </message>
+</context>
 </TS>

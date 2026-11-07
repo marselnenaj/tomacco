@@ -7750,4 +7750,19 @@ GNU General Public License バージョン 2 以降の下で公開されてい�
         <translation>戻る</translation>
     </message>
 </context>
+<context>
+    <name>ProjectFolderDialog</name>
+    <message>
+        <source>Home folder</source>
+        <translation>ホームフォルダー</translation>
+    </message>
+    <message>
+        <source>No folders here</source>
+        <translation>ここにはフォルダーがありません</translation>
+    </message>
+    <message>
+        <source>Parent folder</source>
+        <translation>親フォルダー</translation>
+    </message>
+</context>
 </TS>

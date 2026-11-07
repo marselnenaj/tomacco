@@ -7766,4 +7766,19 @@ Na licencji GNU General Public License w wersji 2 lub nowszej.</translation>
         <translation>Wstecz</translation>
     </message>
 </context>
+<context>
+    <name>ProjectFolderDialog</name>
+    <message>
+        <source>Home folder</source>
+        <translation>Folder domowy</translation>
+    </message>
+    <message>
+        <source>No folders here</source>
+        <translation>Nie ma tu folderów</translation>
+    </message>
+    <message>
+        <source>Parent folder</source>
+        <translation>Folder nadrzędny</translation>
+    </message>
+</context>
 </TS>

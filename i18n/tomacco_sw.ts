@@ -7730,4 +7730,19 @@ Imepewa leseni chini ya Leseni ya Umma ya Jumla ya GNU, toleo la 2 au la baadaye
         <translation>Rudi</translation>
     </message>
 </context>
+<context>
+    <name>ProjectFolderDialog</name>
+    <message>
+        <source>Home folder</source>
+        <translation>Folda ya nyumbani</translation>
+    </message>
+    <message>
+        <source>No folders here</source>
+        <translation>Hakuna folda hapa</translation>
+    </message>
+    <message>
+        <source>Parent folder</source>
+        <translation>Folda ya juu</translation>
+    </message>
+</context>
 </TS>

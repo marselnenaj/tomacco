@@ -7762,4 +7762,19 @@ Distribuito sotto la GNU General Public License, versione 2 o successiva.</trans
         <translation>Indietro</translation>
     </message>
 </context>
+<context>
+    <name>ProjectFolderDialog</name>
+    <message>
+        <source>Home folder</source>
+        <translation>Cartella home</translation>
+    </message>
+    <message>
+        <source>No folders here</source>
+        <translation>Nessuna cartella qui</translation>
+    </message>
+    <message>
+        <source>Parent folder</source>
+        <translation>Cartella superiore</translation>
+    </message>
+</context>
 </TS>

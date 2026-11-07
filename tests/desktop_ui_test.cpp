@@ -231,6 +231,117 @@ class DesktopUiTest : public QObject {
             if(file.open(QIODevice::WriteOnly|QIODevice::Truncate))file.write(QJsonDocument(value).toJson());
         });
     }
+    // The project chooser (qml/ProjectFolderDialog.qml): one dialog that every project entry point opens.
+    QObject *chooser() { return object("projectFolderDialog"); }
+    QVariantMap chooserListing() { return mapOf(chooser()->property("listing")); }
+    QStringList chooserNames() { QStringList names;for(const auto &folder:chooserListing().value("folders").toList())names<<folder.toMap().value("name").toString();return names; }
+    QQuickItem *chooserPart(const QString &part) { return visualItem(window->contentItem(),"projectFolderDialog"+part); }
+    // Open and Cancel: the dialog's buttons by their role (StudioDialog names them).
+    QQuickItem *chooserOpen() { return chooserPart("-button-0"); }
+    QQuickItem *chooserCancel() { return chooserPart("-button-1"); }
+    // The row of a folder, scrolled into the list's view (a list builds only the rows near it).
+    QQuickItem *chooserRow(const QString &name) {
+        const int index=chooserNames().indexOf(name);
+        if(index<0)return nullptr;
+        QMetaObject::invokeMethod(chooserPart("Folders"),"positionViewAtIndex",Q_ARG(int,index),Q_ARG(int,4));
+        QTest::qWait(30);
+        return chooserPart(QString("Folder-%1").arg(index));
+    }
+    void clickOn(QQuickItem *target) {
+        QVERIFY(target);QTRY_VERIFY(target->isVisible() && target->width()>0);
+        QTest::mouseClick(window,Qt::LeftButton,Qt::NoModifier,target->mapToScene(QPointF(target->width()/2,target->height()/2)).toPoint());
+    }
+    // Ctrl+L, a typed (or pasted) path and Enter: the chooser shows that folder.
+    void chooserGo(const QString &path) {
+        QTest::keyClick(window,Qt::Key_L,Qt::ControlModifier);
+        QTRY_VERIFY(chooserPart("Location") && chooserPart("Location")->hasActiveFocus());
+        type(path);QTest::keyClick(window,Qt::Key_Return);
+    }
+    // Synthetic folders only: spaces, long German, Arabic and Japanese names, numbers, a
+    // project, a symbolic link to it, a hidden folder and a file (neither listed by default).
+    struct ChooserFolders { QString base,project,link; QStringList names; };
+    static ChooserFolders chooserFolders(const QTemporaryDir &root) {
+        ChooserFolders f;
+        f.base=root.filePath(QString::fromUtf8("Projekte mit Leerzeichen · ünïcödé · フォルダー"));
+        f.project=f.base+"/Flutter App";
+        f.link=f.base+QString::fromUtf8("/Verknüpfung zum Projekt");
+        f.names={QString::fromUtf8("Ein sehr langer Projektordner für die Übersetzungsprüfung der Anwendung mit Überlänge"),
+            QString::fromUtf8("تطبيق الهاتف المحمول التجريبي الطويل جدا للتحقق من الاتجاه"),
+            QString::fromUtf8("とても長い日本語のプロジェクトフォルダー名の確認用ディレクトリ"),
+            QStringLiteral("Flutter App"),QStringLiteral("app10"),QStringLiteral("app9")};
+        for(const auto &name:f.names)QDir().mkpath(f.base+"/"+name);
+        QDir().mkpath(f.base+"/.versteckt");
+        QFile pubspec(f.project+"/pubspec.yaml");
+        if(pubspec.open(QIODevice::WriteOnly))pubspec.write("name: chooser_app\nversion: 1.0.0\ndependencies:\n  flutter:\n    sdk: flutter\n");
+        pubspec.close();
+        QFile notes(f.base+"/notes.txt");if(notes.open(QIODevice::WriteOnly))notes.write("not a folder\n");
+        QFile::link(f.project,f.link);
+        return f;
+    }
+    // Everything of the open chooser lies inside the window: the location and every folder
+    // name whole (wrapped, never cut), the buttons at full width without overlapping, the
+    // text at the interface size, and no separate window of Qt's fixed-size fallback.
+    void checkChooserLayout(int percent,const QString &context) {
+        auto *dialog=chooser();QVERIFY(dialog);
+        QTRY_VERIFY2(dialog->property("opened").toBool(),qPrintable(context));
+        for(auto *other:QGuiApplication::topLevelWindows())
+            QVERIFY2(other==window || !other->isVisible() || other->title()!=dialog->property("title").toString(),qPrintable(context+": a separate chooser window "+other->title()));
+        const auto scene=[](QQuickItem *i){return i->mapRectToScene(QRectF(0,0,i->width(),i->height()));};
+        const QRectF frame(0,0,window->width(),window->height());
+        const QRectF box(dialog->property("x").toReal(),dialog->property("y").toReal(),dialog->property("width").toReal(),dialog->property("height").toReal());
+        QVERIFY2(frame.adjusted(-0.5,-0.5,0.5,0.5).contains(box),qPrintable(QString("%1: chooser %2,%3 %4x%5 in %6x%7").arg(context).arg(box.x()).arg(box.y()).arg(box.width()).arg(box.height()).arg(window->width()).arg(window->height())));
+        const bool sheet=dialog->property("sheet").toBool();
+        const int body=qRound((sheet?16:13)*percent/100.0);
+        if(sheet)QVERIFY2(qAbs(box.width()-window->width())<1,qPrintable(context+": a phone sheet fills the width"));
+        else QVERIFY2(box.width()>=qMin(760.0*percent/100,window->width()-2.0*qRound(24*percent/100.0))-1,qPrintable(context+": the dialog grows with the interface"));
+        auto *location=chooserPart("Location");QVERIFY(location);
+        QCOMPARE(location->property("font").value<QFont>().pixelSize(),body);
+        QCOMPARE(location->property("text").toString(),chooserListing().value("path").toString());
+        QVERIFY2(location->property("contentWidth").toReal()<=location->width()+1,qPrintable(context+": the location wraps"));
+        QVERIFY(box.contains(scene(chooserPart("LocationScroll"))));
+        QList<QQuickItem *> controls{chooserPart("Parent"),chooserPart("Home"),chooserPart("Hidden"),chooserOpen(),chooserCancel()};
+        for(auto *c:controls) {
+            QVERIFY2(c && c->isVisible(),qPrintable(context));
+            const auto r=scene(c);
+            QVERIFY2(box.adjusted(-0.5,-0.5,0.5,0.5).contains(r),qPrintable(QString("%1: %2 at %3,%4 %5x%6 outside the chooser").arg(context,c->objectName()).arg(r.x()).arg(r.y()).arg(r.width()).arg(r.height())));
+            if(c->metaObject()->indexOfProperty("displayText")>=0 && !c->property("displayText").toString().isEmpty())
+                QVERIFY2(c->width()+1>=c->implicitWidth(),qPrintable(context+": "+c->property("text").toString()+" is squeezed"));
+            if(sheet)QVERIFY2(c->height()>=qRound(48*percent/100.0)-0.5,qPrintable(context+": "+c->objectName()+" is no touch target"));
+            QVERIFY2(!accessibleName(c).isEmpty(),qPrintable(context+": "+c->objectName()+" has no name"));
+        }
+        for(int a=0;a<controls.size();++a)for(int b=a+1;b<controls.size();++b)
+            QVERIFY2(!scene(controls[a]).adjusted(1,1,-1,-1).intersects(scene(controls[b]).adjusted(1,1,-1,-1)),qPrintable(context+": "+controls[a]->objectName()+" overlaps "+controls[b]->objectName()));
+        // A short dialog scrolls its body (never the footer): the list is reachable at the end.
+        auto *scrolling=chooserPart("Body");QVERIFY(scrolling);
+        auto *flick=scrolling->property("contentItem").value<QQuickItem *>();QVERIFY(flick);
+        const auto bodyScroll=qScopeGuard([&]{flick->setProperty("contentY",0);});
+        flick->setProperty("contentY",qMax(0.0,flick->property("contentHeight").toReal()-flick->height()));
+        auto *list=chooserPart("Folders");QVERIFY(list);
+        QTRY_VERIFY2(box.adjusted(-0.5,-0.5,0.5,0.5).contains(scene(list)),qPrintable(context+": the list is out of reach"));
+        const auto listRect=scene(list);
+        QVERIFY2(list->height()>=2*dialog->property("rowHeight").toReal()-1,qPrintable(context+": the list keeps room for two rows"));
+        const auto folders=chooserListing().value("folders").toList();
+        for(const auto &entry:folders) {
+            const auto folder=entry.toMap();
+            auto *row=chooserRow(folder.value("name").toString());QVERIFY2(row,qPrintable(context+": no row for "+folder.value("name").toString()));
+            const auto rowRect=scene(row);
+            QVERIFY2(rowRect.left()>=listRect.left()-0.5 && rowRect.right()<=listRect.right()+0.5,qPrintable(context+": row sticks out"));
+            QVERIFY(row->height()>=dialog->property("rowHeight").toReal()-0.5);
+            auto *name=visualItem(row,"projectFolderName");QVERIFY(name);
+            QCOMPARE(name->property("text").toString(),folder.value("name").toString());
+            QCOMPARE(name->property("font").value<QFont>().pixelSize(),body);
+            QVERIFY2(!name->property("truncated").toBool() && name->property("contentWidth").toReal()<=name->width()+1,qPrintable(context+": cut name "+folder.value("name").toString()));
+            QVERIFY2(rowRect.adjusted(-0.5,-0.5,0.5,0.5).contains(scene(name)),qPrintable(context+": name outside its row "+folder.value("name").toString()));
+            auto *link=visualItem(row,"projectFolderLink");QVERIFY(link);
+            QCOMPARE(link->isVisible(),folder.value("link").toBool());
+            if(folder.value("link").toBool()) {
+                QCOMPARE(link->property("text").toString(),QString::fromUtf8("→ ")+folder.value("target").toString());
+                QVERIFY(link->property("contentWidth").toReal()<=link->width()+1);
+                QVERIFY(rowRect.adjusted(-0.5,-0.5,0.5,0.5).contains(scene(link)));
+            }
+        }
+        QVERIFY2(qmlErrors.isEmpty(),qPrintable(qmlErrors.join('\n')));
+    }
 private slots:
     void device_window_pin_reaches_the_compositor_data() {
         QTest::addColumn<bool>("lua");
@@ -3747,6 +3858,176 @@ for line in sys.stdin:
         QTRY_COMPARE_WITH_TIMEOUT(path(),original,patient(10000));
         for(const auto &folder:backend->recentProjects())if(folder!=QFileInfo(original).canonicalFilePath())backend->forgetProject(folder);
         QTRY_VERIFY(!item("heroRecent-0") || !item("heroRecent-0")->isVisible());
+        QVERIFY2(qmlErrors.isEmpty(),qPrintable(qmlErrors.join('\n')));
+    }
+    void project_chooser_fits_and_shows_whole_names_at_every_interface_size_data() {
+        QTest::addColumn<int>("percent");QTest::addColumn<QSize>("size");QTest::addColumn<bool>("fromWorkspace");
+        for(const int percent:{100,125,150,175,200}) {
+            QTest::newRow(qPrintable(QString("%1-1750x1331").arg(percent)))<<percent<<QSize(1750,1331)<<false;
+            QTest::newRow(qPrintable(QString("%1-1380x970-workspace").arg(percent)))<<percent<<QSize(1380,970)<<true;
+            QTest::newRow(qPrintable(QString("%1-900x640-narrow").arg(percent)))<<percent<<QSize(900,640)<<false;
+        }
+    }
+    void project_chooser_fits_and_shows_whole_names_at_every_interface_size() {
+        // Before: Qt's FolderDialog fallback opened a separate 600x400 window at every interface
+        // size while its text followed the 175 % application font, so long names and the path
+        // were cut off. Opened here as a person opens it: Ctrl+O, or Workspace's own entry point.
+        QFETCH(int,percent);QFETCH(QSize,size);QFETCH(bool,fromWorkspace);
+        auto *dialog=chooser();QVERIFY(dialog);
+        const int previousScale=backend->uiScale();const QSize previousSize=window->size();
+        const auto storedScale=QSettings().value("appearance/uiScale");
+        const auto original=directory.filePath("project");
+        const auto projectPath=[&]{return mapOf(workspace->property("project")).value("path").toString();};
+        const auto restore=qScopeGuard([&]{QMetaObject::invokeMethod(dialog,"close");backend->setUiScale(previousScale);if(!storedScale.isValid())QSettings().remove("appearance/uiScale");window->resize(previousSize);});
+        QTemporaryDir root;QVERIFY(root.isValid());const auto folders=chooserFolders(root);
+        open("runtime");backend->setUiScale(percent);window->resize(size);QTest::qWait(100);
+        window->requestActivate();
+        if(fromWorkspace)QVERIFY(QMetaObject::invokeMethod(workspace,"chooseProjectFolder"));
+        else QTest::keyClick(window,Qt::Key_O,Qt::ControlModifier);
+        QTRY_VERIFY(dialog->property("opened").toBool());
+        QCOMPARE(dialog->property("title").toString(),fromWorkspace?QString("Choose project"):QString("Open project"));
+        // It starts beside the open project, which is the current row.
+        QCOMPARE(chooserListing().value("path").toString(),QDir::cleanPath(directory.path()));
+        const int current=chooserPart("Folders")->property("currentIndex").toInt();
+        QCOMPARE(chooserListing().value("folders").toList().value(current).toMap().value("path").toString(),original);
+        chooserGo(folders.base);
+        QTRY_COMPARE(chooserListing().value("path").toString(),folders.base);
+        QCOMPARE(chooserNames().size(),folders.names.size()+1);
+        const QString context=QString("%1 % %2x%3%4").arg(percent).arg(window->width()).arg(window->height()).arg(fromWorkspace?" workspace":"");
+        checkChooserLayout(percent,context);
+        chooserPart("Folders")->setProperty("contentY",0);
+        capture(QString("project-chooser-%1-%2x%3%4").arg(percent).arg(size.width()).arg(size.height()).arg(fromWorkspace?"-workspace":""));
+        // Cancel leaves the open project as it is.
+        clickOn(chooserCancel());
+        QTRY_VERIFY(!dialog->property("visible").toBool());
+        QCOMPARE(projectPath(),original);
+    }
+    void project_chooser_navigates_chooses_and_cancels_data() {
+        QTest::addColumn<int>("percent");QTest::addColumn<QSize>("size");
+        QTest::newRow("175-1750x1331")<<175<<QSize(1750,1331);
+        QTest::newRow("200-1280x720")<<200<<QSize(1280,720);
+    }
+    void project_chooser_navigates_chooses_and_cancels() {
+        QFETCH(int,percent);QFETCH(QSize,size);
+        auto *dialog=chooser();QVERIFY(dialog);
+        const int previousScale=backend->uiScale();const QSize previousSize=window->size();
+        const auto storedScale=QSettings().value("appearance/uiScale");
+        const auto original=directory.filePath("project");
+        const auto projectPath=[&]{return mapOf(workspace->property("project")).value("path").toString();};
+        const auto restore=qScopeGuard([&]{
+            QMetaObject::invokeMethod(dialog,"close");backend->setUiScale(previousScale);if(!storedScale.isValid())QSettings().remove("appearance/uiScale");window->resize(previousSize);
+            if(projectPath()!=original){QMetaObject::invokeMethod(workspace,"openProject",Q_ARG(QVariant,original));QTRY_COMPARE_WITH_TIMEOUT(projectPath(),original,patient(10000));}
+            for(const auto &folder:backend->recentProjects())if(folder!=QFileInfo(original).canonicalFilePath())backend->forgetProject(folder);
+        });
+        QTemporaryDir root;QVERIFY(root.isValid());const auto f=chooserFolders(root);
+        const auto canonicalProject=QFileInfo(f.project).canonicalFilePath();
+        open("runtime");backend->setUiScale(percent);window->resize(size);QTest::qWait(100);
+        window->requestActivate();
+        const auto listed=[&]{return chooserListing().value("path").toString();};
+        // Ctrl+O opens it with the keyboard on the list.
+        QTest::keyClick(window,Qt::Key_O,Qt::ControlModifier);
+        QTRY_VERIFY(dialog->property("opened").toBool());
+        auto *list=chooserPart("Folders");QVERIFY(list);
+        QTRY_VERIFY(list->hasActiveFocus());
+        // A typed path with spaces and Unicode; files and hidden folders are not listed, numbers sort as numbers.
+        chooserGo(f.base);QTRY_COMPARE(listed(),f.base);
+        auto names=chooserNames();
+        QCOMPARE(names.size(),7);QVERIFY(!names.contains(".versteckt"));QVERIFY(!names.contains("notes.txt"));
+        QVERIFY(names.indexOf("app9")<names.indexOf("app10"));
+        // Hidden lists the hidden folders too, and stops again.
+        clickOn(chooserPart("Hidden"));QTRY_VERIFY(chooserNames().contains(".versteckt"));
+        clickOn(chooserPart("Hidden"));QTRY_VERIFY(!chooserNames().contains(".versteckt"));
+        // Tab reaches the list; Down moves, Return opens a folder, Backspace goes back to the folder left.
+        for(int i=0;i<10 && !list->hasActiveFocus();++i)QTest::keyClick(window,Qt::Key_Tab);
+        QVERIFY(list->hasActiveFocus());
+        list->setProperty("currentIndex",0);
+        QTest::keyClick(window,Qt::Key_Down);QTRY_COMPARE(list->property("currentIndex").toInt(),1);
+        const auto second=chooserListing().value("folders").toList().value(1).toMap().value("path").toString();
+        QTest::keyClick(window,Qt::Key_Return);QTRY_COMPARE(listed(),second);
+        QCOMPARE(chooserPart("Location")->property("text").toString(),second);
+        QTest::keyClick(window,Qt::Key_Backspace);QTRY_COMPARE(listed(),f.base);
+        QCOMPARE(list->property("currentIndex").toInt(),1);
+        // Alt+Up and the parent button go up a level; Home shows the home folder.
+        QTest::keyClick(window,Qt::Key_Up,Qt::AltModifier);QTRY_COMPARE(listed(),QDir::cleanPath(root.path()));
+        clickOn(chooserPart("Home"));QTRY_COMPARE(listed(),QDir::homePath());
+        chooserGo(f.base+"/app9");QTRY_COMPARE(listed(),f.base+"/app9");
+        clickOn(chooserPart("Parent"));QTRY_COMPARE(listed(),f.base);
+        // A click opens the project folder; Cancel leaves the open project as it is.
+        clickOn(chooserRow("Flutter App"));QTRY_COMPARE(listed(),f.project);
+        QTRY_VERIFY(chooserOpen()->isEnabled());
+        capture(QString("project-chooser-selected-%1").arg(percent));
+        clickOn(chooserCancel());QTRY_VERIFY(!dialog->property("visible").toBool());
+        QTest::qWait(patient(200));QCOMPARE(projectPath(),original);
+        // Opening again starts beside the open project, predictably; Escape cancels too.
+        QTest::keyClick(window,Qt::Key_O,Qt::ControlModifier);QTRY_VERIFY(dialog->property("opened").toBool());
+        QCOMPARE(listed(),QDir::cleanPath(directory.path()));
+        QTest::keyClick(window,Qt::Key_Escape);QTRY_VERIFY(!dialog->property("visible").toBool());
+        QCOMPARE(projectPath(),original);
+        // A path that is no folder says so, whole, and cannot be chosen.
+        QTest::keyClick(window,Qt::Key_O,Qt::ControlModifier);QTRY_VERIFY(dialog->property("opened").toBool());
+        chooserGo(f.base+"/fehlt überall");
+        auto *status=chooserPart("Status");QVERIFY(status);QTRY_VERIFY(status->isVisible());
+        QCOMPARE(status->property("text").toString(),QString("%1 cannot be read.").arg(f.base+"/fehlt überall"));
+        QVERIFY(status->property("contentWidth").toReal()<=status->width()+1);
+        QVERIFY(!chooserOpen()->isEnabled());
+        QTest::keyClick(window,Qt::Key_Return,Qt::ControlModifier);QTest::qWait(100);
+        QVERIFY(dialog->property("visible").toBool());
+        // A pasted file URL (spaces and Unicode percent-encoded) is that folder; Ctrl+Return chooses it.
+        QTest::keyClick(window,Qt::Key_L,Qt::ControlModifier);QTRY_VERIFY(chooserPart("Location")->hasActiveFocus());
+        type(QUrl::fromLocalFile(f.project).toString(QUrl::FullyEncoded));
+        QTRY_VERIFY(chooserOpen()->isEnabled());
+        QTest::keyClick(window,Qt::Key_Return,Qt::ControlModifier);
+        QTRY_VERIFY(!dialog->property("visible").toBool());
+        QTRY_COMPARE_WITH_TIMEOUT(QFileInfo(projectPath()).canonicalFilePath(),canonicalProject,patient(10000));
+        QVERIFY(QMetaObject::invokeMethod(workspace,"openProject",Q_ARG(QVariant,original)));
+        QTRY_COMPARE_WITH_TIMEOUT(projectPath(),original,patient(10000));
+        // A symbolic link names its target; the location keeps the link's own path and Open opens the project it leads to.
+        QVERIFY(QMetaObject::invokeMethod(workspace,"chooseProjectFolder"));QTRY_VERIFY(dialog->property("opened").toBool());
+        chooserGo(f.base);QTRY_COMPARE(listed(),f.base);
+        auto *linkRow=chooserRow(QFileInfo(f.link).fileName());QVERIFY(linkRow);
+        QCOMPARE(visualItem(linkRow,"projectFolderLink")->property("text").toString(),QString::fromUtf8("→ ")+canonicalProject);
+        QVERIFY(accessibleName(linkRow).contains(canonicalProject));
+        clickOn(linkRow);QTRY_COMPARE(listed(),f.link);
+        QCOMPARE(chooserPart("Location")->property("text").toString(),f.link);
+        QTRY_VERIFY(chooserOpen()->isEnabled());
+        clickOn(chooserOpen());QTRY_VERIFY(!dialog->property("visible").toBool());
+        QTRY_COMPARE_WITH_TIMEOUT(QFileInfo(projectPath()).canonicalFilePath(),canonicalProject,patient(10000));
+        QCOMPARE(backend->recentProjects().value(0),canonicalProject);
+        QVERIFY2(qmlErrors.isEmpty(),qPrintable(qmlErrors.join('\n')));
+    }
+    void project_chooser_reads_in_german_arabic_and_japanese_data() {
+        QTest::addColumn<QString>("code");QTest::addColumn<bool>("rightToLeft");
+        QTest::newRow("de")<<"de"<<false;QTest::newRow("ar")<<"ar"<<true;QTest::newRow("ja")<<"ja"<<false;
+    }
+    void project_chooser_reads_in_german_arabic_and_japanese() {
+        QFETCH(QString,code);QFETCH(bool,rightToLeft);
+        auto *dialog=chooser();QVERIFY(dialog);
+        const int previousScale=backend->uiScale();const QSize previousSize=window->size();
+        const auto storedScale=QSettings().value("appearance/uiScale");
+        const auto restore=qScopeGuard([&]{QMetaObject::invokeMethod(dialog,"close");backend->setLanguage("en");backend->setUiScale(previousScale);if(!storedScale.isValid())QSettings().remove("appearance/uiScale");window->resize(previousSize);});
+        QTemporaryDir root;QVERIFY(root.isValid());const auto f=chooserFolders(root);
+        open("runtime");backend->setLanguage(code);backend->setUiScale(175);window->resize(1380,970);QTest::qWait(150);
+        window->requestActivate();
+        QTest::keyClick(window,Qt::Key_O,Qt::ControlModifier);QTRY_VERIFY(dialog->property("opened").toBool());
+        // Its own texts are translated, and the reused ones read as where they come from.
+        QCOMPARE(dialog->property("title").toString(),QCoreApplication::translate("NativeWorkspace","Open project"));
+        for(const auto &[part,source]:{std::pair{"Parent","Parent folder"},{"Home","Home folder"}}) {
+            const auto shown=chooserPart(part)->property("text").toString();
+            QCOMPARE(shown,QCoreApplication::translate("ProjectFolderDialog",source));
+            QVERIFY2(shown!=QString::fromLatin1(source),qPrintable(code+" has no translation of "+source));
+        }
+        QCOMPARE(chooserPart("Hidden")->property("text").toString(),QCoreApplication::translate("FileWorkspace","Hidden"));
+        QCOMPARE(chooserPart("Location")->property("placeholderText").toString(),QCoreApplication::translate("Workspace","Type the folder of a Swift, Kotlin or Flutter project"));
+        QVERIFY(QCoreApplication::translate("ProjectFolderDialog","No folders here")!=QString("No folders here"));
+        chooserGo(f.base);QTRY_COMPARE(chooserListing().value("path").toString(),f.base);
+        checkChooserLayout(175,code+" 175 %");
+        // Right to left: the buttons start at the right; a path still reads from the left.
+        const auto parentX=chooserPart("Parent")->mapToScene(QPointF(0,0)).x(),homeX=chooserPart("Home")->mapToScene(QPointF(0,0)).x();
+        QVERIFY2(rightToLeft?parentX>homeX:parentX<homeX,qPrintable(code));
+        QCOMPARE(chooserPart("Location")->property("effectiveHorizontalAlignment").toInt(),int(Qt::AlignLeft));
+        chooserPart("Folders")->setProperty("contentY",0);
+        capture("project-chooser-175-"+code);
+        QTest::keyClick(window,Qt::Key_Escape);QTRY_VERIFY(!dialog->property("visible").toBool());
         QVERIFY2(qmlErrors.isEmpty(),qPrintable(qmlErrors.join('\n')));
     }
     void a_project_folder_dropped_on_the_window_opens() {

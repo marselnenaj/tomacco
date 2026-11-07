@@ -7762,4 +7762,19 @@ Sous licence GNU General Public License, version 2 ou ultérieure.</translation>
         <translation>Retour</translation>
     </message>
 </context>
+<context>
+    <name>ProjectFolderDialog</name>
+    <message>
+        <source>Home folder</source>
+        <translation>Dossier personnel</translation>
+    </message>
+    <message>
+        <source>No folders here</source>
+        <translation>Aucun dossier ici</translation>
+    </message>
+    <message>
+        <source>Parent folder</source>
+        <translation>Dossier parent</translation>
+    </message>
+</context>
 </TS>

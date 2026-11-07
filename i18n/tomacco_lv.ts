@@ -7742,4 +7742,19 @@ Licencēts saskaņā ar GNU General Public License 2. vai jaunāku versiju.</tra
         <translation>Atpakaļ</translation>
     </message>
 </context>
+<context>
+    <name>ProjectFolderDialog</name>
+    <message>
+        <source>Home folder</source>
+        <translation>Mājas mape</translation>
+    </message>
+    <message>
+        <source>No folders here</source>
+        <translation>Šeit nav mapju</translation>
+    </message>
+    <message>
+        <source>Parent folder</source>
+        <translation>Vecākmape</translation>
+    </message>
+</context>
 </TS>

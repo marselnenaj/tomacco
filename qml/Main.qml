@@ -512,7 +512,7 @@ ApplicationWindow {
     PreviewAutomation { objectName: "previewAutomation"; app: root; device: phone; protocol: pageProtocol }
     ApprovalDialog {}
     Workspace { id: workspace; parent: nativeWorkspace.workspaceHost; anchors.fill: parent; visible: opened && root.nativeMode;
-        guestSolo: nativeWorkspace.solo
+        guestSolo: nativeWorkspace.solo; projectChooser: nativeWorkspace.projectChooser
         onGuestCloseRequested: nativeWorkspace.quitApp()
         onConnectAgentRequested: nativeWorkspace.connectAgent()
         onGuestDockRequested: { nativeWorkspace.showMainWindow(); root.nativeMode=true; workspace.showTab("ios-research") } onProfilesChanged: { root.selectDevice(0); Studio.reloadModels() } }

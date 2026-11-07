@@ -192,7 +192,9 @@ Rectangle {
         if(!quiet) { failed=false; failure=({}); status=qsTr("Running…"); running=true }
         return id
     }
-    function chooseProjectFolder() { projectFolder.open() }
+    // The app's one project chooser (NativeWorkspace.projectChooser, set by Main); choosing opens the project here.
+    property var projectChooser: null
+    function chooseProjectFolder() { if(projectChooser)projectChooser.openWith(qsTr("Choose project")) }
     function openProject(path) {
         projectPath.text=path
         request("project.inspect",{path:path})
@@ -402,7 +404,7 @@ Rectangle {
                         actions:[StudioButton {text:qsTr("New project");quiet:true;iconName:"plus";onClicked:panel.showAction("project.create")}]
                         GridLayout {Layout.fillWidth:true;Layout.minimumWidth:0;columns:width<Theme.px(620)?1:3;columnSpacing:Theme.gapXs;rowSpacing:Theme.gapXs
                             StudioTextField {id:projectPath;Layout.fillWidth:true;Layout.minimumWidth:0;font.family:Theme.mono;font.pixelSize:Theme.fontSmall;placeholderText:qsTr("Path to your Swift, Kotlin or Flutter project");onAccepted:panel.openProject(text)}
-                            StudioButton {text:qsTr("Choose folder");accent:!panel.project.path;onClicked:projectFolder.open()}
+                            StudioButton {text:qsTr("Choose folder");accent:!panel.project.path;onClicked:panel.chooseProjectFolder()}
                             StudioButton {text:qsTr("Open");visible:projectPath.text!==panel.project.path;enabled:!!projectPath.text;onClicked:panel.openProject(projectPath.text)}
                         }
                         RowLayout {visible:!!panel.project.path;Layout.fillWidth:true
@@ -499,7 +501,7 @@ Rectangle {
                     StudioButton {
                         objectName:"projectPhoneOpenFolder";visible:phoneProject.listMode;touch:true;accent:true;iconName:"files"
                         Layout.fillWidth:true;Layout.leftMargin:Theme.mobileGutter;Layout.rightMargin:Theme.mobileGutter
-                        text:qsTr("Open folder");onClicked:projectFolder.open()
+                        text:qsTr("Open folder");onClicked:panel.chooseProjectFolder()
                     }
                     Heading {visible:phoneProject.listMode && phoneProject.recent.length>0;text:qsTr("Recent")}
                     Repeater {model:phoneProject.listMode?phoneProject.recent:[]
@@ -1078,7 +1080,6 @@ Rectangle {
             Loader { id:demoPage; active: !!panel.visited.demo; sourceComponent: Component { DemoWorkspace { workspace: panel } } }
         }
     }
-    FolderDialog { id: projectFolder; title: qsTr("Choose project"); onAccepted: panel.openProject(decodeURIComponent(selectedFolder.toString().replace(/^file:\/\//,""))) }
     FileDialog { id: installFile; title: qsTr("Install app on device"); nameFilters: [qsTr("Mobile apps (*.apk *.ipa)")]; onAccepted: panel.request("device.install",{platform:panel.selectedPlatform,device:panel.selectedDevice,paths:[decodeURIComponent(selectedFile.toString().replace(/^file:\/\//,""))]}) }
     FileDialog { id: screenshotFile; title: qsTr("Save device screenshot"); fileMode: FileDialog.SaveFile; nameFilters: ["PNG (*.png)"]; onAccepted: panel.request("device.screenshot",{platform:panel.selectedPlatform,device:panel.selectedDevice,path:decodeURIComponent(selectedFile.toString().replace(/^file:\/\//,""))}) }
 }

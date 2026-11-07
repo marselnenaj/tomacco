@@ -7742,4 +7742,19 @@ Licențiat sub Licența Publică Generală GNU, versiunea 2 sau ulterioară.</tr
         <translation>Înapoi</translation>
     </message>
 </context>
+<context>
+    <name>ProjectFolderDialog</name>
+    <message>
+        <source>Home folder</source>
+        <translation>Dosarul personal</translation>
+    </message>
+    <message>
+        <source>No folders here</source>
+        <translation>Nu există dosare aici</translation>
+    </message>
+    <message>
+        <source>Parent folder</source>
+        <translation>Dosarul părinte</translation>
+    </message>
+</context>
 </TS>

@@ -7750,4 +7750,19 @@ Licensed under the GNU General Public License, version 2 or later.</source>
         <translation>返回</translation>
     </message>
 </context>
+<context>
+    <name>ProjectFolderDialog</name>
+    <message>
+        <source>Home folder</source>
+        <translation>個人資料夾</translation>
+    </message>
+    <message>
+        <source>No folders here</source>
+        <translation>這裡沒有資料夾</translation>
+    </message>
+    <message>
+        <source>Parent folder</source>
+        <translation>上層資料夾</translation>
+    </message>
+</context>
 </TS>

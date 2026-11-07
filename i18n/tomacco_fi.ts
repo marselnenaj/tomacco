@@ -7730,4 +7730,19 @@ Lisensoitu GNU General Public License -lisenssillä, versio 2 tai uudempi.</tran
         <translation>Takaisin</translation>
     </message>
 </context>
+<context>
+    <name>ProjectFolderDialog</name>
+    <message>
+        <source>Home folder</source>
+        <translation>Kotikansio</translation>
+    </message>
+    <message>
+        <source>No folders here</source>
+        <translation>Täällä ei ole kansioita</translation>
+    </message>
+    <message>
+        <source>Parent folder</source>
+        <translation>Yläkansio</translation>
+    </message>
+</context>
 </TS>

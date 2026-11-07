@@ -7718,4 +7718,19 @@ GNU Genel Kamu Lisansı, sürüm 2 veya sonrası kapsamında lisanslanmıştır.
         <translation>Geri</translation>
     </message>
 </context>
+<context>
+    <name>ProjectFolderDialog</name>
+    <message>
+        <source>Home folder</source>
+        <translation>Ev klasörü</translation>
+    </message>
+    <message>
+        <source>No folders here</source>
+        <translation>Burada klasör yok</translation>
+    </message>
+    <message>
+        <source>Parent folder</source>
+        <translation>Üst klasör</translation>
+    </message>
+</context>
 </TS>

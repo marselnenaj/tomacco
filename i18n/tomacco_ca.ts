@@ -7730,4 +7730,19 @@ Llicència: Llicència Pública General de GNU, versió 2 o posterior.</translat
         <translation>Enrere</translation>
     </message>
 </context>
+<context>
+    <name>ProjectFolderDialog</name>
+    <message>
+        <source>Home folder</source>
+        <translation>Carpeta personal</translation>
+    </message>
+    <message>
+        <source>No folders here</source>
+        <translation>No hi ha cap carpeta aquí</translation>
+    </message>
+    <message>
+        <source>Parent folder</source>
+        <translation>Carpeta superior</translation>
+    </message>
+</context>
 </TS>

@@ -7742,4 +7742,19 @@ Licencováno pod GNU General Public License, verze 2 nebo novejší.</translatio
         <translation>Zpět</translation>
     </message>
 </context>
+<context>
+    <name>ProjectFolderDialog</name>
+    <message>
+        <source>Home folder</source>
+        <translation>Domovská složka</translation>
+    </message>
+    <message>
+        <source>No folders here</source>
+        <translation>Nejsou zde žádné složky</translation>
+    </message>
+    <message>
+        <source>Parent folder</source>
+        <translation>Nadřazená složka</translation>
+    </message>
+</context>
 </TS>

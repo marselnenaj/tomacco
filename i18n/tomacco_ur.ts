@@ -7730,4 +7730,19 @@ GNU جنرل پبلک لائسنس، ورژن 2 یا اس کے بعد کے تح�
         <translation>واپس</translation>
     </message>
 </context>
+<context>
+    <name>ProjectFolderDialog</name>
+    <message>
+        <source>Home folder</source>
+        <translation>ہوم فولڈر</translation>
+    </message>
+    <message>
+        <source>No folders here</source>
+        <translation>یہاں کوئی فولڈر نہیں</translation>
+    </message>
+    <message>
+        <source>Parent folder</source>
+        <translation>اوپر والا فولڈر</translation>
+    </message>
+</context>
 </TS>

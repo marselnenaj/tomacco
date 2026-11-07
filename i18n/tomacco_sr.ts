@@ -7742,4 +7742,19 @@ Licensed under the GNU General Public License, version 2 or later.</source>
         <translation>Назад</translation>
     </message>
 </context>
+<context>
+    <name>ProjectFolderDialog</name>
+    <message>
+        <source>Home folder</source>
+        <translation>Лична фасцикла</translation>
+    </message>
+    <message>
+        <source>No folders here</source>
+        <translation>Овде нема фасцикли</translation>
+    </message>
+    <message>
+        <source>Parent folder</source>
+        <translation>Надређена фасцикла</translation>
+    </message>
+</context>
 </TS>
