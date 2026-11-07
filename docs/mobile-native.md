@@ -12,11 +12,12 @@ Alles hier ist auf dem x86_64-Host gebaut und offscreen geprüft. Nichts davon l
 | Fenster-Minimum | `Main.qml` lässt das Fenster so schmal wie den Bildschirm, statt 560 px zu erzwingen | `qml/Main.qml` |
 | Bottom-Navigation | `qml/MobileNav.qml`: Projekt, Geräte, Jobs, Dateien, Mehr (Sheet mit den übrigen Bereichen), 48 px Ziele, Labels immer sichtbar | `tests/mobile_nav_test.cpp`: 10/10 bestanden bei 360/393/412 px und 100/175/200 % |
 | Listenzeile | `qml/MobileRow.qml` nach Bogen „Mobile / Row“: Titel 16/600, Detail 14 (oder Mono 13), Meta 13 max. 40 %, Punkt und Meta an der Titelzeile, min. 56 px, wächst mit Umbruch | `tests/mobile_row_test.cpp`: 8/8 bestanden |
+| Aktionsknöpfe | `qml/StudioButton.qml` mit `touch` (2026-11-07, `integration/finish-tomacco`): die Beschriftung bricht um statt abgeschnitten zu werden, der Knopf wächst mit (min. 48 px skaliert); in einem Flow nie breiter als die Zeile, in Layouts mit `Layout.fillWidth` + `Layout.maximumWidth: naturalWidth` schmaler statt über den Rand; Icon am Zeilenanfang, bei RTL rechts; Desktop- und Icon-Knöpfe unverändert | `tests/studio_button_test.cpp`: 7/7 bestanden; `tests/phone_routes_test.cpp` `translated_action_labels_stay_whole` (de/ta/ar 360 px, ja 393 px, je 200 %) |
 | Phone-Tokens | `Theme.js` `mobileType`/`mobileSizes`, `Theme.qml` `mobileFont*`, `mobileTouch/Control/Bar/Nav/Row/Gutter`; skalieren mit der UI-Größe, berühren keine Gerätegeometrie | qmllint ohne Befund für MobileRow, MobileNav, Theme |
 | Jobs auf dem Telefon | Liste oder Detail statt Split, „Alle Jobs“ zurück | `qml/Workspace.qml` (uncommitted, noch ohne eigenen Test) |
 | Paritätsmatrix | 274 Operationen: 175 lokal, 62 nur mit Host, 37 bedingt, 0 nicht verfügbar; `verified_on_pixel` überall false | `docs/mobile-parity.json`, `tools/build_mobile_parity.py --check` |
 
-Tests bauen mit `cmake -S . -B build -G Ninja -DBUILD_TESTING=ON` und `ninja -C build test-mobile-nav test-mobile-row`; sie laufen mit isoliertem `HOME`, `XDG_CONFIG_HOME`, `TOMACCO_HOME` und `QT_QPA_PLATFORM=offscreen`, ohne Control, CLI, Geräte oder Netzwerk.
+Tests bauen mit `cmake -S . -B build -G Ninja -DBUILD_TESTING=ON` und `ninja -C build test-mobile-nav test-mobile-row test-studio-button`; sie laufen mit isoliertem `HOME`, `XDG_CONFIG_HOME`, `TOMACCO_HOME` und `QT_QPA_PLATFORM=offscreen`, ohne Control, CLI, Geräte oder Netzwerk.
 
 ## Nicht geprüft
 

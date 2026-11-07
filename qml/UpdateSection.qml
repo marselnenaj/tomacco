@@ -6,6 +6,8 @@ import "."
 ColumnLayout {
     id: section
     property var model
+    // A phone sheet: the buttons are touch targets whose labels wrap.
+    property bool touch: false
     // What the settings' search finds this section by.
     readonly property var keywords: [qsTr("Updates"),qsTr("Off"),qsTr("Notify"),qsTr("Automatic"),qsTr("Channel"),qsTr("Stable"),qsTr("Pre-release"),qsTr("Check now"),qsTr("Roll back"),"GitHub"]
     spacing: Theme.gapSm
@@ -42,11 +44,11 @@ ColumnLayout {
     Text {objectName:"updateState";Layout.fillWidth:true;color:section.model.error?Theme.danger:Theme.text;font.pixelSize:Theme.fontSmall;wrapMode:Text.WordWrap;textFormat:Text.PlainText;maximumLineCount:4;elide:Text.ElideRight;text:section.model.stateText()}
     Text {objectName:"updateBlocked";Layout.fillWidth:true;visible:!!text;color:Theme.faint;font.pixelSize:Theme.fontSmall;wrapMode:Text.WordWrap;text:section.model.blockedText()}
     Flow {
-        Layout.fillWidth:true;spacing:Theme.gapSm
-        StudioButton {objectName:"updateCheckNow";text:qsTr("Check now");quiet:true;enabled:!section.model.checking && !section.model.forced;onClicked:section.model.checkNow()}
-        StudioButton {objectName:"updateWhatsNew";visible:!!section.model.notesUrl;text:qsTr("What's new ↗");quiet:true;onClicked:Studio.openExternal(section.model.notesUrl)}
-        StudioButton {objectName:"updateInstall";visible:section.model.canInstall;enabled:!section.model.working;text:qsTr("Install");onClicked:section.model.install()}
-        StudioButton {objectName:"updateRestart";visible:section.model.restartNeeded;text:qsTr("Restart");onClicked:section.model.restartRequested()}
-        StudioButton {objectName:"updateRollBack";visible:section.model.canRollBack;enabled:!section.model.working;text:qsTr("Roll back");quiet:true;onClicked:section.model.rollBack()}
+        Layout.fillWidth:true;Layout.minimumWidth:0;spacing:Theme.gapSm
+        StudioButton {objectName:"updateCheckNow";touch:section.touch;text:qsTr("Check now");quiet:true;enabled:!section.model.checking && !section.model.forced;onClicked:section.model.checkNow()}
+        StudioButton {objectName:"updateWhatsNew";touch:section.touch;visible:!!section.model.notesUrl;text:qsTr("What's new ↗");quiet:true;onClicked:Studio.openExternal(section.model.notesUrl)}
+        StudioButton {objectName:"updateInstall";touch:section.touch;visible:section.model.canInstall;enabled:!section.model.working;text:qsTr("Install");onClicked:section.model.install()}
+        StudioButton {objectName:"updateRestart";touch:section.touch;visible:section.model.restartNeeded;text:qsTr("Restart");onClicked:section.model.restartRequested()}
+        StudioButton {objectName:"updateRollBack";touch:section.touch;visible:section.model.canRollBack;enabled:!section.model.working;text:qsTr("Roll back");quiet:true;onClicked:section.model.rollBack()}
     }
 }

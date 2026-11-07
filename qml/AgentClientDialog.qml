@@ -17,7 +17,7 @@ StudioDialog {
             width: parent.width-Theme.gapMd; spacing: Theme.gapMd
             Text { Layout.fillWidth: true; text: qsTr("Pick your agent. Tomacco shows whether it is connected and the exact setting it reads."); color: Theme.muted; font.pixelSize: Theme.fontSmall; wrapMode: Text.Wrap }
             AgentClientPicker { id: picker; Layout.fillWidth: true }
-            StudioButton { objectName: "agentClientDialogClose"; Layout.alignment: Qt.AlignRight; touch: dialog.sheet; text: qsTr("Done"); onClicked: dialog.close() }
+            StudioButton { objectName: "agentClientDialogClose"; Layout.alignment: Qt.AlignRight; Layout.fillWidth: true; Layout.maximumWidth: naturalWidth; touch: dialog.sheet; text: qsTr("Done"); onClicked: dialog.close() }
         }
     }
 }

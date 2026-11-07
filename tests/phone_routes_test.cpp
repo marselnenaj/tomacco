@@ -182,6 +182,8 @@ private slots:
         engine=std::make_unique<QQmlApplicationEngine>();
         connect(engine.get(),&QQmlEngine::warnings,this,[this](const QList<QQmlError> &errors){for(const auto &e:errors)if(e.url().toString().startsWith("qrc:/qml/"))qmlErrors.append(e.toString());});
         disconnect(engine.get(),&QQmlEngine::quit,nullptr,nullptr);
+        // As main.cpp does: a language chosen while running retranslates the interface at once.
+        connect(backend.get(),&Backend::languageChanged,engine.get(),[this]{engine->setUiLanguage(backend->uiLanguage());engine->retranslate();});
         auto *context=engine->rootContext();
         context->setContextProperty("Studio",backend.get());context->setContextProperty("Agent",control.get());
         context->setContextProperty("initialProject",directory.filePath("project"));
@@ -555,6 +557,84 @@ private slots:
         QVERIFY(sceneRect(banner).bottom()<=window->height());
         handoffs->setProperty("waiting",QVariantList{});
         QTest::keyClick(window,Qt::Key_Escape);
+        noErrors();
+    }
+    // Translated action labels on the real screens at the largest size: German, Tamil and Arabic
+    // (mirrored) on a 360 px phone, Japanese on 393 px. Every phone text button on the project page
+    // (options open), the open file and the interface size settings stays inside the window, is at
+    // least a 48 px target, and shows its whole label: wrapped onto more lines, never cut, inside the
+    // button. In the mirrored layout an icon sits at the right, before the text, without covering it.
+    void translated_action_labels_stay_whole_data() {
+        QTest::addColumn<QString>("language");QTest::addColumn<int>("width");QTest::addColumn<int>("percent");
+        QTest::newRow("de-360-200")<<"de"<<360<<200;QTest::newRow("ta-360-200")<<"ta"<<360<<200;
+        QTest::newRow("ar-360-200")<<"ar"<<360<<200;QTest::newRow("ja-393-200")<<"ja"<<393<<200;
+    }
+    void translated_action_labels_stay_whole() {
+        QFETCH(QString,language);QFETCH(int,width);QFETCH(int,percent);
+        const auto english=qScopeGuard([&]{backend->setLanguage("en");QTest::qWait(50);});
+        backend->setLanguage(language);QTRY_COMPARE(backend->uiLanguage(),language);
+        QCOMPARE(backend->rightToLeft(),language=="ar");
+        setSize(width,852,percent);QTRY_VERIFY(native->property("phone").toBool());
+        int buttons=0,wrapped=0;
+        auto check=[&](QQuickItem *scope){
+            QVERIFY(scope);
+            for(auto *b:scope->findChildren<QQuickItem *>()){
+                // A phone text button: touch, with its text shown (an icon button names itself by tooltip).
+                if(!b->isVisible() || !b->inherits("QQuickButton") || !b->property("touch").toBool() || b->property("iconOnly").toBool())continue;
+                ++buttons;const QString what=QString("%1 \"%2\" at %3 %").arg(b->objectName(),b->property("text").toString()).arg(percent);
+                QQuickItem *label=find(b,"studioButtonLabel",true);
+                for(auto *t:b->findChildren<QQuickItem *>())if(!label && t->inherits("QQuickText") && t->property("text")==b->property("displayText"))label=t;
+                QVERIFY2(label,qPrintable(what));
+                QVERIFY2(insideWidth(b),qPrintable(what+" sticks out of the window"));
+                QVERIFY2(b->height()>=px(48)-0.5,qPrintable(what+" is lower than a touch target"));
+                QVERIFY2(!label->property("truncated").toBool(),qPrintable(what+" is cut off"));
+                QVERIFY2(label->property("contentWidth").toDouble()<=label->width()+0.5,qPrintable(what+" is wider than its button"));
+                const auto br=sceneRect(b),lr=sceneRect(label);
+                QVERIFY2(lr.top()>=br.top()-0.5 && lr.bottom()<=br.bottom()+0.5,qPrintable(what+" runs out of its button"));
+                if(label->property("lineCount").toInt()>1)++wrapped;
+                auto *icon=find(b,"studioButtonIcon",true);
+                if(icon && backend->rightToLeft())
+                    QVERIFY2(sceneRect(icon).left()>=lr.right()-0.5,qPrintable(what+": the icon is not at the right of the text"));
+            }
+        };
+        // The project page with its less common options open, and a device so the primary action runs.
+        workspace->setProperty("projectList",false);showTab("project");QTRY_VERIFY(shown("projectPhone"));
+        workspace->setProperty("devices",QVariantList{QVariantMap{{"id","emulator-5554"},{"name","Pixel 9 Pro XL"},{"platform","android"},{"state","device"}}});
+        workspace->setProperty("selectedDevice",QString("emulator-5554"));
+        shown("projectPhone")->setProperty("moreOptions",true);QTRY_VERIFY(shown("projectPhoneOptions"));QTest::qWait(150);
+        // The screen really is in that language: the primary action shows its translation, not English.
+        const QString run=QCoreApplication::translate("Workspace","Build & run");QVERIFY2(run!="Build & run",qPrintable(run));
+        QTRY_COMPARE(shown("projectPhonePrimary")->property("text").toString(),run);
+        check(shown("projectPhone"));if(QTest::currentTestFailed())return;
+        reveal(shown("projectPhoneMore"));capture("labels-project-"+language);
+        shown("projectPhone")->setProperty("moreOptions",false);workspace->setProperty("selectedDevice",QString());
+        // The open file and its actions.
+        showTab("files");auto *files=any("fileWorkspace");QVERIFY(files);
+        QVERIFY(QMetaObject::invokeMethod(files,"openFile",Q_ARG(QVariant,QString("lib/main.dart")),Q_ARG(QVariant,1)));
+        QTRY_VERIFY(shown("fileEditorPane"));QTRY_VERIFY(shown("filePhoneActions"));QTest::qWait(100);
+        check(shown("filePhoneActions"));if(QTest::currentTestFailed())return;
+        capture("labels-file-"+language);
+        // The interface size in the settings sheet.
+        QVERIFY(QMetaObject::invokeMethod(native,"openSettings",Q_ARG(QVariant,QString())));
+        auto *settings=window->findChild<QObject *>("settingsDialog");QVERIFY(settings);
+        QTRY_VERIFY(settings->property("visible").toBool());
+        // Every group stays within the sheet (one too wide group widens them all), and so does every button in it.
+        for(const auto &n:{"settingsAppearance","settingsInterfaceSize","settingsLanguage","settingsNotifications","settingsAgent","settingsSystem","settingsUpdates","settingsLayouts","settingsTransfer"}){
+            auto *section=shown(n);QVERIFY2(section,n);reveal(section);
+            QTRY_VERIFY2_WITH_TIMEOUT(insideWidth(section),qPrintable(QString("%1 is wider than the window").arg(n)),1500);
+        }
+        auto *sheet=shown("settingsInterfaceSize")->parentItem();
+        for(auto *b:sheet->findChildren<QQuickItem *>())if(b->isVisible() && b->inherits("QQuickButton"))
+            QVERIFY2(insideWidth(b),qPrintable(b->objectName()+" sticks out of the settings sheet"));
+        check(sheet);if(QTest::currentTestFailed())return;
+        reveal(shown("settingsInterfaceSize"));
+        for(const auto &n:{"interfaceSmaller","interfaceLarger"})touchTarget(shown(n),true);
+        capture("labels-settings-"+language);
+        QTest::keyClick(window,Qt::Key_Escape);QTRY_VERIFY(!settings->property("visible").toBool());
+        QVERIFY2(buttons>=12,qPrintable(QString::number(buttons)));
+        // Tamil at 360 px and 200 % has labels longer than a row: they must wrap, not be cut.
+        if(language=="ta")QVERIFY2(wrapped>0,"no label wrapped");
+        qInfo("%s %d x %d %%: %d phone text buttons checked, %d wrapped (\"%s\")",qPrintable(language),width,percent,buttons,wrapped,qPrintable(run));
         noErrors();
     }
     void cleanupTestCase() { engine.reset();control.reset();backend.reset(); }

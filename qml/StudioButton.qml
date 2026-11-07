@@ -38,10 +38,21 @@ Button {
         : danger ? Theme.danger
         : selected ? Theme.text
         : quiet && !hovered ? Theme.muted : Theme.text
-    implicitHeight: touchSize
-    implicitWidth: iconOnly ? touchSize : Math.max(touchSize,label.implicitWidth+(iconName?iconSpace:0)+hintSpace+leftPadding+rightPadding)
+    // A phone text button keeps its whole label readable: the label wraps onto
+    // more lines instead of being cut off and the button grows to fit. In a Flow
+    // (the phone's action rows) it is never wider than the row. In a layout, a
+    // button that should keep its own width but may shrink on a narrow screen
+    // sets Layout.fillWidth: true; Layout.maximumWidth: naturalWidth, so the
+    // layout narrows it instead of being pushed past the screen. Desktop and
+    // icon buttons keep their single line and fixed height.
+    readonly property bool wraps: touch && !iconOnly
+    readonly property real naturalWidth: Math.max(touchSize,label.implicitWidth+(iconName?iconSpace:0)+hintSpace+leftPadding+rightPadding)
+    readonly property Flow parentFlow: wraps ? parent as Flow : null
+    readonly property real room: parentFlow ? parentFlow.width-parentFlow.leftPadding-parentFlow.rightPadding : Infinity
+    implicitHeight: wraps ? Math.max(touchSize,Math.ceil(label.implicitHeight)+Theme.gapSm*2) : touchSize
+    implicitWidth: iconOnly ? touchSize : room>0 && room<naturalWidth ? Math.max(touchSize,room) : naturalWidth
     Layout.minimumHeight: touch ? touchSize : 0
-    Layout.minimumWidth: touch && iconOnly ? touchSize : 0
+    Layout.minimumWidth: touch ? touchSize : 0
     hoverEnabled: true
     focusPolicy: Qt.StrongFocus
     leftPadding: iconOnly ? 0 : marker ? Theme.gapSm : Theme.gapMd
@@ -52,20 +63,27 @@ Button {
         implicitWidth: control.iconOnly ? Theme.iconSize : label.implicitWidth+(control.iconName?control.iconSpace:0)+control.hintSpace
         StudioIcon {
             id: glyph
+            objectName: "studioButtonIcon"
             visible: !!control.iconName
             name: control.iconName
-            x: control.iconOnly ? (parent.width-width)/2 : control.alignLeft ? 0 : Math.max(0,(parent.width-label.implicitWidth-control.iconSpace-control.hintSpace)/2)
+            // Measured from the start edge, which is the right one when mirrored.
+            readonly property real start: control.iconOnly ? (parent.width-width)/2 : control.alignLeft ? 0 : Math.max(0,(parent.width-label.implicitWidth-control.iconSpace-control.hintSpace)/2)
+            x: control.mirrored ? parent.width-width-start : start
             anchors.verticalCenter: parent.verticalCenter
             color: control.marker && control.selected ? Theme.accentText : control.foreground
             z: 1
         }
         Text {
             id: label
+            objectName: "studioButtonLabel"
             visible: !control.iconOnly
-            anchors.fill: parent
-            anchors.leftMargin: control.iconName ? glyph.x+control.iconSpace : 0
+            anchors.left: parent.left
+            anchors.right: parent.right
+            anchors.verticalCenter: parent.verticalCenter
+            anchors.leftMargin: control.iconName ? glyph.start+control.iconSpace : 0
             anchors.rightMargin: control.hintSpace
             text: control.displayText
+            wrapMode: control.wraps ? Text.Wrap : Text.NoWrap
             elide: Text.ElideRight
             color: control.foreground
             font.pixelSize: control.size

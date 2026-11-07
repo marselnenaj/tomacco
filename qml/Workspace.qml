@@ -570,7 +570,7 @@ Rectangle {
                     // An iOS build runs on a Mac that was set up for it; nothing picks or finds one on its own.
                     Field {objectName:"projectPhoneHost";visible:!phoneProject.listMode && platform.currentText==="ios";label:qsTr("Build host")
                         Text {Layout.fillWidth:true;text:qsTr("iOS builds need a Mac host you set up yourself. Tomacco never chooses or searches for one.");color:Theme.text;font.pixelSize:Theme.mobileFontSmall;wrapMode:Text.Wrap}
-                        StudioButton {objectName:"projectPhoneHosts";touch:true;quiet:true;text:qsTr("Mac hosts");onClicked:panel.showAction("remote.list")}
+                        StudioButton {objectName:"projectPhoneHosts";Layout.fillWidth:true;Layout.maximumWidth:naturalWidth;touch:true;quiet:true;text:qsTr("Mac hosts");onClicked:panel.showAction("remote.list")}
                     }
                     StudioButton {
                         objectName:"projectPhonePrimary";visible:!phoneProject.listMode;touch:true;accent:true;iconName:"play"
@@ -764,7 +764,7 @@ Rectangle {
                         enabled:phoneDeviceDetail.emulator?!phoneDeviceDetail.starting:phoneDeviceDetail.connected
                         onClicked:{if(phoneDeviceDetail.emulator)androidLibrary.start(phoneDeviceDetail.avd);else{phoneDeviceDetail.use();panel.runtimeRequested(phoneDeviceDetail.device.platform,phoneDeviceDetail.device.id)}}
                     }
-                    StudioButton {objectName:"devicePhoneFind";visible:phoneDeviceDetail.missing;Layout.leftMargin:Theme.mobileGutter;touch:true;text:qsTr("Find devices");iconName:"refresh";onClicked:{androidLibrary.refresh();panel.request("device.list",{})}}
+                    StudioButton {objectName:"devicePhoneFind";visible:phoneDeviceDetail.missing;Layout.leftMargin:Theme.mobileGutter;Layout.rightMargin:Theme.mobileGutter;Layout.fillWidth:true;Layout.maximumWidth:naturalWidth;touch:true;text:qsTr("Find devices");iconName:"refresh";onClicked:{androidLibrary.refresh();panel.request("device.list",{})}}
                     Text {
                         Layout.fillWidth:true;Layout.leftMargin:Theme.mobileGutter;Layout.rightMargin:Theme.mobileGutter
                         visible:!phoneDeviceDetail.missing && !phoneDeviceDetail.connected
@@ -1059,7 +1059,7 @@ Rectangle {
                         Rectangle { width: Theme.gapXs; height: parent.height; color: Theme.danger }
                         GridLayout { id: confirmRow; columns: panel.phone?1:3; anchors.fill: parent; anchors.margins: Theme.gapSm; anchors.leftMargin: Theme.gapLg; columnSpacing: Theme.gapSm; rowSpacing: Theme.gapSm
                             Text { Layout.fillWidth: true; text: qsTr("This tool changes or removes something and cannot be undone. Run it?"); color: Theme.danger; wrapMode: Text.Wrap; font.pixelSize: Theme.fontSmall }
-                            StudioButton { objectName: "toolConfirmRun"; touch: panel.phone; text: qsTr("Run anyway"); danger: true; onClicked: panel.submitForm(true) }
+                            StudioButton { objectName: "toolConfirmRun"; Layout.fillWidth: panel.phone; Layout.maximumWidth: naturalWidth; touch: panel.phone; text: qsTr("Run anyway"); danger: true; onClicked: panel.submitForm(true) }
                             StudioButton { text: qsTr("Cancel"); quiet: true; onClicked: panel.confirmingRun=false }
                         }
                     }

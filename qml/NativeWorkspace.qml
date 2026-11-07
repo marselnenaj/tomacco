@@ -1333,11 +1333,14 @@ Rectangle {
             ColumnLayout {id:scaleSection;objectName:"settingsInterfaceSize";Layout.fillWidth:true;spacing:Theme.gapSm
                 visible:view.settingShown([qsTr("Interface size"),qsTr("Larger interface"),qsTr("Smaller interface"),qsTr("Reset interface size"),"4K HiDPI Zoom Ctrl Alt"])
                 Text {text:qsTr("Interface size");color:Theme.muted;font.pixelSize:Theme.fontSmall}
-                RowLayout {Layout.fillWidth:true;spacing:Theme.gapXs
-                    StudioButton {objectName:"interfaceSmaller";touch:view.phone;text:qsTr("Smaller interface");displayText:"";iconName:"minus";enabled:Studio.uiScale>75;tip:text+" · Ctrl+Alt+−";onClicked:Studio.setUiScale(Studio.uiScale-25)}
-                    Text {objectName:"interfaceScaleValue";Layout.fillWidth:true;text:Studio.uiScale+" %";color:Theme.text;font.family:Theme.mono;font.pixelSize:Theme.fontBody;horizontalAlignment:Text.AlignHCenter;Accessible.name:qsTr("Interface size")+": "+text}
-                    StudioButton {objectName:"interfaceLarger";touch:view.phone;text:qsTr("Larger interface");displayText:"";iconName:"plus";enabled:Studio.uiScale<200;tip:text+" · Ctrl+Alt++";onClicked:Studio.setUiScale(Studio.uiScale+25)}
-                    StudioButton {objectName:"interfaceReset";touch:view.phone;text:qsTr("Reset");enabled:Studio.uiScale!==100;tip:qsTr("Reset interface size")+" · Ctrl+Alt+0";onClicked:Studio.setUiScale(100)}
+                // Reset moves under − size + when one row has no room for it (a narrow phone at a large size).
+                // Measured against the settings column, whose width the scroll view sets, not this row's.
+                GridLayout {id:scaleRow;objectName:"interfaceScaleRow";Layout.fillWidth:true;columnSpacing:Theme.gapXs;rowSpacing:Theme.gapXs
+                    columns:settingsColumn.width>=scaleSmaller.implicitWidth+scaleValue.implicitWidth+scaleLarger.implicitWidth+scaleReset.naturalWidth+columnSpacing*3?4:3
+                    StudioButton {id:scaleSmaller;objectName:"interfaceSmaller";touch:view.phone;text:qsTr("Smaller interface");displayText:"";iconName:"minus";enabled:Studio.uiScale>75;tip:text+" · Ctrl+Alt+−";onClicked:Studio.setUiScale(Studio.uiScale-25)}
+                    Text {id:scaleValue;objectName:"interfaceScaleValue";Layout.fillWidth:true;text:Studio.uiScale+" %";color:Theme.text;font.family:Theme.mono;font.pixelSize:Theme.fontBody;horizontalAlignment:Text.AlignHCenter;Accessible.name:qsTr("Interface size")+": "+text}
+                    StudioButton {id:scaleLarger;objectName:"interfaceLarger";touch:view.phone;text:qsTr("Larger interface");displayText:"";iconName:"plus";enabled:Studio.uiScale<200;tip:text+" · Ctrl+Alt++";onClicked:Studio.setUiScale(Studio.uiScale+25)}
+                    StudioButton {id:scaleReset;objectName:"interfaceReset";Layout.columnSpan:scaleRow.columns===4?1:3;Layout.fillWidth:true;Layout.maximumWidth:naturalWidth;touch:view.phone;text:qsTr("Reset");enabled:Studio.uiScale!==100;tip:qsTr("Reset interface size")+" · Ctrl+Alt+0";onClicked:Studio.setUiScale(100)}
                 }
                 Text {Layout.fillWidth:true;text:qsTr("Text, controls and spacing in Tomacco. Device zoom and screenshots keep their own size.");color:Theme.faint;font.pixelSize:Theme.fontSmall;wrapMode:Text.WordWrap}
             }
@@ -1389,7 +1392,7 @@ Rectangle {
                     }
                 }
             }
-            UpdateSection {id:updatesSection;objectName:"settingsUpdates";Layout.fillWidth:true;model:updates;visible:view.settingShown(keywords)}
+            UpdateSection {id:updatesSection;objectName:"settingsUpdates";Layout.fillWidth:true;touch:view.phone;model:updates;visible:view.settingShown(keywords)}
             // Named window layouts: which views and panes are open, how wide, and the device windows.
             ColumnLayout {id:layoutsSection;objectName:"settingsLayouts";Layout.fillWidth:true;spacing:Theme.gapSm
                 visible:view.settingShown([qsTr("Window layouts"),qsTr("Save the current layout"),qsTr("A layout keeps the open view, the activity panel, the log beside the device and its width, the device windows and the window's size."),qsTr("Use"),qsTr("Delete")].concat(view.layoutNames))
@@ -1401,13 +1404,14 @@ Rectangle {
                         required property string modelData
                         Layout.fillWidth:true;spacing:Theme.gapXs
                         Text {Layout.fillWidth:true;text:modelData;color:Theme.text;font.pixelSize:Theme.fontBody;elide:Text.ElideRight}
-                        StudioButton {objectName:"useLayout-"+modelData;text:qsTr("Use");quiet:true;Accessible.name:qsTr("Use window layout %1").arg(modelData);onClicked:{view.applyLayout(modelData);settingsDialog.close()}}
-                        StudioButton {objectName:"deleteLayout-"+modelData;iconName:"close";quiet:true;tip:qsTr("Delete");Accessible.name:qsTr("Delete window layout %1").arg(modelData);onClicked:view.deleteLayout(modelData)}
+                        StudioButton {objectName:"useLayout-"+modelData;touch:view.phone;text:qsTr("Use");quiet:true;Accessible.name:qsTr("Use window layout %1").arg(modelData);onClicked:{view.applyLayout(modelData);settingsDialog.close()}}
+                        StudioButton {objectName:"deleteLayout-"+modelData;touch:view.phone;iconName:"close";quiet:true;tip:qsTr("Delete");Accessible.name:qsTr("Delete window layout %1").arg(modelData);onClicked:view.deleteLayout(modelData)}
                     }
                 }
-                RowLayout {Layout.fillWidth:true;spacing:Theme.gapXs
+                // On a phone the name and its button stack, so neither is squeezed or pushed past the sheet.
+                GridLayout {Layout.fillWidth:true;columns:view.phone?1:2;columnSpacing:Theme.gapXs;rowSpacing:Theme.gapXs
                     StudioTextField {id:layoutName;objectName:"settingsLayoutName";Layout.fillWidth:true;placeholderText:qsTr("Name, e.g. testing or debugging");onAccepted:if(text.trim()){view.saveLayout(text);text=""}}
-                    StudioButton {objectName:"settingsSaveLayout";text:qsTr("Save the current layout");quiet:true;enabled:!!layoutName.text.trim();onClicked:{view.saveLayout(layoutName.text);layoutName.text=""}}
+                    StudioButton {objectName:"settingsSaveLayout";touch:view.phone;Layout.fillWidth:view.phone;Layout.maximumWidth:naturalWidth;text:qsTr("Save the current layout");quiet:true;enabled:!!layoutName.text.trim();onClicked:{view.saveLayout(layoutName.text);layoutName.text=""}}
                 }
             }
             // Moving to another computer: the preferences as a JSON file.
@@ -1415,9 +1419,9 @@ Rectangle {
                 visible:view.settingShown([qsTr("Another computer"),qsTr("Appearance, language, notifications, updates and the device view's choices, as a JSON file. Paths, window sizes and history stay on this computer."),qsTr("Export settings…"),qsTr("Import settings…")])
                 Text {text:qsTr("Another computer");color:Theme.muted;font.pixelSize:Theme.fontSmall}
                 Text {Layout.fillWidth:true;text:qsTr("Appearance, language, notifications, updates and the device view's choices, as a JSON file. Paths, window sizes and history stay on this computer.");color:Theme.faint;font.pixelSize:Theme.fontSmall;wrapMode:Text.WordWrap}
-                Flow {Layout.fillWidth:true;spacing:Theme.gapSm
-                    StudioButton {objectName:"exportSettingsButton";text:qsTr("Export settings…");quiet:true;onClicked:settingsExport.open()}
-                    StudioButton {objectName:"importSettingsButton";text:qsTr("Import settings…");quiet:true;onClicked:settingsImport.open()}
+                Flow {Layout.fillWidth:true;Layout.minimumWidth:0;spacing:Theme.gapSm
+                    StudioButton {objectName:"exportSettingsButton";touch:view.phone;text:qsTr("Export settings…");quiet:true;onClicked:settingsExport.open()}
+                    StudioButton {objectName:"importSettingsButton";touch:view.phone;text:qsTr("Import settings…");quiet:true;onClicked:settingsImport.open()}
                 }
                 Text {objectName:"settingsTransferResult";Layout.fillWidth:true;visible:!!text;text:view.settingsTransfer;color:view.settingsTransferFailed?Theme.danger:Theme.muted;font.pixelSize:Theme.fontSmall;wrapMode:Text.WordWrap}
             }
