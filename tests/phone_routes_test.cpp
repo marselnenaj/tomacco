@@ -22,6 +22,7 @@
 #include <QWheelEvent>
 #include <QElapsedTimer>
 #include <QPointer>
+#include <QScopeGuard>
 #include <QtTest>
 #include <QtWebEngineQuick/qtwebenginequickglobal.h>
 #include <memory>
@@ -138,6 +139,12 @@ class PhoneRoutesTest : public QObject {
         }
         return shown(row);
     }
+    // TOMACCO_UI_CAPTURES=DIR saves what the window shows, for the design file and the docs.
+    void capture(const QString &name) {
+        const auto out=qEnvironmentVariable("TOMACCO_UI_CAPTURES");if(out.isEmpty())return;
+        QDir().mkpath(out);QTest::qWait(120);
+        window->grabWindow().save(QString("%1/phone-%2-%3-%4.png").arg(out,name).arg(window->width()).arg(scale));
+    }
     void noErrors() { QVERIFY2(qmlErrors.isEmpty(),qPrintable(qmlErrors.join('\n'))); }
 private slots:
     void initTestCase() {
@@ -246,6 +253,7 @@ private slots:
         QCOMPARE(meta->property("text").toString(),QString("Connected"));QVERIFY(insideWidth(meta));
         // Even at 200 % in the narrowest window the whole row, wrapped, fits on the screen.
         QVERIFY2(row->height()<window->height()*.8,qPrintable(QString::number(row->height())));
+        capture("devices-list");
         injectDevices();QTest::qWait(50);tap("avdRow-"+longAvd);
         QTRY_VERIFY(shown("devicePhoneDetail"));
         QVERIFY(!shown("androidPhoneList"));QVERIFY(!shown("devicesPhoneHeader"));
@@ -253,6 +261,7 @@ private slots:
         QCOMPARE(workspace->property("selectedDevice").toString(),QString("emulator-5554"));
         auto *barTitle=shown("devicePhoneBarTitle");QVERIFY(barTitle);QCOMPARE(barTitle->property("text").toString(),longNickname);
         QVERIFY(!barTitle->property("truncated").toBool());QVERIFY(insideWidth(barTitle));
+        capture("devices-detail");
         auto *back=shown("devicePhoneBarBack");touchTarget(back,true);QVERIFY(insideWidth(back));
         auto *primary=shown("devicePhonePrimary");QVERIFY(primary);touchTarget(primary);QVERIFY(insideWidth(primary));
         QCOMPARE(primary->property("text").toString(),QString("Open live device"));QVERIFY(primary->isEnabled());
@@ -309,7 +318,7 @@ private slots:
         QTRY_VERIFY(shown("fileEditorPane"));QVERIFY(!shown("fileBrowserPane"));
         QCOMPARE(files->property("current").toString(),longFile);
         auto *barTitle=shown("filePhoneBarTitle");QVERIFY(barTitle);QVERIFY(!barTitle->property("truncated").toBool());QVERIFY(insideWidth(barTitle));
-        touchTarget(shown("filePhoneBarBack"),true);
+        touchTarget(shown("filePhoneBarBack"),true);capture("files-file");
         for(const auto &name:{"filePhoneSave","filePhoneCopyPath","filePhoneReload"}){auto *b=shown(name);QVERIFY2(b,name);touchTarget(b);QVERIFY(insideWidth(b));}
         QVERIFY(!shown("filePhoneSave")->isEnabled());
         // The code keeps its lines and scrolls sideways inside its own area.
@@ -328,6 +337,7 @@ private slots:
         QTRY_VERIFY_WITH_TIMEOUT(files->property("searching").toBool() && files->property("matches").toList().size()>=2,8000);
         QVERIFY(shown("filePhoneRoot")->property("text").toString().contains("needle"));
         QVERIFY(rowInList("fileList","filePhoneRow-lib/main.dart:2"));
+        capture("files-search");
         tap("filePhoneRow-lib/main.dart:2");
         QTRY_COMPARE(files->property("current").toString(),QString("lib/main.dart"));
         QVERIFY(shown("fileEditorPane"));
@@ -364,6 +374,7 @@ private slots:
         QVERIFY(primary->property("accent").toBool());
         int accents=0;for(auto *b:shown("projectPhone")->findChildren<QQuickItem *>())if(b->isVisible() && b->property("accent").toBool() && b->inherits("QQuickButton"))++accents;
         QCOMPARE(accents,1);
+        capture("project-overview");
         // The less common options stay folded until asked for.
         QVERIFY(!shown("projectPhoneOptions"));
         tap("projectPhoneMore");QTRY_VERIFY(shown("projectPhoneOptions"));
@@ -383,7 +394,7 @@ private slots:
         tap("projectPhoneSwitch");
         QTRY_VERIFY(shown("projectPhoneListBar"));
         for(const auto &n:{"projectPhoneSearch","projectPhoneOpenFolder","projectPhoneNew","projectPhoneImportXcode","projectPhoneByPath"}){auto *i=shown(n);QVERIFY2(i,n);QVERIFY(insideWidth(i));QVERIFY(i->height()>=px(48)-0.5);}
-        QVERIFY(shown("projectPhoneRecent-tomacco_phone_test")||shown("projectPhoneRecent-project"));
+        QVERIFY(shown("projectPhoneRecent-tomacco_phone_test")||shown("projectPhoneRecent-project"));capture("project-list");
         auto *search=shown("projectPhoneSearch");tap(search);typeKeys("zz-no-such-project");
         QTRY_VERIFY(shown("projectPhoneNoMatch"));
         search->setProperty("text",QString());
@@ -414,7 +425,7 @@ private slots:
         QVERIFY(settings->property("sheet").toBool());
         QCOMPARE(settings->property("width").toReal(),qreal(width));
         QVERIFY(settings->property("height").toReal()<=window->height());
-        QVERIFY(dialog);
+        QVERIFY(dialog);capture("settings-sheet");
         // Every group is reachable by scrolling and readable within the width.
         for(const auto &n:{"settingsAppearance","settingsInterfaceSize","settingsLanguage","settingsNotifications","settingsAgent","settingsSystem","settingsUpdates"}){
             auto *section=shown(n);QVERIFY2(section,n);reveal(section);
@@ -441,6 +452,7 @@ private slots:
         auto *clients=window->findChild<QObject *>("agentClientDialog");QVERIFY(clients);
         QTRY_VERIFY(clients->property("visible").toBool());
         QVERIFY(clients->property("sheet").toBool());QCOMPARE(clients->property("width").toReal(),qreal(width));
+        capture("agent-clients");
         auto *done=shown("agentClientDialogClose");QVERIFY(done);touchTarget(done);QVERIFY(insideWidth(done));
         tap(done);QTRY_VERIFY(!clients->property("visible").toBool());
         noErrors();
@@ -484,6 +496,9 @@ private slots:
     void jobs_detail_targets_and_back() {
         QFETCH(int,width);QFETCH(int,percent);
         setSize(width,852,percent);showTab("jobs");
+        // As the desktop suite does: hold the 1.8 s job.list poll, whose real answer does not know this job.
+        QList<QObject *> polls;for(auto *child:workspace->children())if(child->property("interval").toInt()==1800 && child->property("running").toBool()){polls.append(child);QMetaObject::invokeMethod(child,"stop");}
+        const auto restart=qScopeGuard([&]{for(auto *timer:polls)QMetaObject::invokeMethod(timer,"start");});
         const QVariantMap job{{"id","job-phone-1"},{"label","Build & Run · tomacco_phone_test · Pixel 9 Pro XL — ein langer Jobname, der umbrechen muss"},{"state","running"},{"created",QDateTime::currentSecsSinceEpoch()-75},{"plan",QVariantMap{{"exclusive",directory.filePath("project")}}}};
         workspace->setProperty("jobs",QVariantList{job});workspace->setProperty("selectedJob",QString());
         QTRY_VERIFY(shown("jobRow-job-phone-1"));
@@ -492,7 +507,7 @@ private slots:
         auto *title=shown("jobPhoneBarTitle");QVERIFY(!title->property("truncated").toBool());QVERIFY(insideWidth(title));
         touchTarget(shown("jobBack"),true);
         auto *cancel=shown("jobCancelPhone");QVERIFY(cancel);touchTarget(cancel);QVERIFY(insideWidth(cancel));
-        QVERIFY(insideWidth(shown("jobPhoneActions")));
+        QVERIFY(insideWidth(shown("jobPhoneActions")));capture("job-detail");
         tap("jobBack");
         // The control program's own list (polled) does not know this injected job: put it back for the list.
         QTRY_COMPARE(workspace->property("selectedJob").toString(),QString());

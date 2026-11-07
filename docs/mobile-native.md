@@ -35,3 +35,20 @@ Tests bauen mit `cmake -S . -B build -G Ninja -DBUILD_TESTING=ON` und `ninja -C 
 ## Git
 
 Der Sandbox-Befehl kann in diesem Worktree nicht committen (gemeinsames `.git` ist schreibgeschützt). Alle Änderungen liegen uncommitted im Worktree; `git status` listet sie. Kein Push, kein Release.
+
+## Stand 2026-11-07: Telefon-Routen fertig (Branch `integration/finish-tomacco`)
+
+Unter 600 logischen px (Fensterbreite nach UI-Größe) zeigt jede Route eine Telefonansicht, die dieselben Daten und Operationen wie der Desktop nutzt. Nichts davon lief auf dem Pixel.
+
+| Route | Telefon | Beleg |
+|---|---|---|
+| Geräte | Liste aus `MobileRow` (Emulatoren, Telefone, iPhones), Geräteseite mit Zustand, einer Primäraktion, Geräteaktionen nur im laufenden Zustand, Verwalten über die bestehenden Dialoge mit ihren Bestätigungen; „nicht mehr gelistet“ und „nicht autorisiert“ | `devices_list_detail_and_back` |
+| Dateien | ein Bereich zur Zeit (Liste/Suche oder Datei), Namen und Pfade umbrechend, Speichern/Pfad kopieren/Neu laden, Code scrollt seitlich, Laden/kein Treffer/Fehler | `files_browse_search_and_file` |
+| Projekt, Build & Run | Projektliste (Suche, Zuletzt, gespeicherte Arbeitsbereiche, Ordner öffnen, Pfad, neues Projekt, Xcode-Import) und Übersicht mit Ziel, Mac-Host-Hinweis für iOS, genau einer Primäraktion und eingeklappten Optionen | `project_list_overview_and_options` |
+| Einstellungen, Agent | Sheets über die volle Breite oberhalb der Tastatur; Gruppe „Agents and system“ (Agent verbinden, Richtlinie, Mac-Hosts, SDK-Pfade, Speicher, Fehlerbericht) öffnet die echten Formulare | `settings_sheet_and_agent_clients` |
+| Jobs, Tools | Detail mit voller Überschrift, 48-px-Zurück und Aktionen in eigener Zeile; Tools als Liste oder Formular | `jobs_detail_targets_and_back` |
+| Übergreifend | Escape und System-Zurück schließen das Detail, Tastatur-/SafeArea-Insets, fokussiertes Feld bleibt sichtbar, Zustand über Schwelle, Querformat, Tablet und externes Display | `keyboard_inset_keeps_the_focused_field_visible`, `threshold_and_orientation_keep_each_route_state` |
+
+Tests: `test-phone-routes` (`tests/phone_routes_test.cpp`) lädt `Main.qml` mit Backend und Control-Programm auf einem telefonbreiten Offscreen-Bildschirm, isoliert (eigenes `TOMACCO_HOME`, XDG, QSettings), AVD-Dateien als Fixture für das echte `android.avds` und ein Stand-in-`adb`, das nur eine vorbereitete Liste ausgibt. Lauf: `bash .scratch/run_qt_halves.sh test-phone-routes` (beide Hälften grün), Desktop `bash .scratch/run_qt_halves.sh test-desktop-ui` (113/113). Renderings: `docs/design/phone-final/`. Fortschritt und neue Quelltexte für die Übersetzungen: `docs/phone-finish-progress.json`.
+
+Nicht geprüft: echte Bildschirmtastatur und SafeArea-Werte eines Geräts (Insets im Test eingespeist), die System-Zurück-Taste auf Android (synthetische `Key_Back`), WLAN-only-Downloads (kein Backend-Schalter vorhanden, daher kein Schalter in der App), ARM64-Build.

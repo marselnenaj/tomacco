@@ -1,0 +1,497 @@
+{
+ "$comment": "Phone-UI finish lane (Opus 5.5) on integration/finish-tomacco. Source and tests win over this prose.",
+ "date": "2026-11-07",
+ "branch": "integration/finish-tomacco",
+ "base": "df0a353",
+ "completed_routes": [
+  {
+   "route": "devices",
+   "what": "MobileRow list per AVD and phone (Android and iPhone), device page with state, kind, display, performance, one primary action (Start/Open live device), device actions only when running, Manage rows using the existing pin/nickname/manage/performance dialogs and confirmations, missing and unauthorized states, Find devices, back by top bar/Escape/system back",
+   "qml": [
+    "qml/Workspace.qml devicesPage",
+    "qml/AndroidDevices.qml"
+   ]
+  },
+  {
+   "route": "files",
+   "what": "one pane at a time (browse/search or file), project and path crumbs in full, wrapping Unicode names, search results with folder and line, file page with Save/Copy path/Reload, sideways code scroll, loading/no-match/error states, file opened in a wider window stays the phone detail",
+   "qml": [
+    "qml/FileWorkspace.qml"
+   ]
+  },
+  {
+   "route": "projects-build-run",
+   "what": "project list (search, recent, saved workspaces, open folder, open by path, new project, Xcode import) and overview (name/path/kinds, target platform/configuration/format/device, explicit Mac-host note for iOS, one primary action Build or Build & run, secondary Build only/Tests/Check code, folded options: application ID, sign, build steps, SDK paths, toolchain, save workspace; recent jobs). Drives the same fields as the desktop panels.",
+   "qml": [
+    "qml/Workspace.qml projectOverview"
+   ]
+  },
+  {
+   "route": "settings-agent-clients",
+   "what": "settings and agent clients as full-width phone sheets above keyboard/insets; new Agents and system group (connect agent, agent policy, Mac hosts, SDK & tool paths, storage, bug report bundle) opening their real forms explicitly; Settings, Web preview and About in More; touch sizes for appearance and interface size",
+   "qml": [
+    "qml/NativeWorkspace.qml",
+    "qml/AgentClientDialog.qml",
+    "qml/MobileNav.qml",
+    "qml/StudioDialog.qml"
+   ]
+  },
+  {
+   "route": "cross-route",
+   "what": "StudioButton/StudioSegmented touch (48 logical px, scaled), MobileTopBar (never squeezed), MobileRow stacks meta below 300 logical px, Escape and Key_Back close phone details, keyboard inset hides bottom nav/status and keeps focused field visible, SafeArea insets, Workspace.phone follows the window width, band hidden on phone pages with own header, tools list/form panes, unchanged lists keep their rows (no rebuild every poll)",
+   "qml": [
+    "qml/StudioButton.qml",
+    "qml/StudioSegmented.qml",
+    "qml/MobileTopBar.qml",
+    "qml/MobileRow.qml",
+    "qml/NativeWorkspace.qml",
+    "qml/Workspace.qml",
+    "qml/AndroidDevices.qml"
+   ]
+  },
+  {
+   "route": "bogen",
+   "what": "real app renders of all phone routes placed on page 01 as artboard f9343218ev, rendered and inspected; brand_check 0 hard, score 87",
+   "bogen": {
+    "file": "u8uvnj33hx",
+    "page": "pvcps58bsa",
+    "artboard": "f9343218ev",
+    "checkpoint": "mw5run13-bd8b7896"
+   }
+  }
+ ],
+ "remaining_routes": [],
+ "commits": [
+  "7a5e8ac phone: devices, files, projects/build, settings and tools as phone flows with 48 px targets",
+  "final commit of this lane: phone captures, progress and docs (see git log)"
+ ],
+ "source_digest": {
+  "tool": ".scratch/new_keys.py (qsTr in qml/*.qml|js vs base df0a353)",
+  "sha256": "dbb0d408cd4bb947f88a63895a780906b73d44e69d40546d042a377683edffcb",
+  "source_key_count": 1352
+ },
+ "new_keys": [
+  {
+   "text": "Agent policy",
+   "disambiguation": "",
+   "files": [
+    "qml/NativeWorkspace.qml"
+   ]
+  },
+  {
+   "text": "Agents and system",
+   "disambiguation": "",
+   "files": [
+    "qml/NativeWorkspace.qml"
+   ]
+  },
+  {
+   "text": "All devices",
+   "disambiguation": "",
+   "files": [
+    "qml/Workspace.qml"
+   ]
+  },
+  {
+   "text": "All tools",
+   "disambiguation": "",
+   "files": [
+    "qml/Workspace.qml"
+   ]
+  },
+  {
+   "text": "Android SDK, JDK and executables, updates and parallel jobs",
+   "disambiguation": "",
+   "files": [
+    "qml/NativeWorkspace.qml"
+   ]
+  },
+  {
+   "text": "Android emulator",
+   "disambiguation": "",
+   "files": [
+    "qml/Workspace.qml"
+   ]
+  },
+  {
+   "text": "Android phone",
+   "disambiguation": "",
+   "files": [
+    "qml/Workspace.qml"
+   ]
+  },
+  {
+   "text": "Application ID",
+   "disambiguation": "",
+   "files": [
+    "qml/Workspace.qml"
+   ]
+  },
+  {
+   "text": "Bug report bundle",
+   "disambiguation": "",
+   "files": [
+    "qml/NativeWorkspace.qml"
+   ]
+  },
+  {
+   "text": "Build host",
+   "disambiguation": "",
+   "files": [
+    "qml/Workspace.qml"
+   ]
+  },
+  {
+   "text": "Build only",
+   "disambiguation": "",
+   "files": [
+    "qml/Workspace.qml"
+   ]
+  },
+  {
+   "text": "Clean up old jobs and reports",
+   "disambiguation": "",
+   "files": [
+    "qml/NativeWorkspace.qml"
+   ]
+  },
+  {
+   "text": "Collapsed",
+   "disambiguation": "",
+   "files": [
+    "qml/Workspace.qml"
+   ]
+  },
+  {
+   "text": "Connect the phone to install apps, read its log or take a screenshot.",
+   "disambiguation": "",
+   "files": [
+    "qml/Workspace.qml"
+   ]
+  },
+  {
+   "text": "Create an app from a template",
+   "disambiguation": "",
+   "files": [
+    "qml/Workspace.qml"
+   ]
+  },
+  {
+   "text": "Diagnostics",
+   "disambiguation": "",
+   "files": [
+    "qml/NativeWorkspace.qml"
+   ]
+  },
+  {
+   "text": "Display",
+   "disambiguation": "",
+   "files": [
+    "qml/Workspace.qml"
+   ]
+  },
+  {
+   "text": "Expanded",
+   "disambiguation": "",
+   "files": [
+    "qml/Workspace.qml"
+   ]
+  },
+  {
+   "text": "Import Xcode project",
+   "disambiguation": "",
+   "files": [
+    "qml/Workspace.qml"
+   ]
+  },
+  {
+   "text": "Kind",
+   "disambiguation": "",
+   "files": [
+    "qml/Workspace.qml"
+   ]
+  },
+  {
+   "text": "Lists old jobs, logs and reports; removes them only after you confirm",
+   "disambiguation": "",
+   "files": [
+    "qml/NativeWorkspace.qml"
+   ]
+  },
+  {
+   "text": "Loading files…",
+   "disambiguation": "",
+   "files": [
+    "qml/FileWorkspace.qml"
+   ]
+  },
+  {
+   "text": "Mac hosts",
+   "disambiguation": "",
+   "files": [
+    "qml/NativeWorkspace.qml",
+    "qml/Workspace.qml"
+   ]
+  },
+  {
+   "text": "More",
+   "disambiguation": "projects",
+   "files": [
+    "qml/Workspace.qml"
+   ]
+  },
+  {
+   "text": "More build options",
+   "disambiguation": "",
+   "files": [
+    "qml/Workspace.qml"
+   ]
+  },
+  {
+   "text": "No longer listed. Find devices again, or go back to the list.",
+   "disambiguation": "",
+   "files": [
+    "qml/Workspace.qml"
+   ]
+  },
+  {
+   "text": "No matches for “%1”.",
+   "disambiguation": "",
+   "files": [
+    "qml/FileWorkspace.qml"
+   ]
+  },
+  {
+   "text": "No project matches “%1”.",
+   "disambiguation": "",
+   "files": [
+    "qml/Workspace.qml"
+   ]
+  },
+  {
+   "text": "Not authorized: allow USB debugging on the phone",
+   "disambiguation": "",
+   "files": [
+    "qml/Workspace.qml"
+   ]
+  },
+  {
+   "text": "Open",
+   "disambiguation": "folder",
+   "files": [
+    "qml/FileWorkspace.qml"
+   ]
+  },
+  {
+   "text": "Open",
+   "disambiguation": "project",
+   "files": [
+    "qml/Workspace.qml"
+   ]
+  },
+  {
+   "text": "Open by path",
+   "disambiguation": "",
+   "files": [
+    "qml/Workspace.qml"
+   ]
+  },
+  {
+   "text": "Path copied",
+   "disambiguation": "",
+   "files": [
+    "qml/FileWorkspace.qml"
+   ]
+  },
+  {
+   "text": "Performance",
+   "disambiguation": "",
+   "files": [
+    "qml/Workspace.qml"
+   ]
+  },
+  {
+   "text": "Pinned",
+   "disambiguation": "",
+   "files": [
+    "qml/AndroidDevices.qml"
+   ]
+  },
+  {
+   "text": "Projects",
+   "disambiguation": "",
+   "files": [
+    "qml/Workspace.qml"
+   ]
+  },
+  {
+   "text": "Reads an .xcodeproj and writes the Tomacco configuration",
+   "disambiguation": "",
+   "files": [
+    "qml/Workspace.qml"
+   ]
+  },
+  {
+   "text": "Recent jobs",
+   "disambiguation": "",
+   "files": [
+    "qml/Workspace.qml"
+   ]
+  },
+  {
+   "text": "SSH Macs for iOS builds, each set up explicitly",
+   "disambiguation": "",
+   "files": [
+    "qml/NativeWorkspace.qml"
+   ]
+  },
+  {
+   "text": "Saved workspaces",
+   "disambiguation": "",
+   "files": [
+    "qml/Workspace.qml"
+   ]
+  },
+  {
+   "text": "Search projects and workspaces",
+   "disambiguation": "",
+   "files": [
+    "qml/Workspace.qml"
+   ]
+  },
+  {
+   "text": "Search results for “%1” · %n match(es)",
+   "disambiguation": "",
+   "files": [
+    "qml/FileWorkspace.qml"
+   ]
+  },
+  {
+   "text": "Setup state and the exact setting for each client",
+   "disambiguation": "",
+   "files": [
+    "qml/NativeWorkspace.qml"
+   ]
+  },
+  {
+   "text": "Show all files",
+   "disambiguation": "",
+   "files": [
+    "qml/FileWorkspace.qml"
+   ]
+  },
+  {
+   "text": "Start the emulator to install apps, read its log or take a screenshot.",
+   "disambiguation": "",
+   "files": [
+    "qml/Workspace.qml"
+   ]
+  },
+  {
+   "text": "State",
+   "disambiguation": "",
+   "files": [
+    "qml/Workspace.qml"
+   ]
+  },
+  {
+   "text": "Storage",
+   "disambiguation": "",
+   "files": [
+    "qml/NativeWorkspace.qml"
+   ]
+  },
+  {
+   "text": "Switch project",
+   "disambiguation": "",
+   "files": [
+    "qml/Workspace.qml"
+   ]
+  },
+  {
+   "text": "Target",
+   "disambiguation": "",
+   "files": [
+    "qml/Workspace.qml"
+   ]
+  },
+  {
+   "text": "Type the folder of a Swift, Kotlin or Flutter project",
+   "disambiguation": "",
+   "files": [
+    "qml/Workspace.qml"
+   ]
+  },
+  {
+   "text": "What an agent may run and where it asks first",
+   "disambiguation": "",
+   "files": [
+    "qml/NativeWorkspace.qml"
+   ]
+  },
+  {
+   "text": "Writes one .tar.gz on this computer; nothing is sent",
+   "disambiguation": "",
+   "files": [
+    "qml/NativeWorkspace.qml"
+   ]
+  },
+  {
+   "text": "iOS builds need a Mac host you set up yourself. Tomacco never chooses or searches for one.",
+   "disambiguation": "",
+   "files": [
+    "qml/Workspace.qml"
+   ]
+  }
+ ],
+ "i18n_note": "Catalogs (.ts), registry and flags are untouched; these keys make the strict i18n check report stale catalogs until root reconciles them after the six language packages.",
+ "final_source_ready": true,
+ "tests": {
+  "phone_routes": {
+   "binary": "test-phone-routes (tests/phone_routes_test.cpp)",
+   "result": "21 data rows + init/cleanup passed (run as two ordered halves: 14 + 11 passed)",
+   "sizes": "360/100, 393/175, 412/200 (+393/100, 360/175 for settings; 100/200 keyboard; 393, 852x393 landscape, 768x1024 tablet, 1440x900 external, 1000x1400@200 threshold)",
+   "isolation": "own TOMACCO_HOME/XDG/QSettings, AVD fixtures read by the real android.avds, stand-in adb printing a prerecorded list, runner traps device tools"
+  },
+  "desktop_ui": "113/113 passed (.scratch/run_qt_halves.sh, order kept); two expectations updated to the phone contract: jobBack now asserts 48 px, the 960x680@200% file window (a phone) expects the file pane alone",
+  "components": {
+   "test-mobile-nav": "10/10",
+   "test-mobile-row": "8/8",
+   "test-agent-client-picker": "6/6",
+   "test-handoff-banner": "14/14",
+   "test-environment-panel": "16/16",
+   "test-demo-workspace": "21/21"
+  },
+  "not_rerun": "python suite (.scratch/run_py_tests.py), backend/nativeview C++ tests: no backend or Python source changed in this lane",
+  "python_docs": "test_docs_links, test_docs_consistency, test_build_site_docs, test_mobile_parity, test_docs_reference passed (.scratch/run_py_tests.py)",
+  "i18n_expected_stale": {
+   "module": "test_i18n",
+   "failing": [
+    "test_complete_languages_translate_everything_and_the_registry_says_which",
+    "test_english_plural_forms_exist_for_every_plural",
+    "test_catalog_tool_round_trips_a_translation",
+    "test_coverage_report_is_current",
+    "test_every_catalog_lists_every_marked_string_with_the_right_plural_forms"
+   ],
+   "cause": "the new_keys above (one plural: Search results for “%1” · %n match(es)) are not yet in the catalogs; .ts, registry and flags deliberately untouched"
+  }
+ },
+ "screenshots": "docs/design/phone-final/phone-<route>-<width>-<scale>.png (27, rendered by test-phone-routes with TOMACCO_UI_CAPTURES)",
+ "bogen_checkpoints": [
+  "mw5run13-bd8b7896"
+ ],
+ "unverified": [
+  "Nothing ran on the Pixel or any device; no ARM64 build in this lane (root rebuilds from the final commit)",
+  "Real on-screen keyboard and SafeArea values: covered by injected insets (keyboardInset/insetTop/insetBottom properties), not by a platform input method",
+  "Physical system back key routing on Android: Shortcut 'Back' (Qt.Key_Back) tested with synthetic key events only",
+  "Wi-Fi-only downloads: no backend setting exists; not shown as a fake toggle (settings.configure updates/jobs remain the real controls)",
+  "Desktop suite parallel 12-way run aborted some groups at WebEngine start (D-Bus disconnected) before any test; ordered halves pass"
+ ],
+ "next_step": "Root: reconcile the listed new_keys into the 50 catalogs after the language shards, then rebuild ARM64 from the final commit and qualify on the Pixel when the hardware lock is lifted.",
+ "long_commands": {
+  "phone": "bash .scratch/run_qt_halves.sh test-phone-routes",
+  "desktop": "bash .scratch/run_qt_halves.sh test-desktop-ui",
+  "build": "ninja -C build test-phone-routes test-desktop-ui test-mobile-nav test-mobile-row test-agent-client-picker"
+ },
+ "hardware_block": "Pixel attached to the MacBook is being deployed/flashed: no discovery, ADB/Fastboot/SSH/USB, installs or runtime start/stop were done. Not a release, not proof of Pixel execution."
+}

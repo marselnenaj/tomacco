@@ -83,3 +83,9 @@ Bogen-Checkpoints: `mw425g4a-8a8bd145` (Rohstand vor der Überarbeitung), `mw4tb
 ## Neue UI-Strings für die i18n-Lane (qsTr)
 
 Xcode-Projekt importieren · Liest ein .xcodeproj und legt die Tomacco-Konfiguration an · Zuletzt · Gespeicherte Arbeitsbereiche · Weitere · Anderen Ordner öffnen · Ziel · Ändern · Bauen und starten · Nur bauen · Letzte Jobs · Alle · Darstellung · Oberflächengröße · Gerätespiegel und Screenshots bleiben unverändert · Erscheinungsbild · Omarchy-Akzent übernehmen · Nur bei ausreichendem Kontrast · Speicher und Netz · Artefakte, Aufnahmen und SDK-Pakete · Downloads nur im WLAN · SDK-Pakete und Images fragen sonst nach · Hosts · Agent und System · Agent-Verbindung · Kein offener Netzwerkport · Benachrichtigung bei Jobende · Diagnosepaket erstellen · Szene geändert · Entwurf bleibt in dieser Sitzung erhalten · Keyframe bei %1 hinzufügen · Werte zwischen Keyframes werden interpoliert · Jobs laufen im ControlPlane weiter, auch wenn die App im Hintergrund ist · Host einrichten · Telefon per USB · Telefon per WLAN · Übernimmt der Host · Play-Upload fragt danach einzeln nach.
+
+## App-Renderings der fertigen Telefon-Routen (2026-11-07)
+
+Artboard `f9343218ev` auf Seite `pvcps58bsa` zeigt die gebaute App (Qt offscreen, `test-phone-routes`) neben den Boards: Geräte Liste/Detail, Dateien Suche/Datei, Jobs Detail, Projekt Build & Run und Liste, Einstellungen-Sheet, Agent-Clients sowie die Geräteseite bei 412 px und 200 %. Dateien: `docs/design/phone-final/`. Bogen-Checkpoint `mw5run13-bd8b7896`; `brand_check` des Artboards: 0 harte Verstöße.
+
+Abweichungen der App von den Boards, bewusst: Die Meta-Angabe einer Zeile rutscht unter 300 logischen px unter den Titel (sonst würde der Titel bei 200 % zu schmal); Telefon-Seiten mit eigener Kopfzeile (Projekt, Geräte) zeigen kein Abschnittsband; ein Schalter „Downloads nur im WLAN“ fehlt, weil es dafür keine Einstellung im Kern gibt.
