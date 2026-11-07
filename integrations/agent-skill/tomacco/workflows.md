@@ -62,6 +62,31 @@ tomaccoctl call screen.diff '{"before":"/absolute/before.png","after":"/absolute
 returns where it is, for content the hierarchy does not have. The virtual iPhone has no hierarchy, so
 its marks come from OCR.
 
+On a crowded screen use `mode` `compact`: it keeps whole records from the entire tree within
+`max_chars` (focus, editors and `query` matches first, then controls), folds a label into the one
+control it belongs to, keeps each record's reference (n12), mark number and bounds, and lists what it
+left out. `mode` detail with `refs` answers those records in full. Pass the `digest` you read
+back with the next call: `tree_stale` means the screen changed, so look again.
+
+```sh
+tomaccoctl call screen.tree '{"device":"emulator-5554","mode":"compact","max_chars":3000,"query":"pay"}'
+tomaccoctl call screen.tree '{"device":"emulator-5554","mode":"detail","refs":["n12"],"digest":"5f2c0e9a7b31d4c8"}'
+```
+
+## Type into a field and check it
+
+```sh
+tomaccoctl call device.reservation.acquire '{"device":"0123456789abcdef0123456789abcdef","owner":"agent: search test"}'
+tomaccoctl call runtime.input '{"session":"0123456789abcdef0123456789abcdef","action":"fill","x":0.5,"y":0.2,"text":"tomacco","verify_value":true,"submit":true,"reservation_token":"TOKEN","request_id":"search-1"}'
+```
+
+`verify_value` answers verified only after the focused editor's exact value was read back.
+`field_not_focused`, `field_wrong_target`, `field_unsupported` (password fields are never read) and
+the other refusals typed nothing. `field_uncertain` means text was sent and its effect is unknown:
+never type it again, observe the field instead; its `request_id` answers `request_outcome_unknown`.
+`runtime.state` says under input_capabilities whether a session offers it (a USB iPhone
+does; Android and the Simulator answer `fill_verification_unsupported` and send nothing).
+
 ## Drive the UI by selector
 
 ```sh
