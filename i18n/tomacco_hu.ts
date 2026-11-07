@@ -4494,809 +4494,809 @@ Az SSH a meglévő kulcsaidat és az ismert gazdagép-azonosítót használja.</
     </message>
     <message>
         <source>Open Tomacco</source>
-        <translation type="unfinished"></translation>
+        <translation>Tomacco megnyitása</translation>
     </message>
     <message>
         <source>Open URL</source>
-        <translation type="unfinished"></translation>
+        <translation>URL megnyitása</translation>
     </message>
     <message>
         <source>Open deep link</source>
-        <translation type="unfinished"></translation>
+        <translation>Mélyhivatkozás megnyitása</translation>
     </message>
     <message>
         <source>Open project</source>
-        <translation type="unfinished"></translation>
+        <translation>Projekt megnyitása</translation>
     </message>
     <message>
         <source>Open source file</source>
-        <translation type="unfinished"></translation>
+        <translation>Forrásfájl megnyitása</translation>
     </message>
     <message>
         <source>Operate Android element</source>
-        <translation type="unfinished"></translation>
+        <translation>Android-elem kezelése</translation>
     </message>
     <message>
         <source>Operate running virtual iOS</source>
-        <translation type="unfinished"></translation>
+        <translation>Futó virtuális iOS kezelése</translation>
     </message>
     <message>
         <source>Performance report</source>
-        <translation type="unfinished"></translation>
+        <translation>Teljesítményjelentés</translation>
     </message>
     <message>
         <source>Plan Swift build</source>
-        <translation type="unfinished"></translation>
+        <translation>Swift-build megtervezése</translation>
     </message>
     <message>
         <source>Prepare Google Play release</source>
-        <translation type="unfinished"></translation>
+        <translation>Google Play-kiadás előkészítése</translation>
     </message>
     <message>
         <source>Prepare PMP firmware</source>
-        <translation type="unfinished"></translation>
+        <translation>PMP-firmware előkészítése</translation>
     </message>
     <message>
         <source>Prepare iOS test system</source>
-        <translation type="unfinished"></translation>
+        <translation>iOS-tesztrendszer előkészítése</translation>
     </message>
     <message>
         <source>Prepare iPhone control</source>
-        <translation type="unfinished"></translation>
+        <translation>iPhone-vezérlés előkészítése</translation>
     </message>
     <message>
         <source>Prepare virtual iOS restore runtime</source>
-        <translation type="unfinished"></translation>
+        <translation>Virtuális iOS-visszaállítási futtatókörnyezet előkészítése</translation>
     </message>
     <message>
         <source>Preview sessions</source>
-        <translation type="unfinished"></translation>
+        <translation>Előnézeti munkamenetek</translation>
     </message>
     <message>
         <source>Preview status</source>
-        <translation type="unfinished"></translation>
+        <translation>Előnézet állapota</translation>
     </message>
     <message>
         <source>Read PMP memory</source>
-        <translation type="unfinished"></translation>
+        <translation>PMP-memória olvasása</translation>
     </message>
     <message>
         <source>Read UI tree</source>
-        <translation type="unfinished"></translation>
+        <translation>UI-fa beolvasása</translation>
     </message>
     <message>
         <source>Read Xcode project</source>
-        <translation type="unfinished"></translation>
+        <translation>Xcode-projekt beolvasása</translation>
     </message>
     <message>
         <source>Read call stack</source>
-        <translation type="unfinished"></translation>
+        <translation>Hívási verem beolvasása</translation>
     </message>
     <message>
         <source>Read iOS test run</source>
-        <translation type="unfinished"></translation>
+        <translation>iOS-tesztfuttatás beolvasása</translation>
     </message>
     <message>
         <source>Read model from device</source>
-        <translation type="unfinished"></translation>
+        <translation>Modell beolvasása az eszközről</translation>
     </message>
     <message>
         <source>Read threads</source>
-        <translation type="unfinished"></translation>
+        <translation>Szálak beolvasása</translation>
     </message>
     <message>
         <source>Read variables</source>
-        <translation type="unfinished"></translation>
+        <translation>Változók beolvasása</translation>
     </message>
     <message>
         <source>Read workspaces</source>
-        <translation type="unfinished"></translation>
+        <translation>Munkaterületek beolvasása</translation>
     </message>
     <message>
         <source>Record display</source>
-        <translation type="unfinished"></translation>
+        <translation>Kijelző rögzítése</translation>
     </message>
     <message>
         <source>Reload catalog</source>
-        <translation type="unfinished"></translation>
+        <translation>Katalógus újratöltése</translation>
     </message>
     <message>
         <source>Reload page</source>
-        <translation type="unfinished"></translation>
+        <translation>Oldal újratöltése</translation>
     </message>
     <message>
         <source>Remove custom model</source>
-        <translation type="unfinished"></translation>
+        <translation>Egyéni modell eltávolítása</translation>
     </message>
     <message>
         <source>Remove workspace</source>
-        <translation type="unfinished"></translation>
+        <translation>Munkaterület eltávolítása</translation>
     </message>
     <message>
         <source>Restore virtual iOS system</source>
-        <translation type="unfinished"></translation>
+        <translation>Virtuális iOS-rendszer visszaállítása</translation>
     </message>
     <message>
         <source>Run JavaScript</source>
-        <translation type="unfinished"></translation>
+        <translation>JavaScript futtatása</translation>
     </message>
     <message>
         <source>Run PMP firmware</source>
-        <translation type="unfinished"></translation>
+        <translation>PMP-firmware futtatása</translation>
     </message>
     <message>
         <source>Run XCTest / XCUITest</source>
-        <translation type="unfinished"></translation>
+        <translation>XCTest / XCUITest futtatása</translation>
     </message>
     <message>
         <source>Run iOS guest command</source>
-        <translation type="unfinished"></translation>
+        <translation>iOS-vendégparancs futtatása</translation>
     </message>
     <message>
         <source>Run native tests</source>
-        <translation type="unfinished"></translation>
+        <translation>Natív tesztek futtatása</translation>
     </message>
     <message>
         <source>Record UI test</source>
-        <translation type="unfinished"></translation>
+        <translation>UI-teszt rögzítése</translation>
     </message>
     <message>
         <source>Mark tappable elements</source>
-        <translation type="unfinished"></translation>
+        <translation>Koppintható elemek megjelölése</translation>
     </message>
     <message>
         <source>Tap a mark</source>
-        <translation type="unfinished"></translation>
+        <translation>Koppintás egy jelölésre</translation>
     </message>
     <message>
         <source>Read UI tree as text</source>
-        <translation type="unfinished"></translation>
+        <translation>UI-fa beolvasása szövegként</translation>
     </message>
     <message>
         <source>Read text on screen</source>
-        <translation type="unfinished"></translation>
+        <translation>Képernyőn lévő szöveg beolvasása</translation>
     </message>
     <message>
         <source>Compare two screens</source>
-        <translation type="unfinished"></translation>
+        <translation>Két képernyő összehasonlítása</translation>
     </message>
     <message>
         <source>Wait for text or a steady screen</source>
-        <translation type="unfinished"></translation>
+        <translation>Várakozás szövegre vagy stabil képernyőre</translation>
     </message>
     <message>
         <source>Export a screen</source>
-        <translation type="unfinished"></translation>
+        <translation>Képernyő exportálása</translation>
     </message>
     <message>
         <source>Export screens of several devices</source>
-        <translation type="unfinished"></translation>
+        <translation>Több eszköz képernyőinek exportálása</translation>
     </message>
     <message>
         <source>Check UI test scenario</source>
-        <translation type="unfinished"></translation>
+        <translation>UI-tesztforgatókönyv ellenőrzése</translation>
     </message>
     <message>
         <source>Set up Android text input</source>
-        <translation type="unfinished"></translation>
+        <translation>Android-szövegbevitel beállítása</translation>
     </message>
     <message>
         <source>Check Android text input</source>
-        <translation type="unfinished"></translation>
+        <translation>Android-szövegbevitel ellenőrzése</translation>
     </message>
     <message>
         <source>Clean up old jobs and reports</source>
-        <translation type="unfinished"></translation>
+        <translation>Régi feladatok és jelentések törlése</translation>
     </message>
     <message>
         <source>Write a bug report bundle</source>
-        <translation type="unfinished"></translation>
+        <translation>Hibajelentés-csomag írása</translation>
     </message>
     <message>
         <source>Read test results</source>
-        <translation type="unfinished"></translation>
+        <translation>Teszteredmények beolvasása</translation>
     </message>
     <message>
         <source>Read code coverage</source>
-        <translation type="unfinished"></translation>
+        <translation>Kódlefedettség beolvasása</translation>
     </message>
     <message>
         <source>Write HTML test report</source>
-        <translation type="unfinished"></translation>
+        <translation>HTML-tesztjelentés írása</translation>
     </message>
     <message>
         <source>Test pass-rate history</source>
-        <translation type="unfinished"></translation>
+        <translation>Tesztsikerességi arány előzményei</translation>
     </message>
     <message>
         <source>Select affected tests</source>
-        <translation type="unfinished"></translation>
+        <translation>Érintett tesztek kiválasztása</translation>
     </message>
     <message>
         <source>Review screenshot baselines</source>
-        <translation type="unfinished"></translation>
+        <translation>Képernyőkép-alapvonalak áttekintése</translation>
     </message>
     <message>
         <source>Find app crashes</source>
-        <translation type="unfinished"></translation>
+        <translation>Alkalmazás-összeomlások keresése</translation>
     </message>
     <message>
         <source>Check Android accessibility</source>
-        <translation type="unfinished"></translation>
+        <translation>Android-akadálymentesség ellenőrzése</translation>
     </message>
     <message>
         <source>Compare with baseline image</source>
-        <translation type="unfinished"></translation>
+        <translation>Összehasonlítás az alapképpel</translation>
     </message>
     <message>
         <source>Run on Mac</source>
-        <translation type="unfinished"></translation>
+        <translation>Futtatás Macen</translation>
     </message>
     <message>
         <source>Run steps in order</source>
-        <translation type="unfinished"></translation>
+        <translation>Lépések futtatása sorrendben</translation>
     </message>
     <message>
         <source>Run on every Android device</source>
-        <translation type="unfinished"></translation>
+        <translation>Futtatás minden Android-eszközön</translation>
     </message>
     <message>
         <source>Run workspace</source>
-        <translation type="unfinished"></translation>
+        <translation>Munkaterület futtatása</translation>
     </message>
     <message>
         <source>Runtime status</source>
-        <translation type="unfinished"></translation>
+        <translation>Futtatókörnyezet állapota</translation>
     </message>
     <message>
         <source>SDK packages</source>
-        <translation type="unfinished"></translation>
+        <translation>SDK-csomagok</translation>
     </message>
     <message>
         <source>Save source file</source>
-        <translation type="unfinished"></translation>
+        <translation>Forrásfájl mentése</translation>
     </message>
     <message>
         <source>Save workspace</source>
-        <translation type="unfinished"></translation>
+        <translation>Munkaterület mentése</translation>
     </message>
     <message>
         <source>Search project</source>
-        <translation type="unfinished"></translation>
+        <translation>Keresés a projektben</translation>
     </message>
     <message>
         <source>Set app version</source>
-        <translation type="unfinished"></translation>
+        <translation>Alkalmazásverzió beállítása</translation>
     </message>
     <message>
         <source>Check Android release readiness</source>
-        <translation type="unfinished"></translation>
+        <translation>Android-kiadás készenlétének ellenőrzése</translation>
     </message>
     <message>
         <source>Write Play release notes</source>
-        <translation type="unfinished"></translation>
+        <translation>Play-kiadási megjegyzések írása</translation>
     </message>
     <message>
         <source>Set breakpoints</source>
-        <translation type="unfinished"></translation>
+        <translation>Töréspontok beállítása</translation>
     </message>
     <message>
         <source>Set emulator display</source>
-        <translation type="unfinished"></translation>
+        <translation>Emulátor kijelzőjének beállítása</translation>
     </message>
     <message>
         <source>Set emulator performance</source>
-        <translation type="unfinished"></translation>
+        <translation>Emulátor teljesítményének beállítása</translation>
     </message>
     <message>
         <source>Set up iPhone connection</source>
-        <translation type="unfinished"></translation>
+        <translation>iPhone-kapcsolat beállítása</translation>
     </message>
     <message>
         <source>Set up toolchain</source>
-        <translation type="unfinished"></translation>
+        <translation>Eszközlánc beállítása</translation>
     </message>
     <message>
         <source>Set up virtual iOS device</source>
-        <translation type="unfinished"></translation>
+        <translation>Virtuális iOS-eszköz beállítása</translation>
     </message>
     <message>
         <source>Settings</source>
-        <translation type="unfinished"></translation>
+        <translation>Beállítások</translation>
     </message>
     <message>
         <source>Show Android live</source>
-        <translation type="unfinished"></translation>
+        <translation>Android megjelenítése élőben</translation>
     </message>
     <message>
         <source>Show iPhone apps</source>
-        <translation type="unfinished"></translation>
+        <translation>iPhone-alkalmazások megjelenítése</translation>
     </message>
     <message>
         <source>Show project files</source>
-        <translation type="unfinished"></translation>
+        <translation>Projektfájlok megjelenítése</translation>
     </message>
     <message>
         <source>Sign Android release</source>
-        <translation type="unfinished"></translation>
+        <translation>Android-kiadás aláírása</translation>
     </message>
     <message>
         <source>Start Android activity</source>
-        <translation type="unfinished"></translation>
+        <translation>Android-tevékenység indítása</translation>
     </message>
     <message>
         <source>Start build / test</source>
-        <translation type="unfinished"></translation>
+        <translation>Build / teszt indítása</translation>
     </message>
     <message>
         <source>Start debugger</source>
-        <translation type="unfinished"></translation>
+        <translation>Hibakereső indítása</translation>
     </message>
     <message>
         <source>Start emulator</source>
-        <translation type="unfinished"></translation>
+        <translation>Emulátor indítása</translation>
     </message>
     <message>
         <source>Start iOS test run</source>
-        <translation type="unfinished"></translation>
+        <translation>iOS-tesztfuttatás indítása</translation>
     </message>
     <message>
         <source>Start virtual iOS USB access</source>
-        <translation type="unfinished"></translation>
+        <translation>Virtuális iOS USB-hozzáférésének indítása</translation>
     </message>
     <message>
         <source>Start virtual iOS platform</source>
-        <translation type="unfinished"></translation>
+        <translation>Virtuális iOS-platform indítása</translation>
     </message>
     <message>
         <source>Start virtual iOS device</source>
-        <translation type="unfinished"></translation>
+        <translation>Virtuális iOS-eszköz indítása</translation>
     </message>
     <message>
         <source>Stop virtual iOS device</source>
-        <translation type="unfinished"></translation>
+        <translation>Virtuális iOS-eszköz leállítása</translation>
     </message>
     <message>
         <source>Unlock virtual iOS device</source>
-        <translation type="unfinished"></translation>
+        <translation>Virtuális iOS-eszköz feloldása</translation>
     </message>
     <message>
         <source>Install app on running virtual iOS device</source>
-        <translation type="unfinished"></translation>
+        <translation>Alkalmazás telepítése a futó virtuális iOS-eszközre</translation>
     </message>
     <message>
         <source>Debug process on virtual iOS device</source>
-        <translation type="unfinished"></translation>
+        <translation>Folyamat hibakeresése a virtuális iOS-eszközön</translation>
     </message>
     <message>
         <source>Screenshot of virtual iOS device</source>
-        <translation type="unfinished"></translation>
+        <translation>Virtuális iOS-eszköz képernyőképe</translation>
     </message>
     <message>
         <source>Apps of virtual iOS device</source>
-        <translation type="unfinished"></translation>
+        <translation>Virtuális iOS-eszköz alkalmazásai</translation>
     </message>
     <message>
         <source>Save crash reports of virtual iOS device</source>
-        <translation type="unfinished"></translation>
+        <translation>Virtuális iOS-eszköz összeomlási jelentéseinek mentése</translation>
     </message>
     <message>
         <source>Clean up virtual iOS device disk copies</source>
-        <translation type="unfinished"></translation>
+        <translation>Virtuális iOS-eszköz lemezmásolatainak törlése</translation>
     </message>
     <message>
         <source>Record virtual iOS device screen</source>
-        <translation type="unfinished"></translation>
+        <translation>Virtuális iOS-eszköz képernyőjének rögzítése</translation>
     </message>
     <message>
         <source>Stream device audio</source>
-        <translation type="unfinished"></translation>
+        <translation>Eszközhang továbbítása</translation>
     </message>
     <message>
         <source>Swift toolchain</source>
-        <translation type="unfinished"></translation>
+        <translation>Swift-eszközlánc</translation>
     </message>
     <message>
         <source>Tap / swipe / input</source>
-        <translation type="unfinished"></translation>
+        <translation>Koppintás / húzás / bevitel</translation>
     </message>
     <message>
         <source>Transfer project to Mac</source>
-        <translation type="unfinished"></translation>
+        <translation>Projekt átvitele a Macre</translation>
     </message>
     <message>
         <source>Upload App Store build</source>
-        <translation type="unfinished"></translation>
+        <translation>App Store-build feltöltése</translation>
     </message>
     <message>
         <source>Verify release signature</source>
-        <translation type="unfinished"></translation>
+        <translation>Kiadási aláírás ellenőrzése</translation>
     </message>
     <message>
         <source>Check signing keys</source>
-        <translation type="unfinished"></translation>
+        <translation>Aláírókulcsok ellenőrzése</translation>
     </message>
     <message>
         <source>View build plan</source>
-        <translation type="unfinished"></translation>
+        <translation>Buildterv megtekintése</translation>
     </message>
     <message>
         <source>Check dependency updates</source>
-        <translation type="unfinished"></translation>
+        <translation>Függőségfrissítések ellenőrzése</translation>
     </message>
     <message>
         <source>Analyze project code</source>
-        <translation type="unfinished"></translation>
+        <translation>Projektkód elemzése</translation>
     </message>
     <message>
         <source>Virtual iOS device: status</source>
-        <translation type="unfinished"></translation>
+        <translation>Virtuális iOS-eszköz: állapot</translation>
     </message>
     <message>
         <source>Set up the virtual iOS device</source>
-        <translation type="unfinished"></translation>
+        <translation>A virtuális iOS-eszköz beállítása</translation>
     </message>
     <message>
         <source>Check this machine for the virtual iOS device</source>
-        <translation type="unfinished"></translation>
+        <translation>A gép ellenőrzése a virtuális iOS-eszközhöz</translation>
     </message>
     <message>
         <source>Check the virtual iOS device</source>
-        <translation type="unfinished"></translation>
+        <translation>A virtuális iOS-eszköz ellenőrzése</translation>
     </message>
     <message>
         <source>Wait for job</source>
-        <translation type="unfinished"></translation>
+        <translation>Várakozás a feladatra</translation>
     </message>
     <message>
         <source>Job timeline</source>
-        <translation type="unfinished"></translation>
+        <translation>Feladat idővonala</translation>
     </message>
     <message>
         <source>Wait for rendering</source>
-        <translation type="unfinished"></translation>
+        <translation>Várakozás a renderelésre</translation>
     </message>
     <message>
         <source>Name or pin a device</source>
-        <translation type="unfinished"></translation>
+        <translation>Eszköz elnevezése vagy rögzítése</translation>
     </message>
     <message>
         <source>Pair over Wi-Fi by QR code</source>
-        <translation type="unfinished"></translation>
+        <translation>Párosítás Wi-Fin QR-kóddal</translation>
     </message>
     <message>
         <source>Android screen preview</source>
-        <translation type="unfinished"></translation>
+        <translation>Android-képernyő előnézete</translation>
     </message>
     <message>
         <source>Capture store screenshots</source>
-        <translation type="unfinished"></translation>
+        <translation>Áruházi képernyőképek készítése</translation>
     </message>
     <message>
         <source>Saved states of virtual iOS device</source>
-        <translation type="unfinished"></translation>
+        <translation>Virtuális iOS-eszköz mentett állapotai</translation>
     </message>
     <message>
         <source>Save state of virtual iOS device</source>
-        <translation type="unfinished"></translation>
+        <translation>Virtuális iOS-eszköz állapotának mentése</translation>
     </message>
     <message>
         <source>Delete saved state of virtual iOS device</source>
-        <translation type="unfinished"></translation>
+        <translation>Virtuális iOS-eszköz mentett állapotának törlése</translation>
     </message>
     <message>
         <source>Start virtual iOS device from saved state</source>
-        <translation type="unfinished"></translation>
+        <translation>Virtuális iOS-eszköz indítása mentett állapotból</translation>
     </message>
     <message>
         <source>Profiles of virtual iOS device</source>
-        <translation type="unfinished"></translation>
+        <translation>Virtuális iOS-eszköz profiljai</translation>
     </message>
     <message>
         <source>Log of virtual iOS device</source>
-        <translation type="unfinished"></translation>
+        <translation>Virtuális iOS-eszköz naplója</translation>
     </message>
     <message>
         <source>Agent policy</source>
-        <translation type="unfinished"></translation>
+        <translation>Ügynökszabályzat</translation>
     </message>
     <message>
         <source>Audit log</source>
-        <translation type="unfinished"></translation>
+        <translation>Auditnapló</translation>
     </message>
     <message>
         <source>Read a saved result</source>
-        <translation type="unfinished"></translation>
+        <translation>Mentett eredmény beolvasása</translation>
     </message>
     <message>
         <source>Inspect Demo Studio capabilities</source>
-        <translation type="unfinished"></translation>
+        <translation>Demo Studio képességeinek vizsgálata</translation>
     </message>
     <message>
         <source>Inspect local demo recording</source>
-        <translation type="unfinished"></translation>
+        <translation>Helyi bemutatófelvétel vizsgálata</translation>
     </message>
     <message>
         <source>Create demo scene</source>
-        <translation type="unfinished"></translation>
+        <translation>Bemutatójelenet létrehozása</translation>
     </message>
     <message>
         <source>Read demo scene</source>
-        <translation type="unfinished"></translation>
+        <translation>Bemutatójelenet beolvasása</translation>
     </message>
     <message>
         <source>Update demo scene</source>
-        <translation type="unfinished"></translation>
+        <translation>Bemutatójelenet frissítése</translation>
     </message>
     <message>
         <source>Render demo preview</source>
-        <translation type="unfinished"></translation>
+        <translation>Bemutató-előnézet renderelése</translation>
     </message>
     <message>
         <source>Export demo video</source>
-        <translation type="unfinished"></translation>
+        <translation>Bemutatóvideó exportálása</translation>
     </message>
     <message>
         <source>Validate demo export</source>
-        <translation type="unfinished"></translation>
+        <translation>Bemutatóexport ellenőrzése</translation>
     </message>
     <message>
         <source>QA environment settings</source>
-        <translation type="unfinished"></translation>
+        <translation>QA-környezet beállításai</translation>
     </message>
     <message>
         <source>List QA environments</source>
-        <translation type="unfinished"></translation>
+        <translation>QA-környezetek listázása</translation>
     </message>
     <message>
         <source>Read QA environment</source>
-        <translation type="unfinished"></translation>
+        <translation>QA-környezet beolvasása</translation>
     </message>
     <message>
         <source>Save QA environment</source>
-        <translation type="unfinished"></translation>
+        <translation>QA-környezet mentése</translation>
     </message>
     <message>
         <source>Delete QA environment</source>
-        <translation type="unfinished"></translation>
+        <translation>QA-környezet törlése</translation>
     </message>
     <message>
         <source>Export QA environment</source>
-        <translation type="unfinished"></translation>
+        <translation>QA-környezet exportálása</translation>
     </message>
     <message>
         <source>Import QA environment</source>
-        <translation type="unfinished"></translation>
+        <translation>QA-környezet importálása</translation>
     </message>
     <message>
         <source>Read QA environment of device</source>
-        <translation type="unfinished"></translation>
+        <translation>Eszköz QA-környezetének beolvasása</translation>
     </message>
     <message>
         <source>Plan QA environment</source>
-        <translation type="unfinished"></translation>
+        <translation>QA-környezet megtervezése</translation>
     </message>
     <message>
         <source>Apply QA environment</source>
-        <translation type="unfinished"></translation>
+        <translation>QA-környezet alkalmazása</translation>
     </message>
     <message>
         <source>Restore device settings</source>
-        <translation type="unfinished"></translation>
+        <translation>Eszközbeállítások visszaállítása</translation>
     </message>
     <message>
         <source>List restore points</source>
-        <translation type="unfinished"></translation>
+        <translation>Visszaállítási pontok listázása</translation>
     </message>
     <message>
         <source>Emulator disk usage</source>
-        <translation type="unfinished"></translation>
+        <translation>Emulátor lemezhasználata</translation>
     </message>
     <message>
         <source>Duplicate, rename or wipe emulator</source>
-        <translation type="unfinished"></translation>
+        <translation>Emulátor kettőzése, átnevezése vagy törlése</translation>
     </message>
     <message>
         <source>Plan emulator setup</source>
-        <translation type="unfinished"></translation>
+        <translation>Emulátor beállításának megtervezése</translation>
     </message>
     <message>
         <source>Set up emulator</source>
-        <translation type="unfinished"></translation>
+        <translation>Emulátor beállítása</translation>
     </message>
     <message>
         <source>Ask the person to act</source>
-        <translation type="unfinished"></translation>
+        <translation>Felkérés emberi beavatkozásra</translation>
     </message>
     <message>
         <source>Draft a bug report</source>
-        <translation type="unfinished"></translation>
+        <translation>Hibajelentés piszkozatának megírása</translation>
     </message>
     <message>
         <source>List handoffs</source>
-        <translation type="unfinished"></translation>
+        <translation>Átadások listázása</translation>
     </message>
     <message>
         <source>Observe a session</source>
-        <translation type="unfinished"></translation>
+        <translation>Munkamenet megfigyelése</translation>
     </message>
     <message>
         <source>Ordered input batch</source>
-        <translation type="unfinished"></translation>
+        <translation>Rendezett bevitelköteg</translation>
     </message>
     <message>
         <source>Read a handoff</source>
-        <translation type="unfinished"></translation>
+        <translation>Átadás beolvasása</translation>
     </message>
     <message>
         <source>The person is done</source>
-        <translation type="unfinished"></translation>
+        <translation>Az ember végzett</translation>
     </message>
     <message>
         <source>Timestamped gesture trace</source>
-        <translation type="unfinished"></translation>
+        <translation>Időbélyeges gesztusnyomkövetés</translation>
     </message>
     <message>
         <source>Wait for the person</source>
-        <translation type="unfinished"></translation>
+        <translation>Várakozás az emberre</translation>
     </message>
     <message>
         <source>Withdraw a handoff</source>
-        <translation type="unfinished"></translation>
+        <translation>Átadás visszavonása</translation>
     </message>
     <message>
         <source>Find a device by name</source>
-        <translation type="unfinished"></translation>
+        <translation>Eszköz keresése név alapján</translation>
     </message>
     <message>
         <source>Play a GPX route</source>
-        <translation type="unfinished"></translation>
+        <translation>GPX-útvonal lejátszása</translation>
     </message>
     <message>
         <source>Read a GPX route</source>
-        <translation type="unfinished"></translation>
+        <translation>GPX-útvonal beolvasása</translation>
     </message>
     <message>
         <source>Route playback status</source>
-        <translation type="unfinished"></translation>
+        <translation>Útvonal-lejátszás állapota</translation>
     </message>
 </context>
 <context>
     <name>ProfileWorkspace</name>
     <message>
         <source>% maximum increase</source>
-        <translation type="unfinished"></translation>
+        <translation>% maximális növekedés</translation>
     </message>
     <message>
         <source>Analyze</source>
-        <translation type="unfinished"></translation>
+        <translation>Elemzés</translation>
     </message>
     <message>
         <source>Application ID · e.g. com.example.app</source>
-        <translation type="unfinished"></translation>
+        <translation>Alkalmazásazonosító · pl. com.example.app</translation>
     </message>
     <message>
         <source>Choose file</source>
-        <translation type="unfinished"></translation>
+        <translation>Fájl kiválasztása</translation>
     </message>
     <message>
         <source>Compare</source>
-        <translation type="unfinished"></translation>
+        <translation>Összehasonlítás</translation>
     </message>
     <message>
         <source>Duration (seconds)</source>
-        <translation type="unfinished"></translation>
+        <translation>Időtartam (másodperc)</translation>
     </message>
     <message>
         <source>Frame time</source>
-        <translation type="unfinished"></translation>
+        <translation>Képkockaidő</translation>
     </message>
     <message>
         <source>Memory</source>
-        <translation type="unfinished"></translation>
+        <translation>Memória</translation>
     </message>
     <message>
         <source>Path to the Perfetto trace (.pftrace)</source>
-        <translation type="unfinished"></translation>
+        <translation>A Perfetto-nyomkövetés elérési útja (.pftrace)</translation>
     </message>
     <message>
         <source>Previous JSON report</source>
-        <translation type="unfinished"></translation>
+        <translation>Előző JSON-jelentés</translation>
     </message>
     <message>
         <source>Record</source>
-        <translation type="unfinished"></translation>
+        <translation>Felvétel</translation>
     </message>
     <message>
         <source>Save JSON report as…</source>
-        <translation type="unfinished"></translation>
+        <translation>JSON-jelentés mentése másként…</translation>
     </message>
     <message>
         <source>not available</source>
-        <translation type="unfinished"></translation>
+        <translation>nem érhető el</translation>
     </message>
     <message>
         <source>Record a trace</source>
-        <translation type="unfinished"></translation>
+        <translation>Nyomkövetés rögzítése</translation>
     </message>
     <message>
         <source>Use your app while it records. You get its CPU time, memory and frame times.</source>
-        <translation type="unfinished"></translation>
+        <translation>Használd az alkalmazást a rögzítés alatt. Megkapod a CPU-idejét, memóriáját és képkockaidejeit.</translation>
     </message>
     <message>
         <source>Pick a phone under Devices first.</source>
-        <translation type="unfinished"></translation>
+        <translation>Előbb válassz egy telefont az Eszközök alatt.</translation>
     </message>
     <message>
         <source>Catch regressions</source>
-        <translation type="unfinished"></translation>
+        <translation>Regressziók kiszűrése</translation>
     </message>
 </context>
 <context>
     <name>ReleaseWorkspace</name>
     <message>
         <source>APK / AAB to sign</source>
-        <translation type="unfinished"></translation>
+        <translation>Aláírandó APK / AAB</translation>
     </message>
     <message>
         <source>Build iOS archive</source>
-        <translation type="unfinished"></translation>
+        <translation>iOS-archívum buildelése</translation>
     </message>
     <message>
         <source>Commit Play change</source>
-        <translation type="unfinished"></translation>
+        <translation>Play-módosítás véglegesítése</translation>
     </message>
     <message>
         <source>Create new keystore</source>
-        <translation type="unfinished"></translation>
+        <translation>Új kulcstár létrehozása</translation>
     </message>
     <message>
         <source>Export IPA</source>
-        <translation type="unfinished"></translation>
+        <translation>IPA exportálása</translation>
     </message>
     <message>
         <source>Key alias</source>
-        <translation type="unfinished"></translation>
+        <translation>Kulcsalias</translation>
     </message>
     <message>
         <source>New signed output file</source>
-        <translation type="unfinished"></translation>
+        <translation>Új aláírt kimeneti fájl</translation>
     </message>
     <message>
         <source>Prepare Play upload</source>
-        <translation type="unfinished"></translation>
+        <translation>Play-feltöltés előkészítése</translation>
     </message>
     <message>
         <source>Protected password file · readable by its owner only</source>
-        <translation type="unfinished"></translation>
+        <translation>Védett jelszófájl · csak a tulajdonosa olvashatja</translation>
     </message>
     <message>
         <source>Set in the open project</source>
-        <translation type="unfinished"></translation>
+        <translation>A megnyitott projektben beállítva</translation>
     </message>
     <message>
         <source>Sign &amp; verify</source>
-        <translation type="unfinished"></translation>
+        <translation>Aláírás és ellenőrzés</translation>
     </message>
     <message>
         <source>Verify signature</source>
-        <translation type="unfinished"></translation>
+        <translation>Aláírás ellenőrzése</translation>
     </message>
     <message>
         <source>Version &amp; build number</source>
-        <translation type="unfinished"></translation>
+        <translation>Verzió és buildszám</translation>
     </message>
     <message>
         <source>Sign your app</source>
-        <translation type="unfinished"></translation>
+        <translation>Írd alá az alkalmazásodat</translation>
     </message>
     <message>
         <source>Your keys stay on this computer. Nothing is released until the check passes.</source>
-        <translation type="unfinished"></translation>
+        <translation>A kulcsaid ezen a számítógépen maradnak. Semmi sem jelenik meg, amíg az ellenőrzés sikeres nem lesz.</translation>
     </message>
     <message>
         <source>Google Play needs an authorized service account. Apple needs a Mac with Xcode and your signing keys.</source>
-        <translation type="unfinished"></translation>
+        <translation>A Google Playhez engedélyezett szolgáltatásfiók kell. Az Apple-höz Xcode-dal rendelkező Mac és az aláírókulcsaid szükségesek.</translation>
     </message>
     <message>
         <source>Build number</source>

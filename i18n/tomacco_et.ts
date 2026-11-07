@@ -4503,809 +4503,809 @@ SSH kasutab sinu olemasolevaid võtmeid ja teadaolevat hosti identiteeti.</trans
     </message>
     <message>
         <source>Open Tomacco</source>
-        <translation type="unfinished"></translation>
+        <translation>Ava Tomacco</translation>
     </message>
     <message>
         <source>Open URL</source>
-        <translation type="unfinished"></translation>
+        <translation>Ava URL</translation>
     </message>
     <message>
         <source>Open deep link</source>
-        <translation type="unfinished"></translation>
+        <translation>Ava süvalink</translation>
     </message>
     <message>
         <source>Open project</source>
-        <translation type="unfinished"></translation>
+        <translation>Ava projekt</translation>
     </message>
     <message>
         <source>Open source file</source>
-        <translation type="unfinished"></translation>
+        <translation>Ava lähtefail</translation>
     </message>
     <message>
         <source>Operate Android element</source>
-        <translation type="unfinished"></translation>
+        <translation>Kasuta Androidi elementi</translation>
     </message>
     <message>
         <source>Operate running virtual iOS</source>
-        <translation type="unfinished"></translation>
+        <translation>Kasuta töötavat virtuaalset iOS-i</translation>
     </message>
     <message>
         <source>Performance report</source>
-        <translation type="unfinished"></translation>
+        <translation>Jõudlusaruanne</translation>
     </message>
     <message>
         <source>Plan Swift build</source>
-        <translation type="unfinished"></translation>
+        <translation>Planeeri Swifti ehitus</translation>
     </message>
     <message>
         <source>Prepare Google Play release</source>
-        <translation type="unfinished"></translation>
+        <translation>Valmista ette Google Play väljalase</translation>
     </message>
     <message>
         <source>Prepare PMP firmware</source>
-        <translation type="unfinished"></translation>
+        <translation>Valmista ette PMP püsivara</translation>
     </message>
     <message>
         <source>Prepare iOS test system</source>
-        <translation type="unfinished"></translation>
+        <translation>Valmista ette iOS-i testsüsteem</translation>
     </message>
     <message>
         <source>Prepare iPhone control</source>
-        <translation type="unfinished"></translation>
+        <translation>Valmista ette iPhone&apos;i juhtimine</translation>
     </message>
     <message>
         <source>Prepare virtual iOS restore runtime</source>
-        <translation type="unfinished"></translation>
+        <translation>Valmista ette virtuaalse iOS-i taastamise käituskeskkond</translation>
     </message>
     <message>
         <source>Preview sessions</source>
-        <translation type="unfinished"></translation>
+        <translation>Eelvaate seansid</translation>
     </message>
     <message>
         <source>Preview status</source>
-        <translation type="unfinished"></translation>
+        <translation>Eelvaate olek</translation>
     </message>
     <message>
         <source>Read PMP memory</source>
-        <translation type="unfinished"></translation>
+        <translation>Loe PMP mälu</translation>
     </message>
     <message>
         <source>Read UI tree</source>
-        <translation type="unfinished"></translation>
+        <translation>Loe kasutajaliidese puud</translation>
     </message>
     <message>
         <source>Read Xcode project</source>
-        <translation type="unfinished"></translation>
+        <translation>Loe Xcode&apos;i projekti</translation>
     </message>
     <message>
         <source>Read call stack</source>
-        <translation type="unfinished"></translation>
+        <translation>Loe kutsepinu</translation>
     </message>
     <message>
         <source>Read iOS test run</source>
-        <translation type="unfinished"></translation>
+        <translation>Loe iOS-i testkäitust</translation>
     </message>
     <message>
         <source>Read model from device</source>
-        <translation type="unfinished"></translation>
+        <translation>Loe mudel seadmest</translation>
     </message>
     <message>
         <source>Read threads</source>
-        <translation type="unfinished"></translation>
+        <translation>Loe lõimi</translation>
     </message>
     <message>
         <source>Read variables</source>
-        <translation type="unfinished"></translation>
+        <translation>Loe muutujaid</translation>
     </message>
     <message>
         <source>Read workspaces</source>
-        <translation type="unfinished"></translation>
+        <translation>Loe tööalasid</translation>
     </message>
     <message>
         <source>Record display</source>
-        <translation type="unfinished"></translation>
+        <translation>Salvesta ekraan</translation>
     </message>
     <message>
         <source>Reload catalog</source>
-        <translation type="unfinished"></translation>
+        <translation>Laadi kataloog uuesti</translation>
     </message>
     <message>
         <source>Reload page</source>
-        <translation type="unfinished"></translation>
+        <translation>Laadi leht uuesti</translation>
     </message>
     <message>
         <source>Remove custom model</source>
-        <translation type="unfinished"></translation>
+        <translation>Eemalda kohandatud mudel</translation>
     </message>
     <message>
         <source>Remove workspace</source>
-        <translation type="unfinished"></translation>
+        <translation>Eemalda tööala</translation>
     </message>
     <message>
         <source>Restore virtual iOS system</source>
-        <translation type="unfinished"></translation>
+        <translation>Taasta virtuaalne iOS-i süsteem</translation>
     </message>
     <message>
         <source>Run JavaScript</source>
-        <translation type="unfinished"></translation>
+        <translation>Käivita JavaScript</translation>
     </message>
     <message>
         <source>Run PMP firmware</source>
-        <translation type="unfinished"></translation>
+        <translation>Käivita PMP püsivara</translation>
     </message>
     <message>
         <source>Run XCTest / XCUITest</source>
-        <translation type="unfinished"></translation>
+        <translation>Käivita XCTest / XCUITest</translation>
     </message>
     <message>
         <source>Run iOS guest command</source>
-        <translation type="unfinished"></translation>
+        <translation>Käivita iOS-i külaliskask</translation>
     </message>
     <message>
         <source>Run native tests</source>
-        <translation type="unfinished"></translation>
+        <translation>Käivita omatestid</translation>
     </message>
     <message>
         <source>Record UI test</source>
-        <translation type="unfinished"></translation>
+        <translation>Salvesta kasutajaliidese test</translation>
     </message>
     <message>
         <source>Mark tappable elements</source>
-        <translation type="unfinished"></translation>
+        <translation>Märgista puudutatavad elemendid</translation>
     </message>
     <message>
         <source>Tap a mark</source>
-        <translation type="unfinished"></translation>
+        <translation>Puuduta märki</translation>
     </message>
     <message>
         <source>Read UI tree as text</source>
-        <translation type="unfinished"></translation>
+        <translation>Loe kasutajaliidese puud tekstina</translation>
     </message>
     <message>
         <source>Read text on screen</source>
-        <translation type="unfinished"></translation>
+        <translation>Loe ekraanil olevat teksti</translation>
     </message>
     <message>
         <source>Compare two screens</source>
-        <translation type="unfinished"></translation>
+        <translation>Võrdle kahte kuva</translation>
     </message>
     <message>
         <source>Wait for text or a steady screen</source>
-        <translation type="unfinished"></translation>
+        <translation>Oota teksti või stabiilset kuva</translation>
     </message>
     <message>
         <source>Export a screen</source>
-        <translation type="unfinished"></translation>
+        <translation>Ekspordi kuva</translation>
     </message>
     <message>
         <source>Export screens of several devices</source>
-        <translation type="unfinished"></translation>
+        <translation>Ekspordi mitme seadme kuvad</translation>
     </message>
     <message>
         <source>Check UI test scenario</source>
-        <translation type="unfinished"></translation>
+        <translation>Kontrolli kasutajaliidese testi stsenaariumi</translation>
     </message>
     <message>
         <source>Set up Android text input</source>
-        <translation type="unfinished"></translation>
+        <translation>Seadista Androidi tekstisisestus</translation>
     </message>
     <message>
         <source>Check Android text input</source>
-        <translation type="unfinished"></translation>
+        <translation>Kontrolli Androidi tekstisisestust</translation>
     </message>
     <message>
         <source>Clean up old jobs and reports</source>
-        <translation type="unfinished"></translation>
+        <translation>Puhasta vanad tööd ja aruanded</translation>
     </message>
     <message>
         <source>Write a bug report bundle</source>
-        <translation type="unfinished"></translation>
+        <translation>Kirjuta veaaruande pakett</translation>
     </message>
     <message>
         <source>Read test results</source>
-        <translation type="unfinished"></translation>
+        <translation>Loe testitulemusi</translation>
     </message>
     <message>
         <source>Read code coverage</source>
-        <translation type="unfinished"></translation>
+        <translation>Loe koodi katvust</translation>
     </message>
     <message>
         <source>Write HTML test report</source>
-        <translation type="unfinished"></translation>
+        <translation>Kirjuta HTML-testiaruanne</translation>
     </message>
     <message>
         <source>Test pass-rate history</source>
-        <translation type="unfinished"></translation>
+        <translation>Testide läbimismäära ajalugu</translation>
     </message>
     <message>
         <source>Select affected tests</source>
-        <translation type="unfinished"></translation>
+        <translation>Vali mõjutatud testid</translation>
     </message>
     <message>
         <source>Review screenshot baselines</source>
-        <translation type="unfinished"></translation>
+        <translation>Vaata üle ekraanipiltide võrdluspildid</translation>
     </message>
     <message>
         <source>Find app crashes</source>
-        <translation type="unfinished"></translation>
+        <translation>Leia rakenduse krahhid</translation>
     </message>
     <message>
         <source>Check Android accessibility</source>
-        <translation type="unfinished"></translation>
+        <translation>Kontrolli Androidi ligipääsetavust</translation>
     </message>
     <message>
         <source>Compare with baseline image</source>
-        <translation type="unfinished"></translation>
+        <translation>Võrdle võrdluspildiga</translation>
     </message>
     <message>
         <source>Run on Mac</source>
-        <translation type="unfinished"></translation>
+        <translation>Käivita Macis</translation>
     </message>
     <message>
         <source>Run steps in order</source>
-        <translation type="unfinished"></translation>
+        <translation>Käivita sammud järjekorras</translation>
     </message>
     <message>
         <source>Run on every Android device</source>
-        <translation type="unfinished"></translation>
+        <translation>Käivita igas Android-seadmes</translation>
     </message>
     <message>
         <source>Run workspace</source>
-        <translation type="unfinished"></translation>
+        <translation>Käivita tööala</translation>
     </message>
     <message>
         <source>Runtime status</source>
-        <translation type="unfinished"></translation>
+        <translation>Käituskeskkonna olek</translation>
     </message>
     <message>
         <source>SDK packages</source>
-        <translation type="unfinished"></translation>
+        <translation>SDK paketid</translation>
     </message>
     <message>
         <source>Save source file</source>
-        <translation type="unfinished"></translation>
+        <translation>Salvesta lähtefail</translation>
     </message>
     <message>
         <source>Save workspace</source>
-        <translation type="unfinished"></translation>
+        <translation>Salvesta tööala</translation>
     </message>
     <message>
         <source>Search project</source>
-        <translation type="unfinished"></translation>
+        <translation>Otsi projektist</translation>
     </message>
     <message>
         <source>Set app version</source>
-        <translation type="unfinished"></translation>
+        <translation>Määra rakenduse versioon</translation>
     </message>
     <message>
         <source>Check Android release readiness</source>
-        <translation type="unfinished"></translation>
+        <translation>Kontrolli Androidi väljalaske valmidust</translation>
     </message>
     <message>
         <source>Write Play release notes</source>
-        <translation type="unfinished"></translation>
+        <translation>Kirjuta Play väljalaskemärkmed</translation>
     </message>
     <message>
         <source>Set breakpoints</source>
-        <translation type="unfinished"></translation>
+        <translation>Määra katkestuspunktid</translation>
     </message>
     <message>
         <source>Set emulator display</source>
-        <translation type="unfinished"></translation>
+        <translation>Määra emulaatori ekraan</translation>
     </message>
     <message>
         <source>Set emulator performance</source>
-        <translation type="unfinished"></translation>
+        <translation>Määra emulaatori jõudlus</translation>
     </message>
     <message>
         <source>Set up iPhone connection</source>
-        <translation type="unfinished"></translation>
+        <translation>Seadista iPhone&apos;i ühendus</translation>
     </message>
     <message>
         <source>Set up toolchain</source>
-        <translation type="unfinished"></translation>
+        <translation>Seadista tööriistakett</translation>
     </message>
     <message>
         <source>Set up virtual iOS device</source>
-        <translation type="unfinished"></translation>
+        <translation>Seadista virtuaalne iOS-seade</translation>
     </message>
     <message>
         <source>Settings</source>
-        <translation type="unfinished"></translation>
+        <translation>Seaded</translation>
     </message>
     <message>
         <source>Show Android live</source>
-        <translation type="unfinished"></translation>
+        <translation>Näita Androidi reaalajas</translation>
     </message>
     <message>
         <source>Show iPhone apps</source>
-        <translation type="unfinished"></translation>
+        <translation>Näita iPhone&apos;i rakendusi</translation>
     </message>
     <message>
         <source>Show project files</source>
-        <translation type="unfinished"></translation>
+        <translation>Näita projekti faile</translation>
     </message>
     <message>
         <source>Sign Android release</source>
-        <translation type="unfinished"></translation>
+        <translation>Allkirjasta Androidi väljalase</translation>
     </message>
     <message>
         <source>Start Android activity</source>
-        <translation type="unfinished"></translation>
+        <translation>Käivita Androidi tegevus</translation>
     </message>
     <message>
         <source>Start build / test</source>
-        <translation type="unfinished"></translation>
+        <translation>Alusta ehitust / testi</translation>
     </message>
     <message>
         <source>Start debugger</source>
-        <translation type="unfinished"></translation>
+        <translation>Käivita siluja</translation>
     </message>
     <message>
         <source>Start emulator</source>
-        <translation type="unfinished"></translation>
+        <translation>Käivita emulaator</translation>
     </message>
     <message>
         <source>Start iOS test run</source>
-        <translation type="unfinished"></translation>
+        <translation>Alusta iOS-i testkäitust</translation>
     </message>
     <message>
         <source>Start virtual iOS USB access</source>
-        <translation type="unfinished"></translation>
+        <translation>Käivita virtuaalse iOS-i USB-juurdepääs</translation>
     </message>
     <message>
         <source>Start virtual iOS platform</source>
-        <translation type="unfinished"></translation>
+        <translation>Käivita virtuaalne iOS-i platvorm</translation>
     </message>
     <message>
         <source>Start virtual iOS device</source>
-        <translation type="unfinished"></translation>
+        <translation>Käivita virtuaalne iOS-seade</translation>
     </message>
     <message>
         <source>Stop virtual iOS device</source>
-        <translation type="unfinished"></translation>
+        <translation>Peata virtuaalne iOS-seade</translation>
     </message>
     <message>
         <source>Unlock virtual iOS device</source>
-        <translation type="unfinished"></translation>
+        <translation>Ava virtuaalse iOS-seadme lukk</translation>
     </message>
     <message>
         <source>Install app on running virtual iOS device</source>
-        <translation type="unfinished"></translation>
+        <translation>Paigalda rakendus töötavasse virtuaalsesse iOS-seadmesse</translation>
     </message>
     <message>
         <source>Debug process on virtual iOS device</source>
-        <translation type="unfinished"></translation>
+        <translation>Silu protsessi virtuaalses iOS-seadmes</translation>
     </message>
     <message>
         <source>Screenshot of virtual iOS device</source>
-        <translation type="unfinished"></translation>
+        <translation>Virtuaalse iOS-seadme ekraanipilt</translation>
     </message>
     <message>
         <source>Apps of virtual iOS device</source>
-        <translation type="unfinished"></translation>
+        <translation>Virtuaalse iOS-seadme rakendused</translation>
     </message>
     <message>
         <source>Save crash reports of virtual iOS device</source>
-        <translation type="unfinished"></translation>
+        <translation>Salvesta virtuaalse iOS-seadme krahhiaruanded</translation>
     </message>
     <message>
         <source>Clean up virtual iOS device disk copies</source>
-        <translation type="unfinished"></translation>
+        <translation>Puhasta virtuaalse iOS-seadme kettakoopiad</translation>
     </message>
     <message>
         <source>Record virtual iOS device screen</source>
-        <translation type="unfinished"></translation>
+        <translation>Salvesta virtuaalse iOS-seadme ekraan</translation>
     </message>
     <message>
         <source>Stream device audio</source>
-        <translation type="unfinished"></translation>
+        <translation>Voogedasta seadme heli</translation>
     </message>
     <message>
         <source>Swift toolchain</source>
-        <translation type="unfinished"></translation>
+        <translation>Swifti tööriistakett</translation>
     </message>
     <message>
         <source>Tap / swipe / input</source>
-        <translation type="unfinished"></translation>
+        <translation>Puudutus / pühkimine / sisend</translation>
     </message>
     <message>
         <source>Transfer project to Mac</source>
-        <translation type="unfinished"></translation>
+        <translation>Kanna projekt Maci</translation>
     </message>
     <message>
         <source>Upload App Store build</source>
-        <translation type="unfinished"></translation>
+        <translation>Laadi üles App Store&apos;i ehitus</translation>
     </message>
     <message>
         <source>Verify release signature</source>
-        <translation type="unfinished"></translation>
+        <translation>Kontrolli väljalaske allkirja</translation>
     </message>
     <message>
         <source>Check signing keys</source>
-        <translation type="unfinished"></translation>
+        <translation>Kontrolli allkirjastamisvõtmeid</translation>
     </message>
     <message>
         <source>View build plan</source>
-        <translation type="unfinished"></translation>
+        <translation>Vaata ehitusplaani</translation>
     </message>
     <message>
         <source>Check dependency updates</source>
-        <translation type="unfinished"></translation>
+        <translation>Kontrolli sõltuvuste uuendusi</translation>
     </message>
     <message>
         <source>Analyze project code</source>
-        <translation type="unfinished"></translation>
+        <translation>Analüüsi projekti koodi</translation>
     </message>
     <message>
         <source>Virtual iOS device: status</source>
-        <translation type="unfinished"></translation>
+        <translation>Virtuaalne iOS-seade: olek</translation>
     </message>
     <message>
         <source>Set up the virtual iOS device</source>
-        <translation type="unfinished"></translation>
+        <translation>Seadista virtuaalne iOS-seade</translation>
     </message>
     <message>
         <source>Check this machine for the virtual iOS device</source>
-        <translation type="unfinished"></translation>
+        <translation>Kontrolli, kas see masin sobib virtuaalsele iOS-seadmele</translation>
     </message>
     <message>
         <source>Check the virtual iOS device</source>
-        <translation type="unfinished"></translation>
+        <translation>Kontrolli virtuaalset iOS-seadet</translation>
     </message>
     <message>
         <source>Wait for job</source>
-        <translation type="unfinished"></translation>
+        <translation>Oota tööd</translation>
     </message>
     <message>
         <source>Job timeline</source>
-        <translation type="unfinished"></translation>
+        <translation>Töö ajajoon</translation>
     </message>
     <message>
         <source>Wait for rendering</source>
-        <translation type="unfinished"></translation>
+        <translation>Oota renderdamist</translation>
     </message>
     <message>
         <source>Name or pin a device</source>
-        <translation type="unfinished"></translation>
+        <translation>Nimeta või kinnita seade</translation>
     </message>
     <message>
         <source>Pair over Wi-Fi by QR code</source>
-        <translation type="unfinished"></translation>
+        <translation>Seo WiFi kaudu QR-koodiga</translation>
     </message>
     <message>
         <source>Android screen preview</source>
-        <translation type="unfinished"></translation>
+        <translation>Androidi ekraani eelvaade</translation>
     </message>
     <message>
         <source>Capture store screenshots</source>
-        <translation type="unfinished"></translation>
+        <translation>Jäädvusta poe ekraanipildid</translation>
     </message>
     <message>
         <source>Saved states of virtual iOS device</source>
-        <translation type="unfinished"></translation>
+        <translation>Virtuaalse iOS-seadme salvestatud olekud</translation>
     </message>
     <message>
         <source>Save state of virtual iOS device</source>
-        <translation type="unfinished"></translation>
+        <translation>Salvesta virtuaalse iOS-seadme olek</translation>
     </message>
     <message>
         <source>Delete saved state of virtual iOS device</source>
-        <translation type="unfinished"></translation>
+        <translation>Kustuta virtuaalse iOS-seadme salvestatud olek</translation>
     </message>
     <message>
         <source>Start virtual iOS device from saved state</source>
-        <translation type="unfinished"></translation>
+        <translation>Käivita virtuaalne iOS-seade salvestatud olekust</translation>
     </message>
     <message>
         <source>Profiles of virtual iOS device</source>
-        <translation type="unfinished"></translation>
+        <translation>Virtuaalse iOS-seadme profiilid</translation>
     </message>
     <message>
         <source>Log of virtual iOS device</source>
-        <translation type="unfinished"></translation>
+        <translation>Virtuaalse iOS-seadme logi</translation>
     </message>
     <message>
         <source>Agent policy</source>
-        <translation type="unfinished"></translation>
+        <translation>Agendi poliitika</translation>
     </message>
     <message>
         <source>Audit log</source>
-        <translation type="unfinished"></translation>
+        <translation>Auditilogi</translation>
     </message>
     <message>
         <source>Read a saved result</source>
-        <translation type="unfinished"></translation>
+        <translation>Loe salvestatud tulemust</translation>
     </message>
     <message>
         <source>Inspect Demo Studio capabilities</source>
-        <translation type="unfinished"></translation>
+        <translation>Uuri Demo Studio võimalusi</translation>
     </message>
     <message>
         <source>Inspect local demo recording</source>
-        <translation type="unfinished"></translation>
+        <translation>Uuri kohalikku demosalvestist</translation>
     </message>
     <message>
         <source>Create demo scene</source>
-        <translation type="unfinished"></translation>
+        <translation>Loo demostseen</translation>
     </message>
     <message>
         <source>Read demo scene</source>
-        <translation type="unfinished"></translation>
+        <translation>Loe demostseeni</translation>
     </message>
     <message>
         <source>Update demo scene</source>
-        <translation type="unfinished"></translation>
+        <translation>Uuenda demostseeni</translation>
     </message>
     <message>
         <source>Render demo preview</source>
-        <translation type="unfinished"></translation>
+        <translation>Renderda demo eelvaade</translation>
     </message>
     <message>
         <source>Export demo video</source>
-        <translation type="unfinished"></translation>
+        <translation>Ekspordi demovideo</translation>
     </message>
     <message>
         <source>Validate demo export</source>
-        <translation type="unfinished"></translation>
+        <translation>Kontrolli demo eksporti</translation>
     </message>
     <message>
         <source>QA environment settings</source>
-        <translation type="unfinished"></translation>
+        <translation>QA-keskkonna seaded</translation>
     </message>
     <message>
         <source>List QA environments</source>
-        <translation type="unfinished"></translation>
+        <translation>Loetle QA-keskkonnad</translation>
     </message>
     <message>
         <source>Read QA environment</source>
-        <translation type="unfinished"></translation>
+        <translation>Loe QA-keskkonda</translation>
     </message>
     <message>
         <source>Save QA environment</source>
-        <translation type="unfinished"></translation>
+        <translation>Salvesta QA-keskkond</translation>
     </message>
     <message>
         <source>Delete QA environment</source>
-        <translation type="unfinished"></translation>
+        <translation>Kustuta QA-keskkond</translation>
     </message>
     <message>
         <source>Export QA environment</source>
-        <translation type="unfinished"></translation>
+        <translation>Ekspordi QA-keskkond</translation>
     </message>
     <message>
         <source>Import QA environment</source>
-        <translation type="unfinished"></translation>
+        <translation>Impordi QA-keskkond</translation>
     </message>
     <message>
         <source>Read QA environment of device</source>
-        <translation type="unfinished"></translation>
+        <translation>Loe seadme QA-keskkonda</translation>
     </message>
     <message>
         <source>Plan QA environment</source>
-        <translation type="unfinished"></translation>
+        <translation>Planeeri QA-keskkond</translation>
     </message>
     <message>
         <source>Apply QA environment</source>
-        <translation type="unfinished"></translation>
+        <translation>Rakenda QA-keskkond</translation>
     </message>
     <message>
         <source>Restore device settings</source>
-        <translation type="unfinished"></translation>
+        <translation>Taasta seadme seaded</translation>
     </message>
     <message>
         <source>List restore points</source>
-        <translation type="unfinished"></translation>
+        <translation>Loetle taastepunktid</translation>
     </message>
     <message>
         <source>Emulator disk usage</source>
-        <translation type="unfinished"></translation>
+        <translation>Emulaatori kettakasutus</translation>
     </message>
     <message>
         <source>Duplicate, rename or wipe emulator</source>
-        <translation type="unfinished"></translation>
+        <translation>Dubleeri, nimeta ümber või tühjenda emulaator</translation>
     </message>
     <message>
         <source>Plan emulator setup</source>
-        <translation type="unfinished"></translation>
+        <translation>Planeeri emulaatori seadistamine</translation>
     </message>
     <message>
         <source>Set up emulator</source>
-        <translation type="unfinished"></translation>
+        <translation>Seadista emulaator</translation>
     </message>
     <message>
         <source>Ask the person to act</source>
-        <translation type="unfinished"></translation>
+        <translation>Palu inimesel tegutseda</translation>
     </message>
     <message>
         <source>Draft a bug report</source>
-        <translation type="unfinished"></translation>
+        <translation>Koosta veaaruande mustand</translation>
     </message>
     <message>
         <source>List handoffs</source>
-        <translation type="unfinished"></translation>
+        <translation>Loetle üleandmised</translation>
     </message>
     <message>
         <source>Observe a session</source>
-        <translation type="unfinished"></translation>
+        <translation>Jälgi seanssi</translation>
     </message>
     <message>
         <source>Ordered input batch</source>
-        <translation type="unfinished"></translation>
+        <translation>Järjestatud sisendipakett</translation>
     </message>
     <message>
         <source>Read a handoff</source>
-        <translation type="unfinished"></translation>
+        <translation>Loe üleandmist</translation>
     </message>
     <message>
         <source>The person is done</source>
-        <translation type="unfinished"></translation>
+        <translation>Inimene on valmis</translation>
     </message>
     <message>
         <source>Timestamped gesture trace</source>
-        <translation type="unfinished"></translation>
+        <translation>Ajatempliga žestide jälg</translation>
     </message>
     <message>
         <source>Wait for the person</source>
-        <translation type="unfinished"></translation>
+        <translation>Oota inimest</translation>
     </message>
     <message>
         <source>Withdraw a handoff</source>
-        <translation type="unfinished"></translation>
+        <translation>Võta üleandmine tagasi</translation>
     </message>
     <message>
         <source>Find a device by name</source>
-        <translation type="unfinished"></translation>
+        <translation>Leia seade nime järgi</translation>
     </message>
     <message>
         <source>Play a GPX route</source>
-        <translation type="unfinished"></translation>
+        <translation>Esita GPX-marsruut</translation>
     </message>
     <message>
         <source>Read a GPX route</source>
-        <translation type="unfinished"></translation>
+        <translation>Loe GPX-marsruuti</translation>
     </message>
     <message>
         <source>Route playback status</source>
-        <translation type="unfinished"></translation>
+        <translation>Marsruudi esitamise olek</translation>
     </message>
 </context>
 <context>
     <name>ProfileWorkspace</name>
     <message>
         <source>% maximum increase</source>
-        <translation type="unfinished"></translation>
+        <translation>% maksimaalne kasv</translation>
     </message>
     <message>
         <source>Analyze</source>
-        <translation type="unfinished"></translation>
+        <translation>Analüüsi</translation>
     </message>
     <message>
         <source>Application ID · e.g. com.example.app</source>
-        <translation type="unfinished"></translation>
+        <translation>Rakenduse ID · nt com.example.app</translation>
     </message>
     <message>
         <source>Choose file</source>
-        <translation type="unfinished"></translation>
+        <translation>Vali fail</translation>
     </message>
     <message>
         <source>Compare</source>
-        <translation type="unfinished"></translation>
+        <translation>Võrdle</translation>
     </message>
     <message>
         <source>Duration (seconds)</source>
-        <translation type="unfinished"></translation>
+        <translation>Kestus (sekundites)</translation>
     </message>
     <message>
         <source>Frame time</source>
-        <translation type="unfinished"></translation>
+        <translation>Kaadriaeg</translation>
     </message>
     <message>
         <source>Memory</source>
-        <translation type="unfinished"></translation>
+        <translation>Mälu</translation>
     </message>
     <message>
         <source>Path to the Perfetto trace (.pftrace)</source>
-        <translation type="unfinished"></translation>
+        <translation>Tee Perfetto jälituseni (.pftrace)</translation>
     </message>
     <message>
         <source>Previous JSON report</source>
-        <translation type="unfinished"></translation>
+        <translation>Eelmine JSON-aruanne</translation>
     </message>
     <message>
         <source>Record</source>
-        <translation type="unfinished"></translation>
+        <translation>Salvesta</translation>
     </message>
     <message>
         <source>Save JSON report as…</source>
-        <translation type="unfinished"></translation>
+        <translation>Salvesta JSON-aruanne kui…</translation>
     </message>
     <message>
         <source>not available</source>
-        <translation type="unfinished"></translation>
+        <translation>pole saadaval</translation>
     </message>
     <message>
         <source>Record a trace</source>
-        <translation type="unfinished"></translation>
+        <translation>Salvesta jälitus</translation>
     </message>
     <message>
         <source>Use your app while it records. You get its CPU time, memory and frame times.</source>
-        <translation type="unfinished"></translation>
+        <translation>Kasuta salvestamise ajal oma rakendust. Saad selle protsessoriaja, mälu ja kaadriajad.</translation>
     </message>
     <message>
         <source>Pick a phone under Devices first.</source>
-        <translation type="unfinished"></translation>
+        <translation>Vali kõigepealt jaotises Seadmed telefon.</translation>
     </message>
     <message>
         <source>Catch regressions</source>
-        <translation type="unfinished"></translation>
+        <translation>Püüa regressioonid kinni</translation>
     </message>
 </context>
 <context>
     <name>ReleaseWorkspace</name>
     <message>
         <source>APK / AAB to sign</source>
-        <translation type="unfinished"></translation>
+        <translation>Allkirjastatav APK / AAB</translation>
     </message>
     <message>
         <source>Build iOS archive</source>
-        <translation type="unfinished"></translation>
+        <translation>Ehita iOS-i arhiiv</translation>
     </message>
     <message>
         <source>Commit Play change</source>
-        <translation type="unfinished"></translation>
+        <translation>Kinnita Play muudatus</translation>
     </message>
     <message>
         <source>Create new keystore</source>
-        <translation type="unfinished"></translation>
+        <translation>Loo uus võtmehoidla</translation>
     </message>
     <message>
         <source>Export IPA</source>
-        <translation type="unfinished"></translation>
+        <translation>Ekspordi IPA</translation>
     </message>
     <message>
         <source>Key alias</source>
-        <translation type="unfinished"></translation>
+        <translation>Võtme alias</translation>
     </message>
     <message>
         <source>New signed output file</source>
-        <translation type="unfinished"></translation>
+        <translation>Uus allkirjastatud väljundfail</translation>
     </message>
     <message>
         <source>Prepare Play upload</source>
-        <translation type="unfinished"></translation>
+        <translation>Valmista ette Play üleslaadimine</translation>
     </message>
     <message>
         <source>Protected password file · readable by its owner only</source>
-        <translation type="unfinished"></translation>
+        <translation>Kaitstud paroolifail · loetav ainult omanikule</translation>
     </message>
     <message>
         <source>Set in the open project</source>
-        <translation type="unfinished"></translation>
+        <translation>Määratud avatud projektis</translation>
     </message>
     <message>
         <source>Sign &amp; verify</source>
-        <translation type="unfinished"></translation>
+        <translation>Allkirjasta ja kontrolli</translation>
     </message>
     <message>
         <source>Verify signature</source>
-        <translation type="unfinished"></translation>
+        <translation>Kontrolli allkirja</translation>
     </message>
     <message>
         <source>Version &amp; build number</source>
-        <translation type="unfinished"></translation>
+        <translation>Versioon ja järgu number</translation>
     </message>
     <message>
         <source>Sign your app</source>
-        <translation type="unfinished"></translation>
+        <translation>Allkirjasta oma rakendus</translation>
     </message>
     <message>
         <source>Your keys stay on this computer. Nothing is released until the check passes.</source>
-        <translation type="unfinished"></translation>
+        <translation>Sinu võtmed jäävad sellesse arvutisse. Midagi ei avaldata enne, kui kontroll on läbitud.</translation>
     </message>
     <message>
         <source>Google Play needs an authorized service account. Apple needs a Mac with Xcode and your signing keys.</source>
-        <translation type="unfinished"></translation>
+        <translation>Google Play vajab volitatud teenusekontot. Apple vajab Xcode&apos;iga Maci ja sinu allkirjastamisvõtmeid.</translation>
     </message>
     <message>
         <source>Build number</source>
