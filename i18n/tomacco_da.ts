@@ -5281,6 +5281,38 @@ SSH bruger dine eksisterende nøgler og den kendte værtsidentitet.</translation
         <source>Route playback status</source>
         <translation>Status for ruteafspilning</translation>
     </message>
+    <message>
+        <source>Device reservation state</source>
+        <translation>Status for enhedsreservation</translation>
+    </message>
+    <message>
+        <source>Recorded request</source>
+        <translation>Registreret anmodning</translation>
+    </message>
+    <message>
+        <source>Recorded requests</source>
+        <translation>Registrerede anmodninger</translation>
+    </message>
+    <message>
+        <source>Release a device reservation</source>
+        <translation>Frigiv en enhedsreservation</translation>
+    </message>
+    <message>
+        <source>Renew a device reservation</source>
+        <translation>Forny en enhedsreservation</translation>
+    </message>
+    <message>
+        <source>Reserve a device</source>
+        <translation>Reserver en enhed</translation>
+    </message>
+    <message>
+        <source>Reserved devices</source>
+        <translation>Reserverede enheder</translation>
+    </message>
+    <message>
+        <source>Take over a device reservation</source>
+        <translation>Overtag en enhedsreservation</translation>
+    </message>
 </context>
 <context>
     <name>ProfileWorkspace</name>

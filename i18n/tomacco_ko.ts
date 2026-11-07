@@ -5259,6 +5259,38 @@ SSH는 기존 키와 알려진 호스트 ID를 사용합니다.</translation>
         <source>Route playback status</source>
         <translation>경로 재생 상태</translation>
     </message>
+    <message>
+        <source>Device reservation state</source>
+        <translation>기기 예약 상태</translation>
+    </message>
+    <message>
+        <source>Recorded request</source>
+        <translation>기록된 요청</translation>
+    </message>
+    <message>
+        <source>Recorded requests</source>
+        <translation>기록된 요청 목록</translation>
+    </message>
+    <message>
+        <source>Release a device reservation</source>
+        <translation>기기 예약 해제</translation>
+    </message>
+    <message>
+        <source>Renew a device reservation</source>
+        <translation>기기 예약 갱신</translation>
+    </message>
+    <message>
+        <source>Reserve a device</source>
+        <translation>기기 예약</translation>
+    </message>
+    <message>
+        <source>Reserved devices</source>
+        <translation>예약된 기기</translation>
+    </message>
+    <message>
+        <source>Take over a device reservation</source>
+        <translation>기기 예약 넘겨받기</translation>
+    </message>
 </context>
 <context>
     <name>ProfileWorkspace</name>

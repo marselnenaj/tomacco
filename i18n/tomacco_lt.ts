@@ -5279,6 +5279,38 @@ SSH naudoja jūsų esamus raktus ir žinomą pagrindinio kompiuterio tapatybę.<
         <source>Route playback status</source>
         <translation>Maršruto atkūrimo būsena</translation>
     </message>
+    <message>
+        <source>Device reservation state</source>
+        <translation>Įrenginio rezervacijos būsena</translation>
+    </message>
+    <message>
+        <source>Recorded request</source>
+        <translation>Įrašyta užklausa</translation>
+    </message>
+    <message>
+        <source>Recorded requests</source>
+        <translation>Įrašytos užklausos</translation>
+    </message>
+    <message>
+        <source>Release a device reservation</source>
+        <translation>Atlaisvinti įrenginio rezervaciją</translation>
+    </message>
+    <message>
+        <source>Renew a device reservation</source>
+        <translation>Pratęsti įrenginio rezervaciją</translation>
+    </message>
+    <message>
+        <source>Reserve a device</source>
+        <translation>Rezervuoti įrenginį</translation>
+    </message>
+    <message>
+        <source>Reserved devices</source>
+        <translation>Rezervuoti įrenginiai</translation>
+    </message>
+    <message>
+        <source>Take over a device reservation</source>
+        <translation>Perimti įrenginio rezervaciją</translation>
+    </message>
 </context>
 <context>
     <name>ProfileWorkspace</name>

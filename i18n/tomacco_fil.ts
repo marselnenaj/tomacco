@@ -5279,6 +5279,38 @@ Ginagamit ng SSH ang iyong mga kasalukuyang key at ang kilalang host identity.</
         <source>Route playback status</source>
         <translation>Status ng pag-play ng route</translation>
     </message>
+    <message>
+        <source>Device reservation state</source>
+        <translation>Status ng reserbasyon ng device</translation>
+    </message>
+    <message>
+        <source>Recorded request</source>
+        <translation>Naitalang kahilingan</translation>
+    </message>
+    <message>
+        <source>Recorded requests</source>
+        <translation>Mga naitalang kahilingan</translation>
+    </message>
+    <message>
+        <source>Release a device reservation</source>
+        <translation>Bitawan ang reserbasyon ng device</translation>
+    </message>
+    <message>
+        <source>Renew a device reservation</source>
+        <translation>I-renew ang reserbasyon ng device</translation>
+    </message>
+    <message>
+        <source>Reserve a device</source>
+        <translation>Magreserba ng device</translation>
+    </message>
+    <message>
+        <source>Reserved devices</source>
+        <translation>Mga nakareserbang device</translation>
+    </message>
+    <message>
+        <source>Take over a device reservation</source>
+        <translation>Agawin ang reserbasyon ng device</translation>
+    </message>
 </context>
 <context>
     <name>ProfileWorkspace</name>

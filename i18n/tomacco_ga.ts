@@ -5279,6 +5279,38 @@ SSH uses your existing keys and the known host identity.</source>
         <source>Route playback status</source>
         <translation>Stádas athsheinnte an bhealaigh</translation>
     </message>
+    <message>
+        <source>Device reservation state</source>
+        <translation>Staid áirithint an ghléis</translation>
+    </message>
+    <message>
+        <source>Recorded request</source>
+        <translation>Iarratas taifeadta</translation>
+    </message>
+    <message>
+        <source>Recorded requests</source>
+        <translation>Iarratais thaifeadta</translation>
+    </message>
+    <message>
+        <source>Release a device reservation</source>
+        <translation>Scaoil áirithint gléis</translation>
+    </message>
+    <message>
+        <source>Renew a device reservation</source>
+        <translation>Athnuaigh áirithint gléis</translation>
+    </message>
+    <message>
+        <source>Reserve a device</source>
+        <translation>Cuir gléas in áirithe</translation>
+    </message>
+    <message>
+        <source>Reserved devices</source>
+        <translation>Gléasanna in áirithe</translation>
+    </message>
+    <message>
+        <source>Take over a device reservation</source>
+        <translation>Glac seilbh ar áirithint gléis</translation>
+    </message>
 </context>
 <context>
     <name>ProfileWorkspace</name>

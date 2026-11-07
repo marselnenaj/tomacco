@@ -5279,6 +5279,38 @@ SSH používá vaše stávající klíče a známou identitu hostitele.</transla
         <source>Route playback status</source>
         <translation>Stav přehrávání trasy</translation>
     </message>
+    <message>
+        <source>Device reservation state</source>
+        <translation>Stav rezervace zařízení</translation>
+    </message>
+    <message>
+        <source>Recorded request</source>
+        <translation>Zaznamenaný požadavek</translation>
+    </message>
+    <message>
+        <source>Recorded requests</source>
+        <translation>Zaznamenané požadavky</translation>
+    </message>
+    <message>
+        <source>Release a device reservation</source>
+        <translation>Uvolnit rezervaci zařízení</translation>
+    </message>
+    <message>
+        <source>Renew a device reservation</source>
+        <translation>Obnovit rezervaci zařízení</translation>
+    </message>
+    <message>
+        <source>Reserve a device</source>
+        <translation>Rezervovat zařízení</translation>
+    </message>
+    <message>
+        <source>Reserved devices</source>
+        <translation>Rezervovaná zařízení</translation>
+    </message>
+    <message>
+        <source>Take over a device reservation</source>
+        <translation>Převzít rezervaci zařízení</translation>
+    </message>
 </context>
 <context>
     <name>ProfileWorkspace</name>

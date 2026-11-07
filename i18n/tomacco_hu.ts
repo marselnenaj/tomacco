@@ -5259,6 +5259,38 @@ Az SSH a meglévő kulcsaidat és az ismert gazdagép-azonosítót használja.</
         <source>Route playback status</source>
         <translation>Útvonal-lejátszás állapota</translation>
     </message>
+    <message>
+        <source>Device reservation state</source>
+        <translation>Eszközfoglalás állapota</translation>
+    </message>
+    <message>
+        <source>Recorded request</source>
+        <translation>Rögzített kérés</translation>
+    </message>
+    <message>
+        <source>Recorded requests</source>
+        <translation>Rögzített kérések</translation>
+    </message>
+    <message>
+        <source>Release a device reservation</source>
+        <translation>Eszközfoglalás feloldása</translation>
+    </message>
+    <message>
+        <source>Renew a device reservation</source>
+        <translation>Eszközfoglalás megújítása</translation>
+    </message>
+    <message>
+        <source>Reserve a device</source>
+        <translation>Eszköz lefoglalása</translation>
+    </message>
+    <message>
+        <source>Reserved devices</source>
+        <translation>Lefoglalt eszközök</translation>
+    </message>
+    <message>
+        <source>Take over a device reservation</source>
+        <translation>Eszközfoglalás átvétele</translation>
+    </message>
 </context>
 <context>
     <name>ProfileWorkspace</name>

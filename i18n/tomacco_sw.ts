@@ -5269,6 +5269,38 @@ SSH hutumia funguo zako zilizopo na utambulisho unaojulikana wa seva pangishi.</
         <source>Route playback status</source>
         <translation>Hali ya uchezaji wa njia</translation>
     </message>
+    <message>
+        <source>Device reservation state</source>
+        <translation>Hali ya uhifadhi wa kifaa</translation>
+    </message>
+    <message>
+        <source>Recorded request</source>
+        <translation>Ombi lililorekodiwa</translation>
+    </message>
+    <message>
+        <source>Recorded requests</source>
+        <translation>Maombi yaliyorekodiwa</translation>
+    </message>
+    <message>
+        <source>Release a device reservation</source>
+        <translation>Achilia uhifadhi wa kifaa</translation>
+    </message>
+    <message>
+        <source>Renew a device reservation</source>
+        <translation>Fanya upya uhifadhi wa kifaa</translation>
+    </message>
+    <message>
+        <source>Reserve a device</source>
+        <translation>Hifadhi kifaa</translation>
+    </message>
+    <message>
+        <source>Reserved devices</source>
+        <translation>Vifaa vilivyohifadhiwa</translation>
+    </message>
+    <message>
+        <source>Take over a device reservation</source>
+        <translation>Chukua uhifadhi wa kifaa</translation>
+    </message>
 </context>
 <context>
     <name>ProfileWorkspace</name>

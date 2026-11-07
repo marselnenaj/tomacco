@@ -5285,6 +5285,38 @@ SSH usa le tue chiavi esistenti e l&apos;identità host nota.</translation>
         <source>Route playback status</source>
         <translation>Stato della riproduzione del percorso</translation>
     </message>
+    <message>
+        <source>Device reservation state</source>
+        <translation>Stato della prenotazione del dispositivo</translation>
+    </message>
+    <message>
+        <source>Recorded request</source>
+        <translation>Richiesta registrata</translation>
+    </message>
+    <message>
+        <source>Recorded requests</source>
+        <translation>Richieste registrate</translation>
+    </message>
+    <message>
+        <source>Release a device reservation</source>
+        <translation>Rilascia una prenotazione del dispositivo</translation>
+    </message>
+    <message>
+        <source>Renew a device reservation</source>
+        <translation>Rinnova una prenotazione del dispositivo</translation>
+    </message>
+    <message>
+        <source>Reserve a device</source>
+        <translation>Prenota un dispositivo</translation>
+    </message>
+    <message>
+        <source>Reserved devices</source>
+        <translation>Dispositivi prenotati</translation>
+    </message>
+    <message>
+        <source>Take over a device reservation</source>
+        <translation>Subentra in una prenotazione del dispositivo</translation>
+    </message>
 </context>
 <context>
     <name>ProfileWorkspace</name>

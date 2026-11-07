@@ -5269,6 +5269,38 @@ SSH fa servir les teves claus existents i la identitat coneguda de l&apos;amfitr
         <source>Route playback status</source>
         <translation>Estat de la reproducció de la ruta</translation>
     </message>
+    <message>
+        <source>Device reservation state</source>
+        <translation>Estat de la reserva del dispositiu</translation>
+    </message>
+    <message>
+        <source>Recorded request</source>
+        <translation>Sol·licitud registrada</translation>
+    </message>
+    <message>
+        <source>Recorded requests</source>
+        <translation>Sol·licituds registrades</translation>
+    </message>
+    <message>
+        <source>Release a device reservation</source>
+        <translation>Allibera la reserva del dispositiu</translation>
+    </message>
+    <message>
+        <source>Renew a device reservation</source>
+        <translation>Renova la reserva del dispositiu</translation>
+    </message>
+    <message>
+        <source>Reserve a device</source>
+        <translation>Reserva un dispositiu</translation>
+    </message>
+    <message>
+        <source>Reserved devices</source>
+        <translation>Dispositius reservats</translation>
+    </message>
+    <message>
+        <source>Take over a device reservation</source>
+        <translation>Pren el control de la reserva del dispositiu</translation>
+    </message>
 </context>
 <context>
     <name>ProfileWorkspace</name>

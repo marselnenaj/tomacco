@@ -5259,6 +5259,38 @@ SSH ใช้คีย์ที่คุณมีอยู่และตัว�
         <source>Route playback status</source>
         <translation>สถานะการเล่นเส้นทาง</translation>
     </message>
+    <message>
+        <source>Device reservation state</source>
+        <translation>สถานะการจองอุปกรณ์</translation>
+    </message>
+    <message>
+        <source>Recorded request</source>
+        <translation>คำขอที่บันทึกไว้</translation>
+    </message>
+    <message>
+        <source>Recorded requests</source>
+        <translation>รายการคำขอที่บันทึกไว้</translation>
+    </message>
+    <message>
+        <source>Release a device reservation</source>
+        <translation>ปล่อยการจองอุปกรณ์</translation>
+    </message>
+    <message>
+        <source>Renew a device reservation</source>
+        <translation>ต่ออายุการจองอุปกรณ์</translation>
+    </message>
+    <message>
+        <source>Reserve a device</source>
+        <translation>จองอุปกรณ์</translation>
+    </message>
+    <message>
+        <source>Reserved devices</source>
+        <translation>อุปกรณ์ที่จองไว้</translation>
+    </message>
+    <message>
+        <source>Take over a device reservation</source>
+        <translation>รับช่วงการจองอุปกรณ์</translation>
+    </message>
 </context>
 <context>
     <name>ProfileWorkspace</name>

@@ -5259,6 +5259,38 @@ SSH mevcut anahtarlarınızı ve bilinen ana makine kimliğini kullanır.</trans
         <source>Route playback status</source>
         <translation>Rota oynatma durumu</translation>
     </message>
+    <message>
+        <source>Device reservation state</source>
+        <translation>Cihaz rezervasyonu durumu</translation>
+    </message>
+    <message>
+        <source>Recorded request</source>
+        <translation>Kaydedilen istek</translation>
+    </message>
+    <message>
+        <source>Recorded requests</source>
+        <translation>Kaydedilen istekler</translation>
+    </message>
+    <message>
+        <source>Release a device reservation</source>
+        <translation>Cihaz rezervasyonunu bırak</translation>
+    </message>
+    <message>
+        <source>Renew a device reservation</source>
+        <translation>Cihaz rezervasyonunu yenile</translation>
+    </message>
+    <message>
+        <source>Reserve a device</source>
+        <translation>Cihaz rezerve et</translation>
+    </message>
+    <message>
+        <source>Reserved devices</source>
+        <translation>Rezerve edilen cihazlar</translation>
+    </message>
+    <message>
+        <source>Take over a device reservation</source>
+        <translation>Cihaz rezervasyonunu devral</translation>
+    </message>
 </context>
 <context>
     <name>ProfileWorkspace</name>

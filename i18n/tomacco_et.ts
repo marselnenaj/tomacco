@@ -5269,6 +5269,38 @@ SSH kasutab sinu olemasolevaid võtmeid ja teadaolevat hosti identiteeti.</trans
         <source>Route playback status</source>
         <translation>Marsruudi esitamise olek</translation>
     </message>
+    <message>
+        <source>Device reservation state</source>
+        <translation>Seadme broneeringu olek</translation>
+    </message>
+    <message>
+        <source>Recorded request</source>
+        <translation>Salvestatud päring</translation>
+    </message>
+    <message>
+        <source>Recorded requests</source>
+        <translation>Salvestatud päringud</translation>
+    </message>
+    <message>
+        <source>Release a device reservation</source>
+        <translation>Vabasta seadme broneering</translation>
+    </message>
+    <message>
+        <source>Renew a device reservation</source>
+        <translation>Pikenda seadme broneeringut</translation>
+    </message>
+    <message>
+        <source>Reserve a device</source>
+        <translation>Broneeri seade</translation>
+    </message>
+    <message>
+        <source>Reserved devices</source>
+        <translation>Broneeritud seadmed</translation>
+    </message>
+    <message>
+        <source>Take over a device reservation</source>
+        <translation>Võta seadme broneering üle</translation>
+    </message>
 </context>
 <context>
     <name>ProfileWorkspace</name>

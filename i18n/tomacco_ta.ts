@@ -5269,6 +5269,38 @@ SSH உங்கள் தற்போதுள்ள விசைகளைய�
         <source>Route playback status</source>
         <translation>வழித்தட இயக்க நிலை</translation>
     </message>
+    <message>
+        <source>Device reservation state</source>
+        <translation>சாதன முன்பதிவின் நிலை</translation>
+    </message>
+    <message>
+        <source>Recorded request</source>
+        <translation>பதிவுசெய்த கோரிக்கை</translation>
+    </message>
+    <message>
+        <source>Recorded requests</source>
+        <translation>பதிவுசெய்த கோரிக்கைகள்</translation>
+    </message>
+    <message>
+        <source>Release a device reservation</source>
+        <translation>சாதன முன்பதிவை விடுவி</translation>
+    </message>
+    <message>
+        <source>Renew a device reservation</source>
+        <translation>சாதன முன்பதிவைப் புதுப்பி</translation>
+    </message>
+    <message>
+        <source>Reserve a device</source>
+        <translation>சாதனத்தை முன்பதிவு செய்</translation>
+    </message>
+    <message>
+        <source>Reserved devices</source>
+        <translation>முன்பதிவு செய்த சாதனங்கள்</translation>
+    </message>
+    <message>
+        <source>Take over a device reservation</source>
+        <translation>சாதன முன்பதிவைக் கைப்பற்று</translation>
+    </message>
 </context>
 <context>
     <name>ProfileWorkspace</name>

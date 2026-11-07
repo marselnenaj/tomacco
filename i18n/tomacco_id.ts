@@ -5259,6 +5259,38 @@ SSH memakai kunci Anda yang sudah ada dan identitas host yang dikenal.</translat
         <source>Route playback status</source>
         <translation>Status pemutaran rute</translation>
     </message>
+    <message>
+        <source>Device reservation state</source>
+        <translation>Status reservasi perangkat</translation>
+    </message>
+    <message>
+        <source>Recorded request</source>
+        <translation>Permintaan tercatat</translation>
+    </message>
+    <message>
+        <source>Recorded requests</source>
+        <translation>Daftar permintaan tercatat</translation>
+    </message>
+    <message>
+        <source>Release a device reservation</source>
+        <translation>Lepaskan reservasi perangkat</translation>
+    </message>
+    <message>
+        <source>Renew a device reservation</source>
+        <translation>Perpanjang reservasi perangkat</translation>
+    </message>
+    <message>
+        <source>Reserve a device</source>
+        <translation>Reservasi perangkat</translation>
+    </message>
+    <message>
+        <source>Reserved devices</source>
+        <translation>Perangkat yang direservasi</translation>
+    </message>
+    <message>
+        <source>Take over a device reservation</source>
+        <translation>Ambil alih reservasi perangkat</translation>
+    </message>
 </context>
 <context>
     <name>ProfileWorkspace</name>

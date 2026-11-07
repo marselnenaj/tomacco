@@ -5289,6 +5289,38 @@ SSH gebruikt je bestaande sleutels en de bekende hostidentiteit.</translation>
         <source>Route playback status</source>
         <translation>Status van route afspelen</translation>
     </message>
+    <message>
+        <source>Device reservation state</source>
+        <translation>Status van apparaatreservering</translation>
+    </message>
+    <message>
+        <source>Recorded request</source>
+        <translation>Vastgelegd verzoek</translation>
+    </message>
+    <message>
+        <source>Recorded requests</source>
+        <translation>Vastgelegde verzoeken</translation>
+    </message>
+    <message>
+        <source>Release a device reservation</source>
+        <translation>Apparaatreservering vrijgeven</translation>
+    </message>
+    <message>
+        <source>Renew a device reservation</source>
+        <translation>Apparaatreservering verlengen</translation>
+    </message>
+    <message>
+        <source>Reserve a device</source>
+        <translation>Een apparaat reserveren</translation>
+    </message>
+    <message>
+        <source>Reserved devices</source>
+        <translation>Gereserveerde apparaten</translation>
+    </message>
+    <message>
+        <source>Take over a device reservation</source>
+        <translation>Apparaatreservering overnemen</translation>
+    </message>
 </context>
 <context>
     <name>ProfileWorkspace</name>

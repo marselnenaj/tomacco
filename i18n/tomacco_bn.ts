@@ -5269,6 +5269,38 @@ SSH আপনার বিদ্যমান কী ও পরিচিত হ�
         <source>Route playback status</source>
         <translation>রুট প্লেব্যাকের অবস্থা</translation>
     </message>
+    <message>
+        <source>Device reservation state</source>
+        <translation>ডিভাইস সংরক্ষণের অবস্থা</translation>
+    </message>
+    <message>
+        <source>Recorded request</source>
+        <translation>রেকর্ড করা অনুরোধ</translation>
+    </message>
+    <message>
+        <source>Recorded requests</source>
+        <translation>রেকর্ড করা অনুরোধগুলো</translation>
+    </message>
+    <message>
+        <source>Release a device reservation</source>
+        <translation>ডিভাইসের সংরক্ষণ ছেড়ে দিন</translation>
+    </message>
+    <message>
+        <source>Renew a device reservation</source>
+        <translation>ডিভাইসের সংরক্ষণ নবায়ন করুন</translation>
+    </message>
+    <message>
+        <source>Reserve a device</source>
+        <translation>একটি ডিভাইস সংরক্ষণ করুন</translation>
+    </message>
+    <message>
+        <source>Reserved devices</source>
+        <translation>সংরক্ষিত ডিভাইস</translation>
+    </message>
+    <message>
+        <source>Take over a device reservation</source>
+        <translation>ডিভাইসের সংরক্ষণ নিজের হাতে নিন</translation>
+    </message>
 </context>
 <context>
     <name>ProfileWorkspace</name>

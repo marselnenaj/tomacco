@@ -5269,6 +5269,38 @@ SSH משתמש במפתחות הקיימים שלכם ובזהות המארח ה
         <source>Route playback status</source>
         <translation>מצב הפעלת המסלול</translation>
     </message>
+    <message>
+        <source>Device reservation state</source>
+        <translation>מצב הזמנת המכשיר</translation>
+    </message>
+    <message>
+        <source>Recorded request</source>
+        <translation>בקשה מתועדת</translation>
+    </message>
+    <message>
+        <source>Recorded requests</source>
+        <translation>בקשות מתועדות</translation>
+    </message>
+    <message>
+        <source>Release a device reservation</source>
+        <translation>שחרור הזמנת מכשיר</translation>
+    </message>
+    <message>
+        <source>Renew a device reservation</source>
+        <translation>חידוש הזמנת מכשיר</translation>
+    </message>
+    <message>
+        <source>Reserve a device</source>
+        <translation>הזמנת מכשיר</translation>
+    </message>
+    <message>
+        <source>Reserved devices</source>
+        <translation>מכשירים מוזמנים</translation>
+    </message>
+    <message>
+        <source>Take over a device reservation</source>
+        <translation>השתלטות על הזמנת מכשיר</translation>
+    </message>
 </context>
 <context>
     <name>ProfileWorkspace</name>

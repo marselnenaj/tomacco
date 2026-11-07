@@ -5291,6 +5291,38 @@ SSH używa twoich istniejących kluczy i znanej tożsamości hosta.</translation
         <source>Route playback status</source>
         <translation>Stan odtwarzania trasy</translation>
     </message>
+    <message>
+        <source>Device reservation state</source>
+        <translation>Stan rezerwacji urządzenia</translation>
+    </message>
+    <message>
+        <source>Recorded request</source>
+        <translation>Zarejestrowane żądanie</translation>
+    </message>
+    <message>
+        <source>Recorded requests</source>
+        <translation>Zarejestrowane żądania</translation>
+    </message>
+    <message>
+        <source>Release a device reservation</source>
+        <translation>Zwolnij rezerwację urządzenia</translation>
+    </message>
+    <message>
+        <source>Renew a device reservation</source>
+        <translation>Odnów rezerwację urządzenia</translation>
+    </message>
+    <message>
+        <source>Reserve a device</source>
+        <translation>Zarezerwuj urządzenie</translation>
+    </message>
+    <message>
+        <source>Reserved devices</source>
+        <translation>Zarezerwowane urządzenia</translation>
+    </message>
+    <message>
+        <source>Take over a device reservation</source>
+        <translation>Przejmij rezerwację urządzenia</translation>
+    </message>
 </context>
 <context>
     <name>ProfileWorkspace</name>

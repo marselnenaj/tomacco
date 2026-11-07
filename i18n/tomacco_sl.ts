@@ -5289,6 +5289,38 @@ SSH uporablja vaše obstoječe ključe in znano identiteto gostitelja.</translat
         <source>Route playback status</source>
         <translation>Stanje predvajanja poti</translation>
     </message>
+    <message>
+        <source>Device reservation state</source>
+        <translation>Stanje rezervacije naprave</translation>
+    </message>
+    <message>
+        <source>Recorded request</source>
+        <translation>Zabeležena zahteva</translation>
+    </message>
+    <message>
+        <source>Recorded requests</source>
+        <translation>Zabeležene zahteve</translation>
+    </message>
+    <message>
+        <source>Release a device reservation</source>
+        <translation>Sprosti rezervacijo naprave</translation>
+    </message>
+    <message>
+        <source>Renew a device reservation</source>
+        <translation>Obnovi rezervacijo naprave</translation>
+    </message>
+    <message>
+        <source>Reserve a device</source>
+        <translation>Rezerviraj napravo</translation>
+    </message>
+    <message>
+        <source>Reserved devices</source>
+        <translation>Rezervirane naprave</translation>
+    </message>
+    <message>
+        <source>Take over a device reservation</source>
+        <translation>Prevzemi rezervacijo naprave</translation>
+    </message>
 </context>
 <context>
     <name>ProfileWorkspace</name>

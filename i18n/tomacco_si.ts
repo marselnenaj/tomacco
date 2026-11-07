@@ -5269,6 +5269,38 @@ SSH ඔබේ පවතින යතුරු සහ දන්නා සත්�
         <source>Route playback status</source>
         <translation>මාර්ග ධාවන තත්ත්වය</translation>
     </message>
+    <message>
+        <source>Device reservation state</source>
+        <translation>උපාංග වෙන්කිරීමේ තත්ත්වය</translation>
+    </message>
+    <message>
+        <source>Recorded request</source>
+        <translation>සටහන් කළ ඉල්ලීම</translation>
+    </message>
+    <message>
+        <source>Recorded requests</source>
+        <translation>සටහන් කළ ඉල්ලීම්</translation>
+    </message>
+    <message>
+        <source>Release a device reservation</source>
+        <translation>උපාංග වෙන්කිරීම නිදහස් කරන්න</translation>
+    </message>
+    <message>
+        <source>Renew a device reservation</source>
+        <translation>උපාංග වෙන්කිරීම අලුත් කරන්න</translation>
+    </message>
+    <message>
+        <source>Reserve a device</source>
+        <translation>උපාංගයක් වෙන් කරන්න</translation>
+    </message>
+    <message>
+        <source>Reserved devices</source>
+        <translation>වෙන් කළ උපාංග</translation>
+    </message>
+    <message>
+        <source>Take over a device reservation</source>
+        <translation>උපාංග වෙන්කිරීම භාර ගන්න</translation>
+    </message>
 </context>
 <context>
     <name>ProfileWorkspace</name>

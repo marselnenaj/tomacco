@@ -5285,6 +5285,38 @@ SSH utilise vos clés existantes et l&apos;identité d&apos;hôte connue.</trans
         <source>Route playback status</source>
         <translation>État de la lecture d’itinéraire</translation>
     </message>
+    <message>
+        <source>Device reservation state</source>
+        <translation>État de la réservation de l’appareil</translation>
+    </message>
+    <message>
+        <source>Recorded request</source>
+        <translation>Requête enregistrée</translation>
+    </message>
+    <message>
+        <source>Recorded requests</source>
+        <translation>Requêtes enregistrées</translation>
+    </message>
+    <message>
+        <source>Release a device reservation</source>
+        <translation>Libérer une réservation d’appareil</translation>
+    </message>
+    <message>
+        <source>Renew a device reservation</source>
+        <translation>Renouveler une réservation d’appareil</translation>
+    </message>
+    <message>
+        <source>Reserve a device</source>
+        <translation>Réserver un appareil</translation>
+    </message>
+    <message>
+        <source>Reserved devices</source>
+        <translation>Appareils réservés</translation>
+    </message>
+    <message>
+        <source>Take over a device reservation</source>
+        <translation>Reprendre une réservation d’appareil</translation>
+    </message>
 </context>
 <context>
     <name>ProfileWorkspace</name>

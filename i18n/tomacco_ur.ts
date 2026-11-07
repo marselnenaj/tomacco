@@ -5269,6 +5269,38 @@ SSH آپ کی موجودہ کیز اور معلوم ہوسٹ شناخت استع
         <source>Route playback status</source>
         <translation>روٹ پلی بیک کی حالت</translation>
     </message>
+    <message>
+        <source>Device reservation state</source>
+        <translation>ڈیوائس ریزرویشن کی حالت</translation>
+    </message>
+    <message>
+        <source>Recorded request</source>
+        <translation>درج شدہ درخواست</translation>
+    </message>
+    <message>
+        <source>Recorded requests</source>
+        <translation>درج شدہ درخواستیں</translation>
+    </message>
+    <message>
+        <source>Release a device reservation</source>
+        <translation>ڈیوائس ریزرویشن چھوڑیں</translation>
+    </message>
+    <message>
+        <source>Renew a device reservation</source>
+        <translation>ڈیوائس ریزرویشن کی تجدید کریں</translation>
+    </message>
+    <message>
+        <source>Reserve a device</source>
+        <translation>ڈیوائس ریزرو کریں</translation>
+    </message>
+    <message>
+        <source>Reserved devices</source>
+        <translation>ریزرو شدہ ڈیوائسز</translation>
+    </message>
+    <message>
+        <source>Take over a device reservation</source>
+        <translation>ڈیوائس ریزرویشن اپنے ہاتھ میں لیں</translation>
+    </message>
 </context>
 <context>
     <name>ProfileWorkspace</name>

@@ -5285,6 +5285,38 @@ SSH nutzt deine bestehenden Schlüssel und die bekannte Host-Identität.</transl
         <source>Route playback status</source>
         <translation>Status der Routenwiedergabe</translation>
     </message>
+    <message>
+        <source>Device reservation state</source>
+        <translation>Status der Gerätereservierung</translation>
+    </message>
+    <message>
+        <source>Recorded request</source>
+        <translation>Aufgezeichnete Anfrage</translation>
+    </message>
+    <message>
+        <source>Recorded requests</source>
+        <translation>Aufgezeichnete Anfragen</translation>
+    </message>
+    <message>
+        <source>Release a device reservation</source>
+        <translation>Gerätereservierung freigeben</translation>
+    </message>
+    <message>
+        <source>Renew a device reservation</source>
+        <translation>Gerätereservierung verlängern</translation>
+    </message>
+    <message>
+        <source>Reserve a device</source>
+        <translation>Gerät reservieren</translation>
+    </message>
+    <message>
+        <source>Reserved devices</source>
+        <translation>Reservierte Geräte</translation>
+    </message>
+    <message>
+        <source>Take over a device reservation</source>
+        <translation>Gerätereservierung übernehmen</translation>
+    </message>
 </context>
 <context>
     <name>ProfileWorkspace</name>

@@ -5259,6 +5259,38 @@ SSH از کلیدهای موجود شما و هویت شناخته‌شدهٔ م
         <source>Route playback status</source>
         <translation>وضعیت پخش مسیر</translation>
     </message>
+    <message>
+        <source>Device reservation state</source>
+        <translation>وضعیت رزرو دستگاه</translation>
+    </message>
+    <message>
+        <source>Recorded request</source>
+        <translation>درخواست ثبت‌شده</translation>
+    </message>
+    <message>
+        <source>Recorded requests</source>
+        <translation>درخواست‌های ثبت‌شده</translation>
+    </message>
+    <message>
+        <source>Release a device reservation</source>
+        <translation>آزاد کردن رزرو دستگاه</translation>
+    </message>
+    <message>
+        <source>Renew a device reservation</source>
+        <translation>تمدید رزرو دستگاه</translation>
+    </message>
+    <message>
+        <source>Reserve a device</source>
+        <translation>رزرو یک دستگاه</translation>
+    </message>
+    <message>
+        <source>Reserved devices</source>
+        <translation>دستگاه‌های رزروشده</translation>
+    </message>
+    <message>
+        <source>Take over a device reservation</source>
+        <translation>در اختیار گرفتن رزرو دستگاه</translation>
+    </message>
 </context>
 <context>
     <name>ProfileWorkspace</name>

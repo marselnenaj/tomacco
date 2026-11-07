@@ -5279,6 +5279,38 @@ SSH は既存の鍵と既知のホスト ID を使用します。</translation>
         <source>Route playback status</source>
         <translation>ルート再生の状態</translation>
     </message>
+    <message>
+        <source>Device reservation state</source>
+        <translation>デバイス予約の状態</translation>
+    </message>
+    <message>
+        <source>Recorded request</source>
+        <translation>記録済みリクエスト</translation>
+    </message>
+    <message>
+        <source>Recorded requests</source>
+        <translation>記録済みリクエスト一覧</translation>
+    </message>
+    <message>
+        <source>Release a device reservation</source>
+        <translation>デバイス予約を解除</translation>
+    </message>
+    <message>
+        <source>Renew a device reservation</source>
+        <translation>デバイス予約を延長</translation>
+    </message>
+    <message>
+        <source>Reserve a device</source>
+        <translation>デバイスを予約</translation>
+    </message>
+    <message>
+        <source>Reserved devices</source>
+        <translation>予約中のデバイス</translation>
+    </message>
+    <message>
+        <source>Take over a device reservation</source>
+        <translation>デバイス予約を引き継ぐ</translation>
+    </message>
 </context>
 <context>
     <name>ProfileWorkspace</name>

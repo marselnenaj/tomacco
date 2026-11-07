@@ -5259,6 +5259,38 @@ SSH dùng khóa hiện có của bạn và danh tính máy chủ đã biết.</t
         <source>Route playback status</source>
         <translation>Trạng thái phát tuyến đường</translation>
     </message>
+    <message>
+        <source>Device reservation state</source>
+        <translation>Trạng thái đặt trước thiết bị</translation>
+    </message>
+    <message>
+        <source>Recorded request</source>
+        <translation>Yêu cầu đã ghi lại</translation>
+    </message>
+    <message>
+        <source>Recorded requests</source>
+        <translation>Các yêu cầu đã ghi lại</translation>
+    </message>
+    <message>
+        <source>Release a device reservation</source>
+        <translation>Giải phóng đặt trước thiết bị</translation>
+    </message>
+    <message>
+        <source>Renew a device reservation</source>
+        <translation>Gia hạn đặt trước thiết bị</translation>
+    </message>
+    <message>
+        <source>Reserve a device</source>
+        <translation>Đặt trước thiết bị</translation>
+    </message>
+    <message>
+        <source>Reserved devices</source>
+        <translation>Thiết bị đã đặt trước</translation>
+    </message>
+    <message>
+        <source>Take over a device reservation</source>
+        <translation>Tiếp quản đặt trước thiết bị</translation>
+    </message>
 </context>
 <context>
     <name>ProfileWorkspace</name>

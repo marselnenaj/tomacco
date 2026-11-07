@@ -5279,6 +5279,38 @@ SSH 使用你现有的密钥和已知的主机身份。</translation>
         <source>Route playback status</source>
         <translation>路线回放状态</translation>
     </message>
+    <message>
+        <source>Device reservation state</source>
+        <translation>设备预留状态</translation>
+    </message>
+    <message>
+        <source>Recorded request</source>
+        <translation>已记录的请求</translation>
+    </message>
+    <message>
+        <source>Recorded requests</source>
+        <translation>已记录的请求列表</translation>
+    </message>
+    <message>
+        <source>Release a device reservation</source>
+        <translation>释放设备预留</translation>
+    </message>
+    <message>
+        <source>Renew a device reservation</source>
+        <translation>续期设备预留</translation>
+    </message>
+    <message>
+        <source>Reserve a device</source>
+        <translation>预留设备</translation>
+    </message>
+    <message>
+        <source>Reserved devices</source>
+        <translation>已预留的设备</translation>
+    </message>
+    <message>
+        <source>Take over a device reservation</source>
+        <translation>接管设备预留</translation>
+    </message>
 </context>
 <context>
     <name>ProfileWorkspace</name>

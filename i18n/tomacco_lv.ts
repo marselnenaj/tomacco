@@ -5279,6 +5279,38 @@ SSH izmanto jūsu esošās atslēgas un zināmo resursdatora identitāti.</trans
         <source>Route playback status</source>
         <translation>Maršruta atskaņošanas statuss</translation>
     </message>
+    <message>
+        <source>Device reservation state</source>
+        <translation>Ierīces rezervācijas stāvoklis</translation>
+    </message>
+    <message>
+        <source>Recorded request</source>
+        <translation>Ierakstīts pieprasījums</translation>
+    </message>
+    <message>
+        <source>Recorded requests</source>
+        <translation>Ierakstītie pieprasījumi</translation>
+    </message>
+    <message>
+        <source>Release a device reservation</source>
+        <translation>Atbrīvot ierīces rezervāciju</translation>
+    </message>
+    <message>
+        <source>Renew a device reservation</source>
+        <translation>Atjaunot ierīces rezervāciju</translation>
+    </message>
+    <message>
+        <source>Reserve a device</source>
+        <translation>Rezervēt ierīci</translation>
+    </message>
+    <message>
+        <source>Reserved devices</source>
+        <translation>Rezervētās ierīces</translation>
+    </message>
+    <message>
+        <source>Take over a device reservation</source>
+        <translation>Pārņemt ierīces rezervāciju</translation>
+    </message>
 </context>
 <context>
     <name>ProfileWorkspace</name>

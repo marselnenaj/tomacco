@@ -5269,6 +5269,38 @@ SSH notar fyrirliggjandi lykla þína og þekkt auðkenni hýsils.</translation>
         <source>Route playback status</source>
         <translation>Staða spilunar leiðar</translation>
     </message>
+    <message>
+        <source>Device reservation state</source>
+        <translation>Staða frátekningar tækis</translation>
+    </message>
+    <message>
+        <source>Recorded request</source>
+        <translation>Skráð beiðni</translation>
+    </message>
+    <message>
+        <source>Recorded requests</source>
+        <translation>Skráðar beiðnir</translation>
+    </message>
+    <message>
+        <source>Release a device reservation</source>
+        <translation>Losa frátekningu tækis</translation>
+    </message>
+    <message>
+        <source>Renew a device reservation</source>
+        <translation>Endurnýja frátekningu tækis</translation>
+    </message>
+    <message>
+        <source>Reserve a device</source>
+        <translation>Taka frá tæki</translation>
+    </message>
+    <message>
+        <source>Reserved devices</source>
+        <translation>Frátekin tæki</translation>
+    </message>
+    <message>
+        <source>Take over a device reservation</source>
+        <translation>Yfirtaka frátekningu tækis</translation>
+    </message>
 </context>
 <context>
     <name>ProfileWorkspace</name>

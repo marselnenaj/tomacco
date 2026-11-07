@@ -5269,6 +5269,38 @@ SSH uses your existing keys and the known host identity.</source>
         <source>Route playback status</source>
         <translation>Κατάσταση αναπαραγωγής διαδρομής</translation>
     </message>
+    <message>
+        <source>Device reservation state</source>
+        <translation>Κατάσταση κράτησης συσκευής</translation>
+    </message>
+    <message>
+        <source>Recorded request</source>
+        <translation>Καταγεγραμμένο αίτημα</translation>
+    </message>
+    <message>
+        <source>Recorded requests</source>
+        <translation>Καταγεγραμμένα αιτήματα</translation>
+    </message>
+    <message>
+        <source>Release a device reservation</source>
+        <translation>Αποδέσμευση κράτησης συσκευής</translation>
+    </message>
+    <message>
+        <source>Renew a device reservation</source>
+        <translation>Ανανέωση κράτησης συσκευής</translation>
+    </message>
+    <message>
+        <source>Reserve a device</source>
+        <translation>Κράτηση συσκευής</translation>
+    </message>
+    <message>
+        <source>Reserved devices</source>
+        <translation>Δεσμευμένες συσκευές</translation>
+    </message>
+    <message>
+        <source>Take over a device reservation</source>
+        <translation>Ανάληψη κράτησης συσκευής</translation>
+    </message>
 </context>
 <context>
     <name>ProfileWorkspace</name>

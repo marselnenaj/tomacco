@@ -5269,6 +5269,38 @@ SSH आपकी मौजूदा कुंजियों और ज्ञा
         <source>Route playback status</source>
         <translation>रूट प्लेबैक स्थिति</translation>
     </message>
+    <message>
+        <source>Device reservation state</source>
+        <translation>डिवाइस आरक्षण की स्थिति</translation>
+    </message>
+    <message>
+        <source>Recorded request</source>
+        <translation>दर्ज अनुरोध</translation>
+    </message>
+    <message>
+        <source>Recorded requests</source>
+        <translation>दर्ज अनुरोध सूची</translation>
+    </message>
+    <message>
+        <source>Release a device reservation</source>
+        <translation>डिवाइस आरक्षण छोड़ें</translation>
+    </message>
+    <message>
+        <source>Renew a device reservation</source>
+        <translation>डिवाइस आरक्षण नवीनीकृत करें</translation>
+    </message>
+    <message>
+        <source>Reserve a device</source>
+        <translation>डिवाइस आरक्षित करें</translation>
+    </message>
+    <message>
+        <source>Reserved devices</source>
+        <translation>आरक्षित डिवाइस</translation>
+    </message>
+    <message>
+        <source>Take over a device reservation</source>
+        <translation>डिवाइस आरक्षण अपने हाथ में लें</translation>
+    </message>
 </context>
 <context>
     <name>ProfileWorkspace</name>

@@ -5269,6 +5269,38 @@ SSH използва вашите съществуващи ключове и п�
         <source>Route playback status</source>
         <translation>Състояние на възпроизвеждането на маршрута</translation>
     </message>
+    <message>
+        <source>Device reservation state</source>
+        <translation>Състояние на резервацията на устройството</translation>
+    </message>
+    <message>
+        <source>Recorded request</source>
+        <translation>Записана заявка</translation>
+    </message>
+    <message>
+        <source>Recorded requests</source>
+        <translation>Записани заявки</translation>
+    </message>
+    <message>
+        <source>Release a device reservation</source>
+        <translation>Освободи резервацията на устройството</translation>
+    </message>
+    <message>
+        <source>Renew a device reservation</source>
+        <translation>Поднови резервацията на устройството</translation>
+    </message>
+    <message>
+        <source>Reserve a device</source>
+        <translation>Резервирай устройство</translation>
+    </message>
+    <message>
+        <source>Reserved devices</source>
+        <translation>Резервирани устройства</translation>
+    </message>
+    <message>
+        <source>Take over a device reservation</source>
+        <translation>Поеми резервацията на устройството</translation>
+    </message>
 </context>
 <context>
     <name>ProfileWorkspace</name>

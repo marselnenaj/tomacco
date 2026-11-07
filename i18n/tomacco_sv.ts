@@ -5281,6 +5281,38 @@ SSH använder dina befintliga nycklar och den kända värdidentiteten.</translat
         <source>Route playback status</source>
         <translation>Status för ruttuppspelning</translation>
     </message>
+    <message>
+        <source>Device reservation state</source>
+        <translation>Status för enhetsreservation</translation>
+    </message>
+    <message>
+        <source>Recorded request</source>
+        <translation>Registrerad begäran</translation>
+    </message>
+    <message>
+        <source>Recorded requests</source>
+        <translation>Registrerade begäranden</translation>
+    </message>
+    <message>
+        <source>Release a device reservation</source>
+        <translation>Släpp en enhetsreservation</translation>
+    </message>
+    <message>
+        <source>Renew a device reservation</source>
+        <translation>Förnya en enhetsreservation</translation>
+    </message>
+    <message>
+        <source>Reserve a device</source>
+        <translation>Reservera en enhet</translation>
+    </message>
+    <message>
+        <source>Reserved devices</source>
+        <translation>Reserverade enheter</translation>
+    </message>
+    <message>
+        <source>Take over a device reservation</source>
+        <translation>Ta över en enhetsreservation</translation>
+    </message>
 </context>
 <context>
     <name>ProfileWorkspace</name>

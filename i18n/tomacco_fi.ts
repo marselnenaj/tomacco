@@ -5269,6 +5269,38 @@ SSH käyttää olemassa olevia avaimiasi ja tunnettua palvelimen identiteettiä.
         <source>Route playback status</source>
         <translation>Reitin toiston tila</translation>
     </message>
+    <message>
+        <source>Device reservation state</source>
+        <translation>Laitevarauksen tila</translation>
+    </message>
+    <message>
+        <source>Recorded request</source>
+        <translation>Tallennettu pyyntö</translation>
+    </message>
+    <message>
+        <source>Recorded requests</source>
+        <translation>Tallennetut pyynnöt</translation>
+    </message>
+    <message>
+        <source>Release a device reservation</source>
+        <translation>Vapauta laitevaraus</translation>
+    </message>
+    <message>
+        <source>Renew a device reservation</source>
+        <translation>Uusi laitevaraus</translation>
+    </message>
+    <message>
+        <source>Reserve a device</source>
+        <translation>Varaa laite</translation>
+    </message>
+    <message>
+        <source>Reserved devices</source>
+        <translation>Varatut laitteet</translation>
+    </message>
+    <message>
+        <source>Take over a device reservation</source>
+        <translation>Ota laitevaraus haltuun</translation>
+    </message>
 </context>
 <context>
     <name>ProfileWorkspace</name>

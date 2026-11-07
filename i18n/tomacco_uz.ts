@@ -5269,6 +5269,38 @@ SSH mavjud kalitlaringiz va maʼlum xost identifikatoridan foydalanadi.</transla
         <source>Route playback status</source>
         <translation>Marshrut ijrosi holati</translation>
     </message>
+    <message>
+        <source>Device reservation state</source>
+        <translation>Qurilma bandlovi holati</translation>
+    </message>
+    <message>
+        <source>Recorded request</source>
+        <translation>Yozib olingan soʻrov</translation>
+    </message>
+    <message>
+        <source>Recorded requests</source>
+        <translation>Yozib olingan soʻrovlar</translation>
+    </message>
+    <message>
+        <source>Release a device reservation</source>
+        <translation>Qurilma bandlovini boʻshatish</translation>
+    </message>
+    <message>
+        <source>Renew a device reservation</source>
+        <translation>Qurilma bandlovini yangilash</translation>
+    </message>
+    <message>
+        <source>Reserve a device</source>
+        <translation>Qurilmani band qilish</translation>
+    </message>
+    <message>
+        <source>Reserved devices</source>
+        <translation>Band qilingan qurilmalar</translation>
+    </message>
+    <message>
+        <source>Take over a device reservation</source>
+        <translation>Qurilma bandlovini oʻz qoʻliga olish</translation>
+    </message>
 </context>
 <context>
     <name>ProfileWorkspace</name>

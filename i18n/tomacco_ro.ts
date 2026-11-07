@@ -5279,6 +5279,38 @@ SSH folosește cheile tale existente și identitatea cunoscută a gazdei.</trans
         <source>Route playback status</source>
         <translation>Starea redării traseului</translation>
     </message>
+    <message>
+        <source>Device reservation state</source>
+        <translation>Starea rezervării dispozitivului</translation>
+    </message>
+    <message>
+        <source>Recorded request</source>
+        <translation>Cerere înregistrată</translation>
+    </message>
+    <message>
+        <source>Recorded requests</source>
+        <translation>Cereri înregistrate</translation>
+    </message>
+    <message>
+        <source>Release a device reservation</source>
+        <translation>Eliberează rezervarea dispozitivului</translation>
+    </message>
+    <message>
+        <source>Renew a device reservation</source>
+        <translation>Reînnoiește rezervarea dispozitivului</translation>
+    </message>
+    <message>
+        <source>Reserve a device</source>
+        <translation>Rezervă un dispozitiv</translation>
+    </message>
+    <message>
+        <source>Reserved devices</source>
+        <translation>Dispozitive rezervate</translation>
+    </message>
+    <message>
+        <source>Take over a device reservation</source>
+        <translation>Preia rezervarea dispozitivului</translation>
+    </message>
 </context>
 <context>
     <name>ProfileWorkspace</name>

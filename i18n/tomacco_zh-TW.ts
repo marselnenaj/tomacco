@@ -5279,6 +5279,38 @@ SSH 使用你現有的金鑰和已知的主機身份。</translation>
         <source>Route playback status</source>
         <translation>路線播放狀態</translation>
     </message>
+    <message>
+        <source>Device reservation state</source>
+        <translation>裝置保留狀態</translation>
+    </message>
+    <message>
+        <source>Recorded request</source>
+        <translation>已記錄的要求</translation>
+    </message>
+    <message>
+        <source>Recorded requests</source>
+        <translation>已記錄的要求清單</translation>
+    </message>
+    <message>
+        <source>Release a device reservation</source>
+        <translation>釋放裝置保留</translation>
+    </message>
+    <message>
+        <source>Renew a device reservation</source>
+        <translation>續期裝置保留</translation>
+    </message>
+    <message>
+        <source>Reserve a device</source>
+        <translation>保留裝置</translation>
+    </message>
+    <message>
+        <source>Reserved devices</source>
+        <translation>已保留的裝置</translation>
+    </message>
+    <message>
+        <source>Take over a device reservation</source>
+        <translation>接管裝置保留</translation>
+    </message>
 </context>
 <context>
     <name>ProfileWorkspace</name>

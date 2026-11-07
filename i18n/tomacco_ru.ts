@@ -5299,6 +5299,38 @@ SSH использует ваши существующие ключи и изв�
         <source>Route playback status</source>
         <translation>Состояние воспроизведения маршрута</translation>
     </message>
+    <message>
+        <source>Device reservation state</source>
+        <translation>Состояние бронирования устройства</translation>
+    </message>
+    <message>
+        <source>Recorded request</source>
+        <translation>Записанный запрос</translation>
+    </message>
+    <message>
+        <source>Recorded requests</source>
+        <translation>Записанные запросы</translation>
+    </message>
+    <message>
+        <source>Release a device reservation</source>
+        <translation>Снять бронирование устройства</translation>
+    </message>
+    <message>
+        <source>Renew a device reservation</source>
+        <translation>Продлить бронирование устройства</translation>
+    </message>
+    <message>
+        <source>Reserve a device</source>
+        <translation>Забронировать устройство</translation>
+    </message>
+    <message>
+        <source>Reserved devices</source>
+        <translation>Забронированные устройства</translation>
+    </message>
+    <message>
+        <source>Take over a device reservation</source>
+        <translation>Перехватить бронирование устройства</translation>
+    </message>
 </context>
 <context>
     <name>ProfileWorkspace</name>

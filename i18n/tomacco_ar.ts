@@ -5329,6 +5329,38 @@ SSH uses your existing keys and the known host identity.</source>
         <source>Route playback status</source>
         <translation>حالة تشغيل المسار</translation>
     </message>
+    <message>
+        <source>Device reservation state</source>
+        <translation>حالة حجز الجهاز</translation>
+    </message>
+    <message>
+        <source>Recorded request</source>
+        <translation>طلب مسجَّل</translation>
+    </message>
+    <message>
+        <source>Recorded requests</source>
+        <translation>الطلبات المسجَّلة</translation>
+    </message>
+    <message>
+        <source>Release a device reservation</source>
+        <translation>إلغاء حجز الجهاز</translation>
+    </message>
+    <message>
+        <source>Renew a device reservation</source>
+        <translation>تجديد حجز الجهاز</translation>
+    </message>
+    <message>
+        <source>Reserve a device</source>
+        <translation>حجز جهاز</translation>
+    </message>
+    <message>
+        <source>Reserved devices</source>
+        <translation>الأجهزة المحجوزة</translation>
+    </message>
+    <message>
+        <source>Take over a device reservation</source>
+        <translation>الاستيلاء على حجز الجهاز</translation>
+    </message>
 </context>
 <context>
     <name>ProfileWorkspace</name>
