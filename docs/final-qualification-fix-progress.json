@@ -1,0 +1,80 @@
+{
+ "$comment": "Repair of the sole final-qualification failure (rust-core: javascript::tests::the_server_is_up_before_the_following_commands_run). Counts come from the runs listed; their logs stay in .scratch/qfix/logs (git-ignored). The historical failed receipt and log in /home/maslos/Work/tomacco-finish-20261107 are untouched.",
+ "date": "2026-11-07",
+ "model": "claude-opus-5-5",
+ "branch": "fix/final-qualification-race",
+ "base": "39935232845346f3c72d03c91471ba8b07cb806a",
+ "commits": {
+  "fix": "2aad941913b430074852d50e510f089fc34d0e1a",
+  "record": "the commit that adds this file (HEAD after the fix)"
+ },
+ "failure": {
+  "receipt": "/home/maslos/Work/tomacco-finish-20261107/final-verification-pipeline.json (state failed, stage final-integrated-tests, exit 8; kept as is)",
+  "log": "/home/maslos/Work/tomacco-finish-20261107/final-integrated-tests.log (kept as is)",
+  "ctest": "13/14 suites passed; rust-core failed with 691 passed, 1 failed",
+  "symptom": "Port N is listening was printed, then the follow-up's python3 socket.create_connection raised ConnectionRefusedError, so serve_worker returned step_failed (sh failed, exit status 1) and the test's unwrap panicked at native/javascript.rs:439"
+ },
+ "root_cause": {
+  "classification": "test fixture race; not a production readiness defect and not an environment fault",
+  "explanation": "The fixture's Python server exited on the first connection it accepted after the marker file existed, without checking that the connection came from the follow-up command. serve_worker proves readiness with a TCP connect probe (listening()) that it closes immediately; the kernel completes that handshake from the listen backlog, so the probe succeeds whether or not the server process has called accept yet. If the server accepted the probe, or got as far as checking the marker, only after the follow-up's sh had touched the marker, it treated the probe as the follow-up, closed its listening socket and exited. The follow-up's own python3 needs tens of milliseconds to start, so it then connected to a closed port and was refused. A second path with the same cause: a stray connection on a recycled free port (metro_reload_posts_to_the_reload_endpoint deliberately connects to freed ports; a_busy_port_or_a_failing_server_is_reported probes its own) ended the server the same way. The comment added in 92d72ab ('It checks only after an accept, so it cannot exit before the follow-up's own connection arrives') assumed the probe was always handled before the marker appeared, and that assumption is false under load.",
+  "production_check": "serve_worker (native/javascript.rs) runs the follow-up commands only after listening() connected successfully, i.e. after the server's port accepted a TCP connection. That is the correct readiness contract and is unchanged. A real Metro server simply serves and closes the probe connection."
+ },
+ "evidence": {
+  "baseline_intermittent": {
+   "focused_alone": "40/40 passed",
+   "focused_under_96_busy_loops": "40/40 passed",
+   "full_unit_binary_parallel": "6/6 runs, 692/692 each",
+   "note": "Not reproduced by plain repetition on this machine; the failure needs one particular scheduling order, which the qualification run (CTest with Qt suites around it) hit once."
+  },
+  "forced_reproduction": {
+   "method": "Temporary in-tree experiment module (removed before the commit; source kept in .scratch/qfix/race_experiment.rs) calling the real serve_worker with (a) a 0.1 s pause after accept, modelling a server descheduled after the kernel completed the probe handshake, and (b) a stray connection after the marker, modelling a parallel test on a recycled port. In both cases the follow-up waits 0.3 s before connecting.",
+   "old_fixture": "late probe: step_failed with ConnectionRefusedError; stray connection: step_failed with ConnectionRefusedError (the exact qualification symptom)",
+   "new_fixture": "late probe: ok; stray connection: ok",
+   "repetitions": "1 run plus 10 repetitions with --test-threads 4: all 4 expectations held 11/11"
+  },
+  "readiness_assertion_preserved": "Mutation check: with serve_worker's wait loop disabled (while false && !listening(port)), the fixed test fails with step_failed and ConnectionRefusedError in 0.03 s. Source restored before the commit, and the committed file is byte-identical to the tested one."
+ },
+ "change": {
+  "touched_paths": ["native/javascript.rs"],
+  "diff": "1 file, 10 insertions, 5 deletions, test module only",
+  "details": [
+   "The follow-up command now connects and sends the payload 'then'. The server reads each accepted connection up to EOF (16 bytes at most) and exits only on exactly that payload. The readiness probe (EOF at once) and stray connections (other or no payload, or a read error) are served, and the server keeps listening.",
+   "Bounded: the listening socket has a 20 s accept timeout and each accepted connection a 5 s read timeout. If no follow-up ever arrives, the server exits with an error and serve_worker reports server_failed, so the test fails instead of hanging. This adds no delay on the passing path, and no sleep or timeout was raised to hide the race.",
+   "The marker file and assert!(marker.exists()) are kept. The 0.3 s pre-bind delay, which exercises serve_worker's wait-for-port loop, is unchanged.",
+   "serve_worker, the operation registry, the CLI/MCP contracts, QML, translations and fonts are unchanged."
+  ]
+ },
+ "source_freeze": {
+  "before": {"digest": "d64e05550744", "texts": 1878, "i18n_ts_concat_sha256": "8d195cd65ea21b95ffac9c451a78550901bd5bb27e9dc43a2c7f9cff4a5620a9", "tomacco_en_ts_sha256": "116a12fd5b062e36e85da2c651c6ecbd470ef4578e2b6152be0ee7c98648a07a", "qml_i18n_operations_concat_sha256": "9ff5f5fa84718afe3048b824bba2de6495a0bb64d850eeb31f31ac5f9db59a86"},
+  "after": {"digest": "d64e05550744", "texts": 1878, "i18n_ts_concat_sha256": "8d195cd65ea21b95ffac9c451a78550901bd5bb27e9dc43a2c7f9cff4a5620a9", "tomacco_en_ts_sha256": "116a12fd5b062e36e85da2c651c6ecbd470ef4578e2b6152be0ee7c98648a07a", "qml_i18n_operations_concat_sha256": "9ff5f5fa84718afe3048b824bba2de6495a0bb64d850eeb31f31ac5f9db59a86"},
+  "unchanged": true,
+  "method": "python3 tools/i18n_catalog.py sources (first line); sha256 of cat i18n/*.ts; sha256 of i18n/tomacco_en.ts; sha256 of the concatenated git ls-files qml i18n assets/operations.json"
+ },
+ "environment": {
+  "isolation": "Each run used a fresh /tmp HOME, TOMACCO_HOME, XDG_CONFIG/CACHE/DATA/STATE/RUNTIME and ANDROID_HOME/ANDROID_SDK_ROOT, with PATH traps for adb fastboot ssh iproxy uxplay scrcpy emulator idevice_id ideviceinfo idevicesyslog go-ios xtool gradle (same set as final_verification_pipeline.py), TOMACCO_UPDATES=off and TMPDIR=/tmp. The trap log recorded 0 attempts.",
+  "cargo": "CARGO_HOME=/home/maslos/.cargo RUSTUP_HOME=/home/maslos/.rustup CARGO_NET_OFFLINE=true; this clone's own target/ (git-ignored); rustc 1.99.1",
+  "sandbox": "Commands ran inside the Harness bubblewrap workspace sandbox. Claude's Bash sandbox setting stayed enabled. No sandbox rejection occurred.",
+  "network": "Only private 127.0.0.1 fixture servers. No device, remote host or paid API was contacted. The installed tomaccoctl was not executed."
+ },
+ "tests": [
+  {"command": "cargo test --offline --locked --manifest-path <clone>/Cargo.toml (the CTest rust-core command, isolated env)", "result": "passed: unittests native/main.rs 692 passed, 0 failed; tests/update_e2e.rs 2 passed, 0 failed"},
+  {"command": "target/debug/deps/tomaccoctl-<hash> (full unit binary, default parallel scheduling), 7 runs", "result": "7/7 runs passed, 692/692 each"},
+  {"command": "tomaccoctl-<hash> --exact javascript::tests::the_server_is_up_before_the_following_commands_run, 60 runs", "result": "60/60 passed"},
+  {"command": "the same focused test, 50 runs under 96 concurrent busy loops (32 CPUs)", "result": "50/50 passed"},
+  {"command": "cd tests/python && PYTHONPATH=<clone>:<clone>/tools:<clone>/tests/python python3 -m unittest test_i18n test_docs_consistency test_mobile_parity (pipeline environment)", "result": "Ran 30 tests, OK"},
+  {"command": "the same language/docs/mobile-parity gate with the isolated HOME", "result": "Ran 30 tests, OK (skipped=1: test_parse_accepts_decimal_marks_and_digits_of_the_languages, 'no usable node binary', because the mise node shim needs the real HOME; it passed in the pipeline-environment run above)"},
+  {"command": "rustfmt --edition 2024 --check native/javascript.rs", "result": "clean"}
+ ],
+ "not_run": [
+  "The 13 Qt/CTest suites that already passed at 3993523: this change touches only a Rust #[cfg(test)] fixture, so no runtime path they exercise changed. Root runs the final combined checks.",
+  "ARM64 build, packaging, installation and any hardware step: these belong to root and the MacBook installer.",
+  "The failed one-shot verification pipeline and installer relay were not restarted."
+ ],
+ "limitations": [
+  "The original failure was intermittent and did not recur in 6 unmodified baseline runs here. The evidence that the race is gone is the forced reproduction (old fixture fails, new fixture passes, deterministically) plus the stress loops, not one recurrence of the qualification run.",
+  "A local loopback fixture says nothing about Metro or device behaviour on real hardware."
+ ],
+ "final_source_ready": true,
+ "remaining_blockers": [],
+ "integration": "Fast-forwardable on 3993523 and touches only native/javascript.rs tests plus this record. It does not conflict with the PhoneUse feature lanes unless they edit the same test."
+}
