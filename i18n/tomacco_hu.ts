@@ -6134,839 +6134,839 @@ A GNU General Public License 2-es vagy későbbi verziója alatt licencelve.</tr
     </message>
     <message>
         <source>GitHub could not be reached. This computer may be offline.</source>
-        <translation type="unfinished"></translation>
+        <translation>A GitHub nem érhető el. Lehet, hogy ez a számítógép offline.</translation>
     </message>
     <message>
         <source>The check failed: %1</source>
-        <translation type="unfinished"></translation>
+        <translation>Az ellenőrzés sikertelen: %1</translation>
     </message>
     <message>
         <source>Version %1. Not checked yet.</source>
-        <translation type="unfinished"></translation>
+        <translation>%1 verzió. Még nincs ellenőrizve.</translation>
     </message>
     <message>
         <source>Updates are turned off for this build or by the environment.</source>
-        <translation type="unfinished"></translation>
+        <translation>A frissítések ki vannak kapcsolva ebben a buildben vagy a környezet által.</translation>
     </message>
     <message>
         <source>This copy runs from a source checkout. Update it with Git and a new build.</source>
-        <translation type="unfinished"></translation>
+        <translation>Ez a példány forráskódból fut. Frissítsd Gittel és egy új builddel.</translation>
     </message>
     <message>
         <source>This copy belongs to a system package. Update it with your package manager.</source>
-        <translation type="unfinished"></translation>
+        <translation>Ez a példány egy rendszercsomaghoz tartozik. Frissítsd a csomagkezelőddel.</translation>
     </message>
     <message>
         <source>The installation cannot be written, so it cannot be updated here.</source>
-        <translation type="unfinished"></translation>
+        <translation>A telepítés nem írható, ezért itt nem frissíthető.</translation>
     </message>
     <message>
         <source>This copy was not installed by its installer, so it is left alone.</source>
-        <translation type="unfinished"></translation>
+        <translation>Ezt a példányt nem a saját telepítője telepítette, ezért nem nyúlunk hozzá.</translation>
     </message>
     <message>
         <source>This build has no release signing key, so it cannot verify or install updates.</source>
-        <translation type="unfinished"></translation>
+        <translation>Ennek a buildnek nincs kiadási aláírókulcsa, ezért nem tud frissítéseket ellenőrizni vagy telepíteni.</translation>
     </message>
     <message>
         <source>Version %1 is installed. Restart to use it.</source>
-        <translation type="unfinished"></translation>
+        <translation>A(z) %1 verzió telepítve. A használatához indítsd újra.</translation>
     </message>
     <message>
         <source>Downloading, verifying and installing the update.</source>
-        <translation type="unfinished"></translation>
+        <translation>A frissítés letöltése, ellenőrzése és telepítése.</translation>
     </message>
     <message>
         <source>An update was interrupted. It is undone before the next installation.</source>
-        <translation type="unfinished"></translation>
+        <translation>Egy frissítés megszakadt. A következő telepítés előtt visszavonásra kerül.</translation>
     </message>
     <message>
         <source>The last installation failed: %1</source>
-        <translation type="unfinished"></translation>
+        <translation>Az utolsó telepítés sikertelen: %1</translation>
     </message>
     <message>
         <source>Installing has to wait until jobs, device sessions and the virtual iOS device have ended.</source>
-        <translation type="unfinished"></translation>
+        <translation>A telepítésnek meg kell várnia, amíg a feladatok, az eszköz-munkamenetek és a virtuális iOS-eszköz befejeződnek.</translation>
     </message>
 </context>
 <context>
     <name>UpdateNotice</name>
     <message>
         <source>Open the update settings</source>
-        <translation type="unfinished"></translation>
+        <translation>Frissítési beállítások megnyitása</translation>
     </message>
 </context>
 <context>
     <name>UpdateSection</name>
     <message>
         <source>Updates</source>
-        <translation type="unfinished"></translation>
+        <translation>Frissítések</translation>
     </message>
     <message>
         <source>Off</source>
-        <translation type="unfinished"></translation>
+        <translation>Ki</translation>
     </message>
     <message>
         <source>Notify</source>
-        <translation type="unfinished"></translation>
+        <translation>Értesítés</translation>
     </message>
     <message>
         <source>Automatic</source>
-        <translation type="unfinished"></translation>
+        <translation>Automatikus</translation>
     </message>
     <message>
         <source>Check now</source>
-        <translation type="unfinished"></translation>
+        <translation>Ellenőrzés most</translation>
     </message>
     <message>
         <source>What&apos;s new ↗</source>
-        <translation type="unfinished"></translation>
+        <translation>Újdonságok ↗</translation>
     </message>
     <message>
         <source>Install</source>
-        <translation type="unfinished"></translation>
+        <translation>Telepítés</translation>
     </message>
     <message>
         <source>Restart</source>
-        <translation type="unfinished"></translation>
+        <translation>Újraindítás</translation>
     </message>
     <message>
         <source>Roll back</source>
-        <translation type="unfinished"></translation>
+        <translation>Visszaállítás</translation>
     </message>
     <message>
         <source>Channel</source>
-        <translation type="unfinished"></translation>
+        <translation>Csatorna</translation>
     </message>
     <message>
         <source>Stable</source>
-        <translation type="unfinished"></translation>
+        <translation>Stabil</translation>
     </message>
     <message>
         <source>Pre-release</source>
-        <translation type="unfinished"></translation>
+        <translation>Előzetes kiadás</translation>
     </message>
     <message>
         <source>Also offers test versions before their release. They can have more bugs.</source>
-        <translation type="unfinished"></translation>
+        <translation>Tesztverziókat is felkínál a kiadásuk előtt. Ezekben több hiba lehet.</translation>
     </message>
     <message>
         <source>Offers only finished releases.</source>
-        <translation type="unfinished"></translation>
+        <translation>Csak a kész kiadásokat kínálja fel.</translation>
     </message>
     <message>
         <source>Off: nothing is sent unless you check now.</source>
-        <translation type="unfinished"></translation>
+        <translation>Ki: semmi sem kerül elküldésre, hacsak nem ellenőrzöl most.</translation>
     </message>
     <message>
         <source>Notify: checks GitHub once a day and shows a new version at the top of the window.</source>
-        <translation type="unfinished"></translation>
+        <translation>Értesítés: naponta egyszer ellenőrzi a GitHubot, és az ablak tetején jelzi az új verziót.</translation>
     </message>
     <message>
         <source>Automatic: also installs it by itself when nothing is running, then offers a restart.</source>
-        <translation type="unfinished"></translation>
+        <translation>Automatikus: magától telepíti is, amikor semmi sem fut, majd újraindítást ajánl fel.</translation>
     </message>
 </context>
 <context>
     <name>AppDropArea</name>
     <message>
         <source>Drop to install on %1</source>
-        <translation type="unfinished"></translation>
+        <translation>Engedd el a telepítéshez ide: %1</translation>
     </message>
 </context>
 <context>
     <name>DeviceHero</name>
     <message>
         <source>Recent</source>
-        <translation type="unfinished"></translation>
+        <translation>Legutóbbi</translation>
     </message>
 </context>
 <context>
     <name>UpdateBanner</name>
     <message>
         <source>Updated to %1 · Restart to use it</source>
-        <translation type="unfinished"></translation>
+        <translation>Frissítve erre: %1 · A használatához indítsd újra</translation>
     </message>
     <message>
         <source>Installing Tomacco %1…</source>
-        <translation type="unfinished"></translation>
+        <translation>A Tomacco %1 telepítése…</translation>
     </message>
     <message>
         <source>Tomacco %1 is available</source>
-        <translation type="unfinished"></translation>
+        <translation>Elérhető a Tomacco %1</translation>
     </message>
     <message>
         <source>What&apos;s new ↗</source>
-        <translation type="unfinished"></translation>
+        <translation>Újdonságok ↗</translation>
     </message>
     <message>
         <source>Install</source>
-        <translation type="unfinished"></translation>
+        <translation>Telepítés</translation>
     </message>
     <message>
         <source>Restart now</source>
-        <translation type="unfinished"></translation>
+        <translation>Újraindítás most</translation>
     </message>
     <message>
         <source>Later</source>
-        <translation type="unfinished"></translation>
+        <translation>Később</translation>
     </message>
 </context>
 <context>
     <name>OnboardingSheet</name>
     <message>
         <source>Welcome to Tomacco</source>
-        <translation type="unfinished"></translation>
+        <translation>Üdvözöl a Tomacco</translation>
     </message>
     <message>
         <source>This system lacks libraries the desktop needs. Your agent can still use Tomacco through tomaccoctl.</source>
-        <translation type="unfinished"></translation>
+        <translation>Ebből a rendszerből hiányoznak az asztali alkalmazáshoz szükséges könyvtárak. Az ügynököd a tomaccoctl segítségével továbbra is használhatja a Tomaccót.</translation>
     </message>
     <message>
         <source>Install Java (JDK 17 or newer) and Gradle to build Android apps.</source>
-        <translation type="unfinished"></translation>
+        <translation>Az Android-alkalmazások buildeléséhez telepítsd a Java (JDK 17 vagy újabb) és a Gradle csomagot.</translation>
     </message>
     <message>
         <source>Install the Android SDK and an emulator. This downloads about 5 GB.</source>
-        <translation type="unfinished"></translation>
+        <translation>Telepítsd az Android SDK-t és egy emulátort. Ez körülbelül 5 GB letöltés.</translation>
     </message>
     <message>
         <source>Set up iOS builds. This needs an Apple account.</source>
-        <translation type="unfinished"></translation>
+        <translation>iOS-buildek beállítása. Ehhez Apple-fiók szükséges.</translation>
     </message>
     <message>
         <source>Optional: the virtual iPhone. It needs your own iPhone restore image, about 100 GiB of disk space and a graphics card with 16 GiB.</source>
-        <translation type="unfinished"></translation>
+        <translation>Nem kötelező: a virtuális iPhone. Ehhez a saját iPhone-od visszaállítási képe, körülbelül 100 GiB lemezterület és egy 16 GiB-os grafikus kártya kell.</translation>
     </message>
     <message>
         <source>Tomacco lets your coding agent build, run and test Android and iOS apps on this computer.</source>
-        <translation type="unfinished"></translation>
+        <translation>A Tomacco lehetővé teszi, hogy a kódoló ügynököd ezen a számítógépen buildeljen, futtasson és teszteljen Android- és iOS-alkalmazásokat.</translation>
     </message>
     <message>
         <source>Checking this computer…</source>
-        <translation type="unfinished"></translation>
+        <translation>A számítógép ellenőrzése…</translation>
     </message>
     <message>
         <source>What is left to set up:</source>
-        <translation type="unfinished"></translation>
+        <translation>Ami még beállítandó:</translation>
     </message>
     <message>
         <source>Everything for Android and iOS builds is in place.</source>
-        <translation type="unfinished"></translation>
+        <translation>Az Android- és iOS-buildekhez minden a helyén van.</translation>
     </message>
     <message>
         <source>Your agent can do these steps for you. Connect it, then ask it to set Tomacco up.</source>
-        <translation type="unfinished"></translation>
+        <translation>Az ügynököd elvégezheti helyetted ezeket a lépéseket. Csatlakoztasd, majd kérd meg, hogy állítsa be a Tomaccót.</translation>
     </message>
     <message>
         <source>Connect your coding agent</source>
-        <translation type="unfinished"></translation>
+        <translation>Csatlakoztasd a kódoló ügynöködet</translation>
     </message>
     <message>
         <source>Skip</source>
-        <translation type="unfinished"></translation>
+        <translation>Kihagyás</translation>
     </message>
 </context>
 <context>
     <name>ScreenRecorder</name>
     <message>
         <source>Starting the recording…</source>
-        <translation type="unfinished"></translation>
+        <translation>A felvétel indítása…</translation>
     </message>
     <message>
         <source>Saving the recording…</source>
-        <translation type="unfinished"></translation>
+        <translation>A felvétel mentése…</translation>
     </message>
     <message>
         <source>Recording saved · %1</source>
-        <translation type="unfinished"></translation>
+        <translation>Felvétel mentve · %1</translation>
     </message>
     <message>
         <source>The recording did not finish · details under Builds &amp; jobs</source>
-        <translation type="unfinished"></translation>
+        <translation>A felvétel nem fejeződött be · részletek a Buildek és feladatok alatt</translation>
     </message>
     <message>
         <source>Recording · press again to stop</source>
-        <translation type="unfinished"></translation>
+        <translation>Felvétel · a leállításhoz nyomd meg újra</translation>
     </message>
 </context>
 <context>
     <name>DeviceGrid</name>
     <message>
         <source>Waiting for the screen…</source>
-        <translation type="unfinished"></translation>
+        <translation>Várakozás a képernyőre…</translation>
     </message>
     <message>
         <source>No device running.</source>
-        <translation type="unfinished"></translation>
+        <translation>Egy eszköz sem fut.</translation>
     </message>
     <message>
         <source>Start an emulator or plug in a phone with USB debugging on; each one shows here with its screen.</source>
-        <translation type="unfinished"></translation>
+        <translation>Indíts egy emulátort, vagy csatlakoztass egy telefont bekapcsolt USB-hibakereséssel; mindegyik itt jelenik meg a képernyőjével.</translation>
     </message>
 </context>
 <context>
     <name>DeviceLogPane</name>
     <message>
         <source>App ID, all apps when empty</source>
-        <translation type="unfinished"></translation>
+        <translation>Alkalmazásazonosító, üresen minden alkalmazás</translation>
     </message>
     <message>
         <source>All</source>
-        <translation type="unfinished"></translation>
+        <translation>Mind</translation>
     </message>
     <message>
         <source>Info</source>
-        <translation type="unfinished"></translation>
+        <translation>Információ</translation>
     </message>
     <message>
         <source>Warnings</source>
-        <translation type="unfinished"></translation>
+        <translation>Figyelmeztetések</translation>
     </message>
     <message>
         <source>Errors</source>
-        <translation type="unfinished"></translation>
+        <translation>Hibák</translation>
     </message>
     <message>
         <source>Find in the log</source>
-        <translation type="unfinished"></translation>
+        <translation>Keresés a naplóban</translation>
     </message>
     <message>
         <source>Resume</source>
-        <translation type="unfinished"></translation>
+        <translation>Folytatás</translation>
     </message>
     <message>
         <source>Pause</source>
-        <translation type="unfinished"></translation>
+        <translation>Szünet</translation>
     </message>
     <message>
         <source>Clear</source>
-        <translation type="unfinished"></translation>
+        <translation>Törlés</translation>
     </message>
     <message>
         <source>Clear the lines shown</source>
-        <translation type="unfinished"></translation>
+        <translation>A megjelenített sorok törlése</translation>
     </message>
     <message>
         <source>Paused</source>
-        <translation type="unfinished"></translation>
+        <translation>Szüneteltetve</translation>
     </message>
     <message>
         <source>No line contains this text.</source>
-        <translation type="unfinished"></translation>
+        <translation>Egy sor sem tartalmazza ezt a szöveget.</translation>
     </message>
     <message>
         <source>Waiting for log lines…</source>
-        <translation type="unfinished"></translation>
+        <translation>Várakozás naplósorokra…</translation>
     </message>
     <message>
         <source>Try again</source>
-        <translation type="unfinished"></translation>
+        <translation>Újra</translation>
     </message>
 </context>
 <context>
     <name>ApprovalDialog</name>
     <message>
         <source>Allow this agent action?</source>
-        <translation type="unfinished"></translation>
+        <translation>Engedélyezed ezt az ügynökműveletet?</translation>
     </message>
     <message>
         <source>An agent</source>
-        <translation type="unfinished"></translation>
+        <translation>Egy ügynök</translation>
     </message>
     <message>
         <source>%1 asks to run %2 (%3). Tomacco marks it as destructive: it may delete or overwrite data.</source>
-        <translation type="unfinished"></translation>
+        <translation>%1 a(z) %2 (%3) futtatását kéri. A Tomacco rombolónak jelöli: adatokat törölhet vagy írhat felül.</translation>
     </message>
     <message>
         <source>Its arguments, with secrets masked:</source>
-        <translation type="unfinished"></translation>
+        <translation>Az argumentumai, a titkok elrejtve:</translation>
     </message>
     <message>
         <source>Arguments</source>
-        <translation type="unfinished"></translation>
+        <translation>Argumentumok</translation>
     </message>
     <message>
         <source>Seconds left before it is denied: %1</source>
-        <translation type="unfinished"></translation>
+        <translation>Az elutasításig hátralévő másodpercek: %1</translation>
     </message>
     <message>
         <source>Deny</source>
-        <translation type="unfinished"></translation>
+        <translation>Elutasítás</translation>
     </message>
     <message>
         <source>Approve</source>
-        <translation type="unfinished"></translation>
+        <translation>Jóváhagyás</translation>
     </message>
 </context>
 <context>
     <name>DemoWorkspace</name>
     <message>
         <source>Save your changes before opening another scene.</source>
-        <translation type="unfinished"></translation>
+        <translation>Egy másik jelenet megnyitása előtt mentsd a módosításaidat.</translation>
     </message>
     <message>
         <source>App demo</source>
-        <translation type="unfinished"></translation>
+        <translation>Alkalmazásbemutató</translation>
     </message>
     <message>
         <source>Enter a valid number.</source>
-        <translation type="unfinished"></translation>
+        <translation>Adj meg egy érvényes számot.</translation>
     </message>
     <message>
         <source>Choose a different time for the new pose.</source>
-        <translation type="unfinished"></translation>
+        <translation>Válassz másik időpontot az új pózhoz.</translation>
     </message>
     <message>
         <source>Save changes before rendering.</source>
-        <translation type="unfinished"></translation>
+        <translation>Renderelés előtt mentsd a módosításokat.</translation>
     </message>
     <message>
         <source>Render complete.</source>
-        <translation type="unfinished"></translation>
+        <translation>A renderelés kész.</translation>
     </message>
     <message>
         <source>Rendering did not complete. Your scene is unchanged.</source>
-        <translation type="unfinished"></translation>
+        <translation>A renderelés nem fejeződött be. A jeleneted változatlan.</translation>
     </message>
     <message>
         <source>Your draft has changes. Reload explicitly to replace it.</source>
-        <translation type="unfinished"></translation>
+        <translation>A piszkozatodban módosítások vannak. A lecseréléséhez töltsd újra kifejezetten.</translation>
     </message>
     <message>
         <source>Scene opened.</source>
-        <translation type="unfinished"></translation>
+        <translation>Jelenet megnyitva.</translation>
     </message>
     <message>
         <source>Changes saved.</source>
-        <translation type="unfinished"></translation>
+        <translation>Módosítások mentve.</translation>
     </message>
     <message>
         <source>Saved. Your newer edits are still unsaved.</source>
-        <translation type="unfinished"></translation>
+        <translation>Mentve. Az újabb szerkesztéseid még nincsenek mentve.</translation>
     </message>
     <message>
         <source>The render job could not be followed.</source>
-        <translation type="unfinished"></translation>
+        <translation>A renderelési feladat nem követhető.</translation>
     </message>
     <message>
         <source>A recording, made into a demo</source>
-        <translation type="unfinished"></translation>
+        <translation>Egy felvétel, bemutatóvá alakítva</translation>
     </message>
     <message>
         <source>Choose a local video, place it in a device and set its motion. Your source stays unchanged.</source>
-        <translation type="unfinished"></translation>
+        <translation>Válassz egy helyi videót, helyezd el egy eszközben, és állítsd be a mozgását. A forrásod változatlan marad.</translation>
     </message>
     <message>
         <source>Source video</source>
-        <translation type="unfinished"></translation>
+        <translation>Forrásvideó</translation>
     </message>
     <message>
         <source>Choose video</source>
-        <translation type="unfinished"></translation>
+        <translation>Videó kiválasztása</translation>
     </message>
     <message>
         <source>Inspect video</source>
-        <translation type="unfinished"></translation>
+        <translation>Videó vizsgálata</translation>
     </message>
     <message>
         <source>Scene file (.json)</source>
-        <translation type="unfinished"></translation>
+        <translation>Jelenetfájl (.json)</translation>
     </message>
     <message>
         <source>Choose scene path</source>
-        <translation type="unfinished"></translation>
+        <translation>Jelenet elérési útjának kiválasztása</translation>
     </message>
     <message>
         <source>Scene title</source>
-        <translation type="unfinished"></translation>
+        <translation>Jelenet címe</translation>
     </message>
     <message>
         <source>Create scene</source>
-        <translation type="unfinished"></translation>
+        <translation>Jelenet létrehozása</translation>
     </message>
     <message>
         <source>Open scene</source>
-        <translation type="unfinished"></translation>
+        <translation>Jelenet megnyitása</translation>
     </message>
     <message>
         <source>The video renderer is not ready. Check the rendering tools under Agents &amp; tools.</source>
-        <translation type="unfinished"></translation>
+        <translation>A videórenderelő nem áll készen. Ellenőrizd a renderelőeszközöket az Ügynökök és eszközök alatt.</translation>
     </message>
     <message>
         <source>Scene</source>
-        <translation type="unfinished"></translation>
+        <translation>Jelenet</translation>
     </message>
     <message>
         <source>Keep the original recording or crop its time. Canvas size changes the exported video.</source>
-        <translation type="unfinished"></translation>
+        <translation>Tartsd meg az eredeti felvételt, vagy vágd meg az idejét. A vászon mérete megváltoztatja az exportált videót.</translation>
     </message>
     <message>
         <source>Title</source>
-        <translation type="unfinished"></translation>
+        <translation>Cím</translation>
     </message>
     <message>
         <source>Duration (seconds)</source>
-        <translation type="unfinished"></translation>
+        <translation>Időtartam (másodperc)</translation>
     </message>
     <message>
         <source>Canvas width</source>
-        <translation type="unfinished"></translation>
+        <translation>Vászon szélessége</translation>
     </message>
     <message>
         <source>Canvas height</source>
-        <translation type="unfinished"></translation>
+        <translation>Vászon magassága</translation>
     </message>
     <message>
         <source>Frames per second</source>
-        <translation type="unfinished"></translation>
+        <translation>Képkocka/másodperc</translation>
     </message>
     <message>
         <source>Clip start (seconds)</source>
-        <translation type="unfinished"></translation>
+        <translation>Klip kezdete (másodperc)</translation>
     </message>
     <message>
         <source>Background color</source>
-        <translation type="unfinished"></translation>
+        <translation>Háttérszín</translation>
     </message>
     <message>
         <source>Second background color</source>
-        <translation type="unfinished"></translation>
+        <translation>Második háttérszín</translation>
     </message>
     <message>
         <source>Background</source>
-        <translation type="unfinished"></translation>
+        <translation>Háttér</translation>
     </message>
     <message>
         <source>Device finish</source>
-        <translation type="unfinished"></translation>
+        <translation>Eszköz felületi kidolgozása</translation>
     </message>
     <message>
         <source>Device model</source>
-        <translation type="unfinished"></translation>
+        <translation>Eszközmodell</translation>
     </message>
     <message>
         <source>Shadow opacity</source>
-        <translation type="unfinished"></translation>
+        <translation>Árnyék átlátszatlansága</translation>
     </message>
     <message>
         <source>Shadow</source>
-        <translation type="unfinished"></translation>
+        <translation>Árnyék</translation>
     </message>
     <message>
         <source>Motion</source>
-        <translation type="unfinished"></translation>
+        <translation>Mozgás</translation>
     </message>
     <message>
         <source>Each pose sets the device at a moment in the video. The motion runs between them.</source>
-        <translation type="unfinished"></translation>
+        <translation>Minden póz a videó egy adott pillanatában helyezi el az eszközt. A mozgás közöttük zajlik.</translation>
     </message>
     <message>
         <source>Pose %1 · %2 s</source>
-        <translation type="unfinished"></translation>
+        <translation>%1. póz · %2 s</translation>
     </message>
     <message>
         <source>Add pose</source>
-        <translation type="unfinished"></translation>
+        <translation>Póz hozzáadása</translation>
     </message>
     <message>
         <source>Remove pose</source>
-        <translation type="unfinished"></translation>
+        <translation>Póz eltávolítása</translation>
     </message>
     <message>
         <source>Time (seconds)</source>
-        <translation type="unfinished"></translation>
+        <translation>Idő (másodperc)</translation>
     </message>
     <message>
         <source>Turn · yaw (degrees)</source>
-        <translation type="unfinished"></translation>
+        <translation>Fordulás · yaw (fok)</translation>
     </message>
     <message>
         <source>Tilt · pitch (degrees)</source>
-        <translation type="unfinished"></translation>
+        <translation>Döntés · pitch (fok)</translation>
     </message>
     <message>
         <source>Spin · roll (degrees)</source>
-        <translation type="unfinished"></translation>
+        <translation>Forgás · roll (fok)</translation>
     </message>
     <message>
         <source>Scale</source>
-        <translation type="unfinished"></translation>
+        <translation>Méretarány</translation>
     </message>
     <message>
         <source>Horizontal position (0–1)</source>
-        <translation type="unfinished"></translation>
+        <translation>Vízszintes pozíció (0–1)</translation>
     </message>
     <message>
         <source>Vertical position (0–1)</source>
-        <translation type="unfinished"></translation>
+        <translation>Függőleges pozíció (0–1)</translation>
     </message>
     <message>
         <source>Motion curve</source>
-        <translation type="unfinished"></translation>
+        <translation>Mozgásgörbe</translation>
     </message>
     <message>
         <source>Saving…</source>
-        <translation type="unfinished"></translation>
+        <translation>Mentés…</translation>
     </message>
     <message>
         <source>Save changes</source>
-        <translation type="unfinished"></translation>
+        <translation>Módosítások mentése</translation>
     </message>
     <message>
         <source>Reload saved scene</source>
-        <translation type="unfinished"></translation>
+        <translation>A mentett jelenet újratöltése</translation>
     </message>
     <message>
         <source>Unsaved changes · save before rendering.</source>
-        <translation type="unfinished"></translation>
+        <translation>Nem mentett módosítások · renderelés előtt ments.</translation>
     </message>
     <message>
         <source>Preview &amp; export</source>
-        <translation type="unfinished"></translation>
+        <translation>Előnézet és exportálás</translation>
     </message>
     <message>
         <source>Preview one frame, then export a silent MP4. A poster and a render record are saved beside it.</source>
-        <translation type="unfinished"></translation>
+        <translation>Tekints meg egy képkockát, majd exportálj egy néma MP4-et. Mellé egy poszter és egy renderelési jegyzőkönyv is mentődik.</translation>
     </message>
     <message>
         <source>Your rendered preview appears here.</source>
-        <translation type="unfinished"></translation>
+        <translation>A renderelt előnézet itt jelenik meg.</translation>
     </message>
     <message>
         <source>This image shows the last completed render.</source>
-        <translation type="unfinished"></translation>
+        <translation>Ez a kép az utolsó befejezett renderelést mutatja.</translation>
     </message>
     <message>
         <source>Preview time (seconds)</source>
-        <translation type="unfinished"></translation>
+        <translation>Előnézet időpontja (másodperc)</translation>
     </message>
     <message>
         <source>Render preview</source>
-        <translation type="unfinished"></translation>
+        <translation>Előnézet renderelése</translation>
     </message>
     <message>
         <source>Export MP4</source>
-        <translation type="unfinished"></translation>
+        <translation>MP4 exportálása</translation>
     </message>
     <message>
         <source>Show exported video</source>
-        <translation type="unfinished"></translation>
+        <translation>Exportált videó megjelenítése</translation>
     </message>
     <message>
         <source>Waiting to render…</source>
-        <translation type="unfinished"></translation>
+        <translation>Várakozás a renderelésre…</translation>
     </message>
     <message>
         <source>Rendering…</source>
-        <translation type="unfinished"></translation>
+        <translation>Renderelés…</translation>
     </message>
     <message>
         <source>Render failed.</source>
-        <translation type="unfinished"></translation>
+        <translation>A renderelés sikertelen.</translation>
     </message>
     <message>
         <source>Render cancelled.</source>
-        <translation type="unfinished"></translation>
+        <translation>A renderelés megszakítva.</translation>
     </message>
     <message>
         <source>Render timed out.</source>
-        <translation type="unfinished"></translation>
+        <translation>A renderelés túllépte az időkorlátot.</translation>
     </message>
     <message>
         <source>Videos (*.mp4 *.mov *.mkv *.webm)</source>
-        <translation type="unfinished"></translation>
+        <translation>Videók (*.mp4 *.mov *.mkv *.webm)</translation>
     </message>
     <message>
         <source>Scenes (*.json)</source>
-        <translation type="unfinished"></translation>
+        <translation>Jelenetek (*.json)</translation>
     </message>
     <message>
         <source>PNG image (*.png)</source>
-        <translation type="unfinished"></translation>
+        <translation>PNG-kép (*.png)</translation>
     </message>
     <message>
         <source>MP4 video (*.mp4)</source>
-        <translation type="unfinished"></translation>
+        <translation>MP4-videó (*.mp4)</translation>
     </message>
     <message>
         <source>Discard unsaved changes?</source>
-        <translation type="unfinished"></translation>
+        <translation>Elveted a nem mentett módosításokat?</translation>
     </message>
     <message>
         <source>Reload the saved scene and replace your draft. The video source stays unchanged.</source>
-        <translation type="unfinished"></translation>
+        <translation>A mentett jelenet újratöltése a piszkozat lecserélésével. A videóforrás változatlan marad.</translation>
     </message>
     <message>
         <source>Keep editing</source>
-        <translation type="unfinished"></translation>
+        <translation>Szerkesztés folytatása</translation>
     </message>
     <message>
         <source>Discard and reload</source>
-        <translation type="unfinished"></translation>
+        <translation>Elvetés és újratöltés</translation>
     </message>
 </context>
 <context>
     <name>EnvironmentPanel</name>
     <message>
         <source>Dark mode</source>
-        <translation type="unfinished"></translation>
+        <translation>Sötét mód</translation>
     </message>
     <message>
         <source>Font size</source>
-        <translation type="unfinished"></translation>
+        <translation>Betűméret</translation>
     </message>
     <message>
         <source>Animations</source>
-        <translation type="unfinished"></translation>
+        <translation>Animációk</translation>
     </message>
     <message>
         <source>Airplane mode</source>
-        <translation type="unfinished"></translation>
+        <translation>Repülőgépes üzemmód</translation>
     </message>
     <message>
         <source>App language</source>
-        <translation type="unfinished"></translation>
+        <translation>Alkalmazás nyelve</translation>
     </message>
     <message>
         <source>GPS location</source>
-        <translation type="unfinished"></translation>
+        <translation>GPS-helyzet</translation>
     </message>
     <message>
         <source>TalkBack</source>
-        <translation type="unfinished"></translation>
+        <translation>TalkBack</translation>
     </message>
     <message>
         <source>On</source>
-        <translation type="unfinished"></translation>
+        <translation>Be</translation>
     </message>
     <message>
         <source>Off</source>
-        <translation type="unfinished"></translation>
+        <translation>Ki</translation>
     </message>
     <message>
         <source>Automatic</source>
-        <translation type="unfinished"></translation>
+        <translation>Automatikus</translation>
     </message>
     <message>
         <source>Device language</source>
-        <translation type="unfinished"></translation>
+        <translation>Eszköz nyelve</translation>
     </message>
     <message>
         <source>Will change</source>
-        <translation type="unfinished"></translation>
+        <translation>Módosulni fog</translation>
     </message>
     <message>
         <source>Already set</source>
-        <translation type="unfinished"></translation>
+        <translation>Már beállítva</translation>
     </message>
     <message>
         <source>Not supported here</source>
-        <translation type="unfinished"></translation>
+        <translation>Itt nem támogatott</translation>
     </message>
     <message>
         <source>Applied and read back</source>
-        <translation type="unfinished"></translation>
+        <translation>Alkalmazva és visszaolvasva</translation>
     </message>
     <message>
         <source>Applied, not read back</source>
-        <translation type="unfinished"></translation>
+        <translation>Alkalmazva, nincs visszaolvasva</translation>
     </message>
     <message>
         <source>Android did not apply it</source>
-        <translation type="unfinished"></translation>
+        <translation>Az Android nem alkalmazta</translation>
     </message>
     <message>
         <source>Restored</source>
-        <translation type="unfinished"></translation>
+        <translation>Visszaállítva</translation>
     </message>
     <message>
         <source>Cannot be restored</source>
-        <translation type="unfinished"></translation>
+        <translation>Nem állítható vissza</translation>
     </message>
     <message>
         <source>Not restored</source>
-        <translation type="unfinished"></translation>
+        <translation>Nincs visszaállítva</translation>
     </message>
     <message>
         <source>Preset saved.</source>
-        <translation type="unfinished"></translation>
+        <translation>Előbeállítás mentve.</translation>
     </message>
     <message>
         <source>Preset updated to revision %1.</source>
-        <translation type="unfinished"></translation>
+        <translation>Előbeállítás frissítve a(z) %1. változatra.</translation>
     </message>
     <message>
         <source>Preset deleted.</source>
-        <translation type="unfinished"></translation>
+        <translation>Előbeállítás törölve.</translation>
     </message>
     <message>
         <source>Preset exported to %1.</source>
-        <translation type="unfinished"></translation>
+        <translation>Előbeállítás exportálva ide: %1.</translation>
     </message>
     <message>
         <source>Plan ready. This device does not support: %1.</source>
-        <translation type="unfinished"></translation>
+        <translation>A terv kész. Ez az eszköz nem támogatja: %1.</translation>
     </message>
     <message>
         <source>Plan ready. Nothing has changed on the device yet.</source>
-        <translation type="unfinished"></translation>
+        <translation>A terv kész. Az eszközön még semmi sem változott.</translation>
     </message>
     <message>
         <source>Applied and read back. You can restore the previous settings.</source>
-        <translation type="unfinished"></translation>
+        <translation>Alkalmazva és visszaolvasva. Visszaállíthatod a korábbi beállításokat.</translation>
     </message>
     <message>
         <source>Previous settings restored.</source>
-        <translation type="unfinished"></translation>
+        <translation>A korábbi beállítások visszaállítva.</translation>
     </message>
     <message>
         <source>QA environments</source>
-        <translation type="unfinished"></translation>
+        <translation>QA-környezetek</translation>
     </message>
     <message>
         <source>Save a combination of theme, font size, animations, airplane mode, app language, GPS and TalkBack under a name, then apply it to one device you choose.</source>
-        <translation type="unfinished"></translation>
+        <translation>Téma, betűméret, animációk, repülőgépes üzemmód, alkalmazásnyelv, GPS és TalkBack kombinációjának mentése egy néven, majd alkalmazása egy általad választott eszközön.</translation>
     </message>
     <message>
         <source>New preset</source>
-        <translation type="unfinished"></translation>
+        <translation>Új előbeállítás</translation>
     </message>
     <message>
         <source>ID · e.g. dark-large-text</source>
-        <translation type="unfinished"></translation>
+        <translation>Azonosító · pl. dark-large-text</translation>
     </message>
     <message>
         <source>Name</source>
-        <translation type="unfinished"></translation>
+        <translation>Név</translation>
     </message>
     <message>
         <source>Leave as it is</source>
-        <translation type="unfinished"></translation>
+        <translation>Hagyd változatlanul</translation>
     </message>
     <message>
         <source>Set</source>
-        <translation type="unfinished"></translation>
+        <translation>Beállítás</translation>
     </message>
     <message>
         <source>Latitude, longitude</source>
-        <translation type="unfinished"></translation>
+        <translation>Szélesség, hosszúság</translation>
     </message>
     <message>
         <source>0.5 to 2</source>
-        <translation type="unfinished"></translation>
+        <translation>0,5 és 2 között</translation>
     </message>
     <message>
         <source>Language tags · e.g. de-DE</source>
-        <translation type="unfinished"></translation>
+        <translation>Nyelvcímkék · pl. de-DE</translation>
     </message>
     <message>
         <source>GPS works on emulators only and cannot be read back or restored. App language needs Android 13; airplane mode needs Android 11.</source>
-        <translation type="unfinished"></translation>
+        <translation>A GPS csak emulátorokon működik, és nem olvasható vissza vagy állítható vissza. Az alkalmazásnyelvhez Android 13, a repülőgépes üzemmódhoz Android 11 szükséges.</translation>
     </message>
     <message>
         <source>Save preset</source>
-        <translation type="unfinished"></translation>
+        <translation>Előbeállítás mentése</translation>
     </message>
     <message>
         <source>Import…</source>

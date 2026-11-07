@@ -6144,839 +6144,839 @@ Litsentsitud GNU General Public License&apos;i versiooni 2 või hilisema alusel.
     </message>
     <message>
         <source>GitHub could not be reached. This computer may be offline.</source>
-        <translation type="unfinished"></translation>
+        <translation>GitHubiga ei saadud ühendust. See arvuti võib olla võrguühenduseta.</translation>
     </message>
     <message>
         <source>The check failed: %1</source>
-        <translation type="unfinished"></translation>
+        <translation>Kontroll ebaõnnestus: %1</translation>
     </message>
     <message>
         <source>Version %1. Not checked yet.</source>
-        <translation type="unfinished"></translation>
+        <translation>Versioon %1. Veel kontrollimata.</translation>
     </message>
     <message>
         <source>Updates are turned off for this build or by the environment.</source>
-        <translation type="unfinished"></translation>
+        <translation>Uuendused on selles järgus või keskkonna poolt välja lülitatud.</translation>
     </message>
     <message>
         <source>This copy runs from a source checkout. Update it with Git and a new build.</source>
-        <translation type="unfinished"></translation>
+        <translation>See koopia töötab lähtekoodi väljavõttest. Uuenda seda Giti ja uue ehitusega.</translation>
     </message>
     <message>
         <source>This copy belongs to a system package. Update it with your package manager.</source>
-        <translation type="unfinished"></translation>
+        <translation>See koopia kuulub süsteemipaketti. Uuenda seda oma paketihalduriga.</translation>
     </message>
     <message>
         <source>The installation cannot be written, so it cannot be updated here.</source>
-        <translation type="unfinished"></translation>
+        <translation>Paigaldusse ei saa kirjutada, seega ei saa seda siin uuendada.</translation>
     </message>
     <message>
         <source>This copy was not installed by its installer, so it is left alone.</source>
-        <translation type="unfinished"></translation>
+        <translation>Seda koopiat ei paigaldanud selle paigaldaja, seega jäetakse see puutumata.</translation>
     </message>
     <message>
         <source>This build has no release signing key, so it cannot verify or install updates.</source>
-        <translation type="unfinished"></translation>
+        <translation>Sellel järgul pole väljalaske allkirjastamisvõtit, seega ei saa see uuendusi kontrollida ega paigaldada.</translation>
     </message>
     <message>
         <source>Version %1 is installed. Restart to use it.</source>
-        <translation type="unfinished"></translation>
+        <translation>Versioon %1 on paigaldatud. Kasutamiseks taaskäivita.</translation>
     </message>
     <message>
         <source>Downloading, verifying and installing the update.</source>
-        <translation type="unfinished"></translation>
+        <translation>Uuenduse allalaadimine, kontrollimine ja paigaldamine.</translation>
     </message>
     <message>
         <source>An update was interrupted. It is undone before the next installation.</source>
-        <translation type="unfinished"></translation>
+        <translation>Uuendus katkestati. See võetakse enne järgmist paigaldust tagasi.</translation>
     </message>
     <message>
         <source>The last installation failed: %1</source>
-        <translation type="unfinished"></translation>
+        <translation>Viimane paigaldus ebaõnnestus: %1</translation>
     </message>
     <message>
         <source>Installing has to wait until jobs, device sessions and the virtual iOS device have ended.</source>
-        <translation type="unfinished"></translation>
+        <translation>Paigaldamine peab ootama, kuni tööd, seadmeseansid ja virtuaalne iOS-seade on lõppenud.</translation>
     </message>
 </context>
 <context>
     <name>UpdateNotice</name>
     <message>
         <source>Open the update settings</source>
-        <translation type="unfinished"></translation>
+        <translation>Ava uuendusseaded</translation>
     </message>
 </context>
 <context>
     <name>UpdateSection</name>
     <message>
         <source>Updates</source>
-        <translation type="unfinished"></translation>
+        <translation>Uuendused</translation>
     </message>
     <message>
         <source>Off</source>
-        <translation type="unfinished"></translation>
+        <translation>Väljas</translation>
     </message>
     <message>
         <source>Notify</source>
-        <translation type="unfinished"></translation>
+        <translation>Teavita</translation>
     </message>
     <message>
         <source>Automatic</source>
-        <translation type="unfinished"></translation>
+        <translation>Automaatne</translation>
     </message>
     <message>
         <source>Check now</source>
-        <translation type="unfinished"></translation>
+        <translation>Kontrolli kohe</translation>
     </message>
     <message>
         <source>What&apos;s new ↗</source>
-        <translation type="unfinished"></translation>
+        <translation>Mis on uut ↗</translation>
     </message>
     <message>
         <source>Install</source>
-        <translation type="unfinished"></translation>
+        <translation>Paigalda</translation>
     </message>
     <message>
         <source>Restart</source>
-        <translation type="unfinished"></translation>
+        <translation>Taaskäivita</translation>
     </message>
     <message>
         <source>Roll back</source>
-        <translation type="unfinished"></translation>
+        <translation>Võta tagasi</translation>
     </message>
     <message>
         <source>Channel</source>
-        <translation type="unfinished"></translation>
+        <translation>Kanal</translation>
     </message>
     <message>
         <source>Stable</source>
-        <translation type="unfinished"></translation>
+        <translation>Stabiilne</translation>
     </message>
     <message>
         <source>Pre-release</source>
-        <translation type="unfinished"></translation>
+        <translation>Eelväljalase</translation>
     </message>
     <message>
         <source>Also offers test versions before their release. They can have more bugs.</source>
-        <translation type="unfinished"></translation>
+        <translation>Pakub ka testversioone enne nende väljalaset. Neis võib olla rohkem vigu.</translation>
     </message>
     <message>
         <source>Offers only finished releases.</source>
-        <translation type="unfinished"></translation>
+        <translation>Pakub ainult valmis väljalaskeid.</translation>
     </message>
     <message>
         <source>Off: nothing is sent unless you check now.</source>
-        <translation type="unfinished"></translation>
+        <translation>Väljas: midagi ei saadeta, kui sa ise kohe ei kontrolli.</translation>
     </message>
     <message>
         <source>Notify: checks GitHub once a day and shows a new version at the top of the window.</source>
-        <translation type="unfinished"></translation>
+        <translation>Teavita: kontrollib GitHubi kord päevas ja näitab uut versiooni akna ülaosas.</translation>
     </message>
     <message>
         <source>Automatic: also installs it by itself when nothing is running, then offers a restart.</source>
-        <translation type="unfinished"></translation>
+        <translation>Automaatne: paigaldab selle ka ise, kui midagi ei käi, ning pakub seejärel taaskäivitust.</translation>
     </message>
 </context>
 <context>
     <name>AppDropArea</name>
     <message>
         <source>Drop to install on %1</source>
-        <translation type="unfinished"></translation>
+        <translation>Lohista siia, et paigaldada seadmesse %1</translation>
     </message>
 </context>
 <context>
     <name>DeviceHero</name>
     <message>
         <source>Recent</source>
-        <translation type="unfinished"></translation>
+        <translation>Hiljutised</translation>
     </message>
 </context>
 <context>
     <name>UpdateBanner</name>
     <message>
         <source>Updated to %1 · Restart to use it</source>
-        <translation type="unfinished"></translation>
+        <translation>Uuendatud versioonile %1 · Kasutamiseks taaskäivita</translation>
     </message>
     <message>
         <source>Installing Tomacco %1…</source>
-        <translation type="unfinished"></translation>
+        <translation>Tomacco %1 paigaldamine…</translation>
     </message>
     <message>
         <source>Tomacco %1 is available</source>
-        <translation type="unfinished"></translation>
+        <translation>Tomacco %1 on saadaval</translation>
     </message>
     <message>
         <source>What&apos;s new ↗</source>
-        <translation type="unfinished"></translation>
+        <translation>Mis on uut ↗</translation>
     </message>
     <message>
         <source>Install</source>
-        <translation type="unfinished"></translation>
+        <translation>Paigalda</translation>
     </message>
     <message>
         <source>Restart now</source>
-        <translation type="unfinished"></translation>
+        <translation>Taaskäivita kohe</translation>
     </message>
     <message>
         <source>Later</source>
-        <translation type="unfinished"></translation>
+        <translation>Hiljem</translation>
     </message>
 </context>
 <context>
     <name>OnboardingSheet</name>
     <message>
         <source>Welcome to Tomacco</source>
-        <translation type="unfinished"></translation>
+        <translation>Tere tulemast Tomaccosse</translation>
     </message>
     <message>
         <source>This system lacks libraries the desktop needs. Your agent can still use Tomacco through tomaccoctl.</source>
-        <translation type="unfinished"></translation>
+        <translation>Sellest süsteemist puuduvad teegid, mida töölauarakendus vajab. Sinu agent saab Tomaccot siiski tomaccoctl-i kaudu kasutada.</translation>
     </message>
     <message>
         <source>Install Java (JDK 17 or newer) and Gradle to build Android apps.</source>
-        <translation type="unfinished"></translation>
+        <translation>Androidi rakenduste ehitamiseks paigalda Java (JDK 17 või uuem) ja Gradle.</translation>
     </message>
     <message>
         <source>Install the Android SDK and an emulator. This downloads about 5 GB.</source>
-        <translation type="unfinished"></translation>
+        <translation>Paigalda Android SDK ja emulaator. See laadib alla umbes 5 GB.</translation>
     </message>
     <message>
         <source>Set up iOS builds. This needs an Apple account.</source>
-        <translation type="unfinished"></translation>
+        <translation>Seadista iOS-i ehitused. Selleks on vaja Apple&apos;i kontot.</translation>
     </message>
     <message>
         <source>Optional: the virtual iPhone. It needs your own iPhone restore image, about 100 GiB of disk space and a graphics card with 16 GiB.</source>
-        <translation type="unfinished"></translation>
+        <translation>Valikuline: virtuaalne iPhone. Selleks on vaja sinu enda iPhone&apos;i taastetõmmist, umbes 100 GiB kettaruumi ja 16 GiB mäluga graafikakaarti.</translation>
     </message>
     <message>
         <source>Tomacco lets your coding agent build, run and test Android and iOS apps on this computer.</source>
-        <translation type="unfinished"></translation>
+        <translation>Tomacco laseb sinu koodiagendil selles arvutis Androidi ja iOS-i rakendusi ehitada, käivitada ja testida.</translation>
     </message>
     <message>
         <source>Checking this computer…</source>
-        <translation type="unfinished"></translation>
+        <translation>Selle arvuti kontrollimine…</translation>
     </message>
     <message>
         <source>What is left to set up:</source>
-        <translation type="unfinished"></translation>
+        <translation>Mida on veel seadistada:</translation>
     </message>
     <message>
         <source>Everything for Android and iOS builds is in place.</source>
-        <translation type="unfinished"></translation>
+        <translation>Kõik Androidi ja iOS-i ehituste jaoks vajalik on olemas.</translation>
     </message>
     <message>
         <source>Your agent can do these steps for you. Connect it, then ask it to set Tomacco up.</source>
-        <translation type="unfinished"></translation>
+        <translation>Sinu agent saab need sammud sinu eest teha. Ühenda see ja palu tal Tomacco seadistada.</translation>
     </message>
     <message>
         <source>Connect your coding agent</source>
-        <translation type="unfinished"></translation>
+        <translation>Ühenda oma koodiagent</translation>
     </message>
     <message>
         <source>Skip</source>
-        <translation type="unfinished"></translation>
+        <translation>Jäta vahele</translation>
     </message>
 </context>
 <context>
     <name>ScreenRecorder</name>
     <message>
         <source>Starting the recording…</source>
-        <translation type="unfinished"></translation>
+        <translation>Salvestamise alustamine…</translation>
     </message>
     <message>
         <source>Saving the recording…</source>
-        <translation type="unfinished"></translation>
+        <translation>Salvestise salvestamine…</translation>
     </message>
     <message>
         <source>Recording saved · %1</source>
-        <translation type="unfinished"></translation>
+        <translation>Salvestis salvestatud · %1</translation>
     </message>
     <message>
         <source>The recording did not finish · details under Builds &amp; jobs</source>
-        <translation type="unfinished"></translation>
+        <translation>Salvestamine ei lõppenud · üksikasjad jaotises Ehitused ja tööd</translation>
     </message>
     <message>
         <source>Recording · press again to stop</source>
-        <translation type="unfinished"></translation>
+        <translation>Salvestamine · peatamiseks vajuta uuesti</translation>
     </message>
 </context>
 <context>
     <name>DeviceGrid</name>
     <message>
         <source>Waiting for the screen…</source>
-        <translation type="unfinished"></translation>
+        <translation>Ekraani ootamine…</translation>
     </message>
     <message>
         <source>No device running.</source>
-        <translation type="unfinished"></translation>
+        <translation>Ükski seade ei tööta.</translation>
     </message>
     <message>
         <source>Start an emulator or plug in a phone with USB debugging on; each one shows here with its screen.</source>
-        <translation type="unfinished"></translation>
+        <translation>Käivita emulaator või ühenda telefon, millel on USB-silumine sees; igaüks ilmub siia koos oma ekraaniga.</translation>
     </message>
 </context>
 <context>
     <name>DeviceLogPane</name>
     <message>
         <source>App ID, all apps when empty</source>
-        <translation type="unfinished"></translation>
+        <translation>Rakenduse ID, tühjana kõik rakendused</translation>
     </message>
     <message>
         <source>All</source>
-        <translation type="unfinished"></translation>
+        <translation>Kõik</translation>
     </message>
     <message>
         <source>Info</source>
-        <translation type="unfinished"></translation>
+        <translation>Teave</translation>
     </message>
     <message>
         <source>Warnings</source>
-        <translation type="unfinished"></translation>
+        <translation>Hoiatused</translation>
     </message>
     <message>
         <source>Errors</source>
-        <translation type="unfinished"></translation>
+        <translation>Vead</translation>
     </message>
     <message>
         <source>Find in the log</source>
-        <translation type="unfinished"></translation>
+        <translation>Otsi logist</translation>
     </message>
     <message>
         <source>Resume</source>
-        <translation type="unfinished"></translation>
+        <translation>Jätka</translation>
     </message>
     <message>
         <source>Pause</source>
-        <translation type="unfinished"></translation>
+        <translation>Peata</translation>
     </message>
     <message>
         <source>Clear</source>
-        <translation type="unfinished"></translation>
+        <translation>Tühjenda</translation>
     </message>
     <message>
         <source>Clear the lines shown</source>
-        <translation type="unfinished"></translation>
+        <translation>Tühjenda kuvatud read</translation>
     </message>
     <message>
         <source>Paused</source>
-        <translation type="unfinished"></translation>
+        <translation>Peatatud</translation>
     </message>
     <message>
         <source>No line contains this text.</source>
-        <translation type="unfinished"></translation>
+        <translation>Ükski rida ei sisalda seda teksti.</translation>
     </message>
     <message>
         <source>Waiting for log lines…</source>
-        <translation type="unfinished"></translation>
+        <translation>Logiridade ootamine…</translation>
     </message>
     <message>
         <source>Try again</source>
-        <translation type="unfinished"></translation>
+        <translation>Proovi uuesti</translation>
     </message>
 </context>
 <context>
     <name>ApprovalDialog</name>
     <message>
         <source>Allow this agent action?</source>
-        <translation type="unfinished"></translation>
+        <translation>Kas lubada see agendi toiming?</translation>
     </message>
     <message>
         <source>An agent</source>
-        <translation type="unfinished"></translation>
+        <translation>Agent</translation>
     </message>
     <message>
         <source>%1 asks to run %2 (%3). Tomacco marks it as destructive: it may delete or overwrite data.</source>
-        <translation type="unfinished"></translation>
+        <translation>%1 palub käivitada %2 (%3). Tomacco märgib selle hävitavaks: see võib andmeid kustutada või üle kirjutada.</translation>
     </message>
     <message>
         <source>Its arguments, with secrets masked:</source>
-        <translation type="unfinished"></translation>
+        <translation>Selle argumendid, saladused varjatud:</translation>
     </message>
     <message>
         <source>Arguments</source>
-        <translation type="unfinished"></translation>
+        <translation>Argumendid</translation>
     </message>
     <message>
         <source>Seconds left before it is denied: %1</source>
-        <translation type="unfinished"></translation>
+        <translation>Sekundeid enne keeldumist: %1</translation>
     </message>
     <message>
         <source>Deny</source>
-        <translation type="unfinished"></translation>
+        <translation>Keela</translation>
     </message>
     <message>
         <source>Approve</source>
-        <translation type="unfinished"></translation>
+        <translation>Kinnita</translation>
     </message>
 </context>
 <context>
     <name>DemoWorkspace</name>
     <message>
         <source>Save your changes before opening another scene.</source>
-        <translation type="unfinished"></translation>
+        <translation>Salvesta oma muudatused enne teise stseeni avamist.</translation>
     </message>
     <message>
         <source>App demo</source>
-        <translation type="unfinished"></translation>
+        <translation>Rakenduse demo</translation>
     </message>
     <message>
         <source>Enter a valid number.</source>
-        <translation type="unfinished"></translation>
+        <translation>Sisesta kehtiv arv.</translation>
     </message>
     <message>
         <source>Choose a different time for the new pose.</source>
-        <translation type="unfinished"></translation>
+        <translation>Vali uue poosi jaoks teine aeg.</translation>
     </message>
     <message>
         <source>Save changes before rendering.</source>
-        <translation type="unfinished"></translation>
+        <translation>Salvesta muudatused enne renderdamist.</translation>
     </message>
     <message>
         <source>Render complete.</source>
-        <translation type="unfinished"></translation>
+        <translation>Renderdamine lõpetatud.</translation>
     </message>
     <message>
         <source>Rendering did not complete. Your scene is unchanged.</source>
-        <translation type="unfinished"></translation>
+        <translation>Renderdamine ei lõppenud. Sinu stseen on muutmata.</translation>
     </message>
     <message>
         <source>Your draft has changes. Reload explicitly to replace it.</source>
-        <translation type="unfinished"></translation>
+        <translation>Sinu mustandis on muudatusi. Selle asendamiseks laadi selgesõnaliselt uuesti.</translation>
     </message>
     <message>
         <source>Scene opened.</source>
-        <translation type="unfinished"></translation>
+        <translation>Stseen avatud.</translation>
     </message>
     <message>
         <source>Changes saved.</source>
-        <translation type="unfinished"></translation>
+        <translation>Muudatused salvestatud.</translation>
     </message>
     <message>
         <source>Saved. Your newer edits are still unsaved.</source>
-        <translation type="unfinished"></translation>
+        <translation>Salvestatud. Sinu uuemad muudatused on veel salvestamata.</translation>
     </message>
     <message>
         <source>The render job could not be followed.</source>
-        <translation type="unfinished"></translation>
+        <translation>Renderdustööd ei õnnestunud jälgida.</translation>
     </message>
     <message>
         <source>A recording, made into a demo</source>
-        <translation type="unfinished"></translation>
+        <translation>Salvestis, millest sai demo</translation>
     </message>
     <message>
         <source>Choose a local video, place it in a device and set its motion. Your source stays unchanged.</source>
-        <translation type="unfinished"></translation>
+        <translation>Vali kohalik video, aseta see seadmesse ja määra selle liikumine. Sinu lähtefail jääb muutmata.</translation>
     </message>
     <message>
         <source>Source video</source>
-        <translation type="unfinished"></translation>
+        <translation>Lähtevideo</translation>
     </message>
     <message>
         <source>Choose video</source>
-        <translation type="unfinished"></translation>
+        <translation>Vali video</translation>
     </message>
     <message>
         <source>Inspect video</source>
-        <translation type="unfinished"></translation>
+        <translation>Uuri videot</translation>
     </message>
     <message>
         <source>Scene file (.json)</source>
-        <translation type="unfinished"></translation>
+        <translation>Stseenifail (.json)</translation>
     </message>
     <message>
         <source>Choose scene path</source>
-        <translation type="unfinished"></translation>
+        <translation>Vali stseeni tee</translation>
     </message>
     <message>
         <source>Scene title</source>
-        <translation type="unfinished"></translation>
+        <translation>Stseeni pealkiri</translation>
     </message>
     <message>
         <source>Create scene</source>
-        <translation type="unfinished"></translation>
+        <translation>Loo stseen</translation>
     </message>
     <message>
         <source>Open scene</source>
-        <translation type="unfinished"></translation>
+        <translation>Ava stseen</translation>
     </message>
     <message>
         <source>The video renderer is not ready. Check the rendering tools under Agents &amp; tools.</source>
-        <translation type="unfinished"></translation>
+        <translation>Videorenderdaja pole valmis. Kontrolli renderdamistööriistu jaotises Agendid ja tööriistad.</translation>
     </message>
     <message>
         <source>Scene</source>
-        <translation type="unfinished"></translation>
+        <translation>Stseen</translation>
     </message>
     <message>
         <source>Keep the original recording or crop its time. Canvas size changes the exported video.</source>
-        <translation type="unfinished"></translation>
+        <translation>Jäta algne salvestis alles või kärbi selle aega. Lõuendi suurus muudab eksporditud videot.</translation>
     </message>
     <message>
         <source>Title</source>
-        <translation type="unfinished"></translation>
+        <translation>Pealkiri</translation>
     </message>
     <message>
         <source>Duration (seconds)</source>
-        <translation type="unfinished"></translation>
+        <translation>Kestus (sekundites)</translation>
     </message>
     <message>
         <source>Canvas width</source>
-        <translation type="unfinished"></translation>
+        <translation>Lõuendi laius</translation>
     </message>
     <message>
         <source>Canvas height</source>
-        <translation type="unfinished"></translation>
+        <translation>Lõuendi kõrgus</translation>
     </message>
     <message>
         <source>Frames per second</source>
-        <translation type="unfinished"></translation>
+        <translation>Kaadrit sekundis</translation>
     </message>
     <message>
         <source>Clip start (seconds)</source>
-        <translation type="unfinished"></translation>
+        <translation>Kläipi algus (sekundites)</translation>
     </message>
     <message>
         <source>Background color</source>
-        <translation type="unfinished"></translation>
+        <translation>Taustavärv</translation>
     </message>
     <message>
         <source>Second background color</source>
-        <translation type="unfinished"></translation>
+        <translation>Teine taustavärv</translation>
     </message>
     <message>
         <source>Background</source>
-        <translation type="unfinished"></translation>
+        <translation>Taust</translation>
     </message>
     <message>
         <source>Device finish</source>
-        <translation type="unfinished"></translation>
+        <translation>Seadme viimistlus</translation>
     </message>
     <message>
         <source>Device model</source>
-        <translation type="unfinished"></translation>
+        <translation>Seadme mudel</translation>
     </message>
     <message>
         <source>Shadow opacity</source>
-        <translation type="unfinished"></translation>
+        <translation>Varju läbipaistmatus</translation>
     </message>
     <message>
         <source>Shadow</source>
-        <translation type="unfinished"></translation>
+        <translation>Vari</translation>
     </message>
     <message>
         <source>Motion</source>
-        <translation type="unfinished"></translation>
+        <translation>Liikumine</translation>
     </message>
     <message>
         <source>Each pose sets the device at a moment in the video. The motion runs between them.</source>
-        <translation type="unfinished"></translation>
+        <translation>Iga poos asetab seadme video kindlasse hetke. Liikumine toimub nende vahel.</translation>
     </message>
     <message>
         <source>Pose %1 · %2 s</source>
-        <translation type="unfinished"></translation>
+        <translation>Poos %1 · %2 s</translation>
     </message>
     <message>
         <source>Add pose</source>
-        <translation type="unfinished"></translation>
+        <translation>Lisa poos</translation>
     </message>
     <message>
         <source>Remove pose</source>
-        <translation type="unfinished"></translation>
+        <translation>Eemalda poos</translation>
     </message>
     <message>
         <source>Time (seconds)</source>
-        <translation type="unfinished"></translation>
+        <translation>Aeg (sekundites)</translation>
     </message>
     <message>
         <source>Turn · yaw (degrees)</source>
-        <translation type="unfinished"></translation>
+        <translation>Pööre · yaw (kraadid)</translation>
     </message>
     <message>
         <source>Tilt · pitch (degrees)</source>
-        <translation type="unfinished"></translation>
+        <translation>Kalle · pitch (kraadid)</translation>
     </message>
     <message>
         <source>Spin · roll (degrees)</source>
-        <translation type="unfinished"></translation>
+        <translation>Keere · roll (kraadid)</translation>
     </message>
     <message>
         <source>Scale</source>
-        <translation type="unfinished"></translation>
+        <translation>Skaala</translation>
     </message>
     <message>
         <source>Horizontal position (0–1)</source>
-        <translation type="unfinished"></translation>
+        <translation>Horisontaalne asukoht (0–1)</translation>
     </message>
     <message>
         <source>Vertical position (0–1)</source>
-        <translation type="unfinished"></translation>
+        <translation>Vertikaalne asukoht (0–1)</translation>
     </message>
     <message>
         <source>Motion curve</source>
-        <translation type="unfinished"></translation>
+        <translation>Liikumiskover</translation>
     </message>
     <message>
         <source>Saving…</source>
-        <translation type="unfinished"></translation>
+        <translation>Salvestamine…</translation>
     </message>
     <message>
         <source>Save changes</source>
-        <translation type="unfinished"></translation>
+        <translation>Salvesta muudatused</translation>
     </message>
     <message>
         <source>Reload saved scene</source>
-        <translation type="unfinished"></translation>
+        <translation>Laadi salvestatud stseen uuesti</translation>
     </message>
     <message>
         <source>Unsaved changes · save before rendering.</source>
-        <translation type="unfinished"></translation>
+        <translation>Salvestamata muudatused · salvesta enne renderdamist.</translation>
     </message>
     <message>
         <source>Preview &amp; export</source>
-        <translation type="unfinished"></translation>
+        <translation>Eelvaade ja eksport</translation>
     </message>
     <message>
         <source>Preview one frame, then export a silent MP4. A poster and a render record are saved beside it.</source>
-        <translation type="unfinished"></translation>
+        <translation>Vaata ühe kaadri eelvaadet ja ekspordi seejärel helita MP4. Selle kõrvale salvestatakse plakat ja renderduskirje.</translation>
     </message>
     <message>
         <source>Your rendered preview appears here.</source>
-        <translation type="unfinished"></translation>
+        <translation>Sinu renderdatud eelvaade ilmub siia.</translation>
     </message>
     <message>
         <source>This image shows the last completed render.</source>
-        <translation type="unfinished"></translation>
+        <translation>See pilt näitab viimast lõpetatud renderdust.</translation>
     </message>
     <message>
         <source>Preview time (seconds)</source>
-        <translation type="unfinished"></translation>
+        <translation>Eelvaate aeg (sekundites)</translation>
     </message>
     <message>
         <source>Render preview</source>
-        <translation type="unfinished"></translation>
+        <translation>Renderda eelvaade</translation>
     </message>
     <message>
         <source>Export MP4</source>
-        <translation type="unfinished"></translation>
+        <translation>Ekspordi MP4</translation>
     </message>
     <message>
         <source>Show exported video</source>
-        <translation type="unfinished"></translation>
+        <translation>Näita eksporditud videot</translation>
     </message>
     <message>
         <source>Waiting to render…</source>
-        <translation type="unfinished"></translation>
+        <translation>Renderdamise ootamine…</translation>
     </message>
     <message>
         <source>Rendering…</source>
-        <translation type="unfinished"></translation>
+        <translation>Renderdamine…</translation>
     </message>
     <message>
         <source>Render failed.</source>
-        <translation type="unfinished"></translation>
+        <translation>Renderdamine ebaõnnestus.</translation>
     </message>
     <message>
         <source>Render cancelled.</source>
-        <translation type="unfinished"></translation>
+        <translation>Renderdamine tühistati.</translation>
     </message>
     <message>
         <source>Render timed out.</source>
-        <translation type="unfinished"></translation>
+        <translation>Renderdamine aegus.</translation>
     </message>
     <message>
         <source>Videos (*.mp4 *.mov *.mkv *.webm)</source>
-        <translation type="unfinished"></translation>
+        <translation>Videod (*.mp4 *.mov *.mkv *.webm)</translation>
     </message>
     <message>
         <source>Scenes (*.json)</source>
-        <translation type="unfinished"></translation>
+        <translation>Stseenid (*.json)</translation>
     </message>
     <message>
         <source>PNG image (*.png)</source>
-        <translation type="unfinished"></translation>
+        <translation>PNG-pilt (*.png)</translation>
     </message>
     <message>
         <source>MP4 video (*.mp4)</source>
-        <translation type="unfinished"></translation>
+        <translation>MP4-video (*.mp4)</translation>
     </message>
     <message>
         <source>Discard unsaved changes?</source>
-        <translation type="unfinished"></translation>
+        <translation>Kas loobuda salvestamata muudatustest?</translation>
     </message>
     <message>
         <source>Reload the saved scene and replace your draft. The video source stays unchanged.</source>
-        <translation type="unfinished"></translation>
+        <translation>Laadi salvestatud stseen uuesti ja asenda oma mustand. Videoallikas jääb muutmata.</translation>
     </message>
     <message>
         <source>Keep editing</source>
-        <translation type="unfinished"></translation>
+        <translation>Jätka muutmist</translation>
     </message>
     <message>
         <source>Discard and reload</source>
-        <translation type="unfinished"></translation>
+        <translation>Loobu ja laadi uuesti</translation>
     </message>
 </context>
 <context>
     <name>EnvironmentPanel</name>
     <message>
         <source>Dark mode</source>
-        <translation type="unfinished"></translation>
+        <translation>Tume režiim</translation>
     </message>
     <message>
         <source>Font size</source>
-        <translation type="unfinished"></translation>
+        <translation>Fondi suurus</translation>
     </message>
     <message>
         <source>Animations</source>
-        <translation type="unfinished"></translation>
+        <translation>Animatsioonid</translation>
     </message>
     <message>
         <source>Airplane mode</source>
-        <translation type="unfinished"></translation>
+        <translation>Lennukirežiim</translation>
     </message>
     <message>
         <source>App language</source>
-        <translation type="unfinished"></translation>
+        <translation>Rakenduse keel</translation>
     </message>
     <message>
         <source>GPS location</source>
-        <translation type="unfinished"></translation>
+        <translation>GPS-asukoht</translation>
     </message>
     <message>
         <source>TalkBack</source>
-        <translation type="unfinished"></translation>
+        <translation>TalkBack</translation>
     </message>
     <message>
         <source>On</source>
-        <translation type="unfinished"></translation>
+        <translation>Sees</translation>
     </message>
     <message>
         <source>Off</source>
-        <translation type="unfinished"></translation>
+        <translation>Väljas</translation>
     </message>
     <message>
         <source>Automatic</source>
-        <translation type="unfinished"></translation>
+        <translation>Automaatne</translation>
     </message>
     <message>
         <source>Device language</source>
-        <translation type="unfinished"></translation>
+        <translation>Seadme keel</translation>
     </message>
     <message>
         <source>Will change</source>
-        <translation type="unfinished"></translation>
+        <translation>Muutub</translation>
     </message>
     <message>
         <source>Already set</source>
-        <translation type="unfinished"></translation>
+        <translation>Juba määratud</translation>
     </message>
     <message>
         <source>Not supported here</source>
-        <translation type="unfinished"></translation>
+        <translation>Siin ei toetata</translation>
     </message>
     <message>
         <source>Applied and read back</source>
-        <translation type="unfinished"></translation>
+        <translation>Rakendatud ja tagasi loetud</translation>
     </message>
     <message>
         <source>Applied, not read back</source>
-        <translation type="unfinished"></translation>
+        <translation>Rakendatud, tagasi lugemata</translation>
     </message>
     <message>
         <source>Android did not apply it</source>
-        <translation type="unfinished"></translation>
+        <translation>Android ei rakendanud seda</translation>
     </message>
     <message>
         <source>Restored</source>
-        <translation type="unfinished"></translation>
+        <translation>Taastatud</translation>
     </message>
     <message>
         <source>Cannot be restored</source>
-        <translation type="unfinished"></translation>
+        <translation>Ei saa taastada</translation>
     </message>
     <message>
         <source>Not restored</source>
-        <translation type="unfinished"></translation>
+        <translation>Taastamata</translation>
     </message>
     <message>
         <source>Preset saved.</source>
-        <translation type="unfinished"></translation>
+        <translation>Eelseadistus salvestatud.</translation>
     </message>
     <message>
         <source>Preset updated to revision %1.</source>
-        <translation type="unfinished"></translation>
+        <translation>Eelseadistus uuendatud redaktsioonini %1.</translation>
     </message>
     <message>
         <source>Preset deleted.</source>
-        <translation type="unfinished"></translation>
+        <translation>Eelseadistus kustutatud.</translation>
     </message>
     <message>
         <source>Preset exported to %1.</source>
-        <translation type="unfinished"></translation>
+        <translation>Eelseadistus eksporditud asukohta %1.</translation>
     </message>
     <message>
         <source>Plan ready. This device does not support: %1.</source>
-        <translation type="unfinished"></translation>
+        <translation>Plaan valmis. See seade ei toeta: %1.</translation>
     </message>
     <message>
         <source>Plan ready. Nothing has changed on the device yet.</source>
-        <translation type="unfinished"></translation>
+        <translation>Plaan valmis. Seadmes pole veel midagi muutunud.</translation>
     </message>
     <message>
         <source>Applied and read back. You can restore the previous settings.</source>
-        <translation type="unfinished"></translation>
+        <translation>Rakendatud ja tagasi loetud. Saad eelmised seaded taastada.</translation>
     </message>
     <message>
         <source>Previous settings restored.</source>
-        <translation type="unfinished"></translation>
+        <translation>Eelmised seaded taastatud.</translation>
     </message>
     <message>
         <source>QA environments</source>
-        <translation type="unfinished"></translation>
+        <translation>QA-keskkonnad</translation>
     </message>
     <message>
         <source>Save a combination of theme, font size, animations, airplane mode, app language, GPS and TalkBack under a name, then apply it to one device you choose.</source>
-        <translation type="unfinished"></translation>
+        <translation>Salvesta teema, fondi suuruse, animatsioonide, lennukirežiimi, rakenduse keele, GPS-i ja TalkBacki kombinatsioon nime all ning rakenda see seejärel sinu valitud seadmele.</translation>
     </message>
     <message>
         <source>New preset</source>
-        <translation type="unfinished"></translation>
+        <translation>Uus eelseadistus</translation>
     </message>
     <message>
         <source>ID · e.g. dark-large-text</source>
-        <translation type="unfinished"></translation>
+        <translation>ID · nt dark-large-text</translation>
     </message>
     <message>
         <source>Name</source>
-        <translation type="unfinished"></translation>
+        <translation>Nimi</translation>
     </message>
     <message>
         <source>Leave as it is</source>
-        <translation type="unfinished"></translation>
+        <translation>Jäta nii, nagu on</translation>
     </message>
     <message>
         <source>Set</source>
-        <translation type="unfinished"></translation>
+        <translation>Määra</translation>
     </message>
     <message>
         <source>Latitude, longitude</source>
-        <translation type="unfinished"></translation>
+        <translation>Laiuskraad, pikkuskraad</translation>
     </message>
     <message>
         <source>0.5 to 2</source>
-        <translation type="unfinished"></translation>
+        <translation>0,5 kuni 2</translation>
     </message>
     <message>
         <source>Language tags · e.g. de-DE</source>
-        <translation type="unfinished"></translation>
+        <translation>Keelemärgendid · nt de-DE</translation>
     </message>
     <message>
         <source>GPS works on emulators only and cannot be read back or restored. App language needs Android 13; airplane mode needs Android 11.</source>
-        <translation type="unfinished"></translation>
+        <translation>GPS töötab ainult emulaatorites ning seda ei saa tagasi lugeda ega taastada. Rakenduse keel vajab Android 13; lennukirežiim vajab Android 11.</translation>
     </message>
     <message>
         <source>Save preset</source>
-        <translation type="unfinished"></translation>
+        <translation>Salvesta eelseadistus</translation>
     </message>
     <message>
         <source>Import…</source>
