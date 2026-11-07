@@ -5,127 +5,127 @@
     <name>ActivityPanel</name>
     <message>
         <source>%1 ago</source>
-        <translation type="unfinished"></translation>
+        <translation>%1 lalu</translation>
     </message>
     <message>
         <source>Running</source>
-        <translation type="unfinished"></translation>
+        <translation>Sedang berjalan</translation>
     </message>
     <message>
         <source>Stop this job</source>
-        <translation type="unfinished"></translation>
+        <translation>Hentikan tugas ini</translation>
     </message>
     <message>
         <source>Recent</source>
-        <translation type="unfinished"></translation>
+        <translation>Terkini</translation>
     </message>
     <message>
         <source>Connect your agent.</source>
-        <translation type="unfinished"></translation>
+        <translation>Sambungkan ejen anda.</translation>
     </message>
     <message>
         <source>Claude Code, Codex or any MCP client. It can then do everything this window can.</source>
-        <translation type="unfinished"></translation>
+        <translation>Claude Code, Codex atau mana-mana klien MCP. Ejen itu kemudian boleh melakukan semua yang boleh dilakukan oleh tetingkap ini.</translation>
     </message>
     <message>
         <source>Copied</source>
-        <translation type="unfinished"></translation>
+        <translation>Disalin</translation>
     </message>
     <message>
         <source>3  Ask it to run your app.</source>
-        <translation type="unfinished"></translation>
+        <translation>3  Minta ejen menjalankan aplikasi anda.</translation>
     </message>
     <message>
         <source>Nothing running. Builds and agent jobs show up here as they start.</source>
-        <translation type="unfinished"></translation>
+        <translation>Tiada apa-apa yang berjalan. Binaan dan tugas ejen dipaparkan di sini sebaik sahaja ia bermula.</translation>
     </message>
     <message>
         <source>%1 ms</source>
-        <translation type="unfinished"></translation>
+        <translation>%1 ms</translation>
     </message>
     <message>
         <source>%1 s</source>
-        <translation type="unfinished"></translation>
+        <translation>%1 s</translation>
     </message>
     <message>
         <source>Agent activity</source>
-        <translation type="unfinished"></translation>
+        <translation>Aktiviti ejen</translation>
     </message>
     <message>
         <source>All</source>
-        <translation type="unfinished"></translation>
+        <translation>Semua</translation>
     </message>
     <message>
         <source>Failed</source>
-        <translation type="unfinished"></translation>
+        <translation>Gagal</translation>
     </message>
     <message>
         <source>Find an operation</source>
-        <translation type="unfinished"></translation>
+        <translation>Cari operasi</translation>
     </message>
     <message>
         <source>No call failed.</source>
-        <translation type="unfinished"></translation>
+        <translation>Tiada panggilan yang gagal.</translation>
     </message>
     <message>
         <source>No call matches.</source>
-        <translation type="unfinished"></translation>
+        <translation>Tiada panggilan yang sepadan.</translation>
     </message>
     <message>
         <source>failed</source>
-        <translation type="unfinished"></translation>
+        <translation>gagal</translation>
     </message>
     <message>
         <source>running</source>
-        <translation type="unfinished"></translation>
+        <translation>sedang berjalan</translation>
     </message>
     <message>
         <source>done</source>
-        <translation type="unfinished"></translation>
+        <translation>selesai</translation>
     </message>
     <message>
         <source>An agent&apos;s call failed: %1</source>
-        <translation type="unfinished"></translation>
+        <translation>Panggilan ejen gagal: %1</translation>
     </message>
     <message>
         <source>An agent started a job: %1</source>
-        <translation type="unfinished"></translation>
+        <translation>Ejen memulakan tugas: %1</translation>
     </message>
     <message>
         <source>Notifications</source>
-        <translation type="unfinished"></translation>
+        <translation>Pemberitahuan</translation>
     </message>
     <message>
         <source>Fewer</source>
-        <translation type="unfinished"></translation>
+        <translation>Kurangkan</translation>
     </message>
     <message>
         <source>All %1</source>
-        <translation type="unfinished"></translation>
+        <translation>Semua %1</translation>
     </message>
     <message>
         <source>Clear</source>
-        <translation type="unfinished"></translation>
+        <translation>Kosongkan</translation>
     </message>
     <message>
         <source>Clear the notifications</source>
-        <translation type="unfinished"></translation>
+        <translation>Kosongkan pemberitahuan</translation>
     </message>
     <message>
         <source>1  Pick your agent.</source>
-        <translation type="unfinished"></translation>
+        <translation>1  Pilih ejen anda.</translation>
     </message>
     <message>
         <source>2  Connect it, or copy its own setting.</source>
-        <translation type="unfinished"></translation>
+        <translation>2  Sambungkannya, atau salin tetapannya sendiri.</translation>
     </message>
     <message>
         <source>Connect your agent</source>
-        <translation type="unfinished"></translation>
+        <translation>Sambungkan ejen anda</translation>
     </message>
     <message>
         <source>Copy entry for another MCP client</source>
-        <translation type="unfinished"></translation>
+        <translation>Salin entri untuk klien MCP lain</translation>
     </message>
 </context>
 <context>
@@ -135,2273 +135,2276 @@
 %2 dpi
 
 The model determines the display and frame. Android comes from the chosen system image; vendor interfaces such as One UI are not included.</source>
-        <translation type="unfinished"></translation>
+        <translation>%1 piksel
+%2 dpi
+
+Model menentukan paparan dan bingkai. Android datang daripada imej sistem yang dipilih; antara muka pengeluar seperti One UI tidak disertakan.</translation>
     </message>
     <message>
         <source>Add Android device</source>
-        <translation type="unfinished"></translation>
+        <translation>Tambah peranti Android</translation>
     </message>
     <message>
         <source>Add device</source>
-        <translation type="unfinished"></translation>
+        <translation>Tambah peranti</translation>
     </message>
     <message>
         <source>Automatic</source>
-        <translation type="unfinished"></translation>
+        <translation>Automatik</translation>
     </message>
     <message>
         <source>CPU cores</source>
-        <translation type="unfinished"></translation>
+        <translation>Teras CPU</translation>
     </message>
     <message>
         <source>Cancel</source>
-        <translation type="unfinished"></translation>
+        <translation>Batal</translation>
     </message>
     <message>
         <source>Close</source>
-        <translation type="unfinished"></translation>
+        <translation>Tutup</translation>
     </message>
     <message>
         <source>Computer GPU</source>
-        <translation type="unfinished"></translation>
+        <translation>GPU komputer</translation>
     </message>
     <message>
         <source>Connected</source>
-        <translation type="unfinished"></translation>
+        <translation>Disambungkan</translation>
     </message>
     <message>
         <source>Create</source>
-        <translation type="unfinished"></translation>
+        <translation>Cipta</translation>
     </message>
     <message>
         <source>Creating…</source>
-        <translation type="unfinished"></translation>
+        <translation>Mencipta…</translation>
     </message>
     <message>
         <source>Device created · open it with Start</source>
-        <translation type="unfinished"></translation>
+        <translation>Peranti dicipta · buka dengan Mulakan</translation>
     </message>
     <message>
         <source>Device name</source>
-        <translation type="unfinished"></translation>
+        <translation>Nama peranti</translation>
     </message>
     <message>
         <source>Device profile (*.json)</source>
-        <translation type="unfinished"></translation>
+        <translation>Profil peranti (*.json)</translation>
     </message>
     <message>
         <source>Disabled · OpenGL ES only</source>
-        <translation type="unfinished"></translation>
+        <translation>Dilumpuhkan · OpenGL ES sahaja</translation>
     </message>
     <message>
         <source>Emulator ended · %1</source>
-        <translation type="unfinished"></translation>
+        <translation>Emulator tamat · %1</translation>
     </message>
     <message>
         <source>Emulator performance</source>
-        <translation type="unfinished"></translation>
+        <translation>Prestasi emulator</translation>
     </message>
     <message>
         <source>Emulator ready</source>
-        <translation type="unfinished"></translation>
+        <translation>Emulator sedia</translation>
     </message>
     <message>
         <source>Emulator starting…</source>
-        <translation type="unfinished"></translation>
+        <translation>Emulator sedang dimulakan…</translation>
     </message>
     <message>
         <source>Enabled</source>
-        <translation type="unfinished"></translation>
+        <translation>Didayakan</translation>
     </message>
     <message>
         <source>External profile</source>
-        <translation type="unfinished"></translation>
+        <translation>Profil luaran</translation>
     </message>
     <message>
         <source>Graphics</source>
-        <translation type="unfinished"></translation>
+        <translation>Grafik</translation>
     </message>
     <message>
         <source>Graphics: %1</source>
-        <translation type="unfinished"></translation>
+        <translation>Grafik: %1</translation>
     </message>
     <message>
         <source>Import Android model</source>
-        <translation type="unfinished"></translation>
+        <translation>Import model Android</translation>
     </message>
     <message>
         <source>Import custom model</source>
-        <translation type="unfinished"></translation>
+        <translation>Import model tersuai</translation>
     </message>
     <message>
         <source>Imported · contains no Android model</source>
-        <translation type="unfinished"></translation>
+        <translation>Diimport · tidak mengandungi model Android</translation>
     </message>
     <message>
         <source>Memory (MB)</source>
-        <translation type="unfinished"></translation>
+        <translation>Memori (MB)</translation>
     </message>
     <message>
         <source>Model</source>
-        <translation type="unfinished"></translation>
+        <translation>Model</translation>
     </message>
     <message>
         <source>Model imported</source>
-        <translation type="unfinished"></translation>
+        <translation>Model diimport</translation>
     </message>
     <message>
         <source>No system image installed yet</source>
-        <translation type="unfinished"></translation>
+        <translation>Belum ada imej sistem dipasang</translation>
     </message>
     <message>
         <source>Off</source>
-        <translation type="unfinished"></translation>
+        <translation>Mati</translation>
     </message>
     <message>
         <source>Open</source>
-        <translation type="unfinished"></translation>
+        <translation>Buka</translation>
     </message>
     <message>
         <source>Open job</source>
-        <translation type="unfinished"></translation>
+        <translation>Buka tugas</translation>
     </message>
     <message>
         <source>Performance settings saved · used on the next start</source>
-        <translation type="unfinished"></translation>
+        <translation>Tetapan prestasi disimpan · digunakan pada permulaan seterusnya</translation>
     </message>
     <message>
         <source>Save</source>
-        <translation type="unfinished"></translation>
+        <translation>Simpan</translation>
     </message>
     <message>
         <source>Saving…</source>
-        <translation type="unfinished"></translation>
+        <translation>Menyimpan…</translation>
     </message>
     <message>
         <source>Set graphics, memory and CPU</source>
-        <translation type="unfinished"></translation>
+        <translation>Tetapkan grafik, memori dan CPU</translation>
     </message>
     <message>
         <source>Setting up device…</source>
-        <translation type="unfinished"></translation>
+        <translation>Menyediakan peranti…</translation>
     </message>
     <message>
         <source>Setup failed · details in the job</source>
-        <translation type="unfinished"></translation>
+        <translation>Persediaan gagal · butiran dalam tugas</translation>
     </message>
     <message>
         <source>Software · compatible renderer</source>
-        <translation type="unfinished"></translation>
+        <translation>Perisian · pemapar serasi</translation>
     </message>
     <message>
         <source>Start</source>
-        <translation type="unfinished"></translation>
+        <translation>Mulakan</translation>
     </message>
     <message>
         <source>Starting…</source>
-        <translation type="unfinished"></translation>
+        <translation>Memulakan…</translation>
     </message>
     <message>
         <source>The computer GPU can speed up animations considerably. If graphics glitch, choose a software renderer. Changes require the emulator to be off; app data is kept.</source>
-        <translation type="unfinished"></translation>
+        <translation>GPU komputer boleh mempercepat animasi dengan ketara. Jika grafik bermasalah, pilih pemapar perisian. Perubahan memerlukan emulator dimatikan; data aplikasi dikekalkan.</translation>
     </message>
     <message>
         <source>Turn off emulator</source>
-        <translation type="unfinished"></translation>
+        <translation>Matikan emulator</translation>
     </message>
     <message>
         <source>Vulkan compatibility</source>
-        <translation type="unfinished"></translation>
+        <translation>Keserasian Vulkan</translation>
     </message>
     <message>
         <source>Each emulator keeps its own model and app data.</source>
-        <translation type="unfinished"></translation>
+        <translation>Setiap emulator menyimpan model dan data aplikasinya sendiri.</translation>
     </message>
     <message>
         <source>No phone yet.</source>
-        <translation type="unfinished"></translation>
+        <translation>Belum ada telefon.</translation>
     </message>
     <message>
         <source>Add an emulator, or plug in a phone with USB debugging on.</source>
-        <translation type="unfinished"></translation>
+        <translation>Tambah emulator, atau pasangkan telefon dengan penyahpepijatan USB dihidupkan.</translation>
     </message>
     <message>
         <source>Unpin</source>
-        <translation type="unfinished"></translation>
+        <translation>Nyahsemat</translation>
     </message>
     <message>
         <source>Pin</source>
-        <translation type="unfinished"></translation>
+        <translation>Semat</translation>
     </message>
     <message>
         <source>Unpin this device</source>
-        <translation type="unfinished"></translation>
+        <translation>Nyahsemat peranti ini</translation>
     </message>
     <message>
         <source>Pin this device to the top</source>
-        <translation type="unfinished"></translation>
+        <translation>Semat peranti ini di bahagian atas</translation>
     </message>
     <message>
         <source>Rename</source>
-        <translation type="unfinished"></translation>
+        <translation>Namakan semula</translation>
     </message>
     <message>
         <source>Give this device a nickname</source>
-        <translation type="unfinished"></translation>
+        <translation>Beri peranti ini nama panggilan</translation>
     </message>
     <message>
         <source>Device nickname</source>
-        <translation type="unfinished"></translation>
+        <translation>Nama panggilan peranti</translation>
     </message>
     <message>
         <source>Shown instead of %1 here, in device lists and in the Omarchy panel.</source>
-        <translation type="unfinished"></translation>
+        <translation>Dipaparkan menggantikan %1 di sini, dalam senarai peranti dan dalam panel Omarchy.</translation>
     </message>
     <message>
         <source>Nickname</source>
-        <translation type="unfinished"></translation>
+        <translation>Nama panggilan</translation>
     </message>
     <message>
         <source>Remove nickname</source>
-        <translation type="unfinished"></translation>
+        <translation>Buang nama panggilan</translation>
     </message>
     <message>
         <source>Paired and connected · %1</source>
-        <translation type="unfinished"></translation>
+        <translation>Digandingkan dan disambungkan · %1</translation>
     </message>
     <message>
         <source>Paired. Enter the IP address and port shown under Wireless debugging to connect.</source>
-        <translation type="unfinished"></translation>
+        <translation>Digandingkan. Masukkan alamat IP dan port yang ditunjukkan di bawah Penyahpepijatan wayarles untuk menyambung.</translation>
     </message>
     <message>
         <source>adb could not pair</source>
-        <translation type="unfinished"></translation>
+        <translation>adb tidak dapat menggandingkan</translation>
     </message>
     <message>
         <source>adb could not connect</source>
-        <translation type="unfinished"></translation>
+        <translation>adb tidak dapat menyambung</translation>
     </message>
     <message>
         <source>Pair over Wi-Fi</source>
-        <translation type="unfinished"></translation>
+        <translation>Gandingkan melalui Wi-Fi</translation>
     </message>
     <message>
         <source>QR code</source>
-        <translation type="unfinished"></translation>
+        <translation>Kod QR</translation>
     </message>
     <message>
         <source>Pairing code</source>
-        <translation type="unfinished"></translation>
+        <translation>Kod gandingan</translation>
     </message>
     <message>
         <source>On the phone, open Developer options › Wireless debugging › Pair device with QR code and scan this code. The phone and this computer must be on the same network; Android 11 or newer.</source>
-        <translation type="unfinished"></translation>
+        <translation>Pada telefon, buka Pilihan pembangun › Penyahpepijatan wayarles › Gandingkan peranti dengan kod QR dan imbas kod ini. Telefon dan komputer ini mesti berada dalam rangkaian yang sama; Android 11 atau lebih baharu.</translation>
     </message>
     <message>
         <source>On the phone, open Developer options › Wireless debugging › Pair device with pairing code, then enter the address and code it shows.</source>
-        <translation type="unfinished"></translation>
+        <translation>Pada telefon, buka Pilihan pembangun › Penyahpepijatan wayarles › Gandingkan peranti dengan kod gandingan, kemudian masukkan alamat dan kod yang dipaparkannya.</translation>
     </message>
     <message>
         <source>QR code for wireless debugging</source>
-        <translation type="unfinished"></translation>
+        <translation>Kod QR untuk penyahpepijatan wayarles</translation>
     </message>
     <message>
         <source>Creating a code…</source>
-        <translation type="unfinished"></translation>
+        <translation>Mencipta kod…</translation>
     </message>
     <message>
         <source>Pairing address</source>
-        <translation type="unfinished"></translation>
+        <translation>Alamat gandingan</translation>
     </message>
     <message>
         <source>Waiting for the phone…</source>
-        <translation type="unfinished"></translation>
+        <translation>Menunggu telefon…</translation>
     </message>
     <message>
         <source>Pairing…</source>
-        <translation type="unfinished"></translation>
+        <translation>Menggandingkan…</translation>
     </message>
     <message>
         <source>Connecting…</source>
-        <translation type="unfinished"></translation>
+        <translation>Menyambung…</translation>
     </message>
     <message>
         <source>New code</source>
-        <translation type="unfinished"></translation>
+        <translation>Kod baharu</translation>
     </message>
     <message>
         <source>Pair</source>
-        <translation type="unfinished"></translation>
+        <translation>Gandingkan</translation>
     </message>
     <message>
         <source>List</source>
-        <translation type="unfinished"></translation>
+        <translation>Senarai</translation>
     </message>
     <message>
         <source>All screens</source>
-        <translation type="unfinished"></translation>
+        <translation>Semua skrin</translation>
     </message>
     <message>
         <source>Show the device list</source>
-        <translation type="unfinished"></translation>
+        <translation>Tunjukkan senarai peranti</translation>
     </message>
     <message>
         <source>Show every running device&apos;s screen side by side</source>
-        <translation type="unfinished"></translation>
+        <translation>Tunjukkan skrin setiap peranti yang berjalan secara bersebelahan</translation>
     </message>
     <message>
         <source>Accept Google&apos;s Android SDK licence for this download</source>
-        <translation type="unfinished"></translation>
+        <translation>Terima lesen SDK Android Google untuk muat turun ini</translation>
     </message>
     <message>
         <source>Android system image</source>
-        <translation type="unfinished"></translation>
+        <translation>Imej sistem Android</translation>
     </message>
     <message>
         <source>App data removed · %1 freed · the next start boots like a new device</source>
-        <translation type="unfinished"></translation>
+        <translation>Data aplikasi dibuang · %1 dikosongkan · permulaan seterusnya but seperti peranti baharu</translation>
     </message>
     <message>
         <source>Cannot start: %1</source>
-        <translation type="unfinished"></translation>
+        <translation>Tidak dapat dimulakan: %1</translation>
     </message>
     <message>
         <source>Checking…</source>
-        <translation type="unfinished"></translation>
+        <translation>Menyemak…</translation>
     </message>
     <message>
         <source>Copying device…</source>
-        <translation type="unfinished"></translation>
+        <translation>Menyalin peranti…</translation>
     </message>
     <message>
         <source>Copying…</source>
-        <translation type="unfinished"></translation>
+        <translation>Menyalin…</translation>
     </message>
     <message>
         <source>Disk: about %1 for the emulator · %2 free</source>
-        <translation type="unfinished"></translation>
+        <translation>Cakera: kira-kira %1 untuk emulator · %2 kosong</translation>
     </message>
     <message>
         <source>Download about %1 (estimate) · needs Google&apos;s SDK licence: %2</source>
-        <translation type="unfinished"></translation>
+        <translation>Muat turun kira-kira %1 (anggaran) · memerlukan lesen SDK Google: %2</translation>
     </message>
     <message>
         <source>Download and create</source>
-        <translation type="unfinished"></translation>
+        <translation>Muat turun dan cipta</translation>
     </message>
     <message>
         <source>Duplicate</source>
-        <translation type="unfinished"></translation>
+        <translation>Pendua</translation>
     </message>
     <message>
         <source>Duplicate copies the emulator with its apps and data under the new name, as a job you can cancel. Rename is a real rename of the emulator through the Android SDK; the nickname moves along. A nickname alone is set with the pencil button.</source>
-        <translation type="unfinished"></translation>
+        <translation>Pendua menyalin emulator bersama aplikasi dan datanya di bawah nama baharu, sebagai tugas yang boleh anda batalkan. Namakan semula ialah penamaan semula sebenar emulator melalui SDK Android; nama panggilan turut berpindah. Nama panggilan sahaja ditetapkan dengan butang pensel.</translation>
     </message>
     <message>
         <source>Duplicate, rename or wipe this emulator</source>
-        <translation type="unfinished"></translation>
+        <translation>Pendua, namakan semula atau padam bersih emulator ini</translation>
     </message>
     <message>
         <source>Letters, digits, - and _</source>
-        <translation type="unfinished"></translation>
+        <translation>Huruf, digit, - dan _</translation>
     </message>
     <message>
         <source>Manage</source>
-        <translation type="unfinished"></translation>
+        <translation>Urus</translation>
     </message>
     <message>
         <source>Manage emulator</source>
-        <translation type="unfinished"></translation>
+        <translation>Urus emulator</translation>
     </message>
     <message>
         <source>New name</source>
-        <translation type="unfinished"></translation>
+        <translation>Nama baharu</translation>
     </message>
     <message>
         <source>On disk: %1 · a wipe frees %2</source>
-        <translation type="unfinished"></translation>
+        <translation>Pada cakera: %1 · padam bersih mengosongkan %2</translation>
     </message>
     <message>
         <source>Pick an installed image, or type another package: it is downloaded as the first step. Tomacco creates phone, foldable and tablet emulators.</source>
-        <translation type="unfinished"></translation>
+        <translation>Pilih imej yang dipasang, atau taip pakej lain: ia dimuat turun sebagai langkah pertama. Tomacco mencipta emulator telefon, boleh lipat dan tablet.</translation>
     </message>
     <message>
         <source>Reading disk usage…</source>
-        <translation type="unfinished"></translation>
+        <translation>Membaca penggunaan cakera…</translation>
     </message>
     <message>
         <source>Rename and wipe need the emulator&apos;s name typed here</source>
-        <translation type="unfinished"></translation>
+        <translation>Penamaan semula dan padam bersih memerlukan nama emulator ditaip di sini</translation>
     </message>
     <message>
         <source>Renamed to %1</source>
-        <translation type="unfinished"></translation>
+        <translation>Dinamakan semula kepada %1</translation>
     </message>
     <message>
         <source>Renaming…</source>
-        <translation type="unfinished"></translation>
+        <translation>Menamakan semula…</translation>
     </message>
     <message>
         <source>Start the emulator when it is ready</source>
-        <translation type="unfinished"></translation>
+        <translation>Mulakan emulator apabila ia sedia</translation>
     </message>
     <message>
         <source>Steps: %1</source>
-        <translation type="unfinished"></translation>
+        <translation>Langkah: %1</translation>
     </message>
     <message>
         <source>System image installed · no download</source>
-        <translation type="unfinished"></translation>
+        <translation>Imej sistem dipasang · tiada muat turun</translation>
     </message>
     <message>
         <source>TV, Wear, Automotive and XR images are not supported yet</source>
-        <translation type="unfinished"></translation>
+        <translation>Imej TV, Wear, Automotive dan XR belum disokong</translation>
     </message>
     <message>
         <source>The emulator is on or its lock files exist. Turn it off first; nothing here changes a running emulator.</source>
-        <translation type="unfinished"></translation>
+        <translation>Emulator sedang hidup atau fail kuncinya wujud. Matikannya dahulu; tiada apa-apa di sini mengubah emulator yang sedang berjalan.</translation>
     </message>
     <message>
         <source>Wipe app data</source>
-        <translation type="unfinished"></translation>
+        <translation>Padam bersih data aplikasi</translation>
     </message>
     <message>
         <source>Wipe removes the apps, their data and the snapshots; the next start boots like a new device. The emulator&apos;s model and settings stay.</source>
-        <translation type="unfinished"></translation>
+        <translation>Padam bersih membuang aplikasi, datanya dan petikan keadaan; permulaan seterusnya but seperti peranti baharu. Model dan tetapan emulator kekal.</translation>
     </message>
     <message>
         <source>Wiping…</source>
-        <translation type="unfinished"></translation>
+        <translation>Memadam bersih…</translation>
     </message>
     <message>
         <source>already accepted</source>
-        <translation type="unfinished"></translation>
+        <translation>sudah diterima</translation>
     </message>
     <message>
         <source>apply model</source>
-        <translation type="unfinished"></translation>
+        <translation>gunakan model</translation>
     </message>
     <message>
         <source>create</source>
-        <translation type="unfinished"></translation>
+        <translation>cipta</translation>
     </message>
     <message>
         <source>install image</source>
-        <translation type="unfinished"></translation>
+        <translation>pasang imej</translation>
     </message>
     <message>
         <source>is missing</source>
-        <translation type="unfinished"></translation>
+        <translation>tiada</translation>
     </message>
     <message>
         <source>not enough free space</source>
-        <translation type="unfinished"></translation>
+        <translation>ruang kosong tidak mencukupi</translation>
     </message>
     <message>
         <source>not yet accepted</source>
-        <translation type="unfinished"></translation>
+        <translation>belum diterima</translation>
     </message>
     <message>
         <source>start</source>
-        <translation type="unfinished"></translation>
+        <translation>mulakan</translation>
     </message>
     <message>
         <source>the Android SDK</source>
-        <translation type="unfinished"></translation>
+        <translation>SDK Android</translation>
     </message>
     <message>
         <source>the name is taken</source>
-        <translation type="unfinished"></translation>
+        <translation>nama sudah digunakan</translation>
     </message>
 </context>
 <context>
     <name>Backend</name>
     <message>
         <source>%1 is not part of this installation.</source>
-        <translation type="unfinished"></translation>
+        <translation>%1 bukan sebahagian daripada pemasangan ini.</translation>
     </message>
     <message>
         <source>Check failed</source>
-        <translation type="unfinished"></translation>
+        <translation>Semakan gagal</translation>
     </message>
     <message>
         <source>Checking…</source>
-        <translation type="unfinished"></translation>
+        <translation>Menyemak…</translation>
     </message>
     <message>
         <source>Copied</source>
-        <translation type="unfinished"></translation>
+        <translation>Disalin</translation>
     </message>
     <message>
         <source>Enter a valid http:// or https:// address.</source>
-        <translation type="unfinished"></translation>
+        <translation>Masukkan alamat http:// atau https:// yang sah.</translation>
     </message>
     <message>
         <source>No index.html found. Choose a built web folder or open the dev server address.</source>
-        <translation type="unfinished"></translation>
+        <translation>Tiada index.html ditemui. Pilih folder web yang telah dibina atau buka alamat pelayan pembangunan.</translation>
     </message>
     <message>
         <source>Not installed</source>
-        <translation type="unfinished"></translation>
+        <translation>Tidak dipasang</translation>
     </message>
     <message>
         <source>The local preview server could not start.</source>
-        <translation type="unfinished"></translation>
+        <translation>Pelayan pratonton setempat tidak dapat dimulakan.</translation>
     </message>
     <message>
         <source>The screenshot folder could not be created.</source>
-        <translation type="unfinished"></translation>
+        <translation>Folder tangkapan skrin tidak dapat dicipta.</translation>
     </message>
     <message>
         <source>Unknown</source>
-        <translation type="unfinished"></translation>
+        <translation>Tidak diketahui</translation>
     </message>
     <message>
         <source>This job has no log file yet.</source>
-        <translation type="unfinished"></translation>
+        <translation>Tugas ini belum mempunyai fail log.</translation>
     </message>
     <message>
         <source>Open</source>
-        <translation type="unfinished"></translation>
+        <translation>Buka</translation>
     </message>
     <message>
         <source>%1 cannot be written.</source>
-        <translation type="unfinished"></translation>
+        <translation>%1 tidak dapat ditulis.</translation>
     </message>
     <message>
         <source>%1 cannot be read.</source>
-        <translation type="unfinished"></translation>
+        <translation>%1 tidak dapat dibaca.</translation>
     </message>
     <message>
         <source>%1 is too large for a settings file.</source>
-        <translation type="unfinished"></translation>
+        <translation>%1 terlalu besar untuk fail tetapan.</translation>
     </message>
     <message>
         <source>%1 is not a Tomacco settings file.</source>
-        <translation type="unfinished"></translation>
+        <translation>%1 bukan fail tetapan Tomacco.</translation>
     </message>
     <message>
         <source>%1 comes from a newer Tomacco; update this one first.</source>
-        <translation type="unfinished"></translation>
+        <translation>%1 berasal daripada Tomacco yang lebih baharu; kemas kini yang ini dahulu.</translation>
     </message>
     <message>
         <source>The recordings folder could not be created.</source>
-        <translation type="unfinished"></translation>
+        <translation>Folder rakaman tidak dapat dicipta.</translation>
     </message>
     <message>
         <source>The session log must be an absolute path.</source>
-        <translation type="unfinished"></translation>
+        <translation>Log sesi mestilah laluan mutlak.</translation>
     </message>
     <message>
         <source>No session log at %1 yet. It appears with the agent&apos;s first call.</source>
-        <translation type="unfinished"></translation>
+        <translation>Belum ada log sesi di %1. Ia muncul dengan panggilan pertama ejen.</translation>
     </message>
 </context>
 <context>
     <name>Colors</name>
     <message>
         <source>Cream</source>
-        <translation type="unfinished"></translation>
+        <translation>Krim</translation>
     </message>
     <message>
         <source>Graphite</source>
-        <translation type="unfinished"></translation>
+        <translation>Grafit</translation>
     </message>
     <message>
         <source>Gray</source>
-        <translation type="unfinished"></translation>
+        <translation>Kelabu</translation>
     </message>
     <message>
         <source>Green Shadow</source>
-        <translation type="unfinished"></translation>
+        <translation>Bayang Hijau</translation>
     </message>
     <message>
         <source>Mint</source>
-        <translation type="unfinished"></translation>
+        <translation>Pudina</translation>
     </message>
     <message>
         <source>Violet Shadow</source>
-        <translation type="unfinished"></translation>
+        <translation>Bayang Ungu</translation>
     </message>
     <message>
         <source>Black</source>
-        <translation type="unfinished"></translation>
+        <translation>Hitam</translation>
     </message>
     <message>
         <source>Burgundy</source>
-        <translation type="unfinished"></translation>
+        <translation>Burgundi</translation>
     </message>
     <message>
         <source>Canyon</source>
-        <translation type="unfinished"></translation>
+        <translation>Ngarai</translation>
     </message>
     <message>
         <source>Cloud White</source>
-        <translation type="unfinished"></translation>
+        <translation>Putih Awan</translation>
     </message>
     <message>
         <source>Cobalt Violet</source>
-        <translation type="unfinished"></translation>
+        <translation>Ungu Kobalt</translation>
     </message>
     <message>
         <source>Device</source>
-        <translation type="unfinished"></translation>
+        <translation>Peranti</translation>
     </message>
     <message>
         <source>Fog</source>
-        <translation type="unfinished"></translation>
+        <translation>Kabus</translation>
     </message>
     <message>
         <source>Frost</source>
-        <translation type="unfinished"></translation>
+        <translation>Fros</translation>
     </message>
     <message>
         <source>Glacier</source>
-        <translation type="unfinished"></translation>
+        <translation>Glasier</translation>
     </message>
     <message>
         <source>Hibiscus</source>
-        <translation type="unfinished"></translation>
+        <translation>Bunga Raya</translation>
     </message>
     <message>
         <source>Lavender</source>
-        <translation type="unfinished"></translation>
+        <translation>Lavender</translation>
     </message>
     <message>
         <source>Light Gold</source>
-        <translation type="unfinished"></translation>
+        <translation>Emas Muda</translation>
     </message>
     <message>
         <source>Mist Blue</source>
-        <translation type="unfinished"></translation>
+        <translation>Biru Kabus</translation>
     </message>
     <message>
         <source>Night Sky</source>
-        <translation type="unfinished"></translation>
+        <translation>Langit Malam</translation>
     </message>
     <message>
         <source>Obsidian</source>
-        <translation type="unfinished"></translation>
+        <translation>Obsidian</translation>
     </message>
     <message>
         <source>Olive</source>
-        <translation type="unfinished"></translation>
+        <translation>Zaitun</translation>
     </message>
     <message>
         <source>Pink</source>
-        <translation type="unfinished"></translation>
+        <translation>Merah Jambu</translation>
     </message>
     <message>
         <source>Pistachio</source>
-        <translation type="unfinished"></translation>
+        <translation>Pistachio</translation>
     </message>
     <message>
         <source>Sage</source>
-        <translation type="unfinished"></translation>
+        <translation>Hijau Sage</translation>
     </message>
     <message>
         <source>Silver</source>
-        <translation type="unfinished"></translation>
+        <translation>Perak</translation>
     </message>
     <message>
         <source>Sky Blue</source>
-        <translation type="unfinished"></translation>
+        <translation>Biru Langit</translation>
     </message>
     <message>
         <source>Soft Pink</source>
-        <translation type="unfinished"></translation>
+        <translation>Merah Jambu Lembut</translation>
     </message>
     <message>
         <source>Space Black</source>
-        <translation type="unfinished"></translation>
+        <translation>Hitam Angkasa</translation>
     </message>
     <message>
         <source>Star White</source>
-        <translation type="unfinished"></translation>
+        <translation>Putih Bintang</translation>
     </message>
     <message>
         <source>Teal</source>
-        <translation type="unfinished"></translation>
+        <translation>Hijau Kebiruan</translation>
     </message>
     <message>
         <source>Ultramarine</source>
-        <translation type="unfinished"></translation>
+        <translation>Ultramarin</translation>
     </message>
     <message>
         <source>White</source>
-        <translation type="unfinished"></translation>
+        <translation>Putih</translation>
     </message>
 </context>
 <context>
     <name>CommandPalette</name>
     <message>
         <source>No matching views or tools</source>
-        <translation type="unfinished"></translation>
+        <translation>Tiada paparan atau alat yang sepadan</translation>
     </message>
     <message>
         <source>View</source>
-        <translation type="unfinished"></translation>
+        <translation>Paparan</translation>
     </message>
     <message>
         <source>Search views, commands or tools…</source>
-        <translation type="unfinished"></translation>
+        <translation>Cari paparan, arahan atau alat…</translation>
     </message>
     <message>
         <source>Ctrl</source>
-        <translation type="unfinished"></translation>
+        <translation>Ctrl</translation>
     </message>
     <message>
         <source>Recent</source>
-        <translation type="unfinished"></translation>
+        <translation>Terkini</translation>
     </message>
     <message>
         <source>↑ ↓  Select     PgUp PgDn  Page     ↵  Open     Esc  Close</source>
-        <translation type="unfinished"></translation>
+        <translation>↑ ↓  Pilih     PgUp PgDn  Halaman     ↵  Buka     Esc  Tutup</translation>
     </message>
 </context>
 <context>
     <name>Control</name>
     <message>
         <source>Invalid frame response</source>
-        <translation type="unfinished"></translation>
+        <translation>Respons bingkai tidak sah</translation>
     </message>
     <message>
         <source>Invalid response from the control plane</source>
-        <translation type="unfinished"></translation>
+        <translation>Respons tidak sah daripada satah kawalan</translation>
     </message>
     <message>
         <source>Invalid response from the frame control</source>
-        <translation type="unfinished"></translation>
+        <translation>Respons tidak sah daripada kawalan bingkai</translation>
     </message>
     <message>
         <source>Invalid session name</source>
-        <translation type="unfinished"></translation>
+        <translation>Nama sesi tidak sah</translation>
     </message>
     <message>
         <source>Tomacco is already open in another window; agents keep controlling that one. To control this window too, start it with --preview-session and another name.</source>
-        <translation type="unfinished"></translation>
+        <translation>Tomacco sudah dibuka dalam tetingkap lain; ejen terus mengawal tetingkap itu. Untuk mengawal tetingkap ini juga, mulakannya dengan --preview-session dan nama lain.</translation>
     </message>
     <message>
         <source>Tomacco&apos;s control program (tomaccoctl) could not be started. Reinstall Tomacco or run install.py again.</source>
-        <translation type="unfinished"></translation>
+        <translation>Program kawalan Tomacco (tomaccoctl) tidak dapat dimulakan. Pasang semula Tomacco atau jalankan install.py sekali lagi.</translation>
     </message>
     <message>
         <source>Tomacco&apos;s control program (tomaccoctl) is not working: %1</source>
-        <translation type="unfinished"></translation>
+        <translation>Program kawalan Tomacco (tomaccoctl) tidak berfungsi: %1</translation>
     </message>
     <message>
         <source>Tomacco&apos;s control program (tomaccoctl) was not found. Reinstall Tomacco or run install.py again.</source>
-        <translation type="unfinished"></translation>
+        <translation>Program kawalan Tomacco (tomaccoctl) tidak ditemui. Pasang semula Tomacco atau jalankan install.py sekali lagi.</translation>
     </message>
     <message>
         <source>The agent socket directory belongs to another user</source>
-        <translation type="unfinished"></translation>
+        <translation>Direktori soket ejen milik pengguna lain</translation>
     </message>
     <message>
         <source>The agent socket directory could not be created</source>
-        <translation type="unfinished"></translation>
+        <translation>Direktori soket ejen tidak dapat dicipta</translation>
     </message>
     <message>
         <source>The control program ended unexpectedly</source>
-        <translation type="unfinished"></translation>
+        <translation>Program kawalan tamat tanpa diduga</translation>
     </message>
     <message>
         <source>The control program failed: %1</source>
-        <translation type="unfinished"></translation>
+        <translation>Program kawalan gagal: %1</translation>
     </message>
     <message>
         <source>The frame control could not be initialized</source>
-        <translation type="unfinished"></translation>
+        <translation>Kawalan bingkai tidak dapat dimulakan</translation>
     </message>
     <message>
         <source>The frame control did not respond in time</source>
-        <translation type="unfinished"></translation>
+        <translation>Kawalan bingkai tidak bertindak balas tepat pada masanya</translation>
     </message>
     <message>
         <source>The frame control ended</source>
-        <translation type="unfinished"></translation>
+        <translation>Kawalan bingkai tamat</translation>
     </message>
     <message>
         <source>The frame control is not reachable</source>
-        <translation type="unfinished"></translation>
+        <translation>Kawalan bingkai tidak dapat dicapai</translation>
     </message>
     <message>
         <source>The frame request could not be sent</source>
-        <translation type="unfinished"></translation>
+        <translation>Permintaan bingkai tidak dapat dihantar</translation>
     </message>
     <message>
         <source>The frame response is too large</source>
-        <translation type="unfinished"></translation>
+        <translation>Respons bingkai terlalu besar</translation>
     </message>
     <message>
         <source>The frame response matches no request</source>
-        <translation type="unfinished"></translation>
+        <translation>Respons bingkai tidak sepadan dengan mana-mana permintaan</translation>
     </message>
     <message>
         <source>Too many concurrent requests</source>
-        <translation type="unfinished"></translation>
+        <translation>Terlalu banyak permintaan serentak</translation>
     </message>
     <message>
         <source>tomaccoctl could not be started (%1). Reinstall Tomacco or run install.py again.</source>
-        <translation type="unfinished"></translation>
+        <translation>tomaccoctl tidak dapat dimulakan (%1). Pasang semula Tomacco atau jalankan install.py sekali lagi.</translation>
     </message>
 </context>
 <context>
     <name>DebugWorkspace</name>
     <message>
         <source>All files (*)</source>
-        <translation type="unfinished"></translation>
+        <translation>Semua fail (*)</translation>
     </message>
     <message>
         <source>Android libraries (*.so)</source>
-        <translation type="unfinished"></translation>
+        <translation>Pustaka Android (*.so)</translation>
     </message>
     <message>
         <source>Application ID · e.g. dev.example.app</source>
-        <translation type="unfinished"></translation>
+        <translation>ID aplikasi · cth. dev.example.app</translation>
     </message>
     <message>
         <source>Breakpoints</source>
-        <translation type="unfinished"></translation>
+        <translation>Titik henti</translation>
     </message>
     <message>
         <source>CALL STACK</source>
-        <translation type="unfinished"></translation>
+        <translation>TINDANAN PANGGILAN</translation>
     </message>
     <message>
         <source>Choose Android device</source>
-        <translation type="unfinished"></translation>
+        <translation>Pilih peranti Android</translation>
     </message>
     <message>
         <source>Choose debug program</source>
-        <translation type="unfinished"></translation>
+        <translation>Pilih program nyahpepijat</translation>
     </message>
     <message>
         <source>Choose file</source>
-        <translation type="unfinished"></translation>
+        <translation>Pilih fail</translation>
     </message>
     <message>
         <source>Choose library with debug symbols</source>
-        <translation type="unfinished"></translation>
+        <translation>Pilih pustaka dengan simbol nyahpepijat</translation>
     </message>
     <message>
         <source>Connect</source>
-        <translation type="unfinished"></translation>
+        <translation>Sambung</translation>
     </message>
     <message>
         <source>Connecting…</source>
-        <translation type="unfinished"></translation>
+        <translation>Menyambung…</translation>
     </message>
     <message>
         <source>Continue</source>
-        <translation type="unfinished"></translation>
+        <translation>Teruskan</translation>
     </message>
     <message>
         <source>Debugger exited</source>
-        <translation type="unfinished"></translation>
+        <translation>Penyahpepijat keluar</translation>
     </message>
     <message>
         <source>Debugger request failed</source>
-        <translation type="unfinished"></translation>
+        <translation>Permintaan penyahpepijat gagal</translation>
     </message>
     <message>
         <source>Disconnect</source>
-        <translation type="unfinished"></translation>
+        <translation>Putuskan sambungan</translation>
     </message>
     <message>
         <source>Disconnected</source>
-        <translation type="unfinished"></translation>
+        <translation>Sambungan terputus</translation>
     </message>
     <message>
         <source>Ended</source>
-        <translation type="unfinished"></translation>
+        <translation>Tamat</translation>
     </message>
     <message>
         <source>Enter valid line numbers</source>
-        <translation type="unfinished"></translation>
+        <translation>Masukkan nombor baris yang sah</translation>
     </message>
     <message>
         <source>Evaluate expression</source>
-        <translation type="unfinished"></translation>
+        <translation>Nilaikan ungkapan</translation>
     </message>
     <message>
         <source>Evaluate the expression in the selected frame</source>
-        <translation type="unfinished"></translation>
+        <translation>Nilaikan ungkapan dalam bingkai yang dipilih</translation>
     </message>
     <message>
         <source>Executable with debug symbols</source>
-        <translation type="unfinished"></translation>
+        <translation>Boleh laku dengan simbol nyahpepijat</translation>
     </message>
     <message>
         <source>Hide events</source>
-        <translation type="unfinished"></translation>
+        <translation>Sembunyikan peristiwa</translation>
     </message>
     <message>
         <source>Launch app</source>
-        <translation type="unfinished"></translation>
+        <translation>Lancarkan aplikasi</translation>
     </message>
     <message>
         <source>Launches the app if it is not running yet.</source>
-        <translation type="unfinished"></translation>
+        <translation>Melancarkan aplikasi jika ia belum berjalan.</translation>
     </message>
     <message>
         <source>Library with debug symbols (.so)</source>
-        <translation type="unfinished"></translation>
+        <translation>Pustaka dengan simbol nyahpepijat (.so)</translation>
     </message>
     <message>
         <source>Line %1</source>
-        <translation type="unfinished"></translation>
+        <translation>Baris %1</translation>
     </message>
     <message>
         <source>Lines: 12, 24</source>
-        <translation type="unfinished"></translation>
+        <translation>Baris: 12, 24</translation>
     </message>
     <message>
         <source>Locals</source>
-        <translation type="unfinished"></translation>
+        <translation>Pemboleh ubah setempat</translation>
     </message>
     <message>
         <source>No debugger events yet.</source>
-        <translation type="unfinished"></translation>
+        <translation>Belum ada peristiwa penyahpepijat.</translation>
     </message>
     <message>
         <source>No paused thread yet</source>
-        <translation type="unfinished"></translation>
+        <translation>Belum ada bebenang yang dijeda</translation>
     </message>
     <message>
         <source>No session</source>
-        <translation type="unfinished"></translation>
+        <translation>Tiada sesi</translation>
     </message>
     <message>
         <source>Open existing session</source>
-        <translation type="unfinished"></translation>
+        <translation>Buka sesi sedia ada</translation>
     </message>
     <message>
         <source>Open source</source>
-        <translation type="unfinished"></translation>
+        <translation>Buka sumber</translation>
     </message>
     <message>
         <source>Paused</source>
-        <translation type="unfinished"></translation>
+        <translation>Dijeda</translation>
     </message>
     <message>
         <source>Refresh</source>
-        <translation type="unfinished"></translation>
+        <translation>Muat semula</translation>
     </message>
     <message>
         <source>Restarts the app and waits for the Java debugger.</source>
-        <translation type="unfinished"></translation>
+        <translation>Memulakan semula aplikasi dan menunggu penyahpepijat Java.</translation>
     </message>
     <message>
         <source>Run the next source line</source>
-        <translation type="unfinished"></translation>
+        <translation>Jalankan baris sumber seterusnya</translation>
     </message>
     <message>
         <source>Running</source>
-        <translation type="unfinished"></translation>
+        <translation>Sedang berjalan</translation>
     </message>
     <message>
         <source>Session active</source>
-        <translation type="unfinished"></translation>
+        <translation>Sesi aktif</translation>
     </message>
     <message>
         <source>Show events</source>
-        <translation type="unfinished"></translation>
+        <translation>Tunjukkan peristiwa</translation>
     </message>
     <message>
         <source>Source file or Java class</source>
-        <translation type="unfinished"></translation>
+        <translation>Fail sumber atau kelas Java</translation>
     </message>
     <message>
         <source>Step in</source>
-        <translation type="unfinished"></translation>
+        <translation>Langkah masuk</translation>
     </message>
     <message>
         <source>Step out</source>
-        <translation type="unfinished"></translation>
+        <translation>Langkah keluar</translation>
     </message>
     <message>
         <source>Step over</source>
-        <translation type="unfinished"></translation>
+        <translation>Langkah atas</translation>
     </message>
     <message>
         <source>VARIABLES</source>
-        <translation type="unfinished"></translation>
+        <translation>PEMBOLEH UBAH</translation>
     </message>
     <message>
         <source>ended</source>
-        <translation type="unfinished"></translation>
+        <translation>tamat</translation>
     </message>
     <message>
         <source>Attach to your app</source>
-        <translation type="unfinished"></translation>
+        <translation>Lampirkan pada aplikasi anda</translation>
     </message>
     <message>
         <source>Needs a debug build and the NDK. The library must match your app and its processor.</source>
-        <translation type="unfinished"></translation>
+        <translation>Memerlukan binaan nyahpepijat dan NDK. Pustaka mesti sepadan dengan aplikasi anda dan pemprosesnya.</translation>
     </message>
     <message>
         <source>Needs a debug build on a connected phone or emulator.</source>
-        <translation type="unfinished"></translation>
+        <translation>Memerlukan binaan nyahpepijat pada telefon atau emulator yang disambungkan.</translation>
     </message>
     <message>
         <source>A program on this computer, inspected with LLDB.</source>
-        <translation type="unfinished"></translation>
+        <translation>Program pada komputer ini, diperiksa dengan LLDB.</translation>
     </message>
     <message>
         <source>Take over your agent&apos;s session</source>
-        <translation type="unfinished"></translation>
+        <translation>Ambil alih sesi ejen anda</translation>
     </message>
     <message>
         <source>Pause your app or set a breakpoint to see the stack and variables.</source>
-        <translation type="unfinished"></translation>
+        <translation>Jeda aplikasi anda atau tetapkan titik henti untuk melihat tindanan dan pemboleh ubah.</translation>
     </message>
     <message>
         <source>Attach here, or take over a session your agent started.</source>
-        <translation type="unfinished"></translation>
+        <translation>Lampirkan di sini, atau ambil alih sesi yang dimulakan oleh ejen anda.</translation>
     </message>
 </context>
 <context>
     <name>Device</name>
     <message>
         <source>Device permissions are disabled in this layout preview.</source>
-        <translation type="unfinished"></translation>
+        <translation>Kebenaran peranti dilumpuhkan dalam pratonton reka letak ini.</translation>
     </message>
     <message>
         <source>No connection</source>
-        <translation type="unfinished"></translation>
+        <translation>Tiada sambungan</translation>
     </message>
     <message>
         <source>Page not reachable. Is your dev server running?</source>
-        <translation type="unfinished"></translation>
+        <translation>Halaman tidak dapat dicapai. Adakah pelayan pembangunan anda sedang berjalan?</translation>
     </message>
     <message>
         <source>Please open downloads in your browser. Device images can be saved with “Screenshot”.</source>
-        <translation type="unfinished"></translation>
+        <translation>Sila buka muat turun dalam pelayar anda. Imej peranti boleh disimpan dengan “Tangkapan skrin”.</translation>
     </message>
     <message>
         <source>Reload</source>
-        <translation type="unfinished"></translation>
+        <translation>Muat semula</translation>
     </message>
     <message>
         <source>SAFE AREA · PREVIEW</source>
-        <translation type="unfinished"></translation>
+        <translation>KAWASAN SELAMAT · PRATONTON</translation>
     </message>
     <message>
         <source>The web view was terminated. Please reload.</source>
-        <translation type="unfinished"></translation>
+        <translation>Paparan web telah ditamatkan. Sila muat semula.</translation>
     </message>
     <message>
         <source>This preview opens web addresses. Use “Open folder” for local builds.</source>
-        <translation type="unfinished"></translation>
+        <translation>Pratonton ini membuka alamat web. Gunakan “Buka folder” untuk binaan setempat.</translation>
     </message>
 </context>
 <context>
     <name>DeviceWindow</name>
     <message>
         <source>Save and copy a screenshot · Ctrl+Shift+S</source>
-        <translation type="unfinished"></translation>
+        <translation>Simpan dan salin tangkapan skrin · Ctrl+Shift+S</translation>
     </message>
     <message>
         <source>Back</source>
-        <translation type="unfinished"></translation>
+        <translation>Kembali</translation>
     </message>
     <message>
         <source>Bring back into the workspace</source>
-        <translation type="unfinished"></translation>
+        <translation>Bawa kembali ke ruang kerja</translation>
     </message>
     <message>
         <source>Close device window · the device keeps running</source>
-        <translation type="unfinished"></translation>
+        <translation>Tutup tetingkap peranti · peranti terus berjalan</translation>
     </message>
     <message>
         <source>Larger · Ctrl+mouse wheel</source>
-        <translation type="unfinished"></translation>
+        <translation>Lebih besar · Ctrl+roda tetikus</translation>
     </message>
     <message>
         <source>Open in the workspace</source>
-        <translation type="unfinished"></translation>
+        <translation>Buka dalam ruang kerja</translation>
     </message>
     <message>
         <source>Tomacco – Device</source>
-        <translation type="unfinished"></translation>
+        <translation>Tomacco – Peranti</translation>
     </message>
     <message>
         <source>Rotate</source>
-        <translation type="unfinished"></translation>
+        <translation>Putar</translation>
     </message>
     <message>
         <source>Show the back</source>
-        <translation type="unfinished"></translation>
+        <translation>Tunjukkan bahagian belakang</translation>
     </message>
     <message>
         <source>Show the front</source>
-        <translation type="unfinished"></translation>
+        <translation>Tunjukkan bahagian depan</translation>
     </message>
     <message>
         <source>Side button</source>
-        <translation type="unfinished"></translation>
+        <translation>Butang sisi</translation>
     </message>
     <message>
         <source>Side button · wake or lock the display</source>
-        <translation type="unfinished"></translation>
+        <translation>Butang sisi · bangunkan atau kunci paparan</translation>
     </message>
     <message>
         <source>Smaller · Ctrl+mouse wheel</source>
-        <translation type="unfinished"></translation>
+        <translation>Lebih kecil · Ctrl+roda tetikus</translation>
     </message>
     <message>
         <source>Stop keeping this window above the others</source>
-        <translation type="unfinished"></translation>
+        <translation>Berhenti mengekalkan tetingkap ini di atas tetingkap lain</translation>
     </message>
     <message>
         <source>Keep this window above the others</source>
-        <translation type="unfinished"></translation>
+        <translation>Kekalkan tetingkap ini di atas tetingkap lain</translation>
     </message>
 </context>
 <context>
     <name>FileWorkspace</name>
     <message>
         <source>Choose a file in the project tree</source>
-        <translation type="unfinished"></translation>
+        <translation>Pilih fail dalam pepohon projek</translation>
     </message>
     <message>
         <source>Close file</source>
-        <translation type="unfinished"></translation>
+        <translation>Tutup fail</translation>
     </message>
     <message>
         <source>Discard unsaved changes?</source>
-        <translation type="unfinished"></translation>
+        <translation>Buang perubahan yang belum disimpan?</translation>
     </message>
     <message>
         <source>Folder</source>
-        <translation type="unfinished"></translation>
+        <translation>Folder</translation>
     </message>
     <message>
         <source>Hidden</source>
-        <translation type="unfinished"></translation>
+        <translation>Tersembunyi</translation>
     </message>
     <message>
         <source>Line %1 · UTF-8 · changes are checked on save</source>
-        <translation type="unfinished"></translation>
+        <translation>Baris %1 · UTF-8 · perubahan disemak semasa menyimpan</translation>
     </message>
     <message>
         <source>More matches available; narrow the search term.</source>
-        <translation type="unfinished"></translation>
+        <translation>Lebih banyak padanan tersedia; perincikan istilah carian.</translation>
     </message>
     <message>
         <source>New file</source>
-        <translation type="unfinished"></translation>
+        <translation>Fail baharu</translation>
     </message>
     <message>
         <source>New folder</source>
-        <translation type="unfinished"></translation>
+        <translation>Folder baharu</translation>
     </message>
     <message>
         <source>Open a project first</source>
-        <translation type="unfinished"></translation>
+        <translation>Buka projek dahulu</translation>
     </message>
     <message>
         <source>Path relative to the project, e.g. lib/example.dart</source>
-        <translation type="unfinished"></translation>
+        <translation>Laluan relatif kepada projek, cth. lib/example.dart</translation>
     </message>
     <message>
         <source>Reload</source>
-        <translation type="unfinished"></translation>
+        <translation>Muat semula</translation>
     </message>
     <message>
         <source>Reload files</source>
-        <translation type="unfinished"></translation>
+        <translation>Muat semula fail</translation>
     </message>
     <message>
         <source>Save the file first or discard it with Reload.</source>
-        <translation type="unfinished"></translation>
+        <translation>Simpan fail dahulu atau buang perubahannya dengan Muat semula.</translation>
     </message>
     <message>
         <source>Save · Ctrl+S</source>
-        <translation type="unfinished"></translation>
+        <translation>Simpan · Ctrl+S</translation>
     </message>
     <message>
         <source>Saved · %1</source>
-        <translation type="unfinished"></translation>
+        <translation>Disimpan · %1</translation>
     </message>
     <message>
         <source>Search source code…</source>
-        <translation type="unfinished"></translation>
+        <translation>Cari kod sumber…</translation>
     </message>
     <message>
         <source>The file is read again from disk.</source>
-        <translation type="unfinished"></translation>
+        <translation>Fail dibaca semula daripada cakera.</translation>
     </message>
     <message>
         <source>The link leads outside this project.</source>
-        <translation type="unfinished"></translation>
+        <translation>Pautan membawa ke luar projek ini.</translation>
     </message>
     <message>
         <source>This folder contains more than 2,000 entries. Use search for targeted results.</source>
-        <translation type="unfinished"></translation>
+        <translation>Folder ini mengandungi lebih daripada 2,000 entri. Gunakan carian untuk hasil yang tersasar.</translation>
     </message>
     <message>
         <source>Source of %1</source>
-        <translation type="unfinished"></translation>
+        <translation>Sumber %1</translation>
     </message>
     <message>
         <source>Source editor</source>
-        <translation type="unfinished"></translation>
+        <translation>Editor sumber</translation>
     </message>
     <message>
         <source>Search results</source>
-        <translation type="unfinished"></translation>
+        <translation>Hasil carian</translation>
     </message>
     <message>
         <source>Project files</source>
-        <translation type="unfinished"></translation>
+        <translation>Fail projek</translation>
     </message>
     <message>
         <source>Choose folder</source>
-        <translation type="unfinished"></translation>
+        <translation>Pilih folder</translation>
     </message>
 </context>
 <context>
     <name>IosGuestView</name>
     <message>
         <source>Screenshot saved and copied: %1</source>
-        <translation type="unfinished"></translation>
+        <translation>Tangkapan skrin disimpan dan disalin: %1</translation>
     </message>
     <message>
         <source>%1 · outcome unclear, not retried automatically</source>
-        <translation type="unfinished"></translation>
+        <translation>%1 · hasil tidak jelas, tidak dicuba semula secara automatik</translation>
     </message>
     <message numerus="yes">
         <source>%n new frame(s)/s</source>
-        <translation type="unfinished">
-            <numerusform></numerusform>
+        <translation>
+            <numerusform>%n bingkai baharu/s</numerusform>
         </translation>
     </message>
     <message>
         <source>App switcher</source>
-        <translation type="unfinished"></translation>
+        <translation>Penukar apl</translation>
     </message>
     <message>
         <source>Back</source>
-        <translation type="unfinished"></translation>
+        <translation>Kembali</translation>
     </message>
     <message>
         <source>Capture saved: %1</source>
-        <translation type="unfinished"></translation>
+        <translation>Rakaman disimpan: %1</translation>
     </message>
     <message>
         <source>Control Center</source>
-        <translation type="unfinished"></translation>
+        <translation>Pusat Kawalan</translation>
     </message>
     <message>
         <source>Control still busy · input not delivered</source>
-        <translation type="unfinished"></translation>
+        <translation>Kawalan masih sibuk · input tidak dihantar</translation>
     </message>
     <message>
         <source>Detach the virtual iOS device into its own window</source>
-        <translation type="unfinished"></translation>
+        <translation>Pisahkan peranti iOS maya ke tetingkapnya sendiri</translation>
     </message>
     <message>
         <source>Display output unreachable</source>
-        <translation type="unfinished"></translation>
+        <translation>Output paparan tidak dapat dicapai</translation>
     </message>
     <message>
         <source>Dock</source>
-        <translation type="unfinished"></translation>
+        <translation>Dok</translation>
     </message>
     <message>
         <source>Edge swipes start on the frame or at the screen&apos;s edge</source>
-        <translation type="unfinished"></translation>
+        <translation>Leretan tepi bermula pada bingkai atau di tepi skrin</translation>
     </message>
     <message>
         <source>Home button</source>
-        <translation type="unfinished"></translation>
+        <translation>Butang Utama</translation>
     </message>
     <message>
         <source>Home button and swipe up from the bottom edge</source>
-        <translation type="unfinished"></translation>
+        <translation>Butang Utama dan leret ke atas dari tepi bawah</translation>
     </message>
     <message>
         <source>Input failed</source>
-        <translation type="unfinished"></translation>
+        <translation>Input gagal</translation>
     </message>
     <message>
         <source>Input queue full · this input was not sent</source>
-        <translation type="unfinished"></translation>
+        <translation>Baris gilir input penuh · input ini tidak dihantar</translation>
     </message>
     <message>
         <source>Last frame</source>
-        <translation type="unfinished"></translation>
+        <translation>Bingkai terakhir</translation>
     </message>
     <message>
         <source>Live frame · %1</source>
-        <translation type="unfinished"></translation>
+        <translation>Bingkai langsung · %1</translation>
     </message>
     <message>
         <source>No running interactive iOS session</source>
-        <translation type="unfinished"></translation>
+        <translation>Tiada sesi iOS interaktif yang berjalan</translation>
     </message>
     <message>
         <source>Notification Center</source>
-        <translation type="unfinished"></translation>
+        <translation>Pusat Pemberitahuan</translation>
     </message>
     <message>
         <source>Own window</source>
-        <translation type="unfinished"></translation>
+        <translation>Tetingkap sendiri</translation>
     </message>
     <message>
         <source>Real output of the virtual display</source>
-        <translation type="unfinished"></translation>
+        <translation>Output sebenar paparan maya</translation>
     </message>
     <message>
         <source>Side button</source>
-        <translation type="unfinished"></translation>
+        <translation>Butang sisi</translation>
     </message>
     <message>
         <source>Still frame</source>
-        <translation type="unfinished"></translation>
+        <translation>Bingkai pegun</translation>
     </message>
     <message>
         <source>Swipe down from the top-left edge</source>
-        <translation type="unfinished"></translation>
+        <translation>Leret ke bawah dari tepi kiri atas</translation>
     </message>
     <message>
         <source>Swipe down from the top-right edge</source>
-        <translation type="unfinished"></translation>
+        <translation>Leret ke bawah dari tepi kanan atas</translation>
     </message>
     <message>
         <source>Swipe right from the left edge</source>
-        <translation type="unfinished"></translation>
+        <translation>Leret ke kanan dari tepi kiri</translation>
     </message>
     <message>
         <source>Swipe up from the bottom edge and pause</source>
-        <translation type="unfinished"></translation>
+        <translation>Leret ke atas dari tepi bawah dan berhenti seketika</translation>
     </message>
     <message>
         <source>The iOS device is running in its own window</source>
-        <translation type="unfinished"></translation>
+        <translation>Peranti iOS sedang berjalan dalam tetingkapnya sendiri</translation>
     </message>
     <message>
         <source>Virtual iOS device</source>
-        <translation type="unfinished"></translation>
+        <translation>Peranti iOS maya</translation>
     </message>
     <message>
         <source>Waiting for the display output of iOS…</source>
-        <translation type="unfinished"></translation>
+        <translation>Menunggu output paparan iOS…</translation>
     </message>
     <message>
         <source>Wake or lock the display</source>
-        <translation type="unfinished"></translation>
+        <translation>Bangunkan atau kunci paparan</translation>
     </message>
     <message>
         <source>Stop recording · %1 s</source>
-        <translation type="unfinished"></translation>
+        <translation>Hentikan rakaman · %1 s</translation>
     </message>
     <message>
         <source>Record</source>
-        <translation type="unfinished"></translation>
+        <translation>Rakam</translation>
     </message>
     <message>
         <source>Stop and save the recording</source>
-        <translation type="unfinished"></translation>
+        <translation>Hentikan dan simpan rakaman</translation>
     </message>
     <message>
         <source>Record the screen to a video, at most 10 minutes</source>
-        <translation type="unfinished"></translation>
+        <translation>Rakam skrin ke video, paling lama 10 minit</translation>
     </message>
     <message numerus="yes">
         <source>Typing %n character(s) from the clipboard</source>
-        <translation type="unfinished">
-            <numerusform></numerusform>
+        <translation>
+            <numerusform>Menaip %n aksara daripada papan keratan</numerusform>
         </translation>
     </message>
     <message>
         <source>The clipboard holds no text</source>
-        <translation type="unfinished"></translation>
+        <translation>Papan keratan tidak mengandungi teks</translation>
     </message>
     <message>
         <source>The clipboard holds %1 characters; at most %2 are typed into the phone</source>
-        <translation type="unfinished"></translation>
+        <translation>Papan keratan mengandungi %1 aksara; paling banyak %2 ditaip ke dalam telefon</translation>
     </message>
     <message>
         <source>Paste</source>
-        <translation type="unfinished"></translation>
+        <translation>Tampal</translation>
     </message>
     <message>
         <source>Type the clipboard&apos;s text into the field that has the focus</source>
-        <translation type="unfinished"></translation>
+        <translation>Taip teks papan keratan ke dalam medan yang mempunyai fokus</translation>
     </message>
     <message>
         <source>Keyboard to phone</source>
-        <translation type="unfinished"></translation>
+        <translation>Papan kekunci ke telefon</translation>
     </message>
     <message>
         <source>Keyboard to desktop</source>
-        <translation type="unfinished"></translation>
+        <translation>Papan kekunci ke desktop</translation>
     </message>
     <message>
         <source>Typing goes to the phone · Ctrl+Shift+K gives the keyboard back to the desktop</source>
-        <translation type="unfinished"></translation>
+        <translation>Taipan dihantar ke telefon · Ctrl+Shift+K mengembalikan papan kekunci kepada desktop</translation>
     </message>
     <message>
         <source>Click the screen or press Ctrl+Shift+K to type on the phone</source>
-        <translation type="unfinished"></translation>
+        <translation>Klik skrin atau tekan Ctrl+Shift+K untuk menaip pada telefon</translation>
     </message>
     <message>
         <source>Speed</source>
-        <translation type="unfinished"></translation>
+        <translation>Kelajuan</translation>
     </message>
     <message>
         <source>Show frames per second and the time from an input to the picture</source>
-        <translation type="unfinished"></translation>
+        <translation>Tunjukkan bingkai sesaat dan masa daripada input hingga gambar</translation>
     </message>
     <message>
         <source>Screenshot with frame</source>
-        <translation type="unfinished"></translation>
+        <translation>Tangkapan skrin dengan bingkai</translation>
     </message>
     <message>
         <source>Save and copy a screenshot with a plain device frame and rounded corners</source>
-        <translation type="unfinished"></translation>
+        <translation>Simpan dan salin tangkapan skrin dengan bingkai peranti ringkas dan sudut membulat</translation>
     </message>
     <message>
         <source>%1 new · %2 fetched frames/s</source>
-        <translation type="unfinished"></translation>
+        <translation>%1 baharu · %2 bingkai diambil/s</translation>
     </message>
     <message>
         <source>Input to picture: %1 ms</source>
-        <translation type="unfinished"></translation>
+        <translation>Input hingga gambar: %1 ms</translation>
     </message>
     <message>
         <source>Input to picture: not measured yet</source>
-        <translation type="unfinished"></translation>
+        <translation>Input hingga gambar: belum diukur</translation>
     </message>
     <message>
         <source>The screenshot failed</source>
-        <translation type="unfinished"></translation>
+        <translation>Tangkapan skrin gagal</translation>
     </message>
     <message>
         <source>Keyboard to phone · Ctrl+Shift+K switches it to the desktop and back</source>
-        <translation type="unfinished"></translation>
+        <translation>Papan kekunci ke telefon · Ctrl+Shift+K menukarnya ke desktop dan kembali</translation>
     </message>
 </context>
 <context>
     <name>IosResearch</name>
     <message>
         <source>Another app change is still running.</source>
-        <translation type="unfinished"></translation>
+        <translation>Perubahan aplikasi lain masih berjalan.</translation>
     </message>
     <message>
         <source>Checking %1…</source>
-        <translation type="unfinished"></translation>
+        <translation>Menyemak %1…</translation>
     </message>
     <message>
         <source>%1 added · installing on the running device</source>
-        <translation type="unfinished"></translation>
+        <translation>%1 ditambah · memasang pada peranti yang sedang berjalan</translation>
     </message>
     <message>
         <source>%1 added · the next start installs it</source>
-        <translation type="unfinished"></translation>
+        <translation>%1 ditambah · permulaan seterusnya akan memasangnya</translation>
     </message>
     <message>
         <source>The virtual iOS device takes one .app bundle built for arm64 iOS.</source>
-        <translation type="unfinished"></translation>
+        <translation>Peranti iOS maya menerima satu himpunan .app yang dibina untuk iOS arm64.</translation>
     </message>
     <message>
         <source>Set up the virtual iOS device&apos;s profile before adding apps.</source>
-        <translation type="unfinished"></translation>
+        <translation>Sediakan profil peranti iOS maya sebelum menambah aplikasi.</translation>
     </message>
     <message>
         <source>%1 reads · %2 writes · %3 rejected</source>
-        <translation type="unfinished"></translation>
+        <translation>%1 bacaan · %2 tulisan · %3 ditolak</translation>
     </message>
     <message>
         <source>%1 · Apple variant</source>
-        <translation type="unfinished"></translation>
+        <translation>%1 · varian Apple</translation>
     </message>
     <message>
         <source>%1 · derived</source>
-        <translation type="unfinished"></translation>
+        <translation>%1 · diterbitkan</translation>
     </message>
     <message>
         <source>%1: %2 · state %3</source>
-        <translation type="unfinished"></translation>
+        <translation>%1: %2 · keadaan %3</translation>
     </message>
     <message numerus="yes">
         <source>%1: %n message(s)</source>
-        <translation type="unfinished">
-            <numerusform></numerusform>
+        <translation>
+            <numerusform>%1: %n mesej</numerusform>
         </translation>
     </message>
     <message numerus="yes">
         <source>%n byte(s) from %1 · checksum verified</source>
-        <translation type="unfinished">
-            <numerusform></numerusform>
+        <translation>
+            <numerusform>%n bait daripada %1 · hasil tambah semak disahkan</numerusform>
         </translation>
     </message>
     <message>
         <source>Simulated controller with timers · experimental</source>
-        <translation type="unfinished"></translation>
+        <translation>Pengawal simulasi dengan pemasa · percubaan</translation>
     </message>
     <message>
         <source>Add app…</source>
-        <translation type="unfinished"></translation>
+        <translation>Tambah aplikasi…</translation>
     </message>
     <message>
         <source>Core ID</source>
-        <translation type="unfinished"></translation>
+        <translation>ID teras</translation>
     </message>
     <message>
         <source>App to open at start</source>
-        <translation type="unfinished"></translation>
+        <translation>Aplikasi untuk dibuka semasa permulaan</translation>
     </message>
     <message>
         <source>Applies from the next start.</source>
-        <translation type="unfinished"></translation>
+        <translation>Berkuat kuasa mulai permulaan seterusnya.</translation>
     </message>
     <message>
         <source>Your own arm64 .app bundles. Each start installs them together with the device&apos;s helper tools. Changes apply from the next start.</source>
-        <translation type="unfinished"></translation>
+        <translation>Himpunan .app arm64 anda sendiri. Setiap permulaan memasangnya bersama alat pembantu peranti. Perubahan berkuat kuasa mulai permulaan seterusnya.</translation>
     </message>
     <message>
         <source>Boot image</source>
-        <translation type="unfinished"></translation>
+        <translation>Imej but</translation>
     </message>
     <message>
         <source>Breakpoint reached</source>
-        <translation type="unfinished"></translation>
+        <translation>Titik henti dicapai</translation>
     </message>
     <message>
         <source>Processor core ID (MPIDR affinity)</source>
-        <translation type="unfinished"></translation>
+        <translation>ID teras pemproses (afiniti MPIDR)</translation>
     </message>
     <message>
         <source>Processor settings</source>
-        <translation type="unfinished"></translation>
+        <translation>Tetapan pemproses</translation>
     </message>
     <message>
         <source>Processor register not supported yet: %1 · %2 by code at %3</source>
-        <translation type="unfinished"></translation>
+        <translation>Daftar pemproses belum disokong: %1 · %2 oleh kod di %3</translation>
     </message>
     <message>
         <source>Processor: MIDR %1 · core ID %2 · %3</source>
-        <translation type="unfinished"></translation>
+        <translation>Pemproses: MIDR %1 · ID teras %2 · %3</translation>
     </message>
     <message>
         <source>Cancel</source>
-        <translation type="unfinished"></translation>
+        <translation>Batal</translation>
     </message>
     <message>
         <source>Cancel the start and stop the device without saving</source>
-        <translation type="unfinished"></translation>
+        <translation>Batalkan permulaan dan hentikan peranti tanpa menyimpan</translation>
     </message>
     <message>
         <source>Check the bundle and add it to the profile · the next start installs it</source>
-        <translation type="unfinished"></translation>
+        <translation>Semak himpunan dan tambahkannya pada profil · permulaan seterusnya akan memasangnya</translation>
     </message>
     <message>
         <source>Checking image…</source>
-        <translation type="unfinished"></translation>
+        <translation>Menyemak imej…</translation>
     </message>
     <message>
         <source>Checking…</source>
-        <translation type="unfinished"></translation>
+        <translation>Menyemak…</translation>
     </message>
     <message>
         <source>Choose</source>
-        <translation type="unfinished"></translation>
+        <translation>Pilih</translation>
     </message>
     <message>
         <source>Choose app bundle (.app directory)</source>
-        <translation type="unfinished"></translation>
+        <translation>Pilih himpunan aplikasi (direktori .app)</translation>
     </message>
     <message>
         <source>Choose iOS emulator</source>
-        <translation type="unfinished"></translation>
+        <translation>Pilih emulator iOS</translation>
     </message>
     <message>
         <source>Choose prepared firmware package</source>
-        <translation type="unfinished"></translation>
+        <translation>Pilih pakej perisian tegar yang telah disediakan</translation>
     </message>
     <message>
         <source>Choose prepared iOS package</source>
-        <translation type="unfinished"></translation>
+        <translation>Pilih pakej iOS yang telah disediakan</translation>
     </message>
     <message>
         <source>Classic (Home button)</source>
-        <translation type="unfinished"></translation>
+        <translation>Klasik (butang Utama)</translation>
     </message>
     <message>
         <source>Closing the session…</source>
-        <translation type="unfinished"></translation>
+        <translation>Menutup sesi…</translation>
     </message>
     <message>
         <source>Snapshots of the running system: %1 · %2</source>
-        <translation type="unfinished"></translation>
+        <translation>Petikan keadaan sistem yang sedang berjalan: %1 · %2</translation>
     </message>
     <message>
         <source>Reading the controller state failed: %1</source>
-        <translation type="unfinished"></translation>
+        <translation>Membaca keadaan pengawal gagal: %1</translation>
     </message>
     <message>
         <source>For controller development: Apple&apos;s original firmware runs alone on a simulated ARM processor. The simulated controller still rests on unconfirmed hardware guesses; the firmware&apos;s services and its connection to iOS are not verified.</source>
-        <translation type="unfinished"></translation>
+        <translation>Untuk pembangunan pengawal: perisian tegar asli Apple berjalan bersendirian pada pemproses ARM simulasi. Pengawal simulasi masih bergantung pada tekaan perkakasan yang belum disahkan; perkhidmatan perisian tegar dan sambungannya ke iOS belum disahkan.</translation>
     </message>
     <message>
         <source>Controller state</source>
-        <translation type="unfinished"></translation>
+        <translation>Keadaan pengawal</translation>
     </message>
     <message>
         <source>Work in progress: an agent starts the virtual iOS device, then it appears here. Starting takes many minutes. Apart from the built-in test app, apps with a user interface have not been shown to work yet.</source>
-        <translation type="unfinished"></translation>
+        <translation>Kerja sedang dijalankan: ejen memulakan peranti iOS maya, kemudian ia muncul di sini. Permulaan mengambil masa beberapa minit. Selain aplikasi ujian terbina dalam, aplikasi dengan antara muka pengguna belum terbukti berfungsi.</translation>
     </message>
     <message>
         <source>Diagnostics complete</source>
-        <translation type="unfinished"></translation>
+        <translation>Diagnostik selesai</translation>
     </message>
     <message>
         <source>Diagnostics ended with a finding</source>
-        <translation type="unfinished"></translation>
+        <translation>Diagnostik tamat dengan satu penemuan</translation>
     </message>
     <message>
         <source>Folder with pmp-research.json</source>
-        <translation type="unfinished"></translation>
+        <translation>Folder dengan pmp-research.json</translation>
     </message>
     <message>
         <source>Folder with tomacco-ios.json</source>
-        <translation type="unfinished"></translation>
+        <translation>Folder dengan tomacco-ios.json</translation>
     </message>
     <message>
         <source>Experimental: iOS shows its first system screens. Setup, graphics and native apps do not fully work yet.</source>
-        <translation type="unfinished"></translation>
+        <translation>Percubaan: iOS menunjukkan skrin sistem pertamanya. Persediaan, grafik dan aplikasi asli belum berfungsi sepenuhnya.</translation>
     </message>
     <message>
         <source>First invalid memory access: code at %1 · address %2 · %3</source>
-        <translation type="unfinished"></translation>
+        <translation>Akses memori tidak sah pertama: kod di %1 · alamat %2 · %3</translation>
     </message>
     <message>
         <source>Memory contents in hexadecimal</source>
-        <translation type="unfinished"></translation>
+        <translation>Kandungan memori dalam perenambelasan</translation>
     </message>
     <message>
         <source>Hide processor settings</source>
-        <translation type="unfinished"></translation>
+        <translation>Sembunyikan tetapan pemproses</translation>
     </message>
     <message>
         <source>Hide processor registers</source>
-        <translation type="unfinished"></translation>
+        <translation>Sembunyikan daftar pemproses</translation>
     </message>
     <message>
         <source>Hide boot image</source>
-        <translation type="unfinished"></translation>
+        <translation>Sembunyikan imej but</translation>
     </message>
     <message>
         <source>Address of a firmware instruction, e.g. 0x10280d4 · optional</source>
-        <translation type="unfinished"></translation>
+        <translation>Alamat arahan perisian tegar, cth. 0x10280d4 · pilihan</translation>
     </message>
     <message>
         <source>Job &amp; logs</source>
-        <translation type="unfinished"></translation>
+        <translation>Tugas &amp; log</translation>
     </message>
     <message>
         <source>The processor identity the firmware sees when it starts. Other values make it take other start-up paths; they add no hardware features.</source>
-        <translation type="unfinished"></translation>
+        <translation>Identiti pemproses yang dilihat oleh perisian tegar semasa ia bermula. Nilai lain membuatnya mengambil laluan permulaan lain; ia tidak menambah ciri perkakasan.</translation>
     </message>
     <message>
         <source>From the last snapshot · raw 64-bit values</source>
-        <translation type="unfinished"></translation>
+        <translation>Daripada petikan keadaan terakhir · nilai mentah 64-bit</translation>
     </message>
     <message>
         <source>Loading…</source>
-        <translation type="unfinished"></translation>
+        <translation>Memuatkan…</translation>
     </message>
     <message>
         <source>Maximum run time</source>
-        <translation type="unfinished"></translation>
+        <translation>Masa jalan maksimum</translation>
     </message>
     <message>
         <source>Maximum run time in seconds</source>
-        <translation type="unfinished"></translation>
+        <translation>Masa jalan maksimum dalam saat</translation>
     </message>
     <message>
         <source>Saved memory</source>
-        <translation type="unfinished"></translation>
+        <translation>Memori disimpan</translation>
     </message>
     <message>
         <source>Model</source>
-        <translation type="unfinished"></translation>
+        <translation>Model</translation>
     </message>
     <message>
         <source>No controller · baseline for comparison</source>
-        <translation type="unfinished"></translation>
+        <translation>Tiada pengawal · garis dasar untuk perbandingan</translation>
     </message>
     <message>
         <source>No apps of your own yet · the start opens the built-in test app.</source>
-        <translation type="unfinished"></translation>
+        <translation>Belum ada aplikasi anda sendiri · permulaan membuka aplikasi ujian terbina dalam.</translation>
     </message>
     <message>
         <source>Number of bytes</source>
-        <translation type="unfinished"></translation>
+        <translation>Bilangan bait</translation>
     </message>
     <message>
         <source>Open at start</source>
-        <translation type="unfinished"></translation>
+        <translation>Buka semasa permulaan</translation>
     </message>
     <message>
         <source>Open test system</source>
-        <translation type="unfinished"></translation>
+        <translation>Buka sistem ujian</translation>
     </message>
     <message>
         <source>Your apps</source>
-        <translation type="unfinished"></translation>
+        <translation>Aplikasi anda</translation>
     </message>
     <message>
         <source>Built-in test app (diagnostics)</source>
-        <translation type="unfinished"></translation>
+        <translation>Aplikasi ujian terbina dalam (diagnostik)</translation>
     </message>
     <message>
         <source>Own window</source>
-        <translation type="unfinished"></translation>
+        <translation>Tetingkap sendiri</translation>
     </message>
     <message>
         <source>Firmware breakpoint</source>
-        <translation type="unfinished"></translation>
+        <translation>Titik henti perisian tegar</translation>
     </message>
     <message>
         <source>Simulated firmware controller</source>
-        <translation type="unfinished"></translation>
+        <translation>Pengawal perisian tegar simulasi</translation>
     </message>
     <message>
         <source>Power-management firmware (PMP)</source>
-        <translation type="unfinished"></translation>
+        <translation>Perisian tegar pengurusan kuasa (PMP)</translation>
     </message>
     <message>
         <source>Firmware running</source>
-        <translation type="unfinished"></translation>
+        <translation>Perisian tegar sedang berjalan</translation>
     </message>
     <message>
         <source>Path to an .app directory (arm64)</source>
-        <translation type="unfinished"></translation>
+        <translation>Laluan ke direktori .app (arm64)</translation>
     </message>
     <message>
         <source>Addresses 0x1000000 to 0x11fffff of the firmware&apos;s memory. Reading checks the saved copy; the firmware is not run again for it.</source>
-        <translation type="unfinished"></translation>
+        <translation>Alamat 0x1000000 hingga 0x11fffff dalam memori perisian tegar. Membaca menyemak salinan yang disimpan; perisian tegar tidak dijalankan semula untuknya.</translation>
     </message>
     <message>
         <source>Memory address</source>
-        <translation type="unfinished"></translation>
+        <translation>Alamat memori</translation>
     </message>
     <message>
         <source>Prepare package</source>
-        <translation type="unfinished"></translation>
+        <translation>Sediakan pakej</translation>
     </message>
     <message>
         <source>Prepare, boot, unlock and open the test app</source>
-        <translation type="unfinished"></translation>
+        <translation>Sediakan, but, buka kunci dan buka aplikasi ujian</translation>
     </message>
     <message>
         <source>Prepared firmware package</source>
-        <translation type="unfinished"></translation>
+        <translation>Pakej perisian tegar yang disediakan</translation>
     </message>
     <message>
         <source>Prepared iOS package</source>
-        <translation type="unfinished"></translation>
+        <translation>Pakej iOS yang disediakan</translation>
     </message>
     <message>
         <source>Preparing working copy</source>
-        <translation type="unfinished"></translation>
+        <translation>Menyediakan salinan kerja</translation>
     </message>
     <message>
         <source>Memory copy failed: %1</source>
-        <translation type="unfinished"></translation>
+        <translation>Salinan memori gagal: %1</translation>
     </message>
     <message>
         <source>Memory copy: 2 MiB from address %1 · saved in the report folder</source>
-        <translation type="unfinished"></translation>
+        <translation>Salinan memori: 2 MiB dari alamat %1 · disimpan dalam folder laporan</translation>
     </message>
     <message>
         <source>Read</source>
-        <translation type="unfinished"></translation>
+        <translation>Baca</translation>
     </message>
     <message>
         <source>Ready for a test run</source>
-        <translation type="unfinished"></translation>
+        <translation>Sedia untuk larian ujian</translation>
     </message>
     <message>
         <source>Actual image from the start-up screen · not yet the device&apos;s main display</source>
-        <translation type="unfinished"></translation>
+        <translation>Imej sebenar daripada skrin permulaan · belum lagi paparan utama peranti</translation>
     </message>
     <message>
         <source>Real iOS directly on Linux. The virtual iOS device shows the lock and Home screens and starts its own test app; general app development is not enabled yet.</source>
-        <translation type="unfinished"></translation>
+        <translation>iOS sebenar terus pada Linux. Peranti iOS maya menunjukkan skrin kunci dan skrin Utama serta memulakan aplikasi ujiannya sendiri; pembangunan aplikasi umum belum didayakan.</translation>
     </message>
     <message>
         <source>Refresh</source>
-        <translation type="unfinished"></translation>
+        <translation>Muat semula</translation>
     </message>
     <message>
         <source>Remove</source>
-        <translation type="unfinished"></translation>
+        <translation>Buang</translation>
     </message>
     <message>
         <source>Remove from the profile · an app already installed stays on the device</source>
-        <translation type="unfinished"></translation>
+        <translation>Buang daripada profil · aplikasi yang sudah dipasang kekal pada peranti</translation>
     </message>
     <message>
         <source>Report folder</source>
-        <translation type="unfinished"></translation>
+        <translation>Folder laporan</translation>
     </message>
     <message>
         <source>Run %1 · %2</source>
-        <translation type="unfinished"></translation>
+        <translation>Larian %1 · %2</translation>
     </message>
     <message>
         <source>Run iOS, or the iPhone&apos;s power-management firmware on its own, directly on Linux. Each run writes its own report; runs started from the command line or by an agent appear here too.</source>
-        <translation type="unfinished"></translation>
+        <translation>Jalankan iOS, atau perisian tegar pengurusan kuasa iPhone secara bersendirian, terus pada Linux. Setiap larian menulis laporannya sendiri; larian yang dimulakan dari baris arahan atau oleh ejen juga muncul di sini.</translation>
     </message>
     <message>
         <source>Run ended</source>
-        <translation type="unfinished"></translation>
+        <translation>Larian tamat</translation>
     </message>
     <message>
         <source>Save a copy of the firmware&apos;s memory with the report (2 MiB)</source>
-        <translation type="unfinished"></translation>
+        <translation>Simpan salinan memori perisian tegar bersama laporan (2 MiB)</translation>
     </message>
     <message>
         <source>Save storage and shut down cleanly</source>
-        <translation type="unfinished"></translation>
+        <translation>Simpan storan dan matikan dengan bersih</translation>
     </message>
     <message>
         <source>System services not found in the snapshots: %1</source>
-        <translation type="unfinished"></translation>
+        <translation>Perkhidmatan sistem tidak ditemui dalam petikan keadaan: %1</translation>
     </message>
     <message>
         <source>Show</source>
-        <translation type="unfinished"></translation>
+        <translation>Tunjukkan</translation>
     </message>
     <message>
         <source>Show processor registers</source>
-        <translation type="unfinished"></translation>
+        <translation>Tunjukkan daftar pemproses</translation>
     </message>
     <message>
         <source>Start</source>
-        <translation type="unfinished"></translation>
+        <translation>Mulakan</translation>
     </message>
     <message>
         <source>Start failed</source>
-        <translation type="unfinished"></translation>
+        <translation>Permulaan gagal</translation>
     </message>
     <message>
         <source>Start test run</source>
-        <translation type="unfinished"></translation>
+        <translation>Mulakan larian ujian</translation>
     </message>
     <message>
         <source>Status currently unknown</source>
-        <translation type="unfinished"></translation>
+        <translation>Status tidak diketahui buat masa ini</translation>
     </message>
     <message>
         <source>Stop</source>
-        <translation type="unfinished"></translation>
+        <translation>Hentikan</translation>
     </message>
     <message>
         <source>Stop at a code address</source>
-        <translation type="unfinished"></translation>
+        <translation>Berhenti pada alamat kod</translation>
     </message>
     <message>
         <source>Stop without saving</source>
-        <translation type="unfinished"></translation>
+        <translation>Hentikan tanpa menyimpan</translation>
     </message>
     <message>
         <source>Stop without saving · ends the run at once, whatever the device has not saved yet is lost</source>
-        <translation type="unfinished"></translation>
+        <translation>Hentikan tanpa menyimpan · menamatkan larian serta-merta, apa-apa yang belum disimpan oleh peranti akan hilang</translation>
     </message>
     <message>
         <source>Stopped before the instruction at %1 · this does not show that the firmware started completely</source>
-        <translation type="unfinished"></translation>
+        <translation>Berhenti sebelum arahan di %1 · ini tidak menunjukkan bahawa perisian tegar bermula sepenuhnya</translation>
     </message>
     <message>
         <source>Stopping…</source>
-        <translation type="unfinished"></translation>
+        <translation>Menghentikan…</translation>
     </message>
     <message>
         <source>What to run</source>
-        <translation type="unfinished"></translation>
+        <translation>Apa yang hendak dijalankan</translation>
     </message>
     <message>
         <source>Reading this state changes nothing: no message is taken from a queue and no interrupt is answered.</source>
-        <translation type="unfinished"></translation>
+        <translation>Membaca keadaan ini tidak mengubah apa-apa: tiada mesej diambil daripada baris gilir dan tiada sampukan dijawab.</translation>
     </message>
     <message>
         <source>The existing run is reused.</source>
-        <translation type="unfinished"></translation>
+        <translation>Larian sedia ada digunakan semula.</translation>
     </message>
     <message>
         <source>The device could not save before stopping (%1). “Stop without saving” ends the run at once; the next start uses the last saved state.</source>
-        <translation type="unfinished"></translation>
+        <translation>Peranti tidak dapat menyimpan sebelum berhenti (%1). “Hentikan tanpa menyimpan” menamatkan larian serta-merta; permulaan seterusnya menggunakan keadaan terakhir yang disimpan.</translation>
     </message>
     <message>
         <source>The device is still starting, there is nothing to save. Ending the run…</source>
-        <translation type="unfinished"></translation>
+        <translation>Peranti masih bermula, tiada apa-apa untuk disimpan. Menamatkan larian…</translation>
     </message>
     <message>
         <source>The run stops at that address and reports the processor state. The firmware itself is not modified.</source>
-        <translation type="unfinished"></translation>
+        <translation>Larian berhenti pada alamat itu dan melaporkan keadaan pemproses. Perisian tegar itu sendiri tidak diubah suai.</translation>
     </message>
     <message>
         <source>Time limit reached</source>
-        <translation type="unfinished"></translation>
+        <translation>Had masa dicapai</translation>
     </message>
     <message>
         <source>Time zone %1 applied</source>
-        <translation type="unfinished"></translation>
+        <translation>Zon waktu %1 digunakan</translation>
     </message>
     <message>
         <source>Time zone %1 not applied · %2</source>
-        <translation type="unfinished"></translation>
+        <translation>Zon waktu %1 tidak digunakan · %2</translation>
     </message>
     <message>
         <source>Time zone %1 was already set</source>
-        <translation type="unfinished"></translation>
+        <translation>Zon waktu %1 sudah ditetapkan</translation>
     </message>
     <message>
         <source>Time zone not set · %1</source>
-        <translation type="unfinished"></translation>
+        <translation>Zon waktu tidak ditetapkan · %1</translation>
     </message>
     <message>
         <source>View run</source>
-        <translation type="unfinished"></translation>
+        <translation>Lihat larian</translation>
     </message>
     <message>
         <source>Virtual iOS device · started by an agent</source>
-        <translation type="unfinished"></translation>
+        <translation>Peranti iOS maya · dimulakan oleh ejen</translation>
     </message>
     <message>
         <source>Virtual iOS device started by your agent · its real screen appears here and you can use it.</source>
-        <translation type="unfinished"></translation>
+        <translation>Peranti iOS maya dimulakan oleh ejen anda · skrin sebenarnya muncul di sini dan anda boleh menggunakannya.</translation>
     </message>
     <message>
         <source>Virtual iOS device</source>
-        <translation type="unfinished"></translation>
+        <translation>Peranti iOS maya</translation>
     </message>
     <message>
         <source>Virtual iOS device · experimental</source>
-        <translation type="unfinished"></translation>
+        <translation>Peranti iOS maya · percubaan</translation>
     </message>
     <message>
         <source>Virtual iOS device · run %1</source>
-        <translation type="unfinished"></translation>
+        <translation>Peranti iOS maya · larian %1</translation>
     </message>
     <message>
         <source>Waiting to start</source>
-        <translation type="unfinished"></translation>
+        <translation>Menunggu untuk bermula</translation>
     </message>
     <message>
         <source>configuration verified</source>
-        <translation type="unfinished"></translation>
+        <translation>konfigurasi disahkan</translation>
     </message>
     <message>
         <source>execute</source>
         <comment>access</comment>
-        <translation type="unfinished"></translation>
+        <translation>laksana</translation>
     </message>
     <message>
         <source>data from iOS verified</source>
-        <translation type="unfinished"></translation>
+        <translation>data daripada iOS disahkan</translation>
     </message>
     <message>
         <source>iOS diagnostics running</source>
-        <translation type="unfinished"></translation>
+        <translation>Diagnostik iOS sedang berjalan</translation>
     </message>
     <message>
         <source>iOS draws itself for this device; the data stays the same.</source>
-        <translation type="unfinished"></translation>
+        <translation>iOS melukis dirinya sendiri untuk peranti ini; datanya kekal sama.</translation>
     </message>
     <message>
         <source>iOS is starting… this takes many minutes</source>
-        <translation type="unfinished"></translation>
+        <translation>iOS sedang bermula… ini mengambil masa beberapa minit</translation>
     </message>
     <message>
         <source>iOS on Linux</source>
-        <translation type="unfinished"></translation>
+        <translation>iOS pada Linux</translation>
     </message>
     <message>
         <source>iOS</source>
-        <translation type="unfinished"></translation>
+        <translation>iOS</translation>
     </message>
     <message>
         <source>iOS test system</source>
-        <translation type="unfinished"></translation>
+        <translation>Sistem ujian iOS</translation>
     </message>
     <message>
         <source>Device status unreachable</source>
-        <translation type="unfinished"></translation>
+        <translation>Status peranti tidak dapat dicapai</translation>
     </message>
     <message>
         <source>incomplete run</source>
-        <translation type="unfinished"></translation>
+        <translation>larian tidak lengkap</translation>
     </message>
     <message>
         <source>installed in the current run</source>
-        <translation type="unfinished"></translation>
+        <translation>dipasang dalam larian semasa</translation>
     </message>
     <message>
         <source>interrupts enabled</source>
-        <translation type="unfinished"></translation>
+        <translation>sampukan didayakan</translation>
     </message>
     <message>
         <source>interrupts blocked</source>
-        <translation type="unfinished"></translation>
+        <translation>sampukan disekat</translation>
     </message>
     <message>
         <source>locked · unlock on the device</source>
-        <translation type="unfinished"></translation>
+        <translation>dikunci · buka kunci pada peranti</translation>
     </message>
     <message>
         <source>no answer</source>
-        <translation type="unfinished"></translation>
+        <translation>tiada jawapan</translation>
     </message>
     <message>
         <source>no signal</source>
-        <translation type="unfinished"></translation>
+        <translation>tiada isyarat</translation>
     </message>
     <message>
         <source>not installed in the current run</source>
-        <translation type="unfinished"></translation>
+        <translation>tidak dipasang dalam larian semasa</translation>
     </message>
     <message>
         <source>not recorded</source>
-        <translation type="unfinished"></translation>
+        <translation>tidak direkodkan</translation>
     </message>
     <message>
         <source>not verified</source>
-        <translation type="unfinished"></translation>
+        <translation>tidak disahkan</translation>
     </message>
     <message>
         <source>off</source>
-        <translation type="unfinished"></translation>
+        <translation>mati</translation>
     </message>
     <message>
         <source>off · last run not verified</source>
-        <translation type="unfinished"></translation>
+        <translation>mati · larian terakhir tidak disahkan</translation>
     </message>
     <message>
         <source>off · session ended without saving, the next start uses the last saved state</source>
-        <translation type="unfinished"></translation>
+        <translation>mati · sesi tamat tanpa menyimpan, permulaan seterusnya menggunakan keadaan terakhir yang disimpan</translation>
     </message>
     <message>
         <source>off · stopped and saved because the graphics card ran out of memory</source>
-        <translation type="unfinished"></translation>
+        <translation>mati · dihentikan dan disimpan kerana kad grafik kehabisan memori</translation>
     </message>
     <message>
         <source>off · stopped because the graphics card ran out of memory, the next start uses the last saved state</source>
-        <translation type="unfinished"></translation>
+        <translation>mati · dihentikan kerana kad grafik kehabisan memori, permulaan seterusnya menggunakan keadaan terakhir yang disimpan</translation>
     </message>
     <message>
         <source>off · session was saved and ended at its time limit</source>
-        <translation type="unfinished"></translation>
+        <translation>mati · sesi disimpan dan ditamatkan pada had masanya</translation>
     </message>
     <message>
         <source>opened at start</source>
-        <translation type="unfinished"></translation>
+        <translation>dibuka semasa permulaan</translation>
     </message>
     <message>
         <source>preparing…</source>
-        <translation type="unfinished"></translation>
+        <translation>menyediakan…</translation>
     </message>
     <message>
         <source>read</source>
         <comment>access</comment>
-        <translation type="unfinished"></translation>
+        <translation>baca</translation>
     </message>
     <message>
         <source>running</source>
-        <translation type="unfinished"></translation>
+        <translation>sedang berjalan</translation>
     </message>
     <message>
         <source>running · app launch accepted</source>
-        <translation type="unfinished"></translation>
+        <translation>sedang berjalan · pelancaran aplikasi diterima</translation>
     </message>
     <message>
         <source>running · app launch unclear</source>
-        <translation type="unfinished"></translation>
+        <translation>sedang berjalan · pelancaran aplikasi tidak jelas</translation>
     </message>
     <message>
         <source>running · app visible</source>
-        <translation type="unfinished"></translation>
+        <translation>sedang berjalan · aplikasi kelihatan</translation>
     </message>
     <message>
         <source>seconds</source>
-        <translation type="unfinished"></translation>
+        <translation>saat</translation>
     </message>
     <message>
         <source>signal active</source>
-        <translation type="unfinished"></translation>
+        <translation>isyarat aktif</translation>
     </message>
     <message>
         <source>skipped</source>
-        <translation type="unfinished"></translation>
+        <translation>dilangkau</translation>
     </message>
     <message>
         <source>stopping…</source>
-        <translation type="unfinished"></translation>
+        <translation>menghentikan…</translation>
     </message>
     <message>
         <source>the device&apos;s helper tools are too old for this (before build 368)</source>
-        <translation type="unfinished"></translation>
+        <translation>alat pembantu peranti terlalu lama untuk ini (sebelum binaan 368)</translation>
     </message>
     <message>
         <source>this computer&apos;s time zone has no standard name such as Europe/Vienna</source>
-        <translation type="unfinished"></translation>
+        <translation>zon waktu komputer ini tiada nama standard seperti Europe/Vienna</translation>
     </message>
     <message>
         <source>transfer waiting</source>
-        <translation type="unfinished"></translation>
+        <translation>pemindahan menunggu</translation>
     </message>
     <message>
         <source>trying to unlock…</source>
-        <translation type="unfinished"></translation>
+        <translation>cuba membuka kunci…</translation>
     </message>
     <message>
         <source>unverified · only the path is listed, the next start checks the bundle</source>
-        <translation type="unfinished"></translation>
+        <translation>belum disahkan · hanya laluan disenaraikan, permulaan seterusnya menyemak himpunan</translation>
     </message>
     <message>
         <source>verified</source>
-        <translation type="unfinished"></translation>
+        <translation>disahkan</translation>
     </message>
     <message>
         <source>write</source>
         <comment>access</comment>
-        <translation type="unfinished"></translation>
+        <translation>tulis</translation>
     </message>
     <message>
         <source>System</source>
-        <translation type="unfinished"></translation>
+        <translation>Sistem</translation>
     </message>
     <message>
         <source>Controller</source>
-        <translation type="unfinished"></translation>
+        <translation>Pengawal</translation>
     </message>
     <message>
         <source>Emulator</source>
-        <translation type="unfinished"></translation>
+        <translation>Emulator</translation>
     </message>
     <message>
         <source>Saved states</source>
-        <translation type="unfinished"></translation>
+        <translation>Keadaan disimpan</translation>
     </message>
     <message>
         <source>Keep the last stopped run under a name and start from it again later. Saving copies nothing.</source>
-        <translation type="unfinished"></translation>
+        <translation>Simpan larian terakhir yang dihentikan di bawah satu nama dan mulakan daripadanya semula kemudian. Menyimpan tidak menyalin apa-apa.</translation>
     </message>
     <message>
         <source>No saved states yet.</source>
-        <translation type="unfinished"></translation>
+        <translation>Belum ada keadaan disimpan.</translation>
     </message>
     <message>
         <source>Saved state</source>
-        <translation type="unfinished"></translation>
+        <translation>Keadaan disimpan</translation>
     </message>
     <message>
         <source>Start from it</source>
-        <translation type="unfinished"></translation>
+        <translation>Mulakan daripadanya</translation>
     </message>
     <message>
         <source>The next start begins from this state · the phone must be off</source>
-        <translation type="unfinished"></translation>
+        <translation>Permulaan seterusnya bermula daripada keadaan ini · telefon mesti dimatikan</translation>
     </message>
     <message>
         <source>Delete for good</source>
-        <translation type="unfinished"></translation>
+        <translation>Padam selama-lamanya</translation>
     </message>
     <message>
         <source>Delete</source>
-        <translation type="unfinished"></translation>
+        <translation>Padam</translation>
     </message>
     <message>
         <source>Remove the name, and its disk copy when nothing else keeps it</source>
-        <translation type="unfinished"></translation>
+        <translation>Buang nama itu, dan salinan cakeranya apabila tiada lagi yang menyimpannya</translation>
     </message>
     <message>
         <source>Name for the last stopped run</source>
-        <translation type="unfinished"></translation>
+        <translation>Nama untuk larian terakhir yang dihentikan</translation>
     </message>
     <message>
         <source>Save state</source>
-        <translation type="unfinished"></translation>
+        <translation>Simpan keadaan</translation>
     </message>
     <message>
         <source>Keep the last stopped run under this name</source>
-        <translation type="unfinished"></translation>
+        <translation>Simpan larian terakhir yang dihentikan di bawah nama ini</translation>
     </message>
     <message>
         <source>run %1</source>
-        <translation type="unfinished"></translation>
+        <translation>larian %1</translation>
     </message>
     <message>
         <source>next start</source>
-        <translation type="unfinished"></translation>
+        <translation>permulaan seterusnya</translation>
     </message>
     <message>
         <source>disks gone</source>
-        <translation type="unfinished"></translation>
+        <translation>cakera tiada lagi</translation>
     </message>
     <message>
         <source>Saved as %1</source>
-        <translation type="unfinished"></translation>
+        <translation>Disimpan sebagai %1</translation>
     </message>
     <message>
         <source>The next start begins from %1</source>
-        <translation type="unfinished"></translation>
+        <translation>Permulaan seterusnya bermula daripada %1</translation>
     </message>
     <message>
         <source>%1 deleted with its disk copy</source>
-        <translation type="unfinished"></translation>
+        <translation>%1 dipadam bersama salinan cakeranya</translation>
     </message>
     <message>
         <source>%1 deleted · its disk copy stays (%2)</source>
-        <translation type="unfinished"></translation>
+        <translation>%1 dipadam · salinan cakeranya kekal (%2)</translation>
     </message>
 </context>
 <context>
     <name>Main</name>
     <message>
         <source>Screenshot saved and copied · %1</source>
-        <translation type="unfinished"></translation>
+        <translation>Tangkapan skrin disimpan dan disalin · %1</translation>
     </message>
     <message>
         <source>%1 panel pixels</source>
-        <translation type="unfinished"></translation>
+        <translation>%1 piksel panel</translation>
     </message>
     <message numerus="yes">
         <source>%n model(s)</source>
-        <translation type="unfinished">
-            <numerusform></numerusform>
+        <translation>
+            <numerusform>%n model</numerusform>
         </translation>
     </message>
     <message>
         <source>Apple download ↗</source>
-        <translation type="unfinished"></translation>
+        <translation>Muat turun Apple ↗</translation>
     </message>
     <message>
         <source>Back</source>
-        <translation type="unfinished"></translation>
+        <translation>Kembali</translation>
     </message>
     <message>
         <source>CASE</source>
-        <translation type="unfinished"></translation>
+        <translation>SARUNG</translation>
     </message>
     <message>
         <source>Choose a web build</source>
-        <translation type="unfinished"></translation>
+        <translation>Pilih binaan web</translation>
     </message>
     <message>
         <source>Close</source>
-        <translation type="unfinished"></translation>
+        <translation>Tutup</translation>
     </message>
     <message>
         <source>Copy setup</source>
-        <translation type="unfinished"></translation>
+        <translation>Salin persediaan</translation>
     </message>
     <message>
         <source>Ctrl+L                  Address
@@ -2410,4976 +2413,4989 @@ Ctrl+Shift+R         Rotate
 Ctrl+Shift+S         Screenshot
 F11 / Esc              Full screen / back
 F12                        Web inspector</source>
-        <translation type="unfinished"></translation>
+        <translation>Ctrl+L                  Alamat
+Ctrl+R                  Muat semula
+Ctrl+Shift+R         Putar
+Ctrl+Shift+S         Tangkapan skrin
+F11 / Esc              Skrin penuh / kembali
+F12                        Pemeriksa web</translation>
     </message>
     <message>
         <source>Ctrl+L  Address     Ctrl+Shift+R  Rotate     F11  Full screen</source>
-        <translation type="unfinished"></translation>
+        <translation>Ctrl+L  Alamat     Ctrl+Shift+R  Putar     F11  Skrin penuh</translation>
     </message>
     <message>
         <source>Custom</source>
         <comment>device category</comment>
-        <translation type="unfinished"></translation>
+        <translation>Tersuai</translation>
     </message>
     <message>
         <source>Custom size</source>
-        <translation type="unfinished"></translation>
+        <translation>Saiz tersuai</translation>
     </message>
     <message>
         <source>DISPLAY</source>
-        <translation type="unfinished"></translation>
+        <translation>PAPARAN</translation>
     </message>
     <message>
         <source>Developer tools · F12</source>
-        <translation type="unfinished"></translation>
+        <translation>Alat pembangun · F12</translation>
     </message>
     <message>
         <source>Device catalog updated</source>
-        <translation type="unfinished"></translation>
+        <translation>Katalog peranti dikemas kini</translation>
     </message>
     <message>
         <source>Device profiles (*.json)</source>
-        <translation type="unfinished"></translation>
+        <translation>Profil peranti (*.json)</translation>
     </message>
     <message>
         <source>Export</source>
-        <translation type="unfinished"></translation>
+        <translation>Eksport</translation>
     </message>
     <message>
         <source>Export device profile</source>
-        <translation type="unfinished"></translation>
+        <translation>Eksport profil peranti</translation>
     </message>
     <message>
         <source>Fit</source>
-        <translation type="unfinished"></translation>
+        <translation>Muat</translation>
     </message>
     <message>
         <source>Fold</source>
-        <translation type="unfinished"></translation>
+        <translation>Lipat</translation>
     </message>
     <message>
         <source>Folded · %1</source>
-        <translation type="unfinished"></translation>
+        <translation>Dilipat · %1</translation>
     </message>
     <message>
         <source>Folded · Landscape</source>
-        <translation type="unfinished"></translation>
+        <translation>Dilipat · Landskap</translation>
     </message>
     <message>
         <source>Folded · Portrait</source>
-        <translation type="unfinished"></translation>
+        <translation>Dilipat · Potret</translation>
     </message>
     <message>
         <source>Full screen · F11</source>
-        <translation type="unfinished"></translation>
+        <translation>Skrin penuh · F11</translation>
     </message>
     <message>
         <source>Got it</source>
-        <translation type="unfinished"></translation>
+        <translation>Faham</translation>
     </message>
     <message>
         <source>Import</source>
-        <translation type="unfinished"></translation>
+        <translation>Import</translation>
     </message>
     <message>
         <source>Import device profiles</source>
-        <translation type="unfinished"></translation>
+        <translation>Import profil peranti</translation>
     </message>
     <message>
         <source>Inner · Under-display camera</source>
-        <translation type="unfinished"></translation>
+        <translation>Dalam · Kamera bawah paparan</translation>
     </message>
     <message>
         <source>Interactive demo</source>
-        <translation type="unfinished"></translation>
+        <translation>Demo interaktif</translation>
     </message>
     <message>
         <source>Keyboard shortcuts and tips</source>
-        <translation type="unfinished"></translation>
+        <translation>Pintasan papan kekunci dan petua</translation>
     </message>
     <message>
         <source>Landscape</source>
-        <translation type="unfinished"></translation>
+        <translation>Landskap</translation>
     </message>
     <message>
         <source>Landscape</source>
         <comment>orientation button</comment>
-        <translation type="unfinished"></translation>
+        <translation>Landskap</translation>
     </message>
     <message>
         <source>Load a local web build with index.html</source>
-        <translation type="unfinished"></translation>
+        <translation>Muatkan binaan web setempat dengan index.html</translation>
     </message>
     <message>
         <source>Loading…</source>
-        <translation type="unfinished"></translation>
+        <translation>Memuatkan…</translation>
     </message>
     <message>
         <source>Model specifications ↗</source>
-        <translation type="unfinished"></translation>
+        <translation>Spesifikasi model ↗</translation>
     </message>
     <message>
         <source>Native build tools</source>
-        <translation type="unfinished"></translation>
+        <translation>Alat binaan asli</translation>
     </message>
     <message>
         <source>No matching model</source>
-        <translation type="unfinished"></translation>
+        <translation>Tiada model yang sepadan</translation>
     </message>
     <message>
         <source>Open</source>
-        <translation type="unfinished"></translation>
+        <translation>Buka</translation>
     </message>
     <message>
         <source>Open folder</source>
-        <translation type="unfinished"></translation>
+        <translation>Buka folder</translation>
     </message>
     <message>
         <source>Open · %1</source>
-        <translation type="unfinished"></translation>
+        <translation>Terbuka · %1</translation>
     </message>
     <message>
         <source>Open · Landscape</source>
-        <translation type="unfinished"></translation>
+        <translation>Terbuka · Landskap</translation>
     </message>
     <message>
         <source>Open · Portrait</source>
-        <translation type="unfinished"></translation>
+        <translation>Terbuka · Potret</translation>
     </message>
     <message>
         <source>Outer · Round front camera</source>
-        <translation type="unfinished"></translation>
+        <translation>Luar · Kamera depan bulat</translation>
     </message>
     <message>
         <source>Tomacco · Web inspector</source>
-        <translation type="unfinished"></translation>
+        <translation>Tomacco · Pemeriksa web</translation>
     </message>
     <message>
         <source>Portrait</source>
-        <translation type="unfinished"></translation>
+        <translation>Potret</translation>
     </message>
     <message>
         <source>Portrait</source>
         <comment>orientation button</comment>
-        <translation type="unfinished"></translation>
+        <translation>Potret</translation>
     </message>
     <message>
         <source>QUICK OPEN</source>
-        <translation type="unfinished"></translation>
+        <translation>BUKA PANTAS</translation>
     </message>
     <message>
         <source>Reload · Ctrl+R</source>
-        <translation type="unfinished"></translation>
+        <translation>Muat semula · Ctrl+R</translation>
     </message>
     <message>
         <source>Rotate · Ctrl+Shift+R</source>
-        <translation type="unfinished"></translation>
+        <translation>Putar · Ctrl+Shift+R</translation>
     </message>
     <message>
         <source>Safe area</source>
-        <translation type="unfinished"></translation>
+        <translation>Kawasan selamat</translation>
     </message>
     <message>
         <source>Save device as PNG · Ctrl+Shift+S</source>
-        <translation type="unfinished"></translation>
+        <translation>Simpan peranti sebagai PNG · Ctrl+Shift+S</translation>
     </message>
     <message>
         <source>Screenshot could not be saved.</source>
-        <translation type="unfinished"></translation>
+        <translation>Tangkapan skrin tidak dapat disimpan.</translation>
     </message>
     <message>
         <source>Screenshot saved · %1</source>
-        <translation type="unfinished"></translation>
+        <translation>Tangkapan skrin disimpan · %1</translation>
     </message>
     <message>
         <source>Search Android devices…</source>
-        <translation type="unfinished"></translation>
+        <translation>Cari peranti Android…</translation>
     </message>
     <message>
         <source>Search Apple devices…</source>
-        <translation type="unfinished"></translation>
+        <translation>Cari peranti Apple…</translation>
     </message>
     <message>
         <source>Search custom devices…</source>
-        <translation type="unfinished"></translation>
+        <translation>Cari peranti tersuai…</translation>
     </message>
     <message>
         <source>Send layout hints to the app; the background always stays edge-to-edge</source>
-        <translation type="unfinished"></translation>
+        <translation>Hantar petunjuk reka letak kepada aplikasi; latar belakang sentiasa kekal dari tepi ke tepi</translation>
     </message>
     <message>
         <source>Show safe area</source>
-        <translation type="unfinished"></translation>
+        <translation>Tunjukkan kawasan selamat</translation>
     </message>
     <message>
         <source>TOOLS</source>
-        <translation type="unfinished"></translation>
+        <translation>ALAT</translation>
     </message>
     <message>
         <source>The layout preview uses Chromium. Build and run native Android and iOS apps from the workspace on an emulator or a connected device. The profiles contain the manufacturers&apos; resolutions and approximated bodies, cutouts and safe areas. CSS env(safe-area-inset-*) and Safari are not emulated here.</source>
-        <translation type="unfinished"></translation>
+        <translation>Pratonton reka letak menggunakan Chromium. Bina dan jalankan aplikasi Android dan iOS asli dari ruang kerja pada emulator atau peranti yang disambungkan. Profil mengandungi resolusi pengeluar serta badan, keratan dan kawasan selamat anggaran. CSS env(safe-area-inset-*) dan Safari tidak diemulasikan di sini.</translation>
     </message>
     <message>
         <source>The web preview works independently of this. Credentials are entered only in the interactive xtool setup.</source>
-        <translation type="unfinished"></translation>
+        <translation>Pratonton web berfungsi secara bebas daripada ini. Kelayakan dimasukkan hanya dalam persediaan xtool interaktif.</translation>
     </message>
     <message>
         <source>The workspace has unsaved changes.</source>
-        <translation type="unfinished"></translation>
+        <translation>Ruang kerja mempunyai perubahan yang belum disimpan.</translation>
     </message>
     <message>
         <source>Unfold</source>
-        <translation type="unfinished"></translation>
+        <translation>Buka lipatan</translation>
     </message>
     <message>
         <source>Unreachable</source>
-        <translation type="unfinished"></translation>
+        <translation>Tidak dapat dicapai</translation>
     </message>
     <message>
         <source>VIEW</source>
-        <translation type="unfinished"></translation>
+        <translation>PAPARAN</translation>
     </message>
     <message>
         <source>View at 100 %</source>
-        <translation type="unfinished"></translation>
+        <translation>Lihat pada 100 %</translation>
     </message>
     <message>
         <source>View build tools →</source>
-        <translation type="unfinished"></translation>
+        <translation>Lihat alat binaan →</translation>
     </message>
     <message>
         <source>Web app connected</source>
-        <translation type="unfinished"></translation>
+        <translation>Aplikasi web disambungkan</translation>
     </message>
     <message>
         <source>Web preview</source>
-        <translation type="unfinished"></translation>
+        <translation>Pratonton web</translation>
     </message>
     <message>
         <source>Workspace</source>
-        <translation type="unfinished"></translation>
+        <translation>Ruang kerja</translation>
     </message>
     <message>
         <source>Zoom in</source>
-        <translation type="unfinished"></translation>
+        <translation>Zum masuk</translation>
     </message>
     <message>
         <source>Zoom out</source>
-        <translation type="unfinished"></translation>
+        <translation>Zum keluar</translation>
     </message>
     <message>
         <source>iOS SDK not set up yet</source>
-        <translation type="unfinished"></translation>
+        <translation>SDK iOS belum disediakan</translation>
     </message>
     <message>
         <source>xtool builds and signs SwiftPM apps for iOS. This needs Apple&apos;s SDK from Xcode and a separate sign-in for signing.</source>
-        <translation type="unfinished"></translation>
+        <translation>xtool membina dan menandatangani aplikasi SwiftPM untuk iOS. Ini memerlukan SDK Apple daripada Xcode dan log masuk berasingan untuk menandatangani.</translation>
     </message>
     <message>
         <source>xtool sdk install /path/to/Xcode.xip
 xtool setup</source>
-        <translation type="unfinished"></translation>
+        <translation>xtool sdk install /laluan/ke/Xcode.xip
+xtool setup</translation>
     </message>
     <message>
         <source>Safe area metadata</source>
-        <translation type="unfinished"></translation>
+        <translation>Metadata kawasan selamat</translation>
     </message>
     <message>
         <source>System bars</source>
-        <translation type="unfinished"></translation>
+        <translation>Bar sistem</translation>
     </message>
     <message>
         <source>Sound</source>
-        <translation type="unfinished"></translation>
+        <translation>Bunyi</translation>
     </message>
     <message>
         <source>Custom</source>
-        <translation type="unfinished"></translation>
+        <translation>Tersuai</translation>
     </message>
     <message>
         <source>Fast 3G</source>
-        <translation type="unfinished"></translation>
+        <translation>3G pantas</translation>
     </message>
     <message>
         <source>Network</source>
-        <translation type="unfinished"></translation>
+        <translation>Rangkaian</translation>
     </message>
     <message>
         <source>No throttling</source>
-        <translation type="unfinished"></translation>
+        <translation>Tiada pendikitan</translation>
     </message>
     <message>
         <source>Offline</source>
-        <translation type="unfinished"></translation>
+        <translation>Luar talian</translation>
     </message>
     <message>
         <source>Page color scheme</source>
-        <translation type="unfinished"></translation>
+        <translation>Skema warna halaman</translation>
     </message>
     <message>
         <source>Reduce motion</source>
-        <translation type="unfinished"></translation>
+        <translation>Kurangkan gerakan</translation>
     </message>
     <message>
         <source>Slow 3G</source>
-        <translation type="unfinished"></translation>
+        <translation>3G perlahan</translation>
     </message>
     <message>
         <source>System</source>
-        <translation type="unfinished"></translation>
+        <translation>Sistem</translation>
     </message>
     <message>
         <source>The page sees prefers-reduced-motion: reduce</source>
-        <translation type="unfinished"></translation>
+        <translation>Halaman melihat prefers-reduced-motion: reduce</translation>
     </message>
     <message>
         <source>System bar color</source>
-        <translation type="unfinished"></translation>
+        <translation>Warna bar sistem</translation>
     </message>
     <message>
         <source>Auto</source>
-        <translation type="unfinished"></translation>
+        <translation>Auto</translation>
     </message>
     <message>
         <source>Light</source>
-        <translation type="unfinished"></translation>
+        <translation>Cerah</translation>
     </message>
     <message>
         <source>Dark</source>
-        <translation type="unfinished"></translation>
+        <translation>Gelap</translation>
     </message>
     <message>
         <source>Web inspector</source>
-        <translation type="unfinished"></translation>
+        <translation>Pemeriksa web</translation>
     </message>
     <message>
         <source>Builds &amp; devices</source>
-        <translation type="unfinished"></translation>
+        <translation>Binaan &amp; peranti</translation>
     </message>
     <message>
         <source>Screenshots</source>
-        <translation type="unfinished"></translation>
+        <translation>Tangkapan skrin</translation>
     </message>
     <message>
         <source>Live device</source>
-        <translation type="unfinished"></translation>
+        <translation>Peranti langsung</translation>
     </message>
     <message>
         <source>Chromium preview. Frames are approximate.</source>
-        <translation type="unfinished"></translation>
+        <translation>Pratonton Chromium. Bingkai adalah anggaran.</translation>
     </message>
     <message>
         <source>Your web app, on every phone.</source>
-        <translation type="unfinished"></translation>
+        <translation>Aplikasi web anda, pada setiap telefon.</translation>
     </message>
     <message>
         <source>Open it by URL, or load a finished build as a folder. Switch phone, color and orientation without reloading.</source>
-        <translation type="unfinished"></translation>
+        <translation>Bukanya melalui URL, atau muatkan binaan siap sebagai folder. Tukar telefon, warna dan orientasi tanpa memuat semula.</translation>
     </message>
     <message>
         <source>Unsaved changes</source>
-        <translation type="unfinished"></translation>
+        <translation>Perubahan belum disimpan</translation>
     </message>
 </context>
 <context>
     <name>NativeView</name>
     <message>
         <source>Click the text field in the app first</source>
-        <translation type="unfinished"></translation>
+        <translation>Klik medan teks dalam aplikasi dahulu</translation>
     </message>
     <message>
         <source>Connection to the runtime ended</source>
-        <translation type="unfinished"></translation>
+        <translation>Sambungan ke masa jalan tamat</translation>
     </message>
     <message>
         <source>Frame resolution outside the limits</source>
-        <translation type="unfinished"></translation>
+        <translation>Resolusi bingkai di luar had</translation>
     </message>
     <message>
         <source>Input failed</source>
-        <translation type="unfinished"></translation>
+        <translation>Input gagal</translation>
     </message>
     <message>
         <source>Invalid video packet size</source>
-        <translation type="unfinished"></translation>
+        <translation>Saiz paket video tidak sah</translation>
     </message>
     <message>
         <source>Not enough memory for the video frame</source>
-        <translation type="unfinished"></translation>
+        <translation>Memori tidak mencukupi untuk bingkai video</translation>
     </message>
     <message>
         <source>The H.264 data could not be read</source>
-        <translation type="unfinished"></translation>
+        <translation>Data H.264 tidak dapat dibaca</translation>
     </message>
     <message>
         <source>The input was not confirmed</source>
-        <translation type="unfinished"></translation>
+        <translation>Input tidak disahkan</translation>
     </message>
     <message>
         <source>The runtime response is too large</source>
-        <translation type="unfinished"></translation>
+        <translation>Respons masa jalan terlalu besar</translation>
     </message>
     <message>
         <source>The video decoder could not be initialized</source>
-        <translation type="unfinished"></translation>
+        <translation>Penyahkod video tidak dapat dimulakan</translation>
     </message>
     <message>
         <source>The video frame could not be converted</source>
-        <translation type="unfinished"></translation>
+        <translation>Bingkai video tidak dapat ditukar</translation>
     </message>
     <message>
         <source>Too many pending inputs</source>
-        <translation type="unfinished"></translation>
+        <translation>Terlalu banyak input yang belum selesai</translation>
     </message>
     <message>
         <source>Video decoder not available</source>
-        <translation type="unfinished"></translation>
+        <translation>Penyahkod video tidak tersedia</translation>
     </message>
 </context>
 <context>
     <name>NativeWorkspace</name>
     <message>
         <source>Interface size</source>
-        <translation type="unfinished"></translation>
+        <translation>Saiz antara muka</translation>
     </message>
     <message>
         <source>Larger interface</source>
-        <translation type="unfinished"></translation>
+        <translation>Antara muka lebih besar</translation>
     </message>
     <message>
         <source>Smaller interface</source>
-        <translation type="unfinished"></translation>
+        <translation>Antara muka lebih kecil</translation>
     </message>
     <message>
         <source>Reset interface size</source>
-        <translation type="unfinished"></translation>
+        <translation>Tetapkan semula saiz antara muka</translation>
     </message>
     <message>
         <source>Text, controls and spacing in Tomacco. Device zoom and screenshots keep their own size.</source>
-        <translation type="unfinished"></translation>
+        <translation>Teks, kawalan dan jarak dalam Tomacco. Zum peranti dan tangkapan skrin mengekalkan saiz masing-masing.</translation>
     </message>
     <message>
         <source>Reset</source>
-        <translation type="unfinished"></translation>
+        <translation>Tetapkan semula</translation>
     </message>
     <message>
         <source>Drop to open %1 as the project</source>
-        <translation type="unfinished"></translation>
+        <translation>Lepaskan untuk membuka %1 sebagai projek</translation>
     </message>
     <message>
         <source>Open recent project %1</source>
-        <translation type="unfinished"></translation>
+        <translation>Buka projek terkini %1</translation>
     </message>
     <message>
         <source>Connect a device to take a screenshot.</source>
-        <translation type="unfinished"></translation>
+        <translation>Sambungkan peranti untuk mengambil tangkapan skrin.</translation>
     </message>
     <message>
         <source>Screenshot saved and copied · %1</source>
-        <translation type="unfinished"></translation>
+        <translation>Tangkapan skrin disimpan dan disalin · %1</translation>
     </message>
     <message>
         <source>Save and copy a device screenshot</source>
-        <translation type="unfinished"></translation>
+        <translation>Simpan dan salin tangkapan skrin peranti</translation>
     </message>
     <message>
         <source>Save and copy a screenshot</source>
-        <translation type="unfinished"></translation>
+        <translation>Simpan dan salin tangkapan skrin</translation>
     </message>
     <message>
         <source>Choose a device first, then drop the app on it.</source>
-        <translation type="unfinished"></translation>
+        <translation>Pilih peranti dahulu, kemudian lepaskan aplikasi padanya.</translation>
     </message>
     <message>
         <source>Android devices install .apk files.</source>
-        <translation type="unfinished"></translation>
+        <translation>Peranti Android memasang fail .apk.</translation>
     </message>
     <message>
         <source>An iPhone installs one signed .ipa file.</source>
-        <translation type="unfinished"></translation>
+        <translation>iPhone memasang satu fail .ipa yang ditandatangani.</translation>
     </message>
     <message>
         <source>Apps for the Mac&apos;s simulator are installed with Apple&apos;s tools.</source>
-        <translation type="unfinished"></translation>
+        <translation>Aplikasi untuk simulator Mac dipasang dengan alat Apple.</translation>
     </message>
     <message>
         <source>Installing %1 on %2…</source>
-        <translation type="unfinished"></translation>
+        <translation>Memasang %1 pada %2…</translation>
     </message>
     <message>
         <source>Installing · progress under Builds &amp; jobs</source>
-        <translation type="unfinished"></translation>
+        <translation>Memasang · kemajuan di bawah Binaan &amp; tugas</translation>
     </message>
     <message numerus="yes">
         <source>%n tool(s) available to agents through the CLI and MCP</source>
-        <translation type="unfinished">
-            <numerusform></numerusform>
+        <translation>
+            <numerusform>%n alat tersedia kepada ejen melalui CLI dan MCP</numerusform>
         </translation>
     </message>
     <message>
         <source>A job is already running for this project. You can open or stop it under Builds &amp; jobs.</source>
-        <translation type="unfinished"></translation>
+        <translation>Satu tugas sedang berjalan untuk projek ini. Anda boleh membuka atau menghentikannya di bawah Binaan &amp; tugas.</translation>
     </message>
     <message>
         <source>AUTOMATION</source>
-        <translation type="unfinished"></translation>
+        <translation>AUTOMASI</translation>
     </message>
     <message>
         <source>About Tomacco</source>
-        <translation type="unfinished"></translation>
+        <translation>Perihal Tomacco</translation>
     </message>
     <message>
         <source>About Tomacco · version, license and source code</source>
-        <translation type="unfinished"></translation>
+        <translation>Perihal Tomacco · versi, lesen dan kod sumber</translation>
     </message>
     <message>
         <source>Agent API not ready</source>
-        <translation type="unfinished"></translation>
+        <translation>API ejen belum sedia</translation>
     </message>
     <message>
         <source>Agents</source>
-        <translation type="unfinished"></translation>
+        <translation>Ejen</translation>
     </message>
     <message>
         <source>All files (*)</source>
-        <translation type="unfinished"></translation>
+        <translation>Semua fail (*)</translation>
     </message>
     <message>
         <source>Android is starting…</source>
-        <translation type="unfinished"></translation>
+        <translation>Android sedang bermula…</translation>
     </message>
     <message>
         <source>App launch: %1. Details under Builds &amp; jobs.</source>
-        <translation type="unfinished"></translation>
+        <translation>Pelancaran aplikasi: %1. Butiran di bawah Binaan &amp; tugas.</translation>
     </message>
     <message>
         <source>App launched</source>
-        <translation type="unfinished"></translation>
+        <translation>Aplikasi dilancarkan</translation>
     </message>
     <message>
         <source>App running on %1 · end the session before switching targets</source>
-        <translation type="unfinished"></translation>
+        <translation>Aplikasi berjalan pada %1 · tamatkan sesi sebelum menukar sasaran</translation>
     </message>
     <message>
         <source>App running · apply changes with Hot Reload</source>
-        <translation type="unfinished"></translation>
+        <translation>Aplikasi berjalan · gunakan perubahan dengan Hot Reload</translation>
     </message>
     <message>
         <source>Apple SDK</source>
-        <translation type="unfinished"></translation>
+        <translation>SDK Apple</translation>
     </message>
     <message>
         <source>Apple sign-in</source>
-        <translation type="unfinished"></translation>
+        <translation>Log masuk Apple</translation>
     </message>
     <message>
         <source>Apple sign-in opened in the local terminal</source>
-        <translation type="unfinished"></translation>
+        <translation>Log masuk Apple dibuka dalam terminal setempat</translation>
     </message>
     <message>
         <source>Applying changes to the running app…</source>
-        <translation type="unfinished"></translation>
+        <translation>Menggunakan perubahan pada aplikasi yang sedang berjalan…</translation>
     </message>
     <message>
         <source>Back</source>
-        <translation type="unfinished"></translation>
+        <translation>Kembali</translation>
     </message>
     <message>
         <source>Build running…</source>
-        <translation type="unfinished"></translation>
+        <translation>Binaan sedang berjalan…</translation>
     </message>
     <message>
         <source>Build, run and test native Android and iOS apps on Linux, by hand or with your agents.</source>
-        <translation type="unfinished"></translation>
+        <translation>Bina, jalankan dan uji aplikasi Android dan iOS asli pada Linux, secara manual atau dengan ejen anda.</translation>
     </message>
     <message>
         <source>Builds &amp; jobs</source>
-        <translation type="unfinished"></translation>
+        <translation>Binaan &amp; tugas</translation>
     </message>
     <message>
         <source>Capture saved · %1</source>
-        <translation type="unfinished"></translation>
+        <translation>Rakaman disimpan · %1</translation>
     </message>
     <message>
         <source>Case color</source>
-        <translation type="unfinished"></translation>
+        <translation>Warna sarung</translation>
     </message>
     <message>
         <source>Check again</source>
-        <translation type="unfinished"></translation>
+        <translation>Semak semula</translation>
     </message>
     <message>
         <source>Choose a Mac</source>
-        <translation type="unfinished"></translation>
+        <translation>Pilih Mac</translation>
     </message>
     <message>
         <source>Choose a device</source>
-        <translation type="unfinished"></translation>
+        <translation>Pilih peranti</translation>
     </message>
     <message>
         <source>Choose ‘Sign in to Apple’ and finish signing in in the local terminal.</source>
-        <translation type="unfinished"></translation>
+        <translation>Pilih ‘Log masuk ke Apple’ dan selesaikan log masuk dalam terminal setempat.</translation>
     </message>
     <message>
         <source>Color</source>
-        <translation type="unfinished"></translation>
+        <translation>Warna</translation>
     </message>
     <message>
         <source>Connect</source>
-        <translation type="unfinished"></translation>
+        <translation>Sambung</translation>
     </message>
     <message>
         <source>Connect Mac</source>
-        <translation type="unfinished"></translation>
+        <translation>Sambungkan Mac</translation>
     </message>
     <message>
         <source>Connect an iPhone or iPad via USB and confirm ‘Trust This Computer’.</source>
-        <translation type="unfinished"></translation>
+        <translation>Sambungkan iPhone atau iPad melalui USB dan sahkan ‘Percayai Komputer Ini’.</translation>
     </message>
     <message>
         <source>Connect the Apple simulator to Linux</source>
-        <translation type="unfinished"></translation>
+        <translation>Sambungkan simulator Apple ke Linux</translation>
     </message>
     <message>
         <source>Connect the unlocked iPhone. The usbmuxd service must be available.</source>
-        <translation type="unfinished"></translation>
+        <translation>Sambungkan iPhone yang tidak berkunci. Perkhidmatan usbmuxd mesti tersedia.</translation>
     </message>
     <message>
         <source>Connected</source>
-        <translation type="unfinished"></translation>
+        <translation>Disambungkan</translation>
     </message>
     <message>
         <source>Connecting</source>
-        <translation type="unfinished"></translation>
+        <translation>Menyambung</translation>
     </message>
     <message>
         <source>Connecting the picture…</source>
-        <translation type="unfinished"></translation>
+        <translation>Menyambungkan gambar…</translation>
     </message>
     <message>
         <source>Not mirroring</source>
-        <translation type="unfinished"></translation>
+        <translation>Tidak mencerminkan</translation>
     </message>
     <message>
         <source>On the iPhone, open Control Center, tap Screen Mirroring and choose %1.</source>
-        <translation type="unfinished"></translation>
+        <translation>Pada iPhone, buka Pusat Kawalan, ketik Pencerminan Skrin dan pilih %1.</translation>
     </message>
     <message>
         <source>Connecting…</source>
-        <translation type="unfinished"></translation>
+        <translation>Menyambung…</translation>
     </message>
     <message>
         <source>Connection name, e.g. build-mac</source>
-        <translation type="unfinished"></translation>
+        <translation>Nama sambungan, cth. build-mac</translation>
     </message>
     <message>
         <source>Control program</source>
-        <translation type="unfinished"></translation>
+        <translation>Program kawalan</translation>
     </message>
     <message>
         <source>Control program unavailable</source>
-        <translation type="unfinished"></translation>
+        <translation>Program kawalan tidak tersedia</translation>
     </message>
     <message>
         <source>Copy companion command</source>
-        <translation type="unfinished"></translation>
+        <translation>Salin arahan pendamping</translation>
     </message>
     <message>
         <source>Copy context</source>
-        <translation type="unfinished"></translation>
+        <translation>Salin konteks</translation>
     </message>
     <message>
         <source>DEVELOPMENT</source>
-        <translation type="unfinished"></translation>
+        <translation>PEMBANGUNAN</translation>
     </message>
     <message>
         <source>Detach the device into its own window</source>
-        <translation type="unfinished"></translation>
+        <translation>Pisahkan peranti ke tetingkapnya sendiri</translation>
     </message>
     <message>
         <source>Device pairing</source>
-        <translation type="unfinished"></translation>
+        <translation>Gandingan peranti</translation>
     </message>
     <message>
         <source>Devices</source>
-        <translation type="unfinished"></translation>
+        <translation>Peranti</translation>
     </message>
     <message>
         <source>Disconnect</source>
-        <translation type="unfinished"></translation>
+        <translation>Putuskan sambungan</translation>
     </message>
     <message>
         <source>Dismiss notice</source>
-        <translation type="unfinished"></translation>
+        <translation>Ketepikan notis</translation>
     </message>
     <message>
         <source>Dock</source>
-        <translation type="unfinished"></translation>
+        <translation>Dok</translation>
     </message>
     <message>
         <source>Download SDK from Apple</source>
-        <translation type="unfinished"></translation>
+        <translation>Muat turun SDK daripada Apple</translation>
     </message>
     <message>
         <source>Download control package</source>
-        <translation type="unfinished"></translation>
+        <translation>Muat turun pakej kawalan</translation>
     </message>
     <message>
         <source>Download the Xcode archive from Apple, then choose ‘Import SDK’. Processing runs on Linux.</source>
-        <translation type="unfinished"></translation>
+        <translation>Muat turun arkib Xcode daripada Apple, kemudian pilih ‘Import SDK’. Pemprosesan berjalan pada Linux.</translation>
     </message>
     <message>
         <source>Ending the session…</source>
-        <translation type="unfinished"></translation>
+        <translation>Menamatkan sesi…</translation>
     </message>
     <message>
         <source>Enter text</source>
-        <translation type="unfinished"></translation>
+        <translation>Masukkan teks</translation>
     </message>
     <message>
         <source>Files</source>
-        <translation type="unfinished"></translation>
+        <translation>Fail</translation>
     </message>
     <message>
         <source>First click into the app&apos;s text field. This text is pasted through the device clipboard.</source>
-        <translation type="unfinished"></translation>
+        <translation>Klik dahulu ke dalam medan teks aplikasi. Teks ini ditampal melalui papan keratan peranti.</translation>
     </message>
     <message>
         <source>First click the text field you want in the app. Its entire accessible value is replaced, umlauts and emoji included.</source>
-        <translation type="unfinished"></translation>
+        <translation>Klik dahulu medan teks yang anda mahu dalam aplikasi. Keseluruhan nilai yang boleh diaksesnya diganti, termasuk umlaut dan emoji.</translation>
     </message>
     <message>
         <source>Frame</source>
-        <translation type="unfinished"></translation>
+        <translation>Bingkai</translation>
     </message>
     <message>
         <source>Import SDK</source>
-        <translation type="unfinished"></translation>
+        <translation>Import SDK</translation>
     </message>
     <message>
         <source>Import the Apple SDK from Xcode</source>
-        <translation type="unfinished"></translation>
+        <translation>Import SDK Apple daripada Xcode</translation>
     </message>
     <message>
         <source>Insert text</source>
-        <translation type="unfinished"></translation>
+        <translation>Sisipkan teks</translation>
     </message>
     <message>
         <source>Install libimobiledevice for device pairing.</source>
-        <translation type="unfinished"></translation>
+        <translation>Pasang libimobiledevice untuk gandingan peranti.</translation>
     </message>
     <message>
         <source>Install libusbmuxd for the USB connection.</source>
-        <translation type="unfinished"></translation>
+        <translation>Pasang libusbmuxd untuk sambungan USB.</translation>
     </message>
     <message>
         <source>Install the Swift toolchain that matches your Apple SDK.</source>
-        <translation type="unfinished"></translation>
+        <translation>Pasang rantai alat Swift yang sepadan dengan SDK Apple anda.</translation>
     </message>
     <message>
         <source>Install xtool for Linux.</source>
-        <translation type="unfinished"></translation>
+        <translation>Pasang xtool untuk Linux.</translation>
     </message>
     <message>
         <source>Installed WebDriverAgent bundle ID</source>
-        <translation type="unfinished"></translation>
+        <translation>ID himpunan WebDriverAgent yang dipasang</translation>
     </message>
     <message>
         <source>Interface language; System follows the desktop language</source>
-        <translation type="unfinished"></translation>
+        <translation>Bahasa antara muka; Sistem mengikut bahasa desktop</translation>
     </message>
     <message>
         <source>Language</source>
-        <translation type="unfinished"></translation>
+        <translation>Bahasa</translation>
     </message>
     <message>
         <source>Sponsor</source>
-        <translation type="unfinished"></translation>
+        <translation>Penaja</translation>
     </message>
     <message>
         <source>Legal notes</source>
-        <translation type="unfinished"></translation>
+        <translation>Nota undang-undang</translation>
     </message>
     <message>
         <source>License</source>
-        <translation type="unfinished"></translation>
+        <translation>Lesen</translation>
     </message>
     <message>
         <source>Linux builds your SwiftPM/xtool app. The connected iPhone runs it. Set up the Apple SDK and signing here once.</source>
-        <translation type="unfinished"></translation>
+        <translation>Linux membina aplikasi SwiftPM/xtool anda. iPhone yang disambungkan menjalankannya. Sediakan SDK Apple dan penandatanganan di sini sekali sahaja.</translation>
     </message>
     <message>
         <source>Live device</source>
-        <translation type="unfinished"></translation>
+        <translation>Peranti langsung</translation>
     </message>
     <message>
         <source>Load developer image</source>
-        <translation type="unfinished"></translation>
+        <translation>Muatkan imej pembangun</translation>
     </message>
     <message>
         <source>Mac terminal: brew install facebook/fb/idb
 SSH uses your existing keys and the known host identity.</source>
-        <translation type="unfinished"></translation>
+        <translation>Terminal Mac: brew install facebook/fb/idb
+SSH menggunakan kunci sedia ada anda dan identiti hos yang dikenali.</translation>
     </message>
     <message>
         <source>No iOS simulator runtime is installed on this Mac yet. Install one in Xcode → Settings → Components.</source>
-        <translation type="unfinished"></translation>
+        <translation>Belum ada masa jalan simulator iOS dipasang pada Mac ini. Pasang satu dalam Xcode → Settings → Components.</translation>
     </message>
     <message>
         <source>No project open</source>
-        <translation type="unfinished"></translation>
+        <translation>Tiada projek dibuka</translation>
     </message>
     <message>
         <source>No project yet</source>
-        <translation type="unfinished"></translation>
+        <translation>Belum ada projek</translation>
     </message>
     <message>
         <source>Not available</source>
-        <translation type="unfinished"></translation>
+        <translation>Tidak tersedia</translation>
     </message>
     <message>
         <source>Open a project folder · Ctrl+O</source>
-        <translation type="unfinished"></translation>
+        <translation>Buka folder projek · Ctrl+O</translation>
     </message>
     <message>
         <source>Open job</source>
-        <translation type="unfinished"></translation>
+        <translation>Buka tugas</translation>
     </message>
     <message>
         <source>Open project</source>
-        <translation type="unfinished"></translation>
+        <translation>Buka projek</translation>
     </message>
     <message>
         <source>Overview</source>
-        <translation type="unfinished"></translation>
+        <translation>Gambaran keseluruhan</translation>
     </message>
     <message>
         <source>Own window</source>
-        <translation type="unfinished"></translation>
+        <translation>Tetingkap sendiri</translation>
     </message>
     <message>
         <source>Pair device</source>
-        <translation type="unfinished"></translation>
+        <translation>Gandingkan peranti</translation>
     </message>
     <message>
         <source>Play the app&apos;s sound on this computer</source>
-        <translation type="unfinished"></translation>
+        <translation>Mainkan bunyi aplikasi pada komputer ini</translation>
     </message>
     <message>
         <source>Tomacco is free software under the GNU General Public License. Source: GPL-2.0-or-later. Distributed binaries: GPL-3.0-or-later, because they include Apache-2.0 components. It comes with ABSOLUTELY NO WARRANTY.</source>
-        <translation type="unfinished"></translation>
+        <translation>Tomacco ialah perisian bebas di bawah GNU General Public License. Sumber: GPL-2.0-or-later. Binari yang diedarkan: GPL-3.0-or-later, kerana ia mengandungi komponen Apache-2.0. Ia disediakan TANPA SEBARANG JAMINAN.</translation>
     </message>
     <message>
         <source>Project and runtime context copied</source>
-        <translation type="unfinished"></translation>
+        <translation>Konteks projek dan masa jalan disalin</translation>
     </message>
     <message>
         <source>Project busy</source>
-        <translation type="unfinished"></translation>
+        <translation>Projek sibuk</translation>
     </message>
     <message>
         <source>Project directory on the Mac, e.g. /Users/me/Projects/app</source>
-        <translation type="unfinished"></translation>
+        <translation>Direktori projek pada Mac, cth. /Users/me/Projects/app</translation>
     </message>
     <message>
         <source>Project format</source>
-        <translation type="unfinished"></translation>
+        <translation>Format projek</translation>
     </message>
     <message>
         <source>Reference frame recognized from the display size; the frame geometry is approximated</source>
-        <translation type="unfinished"></translation>
+        <translation>Bingkai rujukan dikenal pasti daripada saiz paparan; geometri bingkai adalah anggaran</translation>
     </message>
     <message>
         <source>Replace text field</source>
-        <translation type="unfinished"></translation>
+        <translation>Ganti medan teks</translation>
     </message>
     <message>
         <source>Reused the running session</source>
-        <translation type="unfinished"></translation>
+        <translation>Sesi yang sedang berjalan digunakan semula</translation>
     </message>
     <message>
         <source>Rotate</source>
-        <translation type="unfinished"></translation>
+        <translation>Putar</translation>
     </message>
     <message>
         <source>Run app</source>
-        <translation type="unfinished"></translation>
+        <translation>Jalankan aplikasi</translation>
     </message>
     <message>
         <source>SSH target, e.g. user@mac.local</source>
-        <translation type="unfinished"></translation>
+        <translation>Sasaran SSH, cth. user@mac.local</translation>
     </message>
     <message>
         <source>Save &amp; load simulators</source>
-        <translation type="unfinished"></translation>
+        <translation>Simpan &amp; muatkan simulator</translation>
     </message>
     <message>
         <source>Search</source>
-        <translation type="unfinished"></translation>
+        <translation>Cari</translation>
     </message>
     <message>
         <source>Search for devices again</source>
-        <translation type="unfinished"></translation>
+        <translation>Cari peranti sekali lagi</translation>
     </message>
     <message>
         <source>Search navigation and all tools · Ctrl+K</source>
-        <translation type="unfinished"></translation>
+        <translation>Cari navigasi dan semua alat · Ctrl+K</translation>
     </message>
     <message>
         <source>Session ended</source>
-        <translation type="unfinished"></translation>
+        <translation>Sesi tamat</translation>
     </message>
     <message>
         <source>Session ended · %1</source>
-        <translation type="unfinished"></translation>
+        <translation>Sesi tamat · %1</translation>
     </message>
     <message>
         <source>Set up Mac</source>
-        <translation type="unfinished"></translation>
+        <translation>Sediakan Mac</translation>
     </message>
     <message>
         <source>Set up another Android model</source>
-        <translation type="unfinished"></translation>
+        <translation>Sediakan model Android lain</translation>
     </message>
     <message>
         <source>Set up go-ios for the iPhone developer services.</source>
-        <translation type="unfinished"></translation>
+        <translation>Sediakan go-ios untuk perkhidmatan pembangun iPhone.</translation>
     </message>
     <message>
         <source>Set up iPhone</source>
-        <translation type="unfinished"></translation>
+        <translation>Sediakan iPhone</translation>
     </message>
     <message>
         <source>Setup started · progress under Builds &amp; jobs</source>
-        <translation type="unfinished"></translation>
+        <translation>Persediaan dimulakan · kemajuan di bawah Binaan &amp; tugas</translation>
     </message>
     <message>
         <source>Show installed apps</source>
-        <translation type="unfinished"></translation>
+        <translation>Tunjukkan aplikasi yang dipasang</translation>
     </message>
     <message>
         <source>Show the device frame; Android provides the real status bar</source>
-        <translation type="unfinished"></translation>
+        <translation>Tunjukkan bingkai peranti; Android menyediakan bar status sebenar</translation>
     </message>
     <message>
         <source>Sign &amp; install control</source>
-        <translation type="unfinished"></translation>
+        <translation>Tandatangani &amp; pasang kawalan</translation>
     </message>
     <message>
         <source>Sign in to Apple</source>
-        <translation type="unfinished"></translation>
+        <translation>Log masuk ke Apple</translation>
     </message>
     <message>
         <source>Signing can change the bundle ID. Then enter the ID of the installed WebDriverAgent runner. A modern local iOS emulator is not included at present.</source>
-        <translation type="unfinished"></translation>
+        <translation>Penandatanganan boleh mengubah ID himpunan. Kemudian masukkan ID pelari WebDriverAgent yang dipasang. Emulator iOS setempat moden tidak disertakan buat masa ini.</translation>
     </message>
     <message>
         <source>Simulator on a Mac</source>
-        <translation type="unfinished"></translation>
+        <translation>Simulator pada Mac</translation>
     </message>
     <message>
         <source>Sound</source>
-        <translation type="unfinished"></translation>
+        <translation>Bunyi</translation>
     </message>
     <message>
         <source>Sound error</source>
-        <translation type="unfinished"></translation>
+        <translation>Ralat bunyi</translation>
     </message>
     <message>
         <source>Sound…</source>
-        <translation type="unfinished"></translation>
+        <translation>Bunyi…</translation>
     </message>
     <message>
         <source>Source code ↗</source>
-        <translation type="unfinished"></translation>
+        <translation>Kod sumber ↗</translation>
     </message>
     <message>
         <source>Start iOS tunnel</source>
-        <translation type="unfinished"></translation>
+        <translation>Mulakan terowong iOS</translation>
     </message>
     <message>
         <source>Stop</source>
-        <translation type="unfinished"></translation>
+        <translation>Hentikan</translation>
     </message>
     <message>
         <source>Stop forwarding sound; restore output on the device</source>
-        <translation type="unfinished"></translation>
+        <translation>Hentikan pemajuan bunyi; pulihkan output pada peranti</translation>
     </message>
     <message>
         <source>Switch workspace</source>
-        <translation type="unfinished"></translation>
+        <translation>Tukar ruang kerja</translation>
     </message>
     <message>
         <source>System</source>
-        <translation type="unfinished"></translation>
+        <translation>Sistem</translation>
     </message>
     <message>
         <source>Text…</source>
-        <translation type="unfinished"></translation>
+        <translation>Teks…</translation>
     </message>
     <message>
         <source>The Mac needs Xcode with an iOS simulator runtime, SSH access and idb_companion. Your own Mac or a rented one works.</source>
-        <translation type="unfinished"></translation>
+        <translation>Mac memerlukan Xcode dengan masa jalan simulator iOS, akses SSH dan idb_companion. Mac anda sendiri atau Mac sewaan boleh digunakan.</translation>
     </message>
     <message>
         <source>The desktop and its control program come from different versions. Install both from the same build.</source>
-        <translation type="unfinished"></translation>
+        <translation>Desktop dan program kawalannya berasal daripada versi yang berbeza. Pasang kedua-duanya daripada binaan yang sama.</translation>
     </message>
     <message>
         <source>The device did not become ready in time.</source>
-        <translation type="unfinished"></translation>
+        <translation>Peranti tidak sedia tepat pada masanya.</translation>
     </message>
     <message>
         <source>The runtime is still starting…</source>
-        <translation type="unfinished"></translation>
+        <translation>Masa jalan masih bermula…</translation>
     </message>
     <message>
         <source>Third-party components keep their own licenses: THIRD_PARTY_NOTICES.md lists them, and docs/legal.md has further legal notes.</source>
-        <translation type="unfinished"></translation>
+        <translation>Komponen pihak ketiga mengekalkan lesen masing-masing: THIRD_PARTY_NOTICES.md menyenaraikannya, dan docs/legal.md mengandungi nota undang-undang lanjut.</translation>
     </message>
     <message>
         <source>Release notes</source>
-        <translation type="unfinished"></translation>
+        <translation>Nota keluaran</translation>
     </message>
     <message>
         <source>Third-party notices</source>
-        <translation type="unfinished"></translation>
+        <translation>Notis pihak ketiga</translation>
     </message>
     <message>
         <source>This Linux build path needs a SwiftPM/xtool project. Flutter and Xcode projects are not converted automatically yet.</source>
-        <translation type="unfinished"></translation>
+        <translation>Laluan binaan Linux ini memerlukan projek SwiftPM/xtool. Projek Flutter dan Xcode belum ditukar secara automatik.</translation>
     </message>
     <message>
         <source>Turn on Developer Mode on the iPhone and confirm the pairing. The Apple sign-in opens a local terminal; passwords are not entered in Tomacco or MCP.</source>
-        <translation type="unfinished"></translation>
+        <translation>Hidupkan Mod Pembangun pada iPhone dan sahkan gandingan. Log masuk Apple membuka terminal setempat; kata laluan tidak dimasukkan dalam Tomacco atau MCP.</translation>
     </message>
     <message>
         <source>UI tests</source>
-        <translation type="unfinished"></translation>
+        <translation>Ujian UI</translation>
     </message>
     <message>
         <source>USB connection</source>
-        <translation type="unfinished"></translation>
+        <translation>Sambungan USB</translation>
     </message>
     <message>
         <source>USB picture transfer</source>
-        <translation type="unfinished"></translation>
+        <translation>Pemindahan gambar USB</translation>
     </message>
     <message>
         <source>Version %1</source>
-        <translation type="unfinished"></translation>
+        <translation>Versi %1</translation>
     </message>
     <message>
         <source>View the sound forwarding error</source>
-        <translation type="unfinished"></translation>
+        <translation>Lihat ralat pemajuan bunyi</translation>
     </message>
     <message>
         <source>WORKSPACE</source>
-        <translation type="unfinished"></translation>
+        <translation>RUANG KERJA</translation>
     </message>
     <message>
         <source>Web preview</source>
-        <translation type="unfinished"></translation>
+        <translation>Pratonton web</translation>
     </message>
     <message>
         <source>Xcode archive (*.xip)</source>
-        <translation type="unfinished"></translation>
+        <translation>Arkib Xcode (*.xip)</translation>
     </message>
     <message>
         <source>iPhone development without a Mac</source>
-        <translation type="unfinished"></translation>
+        <translation>Pembangunan iPhone tanpa Mac</translation>
     </message>
     <message>
         <source>iPhone services</source>
-        <translation type="unfinished"></translation>
+        <translation>Perkhidmatan iPhone</translation>
     </message>
     <message>
         <source>iPhone via USB</source>
-        <translation type="unfinished"></translation>
+        <translation>iPhone melalui USB</translation>
     </message>
     <message>
         <source>Command</source>
-        <translation type="unfinished"></translation>
+        <translation>Arahan</translation>
     </message>
     <message>
         <source>Hide activity</source>
-        <translation type="unfinished"></translation>
+        <translation>Sembunyikan aktiviti</translation>
     </message>
     <message>
         <source>Show activity</source>
-        <translation type="unfinished"></translation>
+        <translation>Tunjukkan aktiviti</translation>
     </message>
     <message>
         <source>Switch to light appearance</source>
-        <translation type="unfinished"></translation>
+        <translation>Tukar ke penampilan cerah</translation>
     </message>
     <message>
         <source>Switch to dark appearance</source>
-        <translation type="unfinished"></translation>
+        <translation>Tukar ke penampilan gelap</translation>
     </message>
     <message>
         <source>Settings</source>
-        <translation type="unfinished"></translation>
+        <translation>Tetapan</translation>
     </message>
     <message>
         <source>Keyboard shortcuts</source>
-        <translation type="unfinished"></translation>
+        <translation>Pintasan papan kekunci</translation>
     </message>
     <message>
         <source>Booting</source>
-        <translation type="unfinished"></translation>
+        <translation>Sedang but</translation>
     </message>
     <message>
         <source>Live</source>
-        <translation type="unfinished"></translation>
+        <translation>Langsung</translation>
     </message>
     <message>
         <source>Failed</source>
-        <translation type="unfinished"></translation>
+        <translation>Gagal</translation>
     </message>
     <message>
         <source>Disconnected</source>
-        <translation type="unfinished"></translation>
+        <translation>Sambungan terputus</translation>
     </message>
     <message>
         <source>No device</source>
-        <translation type="unfinished"></translation>
+        <translation>Tiada peranti</translation>
     </message>
     <message>
         <source>Activity</source>
-        <translation type="unfinished"></translation>
+        <translation>Aktiviti</translation>
     </message>
     <message>
         <source>Jobs and agent calls · Ctrl+J</source>
-        <translation type="unfinished"></translation>
+        <translation>Tugas dan panggilan ejen · Ctrl+J</translation>
     </message>
     <message>
         <source>Appearance and language · Ctrl+,</source>
-        <translation type="unfinished"></translation>
+        <translation>Penampilan dan bahasa · Ctrl+,</translation>
     </message>
     <message numerus="yes">
         <source>%n job(s) running</source>
-        <translation type="unfinished">
-            <numerusform></numerusform>
+        <translation>
+            <numerusform>%n tugas sedang berjalan</numerusform>
         </translation>
     </message>
     <message>
         <source>Ctrl+K search · F1 keys</source>
-        <translation type="unfinished"></translation>
+        <translation>Ctrl+K cari · F1 kekunci</translation>
     </message>
     <message>
         <source>Appearance</source>
-        <translation type="unfinished"></translation>
+        <translation>Penampilan</translation>
     </message>
     <message>
         <source>Dark</source>
-        <translation type="unfinished"></translation>
+        <translation>Gelap</translation>
     </message>
     <message>
         <source>Light</source>
-        <translation type="unfinished"></translation>
+        <translation>Cerah</translation>
     </message>
     <message>
         <source>Search views, commands and tools</source>
-        <translation type="unfinished"></translation>
+        <translation>Cari paparan, arahan dan alat</translation>
     </message>
     <message>
         <source>Show or hide activity</source>
-        <translation type="unfinished"></translation>
+        <translation>Tunjukkan atau sembunyikan aktiviti</translation>
     </message>
     <message>
         <source>Save the current file</source>
-        <translation type="unfinished"></translation>
+        <translation>Simpan fail semasa</translation>
     </message>
     <message>
         <source>Search the project&apos;s source code</source>
-        <translation type="unfinished"></translation>
+        <translation>Cari kod sumber projek</translation>
     </message>
     <message>
         <source>Full screen · web preview</source>
-        <translation type="unfinished"></translation>
+        <translation>Skrin penuh · pratonton web</translation>
     </message>
     <message>
         <source>Project</source>
-        <translation type="unfinished"></translation>
+        <translation>Projek</translation>
     </message>
     <message>
         <source>Device</source>
-        <translation type="unfinished"></translation>
+        <translation>Peranti</translation>
     </message>
     <message>
         <source>Run</source>
-        <translation type="unfinished"></translation>
+        <translation>Jalankan</translation>
     </message>
     <message>
         <source>Ctrl</source>
-        <translation type="unfinished"></translation>
+        <translation>Ctrl</translation>
     </message>
     <message>
         <source>Building and starting your app…</source>
-        <translation type="unfinished"></translation>
+        <translation>Membina dan memulakan aplikasi anda…</translation>
     </message>
     <message>
         <source>Copy what your agent needs: this project and the live device</source>
-        <translation type="unfinished"></translation>
+        <translation>Salin apa yang diperlukan oleh ejen anda: projek ini dan peranti langsung</translation>
     </message>
     <message>
         <source>Ready for agents</source>
-        <translation type="unfinished"></translation>
+        <translation>Sedia untuk ejen</translation>
     </message>
     <message>
         <source>Your device is in its own window.</source>
-        <translation type="unfinished"></translation>
+        <translation>Peranti anda berada dalam tetingkapnya sendiri.</translation>
     </message>
     <message>
         <source>Drag it by its body. Ctrl+wheel resizes it. Close it to bring it back.</source>
-        <translation type="unfinished"></translation>
+        <translation>Seretnya melalui badannya. Ctrl+roda mengubah saiznya. Tutupnya untuk membawanya kembali.</translation>
     </message>
     <message>
         <source>Bring it back</source>
-        <translation type="unfinished"></translation>
+        <translation>Bawa kembali</translation>
     </message>
     <message>
         <source>Plug in your iPhone.</source>
-        <translation type="unfinished"></translation>
+        <translation>Pasangkan iPhone anda.</translation>
     </message>
     <message>
         <source>Connect a Mac.</source>
-        <translation type="unfinished"></translation>
+        <translation>Sambungkan Mac.</translation>
     </message>
     <message>
         <source>Give your agent a phone.</source>
-        <translation type="unfinished"></translation>
+        <translation>Berikan ejen anda sebuah telefon.</translation>
     </message>
     <message>
         <source>Plug it in and unlock it. Build Swift apps on Linux and control them from here.</source>
-        <translation type="unfinished"></translation>
+        <translation>Pasangkan dan buka kuncinya. Bina aplikasi Swift pada Linux dan kawalnya dari sini.</translation>
     </message>
     <message>
         <source>The Apple simulator needs a Mac with Xcode. Yours or a rented one, over SSH.</source>
-        <translation type="unfinished"></translation>
+        <translation>Simulator Apple memerlukan Mac dengan Xcode. Milik anda atau yang disewa, melalui SSH.</translation>
     </message>
     <message>
         <source>It builds, runs, taps through and debugs iOS and Android apps. On Linux. No Mac needed.</source>
-        <translation type="unfinished"></translation>
+        <translation>Ia membina, menjalankan, mengetik dan menyahpepijat aplikasi iOS dan Android. Pada Linux. Tanpa memerlukan Mac.</translation>
     </message>
     <message>
         <source>Connect %1</source>
-        <translation type="unfinished"></translation>
+        <translation>Sambungkan %1</translation>
     </message>
     <message>
         <source>Add a device</source>
-        <translation type="unfinished"></translation>
+        <translation>Tambah peranti</translation>
     </message>
     <message>
         <source>Open a project</source>
-        <translation type="unfinished"></translation>
+        <translation>Buka projek</translation>
     </message>
     <message>
         <source>Completed after %1</source>
-        <translation type="unfinished"></translation>
+        <translation>Selesai selepas %1</translation>
     </message>
     <message>
         <source>Failed after %1</source>
-        <translation type="unfinished"></translation>
+        <translation>Gagal selepas %1</translation>
     </message>
     <message>
         <source>Timed out after %1</source>
-        <translation type="unfinished"></translation>
+        <translation>Tamat masa selepas %1</translation>
     </message>
     <message>
         <source>Notifications</source>
-        <translation type="unfinished"></translation>
+        <translation>Pemberitahuan</translation>
     </message>
     <message>
         <source>When a job ends in the background</source>
-        <translation type="unfinished"></translation>
+        <translation>Apabila tugas tamat di latar belakang</translation>
     </message>
     <message>
         <source>Touches and coordinates</source>
-        <translation type="unfinished"></translation>
+        <translation>Sentuhan dan koordinat</translation>
     </message>
     <message>
         <source>Hide touches and pointer coordinates</source>
-        <translation type="unfinished"></translation>
+        <translation>Sembunyikan sentuhan dan koordinat penuding</translation>
     </message>
     <message>
         <source>Show touches and pointer coordinates, for writing UI tests</source>
-        <translation type="unfinished"></translation>
+        <translation>Tunjukkan sentuhan dan koordinat penuding, untuk menulis ujian UI</translation>
     </message>
     <message>
         <source>Show touches and pointer coordinates</source>
-        <translation type="unfinished"></translation>
+        <translation>Tunjukkan sentuhan dan koordinat penuding</translation>
     </message>
     <message>
         <source>Another computer</source>
-        <translation type="unfinished"></translation>
+        <translation>Komputer lain</translation>
     </message>
     <message>
         <source>Appearance, language, notifications, updates and the device view&apos;s choices, as a JSON file. Paths, window sizes and history stay on this computer.</source>
-        <translation type="unfinished"></translation>
+        <translation>Penampilan, bahasa, pemberitahuan, kemas kini dan pilihan paparan peranti, sebagai fail JSON. Laluan, saiz tetingkap dan sejarah kekal pada komputer ini.</translation>
     </message>
     <message>
         <source>Export settings…</source>
-        <translation type="unfinished"></translation>
+        <translation>Eksport tetapan…</translation>
     </message>
     <message>
         <source>Import settings…</source>
-        <translation type="unfinished"></translation>
+        <translation>Import tetapan…</translation>
     </message>
     <message>
         <source>Export settings</source>
-        <translation type="unfinished"></translation>
+        <translation>Eksport tetapan</translation>
     </message>
     <message>
         <source>Import settings</source>
-        <translation type="unfinished"></translation>
+        <translation>Import tetapan</translation>
     </message>
     <message>
         <source>Tomacco settings (*.json)</source>
-        <translation type="unfinished"></translation>
+        <translation>Tetapan Tomacco (*.json)</translation>
     </message>
     <message>
         <source>Settings saved to %1</source>
-        <translation type="unfinished"></translation>
+        <translation>Tetapan disimpan ke %1</translation>
     </message>
     <message numerus="yes">
         <source>%n setting(s) imported</source>
-        <translation type="unfinished">
-            <numerusform></numerusform>
+        <translation>
+            <numerusform>%n tetapan diimport</numerusform>
         </translation>
     </message>
     <message numerus="yes">
         <source>%n ignored</source>
-        <translation type="unfinished">
-            <numerusform></numerusform>
+        <translation>
+            <numerusform>%n diabaikan</numerusform>
         </translation>
     </message>
     <message>
         <source>Tomacco %1 is available</source>
-        <translation type="unfinished"></translation>
+        <translation>Tomacco %1 tersedia</translation>
     </message>
     <message>
         <source>Open Tomacco to see what&apos;s new and install it.</source>
-        <translation type="unfinished"></translation>
+        <translation>Buka Tomacco untuk melihat apa yang baharu dan memasangnya.</translation>
     </message>
     <message>
         <source>Tomacco could not be started again. Close it and open it from the application menu.</source>
-        <translation type="unfinished"></translation>
+        <translation>Tomacco tidak dapat dimulakan semula. Tutupnya dan bukanya daripada menu aplikasi.</translation>
     </message>
     <message>
         <source>What&apos;s new in %1</source>
-        <translation type="unfinished"></translation>
+        <translation>Apa yang baharu dalam %1</translation>
     </message>
     <message>
         <source>Tomacco is now version %1. The release notes list what changed.</source>
-        <translation type="unfinished"></translation>
+        <translation>Tomacco kini versi %1. Nota keluaran menyenaraikan apa yang berubah.</translation>
     </message>
     <message>
         <source>On GitHub ↗</source>
-        <translation type="unfinished"></translation>
+        <translation>Di GitHub ↗</translation>
     </message>
     <message>
         <source>Get started</source>
-        <translation type="unfinished"></translation>
+        <translation>Mulakan</translation>
     </message>
     <message>
         <source>Connect your coding agent</source>
-        <translation type="unfinished"></translation>
+        <translation>Sambungkan ejen pengekodan anda</translation>
     </message>
     <message>
         <source>Connect an Android device to record its screen.</source>
-        <translation type="unfinished"></translation>
+        <translation>Sambungkan peranti Android untuk merakam skrinnya.</translation>
     </message>
     <message>
         <source>Stop recording</source>
-        <translation type="unfinished"></translation>
+        <translation>Hentikan rakaman</translation>
     </message>
     <message>
         <source>Record the screen</source>
-        <translation type="unfinished"></translation>
+        <translation>Rakam skrin</translation>
     </message>
     <message>
         <source>Stop and save the recording · %1 s</source>
-        <translation type="unfinished"></translation>
+        <translation>Hentikan dan simpan rakaman · %1 s</translation>
     </message>
     <message>
         <source>Record the screen to a video, at most 3 minutes</source>
-        <translation type="unfinished"></translation>
+        <translation>Rakam skrin ke video, paling lama 3 minit</translation>
     </message>
     <message>
         <source>Hide the log beside the device</source>
-        <translation type="unfinished"></translation>
+        <translation>Sembunyikan log di sebelah peranti</translation>
     </message>
     <message>
         <source>Show the log beside the device</source>
-        <translation type="unfinished"></translation>
+        <translation>Tunjukkan log di sebelah peranti</translation>
     </message>
     <message>
         <source>Split view</source>
-        <translation type="unfinished"></translation>
+        <translation>Paparan terpisah</translation>
     </message>
     <message>
         <source>Log beside the device</source>
-        <translation type="unfinished"></translation>
+        <translation>Log di sebelah peranti</translation>
     </message>
     <message>
         <source>Show the device&apos;s or a job&apos;s log beside the device</source>
-        <translation type="unfinished"></translation>
+        <translation>Tunjukkan log peranti atau tugas di sebelah peranti</translation>
     </message>
     <message>
         <source>Agent activity</source>
-        <translation type="unfinished"></translation>
+        <translation>Aktiviti ejen</translation>
     </message>
     <message>
         <source>Session log, e.g. %1</source>
-        <translation type="unfinished"></translation>
+        <translation>Log sesi, cth. %1</translation>
     </message>
     <message>
         <source>Set TOMACCO_SESSION_LOG to this file in your agent&apos;s MCP settings, and the activity panel lists every operation it calls, with its duration and result.</source>
-        <translation type="unfinished"></translation>
+        <translation>Tetapkan TOMACCO_SESSION_LOG kepada fail ini dalam tetapan MCP ejen anda, dan panel aktiviti akan menyenaraikan setiap operasi yang dipanggilnya, beserta tempoh dan hasilnya.</translation>
     </message>
     <message>
         <source>Try again</source>
-        <translation type="unfinished"></translation>
+        <translation>Cuba lagi</translation>
     </message>
     <message>
         <source>What to do: %1</source>
-        <translation type="unfinished"></translation>
+        <translation>Apa yang perlu dilakukan: %1</translation>
     </message>
     <message>
         <source>Open the update settings to install it.</source>
-        <translation type="unfinished"></translation>
+        <translation>Buka tetapan kemas kini untuk memasangnya.</translation>
     </message>
     <message>
         <source>Version %1 is installed. Restart to use it.</source>
-        <translation type="unfinished"></translation>
+        <translation>Versi %1 telah dipasang. Mulakan semula untuk menggunakannya.</translation>
     </message>
     <message>
         <source>Updates</source>
-        <translation type="unfinished"></translation>
+        <translation>Kemas kini</translation>
     </message>
     <message>
         <source>Cancelled after %1</source>
-        <translation type="unfinished"></translation>
+        <translation>Dibatalkan selepas %1</translation>
     </message>
     <message>
         <source>Save the current layout</source>
-        <translation type="unfinished"></translation>
+        <translation>Simpan reka letak semasa</translation>
     </message>
     <message>
         <source>Window layouts</source>
-        <translation type="unfinished"></translation>
+        <translation>Reka letak tetingkap</translation>
     </message>
     <message>
         <source>Use window layout %1</source>
-        <translation type="unfinished"></translation>
+        <translation>Gunakan reka letak tetingkap %1</translation>
     </message>
     <message>
         <source>At most %1 window layouts are kept. Delete one first.</source>
-        <translation type="unfinished"></translation>
+        <translation>Paling banyak %1 reka letak tetingkap disimpan. Padam satu dahulu.</translation>
     </message>
     <message>
         <source>Window layout “%1” saved</source>
-        <translation type="unfinished"></translation>
+        <translation>Reka letak tetingkap “%1” disimpan</translation>
     </message>
     <message>
         <source>Window layout “%1”</source>
-        <translation type="unfinished"></translation>
+        <translation>Reka letak tetingkap “%1”</translation>
     </message>
     <message>
         <source>Search settings</source>
-        <translation type="unfinished"></translation>
+        <translation>Cari tetapan</translation>
     </message>
     <message>
         <source>No setting matches “%1”.</source>
-        <translation type="unfinished"></translation>
+        <translation>Tiada tetapan yang sepadan dengan “%1”.</translation>
     </message>
     <message>
         <source>Use the Omarchy theme&apos;s accent</source>
-        <translation type="unfinished"></translation>
+        <translation>Gunakan warna aksen tema Omarchy</translation>
     </message>
     <message>
         <source>Theme</source>
-        <translation type="unfinished"></translation>
+        <translation>Tema</translation>
     </message>
     <message>
         <source>The accent of %1 does not read clearly on this background, so Tomacco keeps its own.</source>
-        <translation type="unfinished"></translation>
+        <translation>Warna aksen %1 tidak jelas dibaca pada latar belakang ini, jadi Tomacco mengekalkan warnanya sendiri.</translation>
     </message>
     <message>
         <source>Accent from the Omarchy theme %1.</source>
-        <translation type="unfinished"></translation>
+        <translation>Warna aksen daripada tema Omarchy %1.</translation>
     </message>
     <message>
         <source>A layout keeps the open view, the activity panel, the log beside the device and its width, the device windows and the window&apos;s size.</source>
-        <translation type="unfinished"></translation>
+        <translation>Reka letak menyimpan paparan yang dibuka, panel aktiviti, log di sebelah peranti dan lebarnya, tetingkap peranti serta saiz tetingkap.</translation>
     </message>
     <message>
         <source>Use</source>
-        <translation type="unfinished"></translation>
+        <translation>Gunakan</translation>
     </message>
     <message>
         <source>Delete</source>
-        <translation type="unfinished"></translation>
+        <translation>Padam</translation>
     </message>
     <message>
         <source>Delete window layout %1</source>
-        <translation type="unfinished"></translation>
+        <translation>Padam reka letak tetingkap %1</translation>
     </message>
     <message>
         <source>Name, e.g. testing or debugging</source>
-        <translation type="unfinished"></translation>
+        <translation>Nama, cth. ujian atau nyahpepijat</translation>
     </message>
     <message>
         <source>Restarting AirPlay. Then choose Tomacco again in the iPhone&apos;s Screen Mirroring.</source>
-        <translation type="unfinished"></translation>
+        <translation>Memulakan semula AirPlay. Kemudian pilih Tomacco sekali lagi dalam Pencerminan Skrin iPhone.</translation>
     </message>
     <message>
         <source>iPhone over Wi-Fi</source>
-        <translation type="unfinished"></translation>
+        <translation>iPhone melalui Wi-Fi</translation>
     </message>
     <message>
         <source>Waiting for a new iPhone picture</source>
-        <translation type="unfinished"></translation>
+        <translation>Menunggu gambar iPhone baharu</translation>
     </message>
     <message>
         <source>Ready for your iPhone</source>
-        <translation type="unfinished"></translation>
+        <translation>Sedia untuk iPhone anda</translation>
     </message>
     <message>
         <source>Connect your iPhone over Wi-Fi</source>
-        <translation type="unfinished"></translation>
+        <translation>Sambungkan iPhone anda melalui Wi-Fi</translation>
     </message>
     <message>
         <source>If no picture appears, stop Screen Mirroring on the iPhone and select Tomacco again. Restart AirPlay below if the receiver stopped responding.</source>
-        <translation type="unfinished"></translation>
+        <translation>Jika tiada gambar muncul, hentikan Pencerminan Skrin pada iPhone dan pilih Tomacco sekali lagi. Mulakan semula AirPlay di bawah jika penerima berhenti bertindak balas.</translation>
     </message>
     <message>
         <source>Open Control Center on the iPhone, choose Screen Mirroring, then Tomacco. Both devices must be on the same network.</source>
-        <translation type="unfinished"></translation>
+        <translation>Buka Pusat Kawalan pada iPhone, pilih Pencerminan Skrin, kemudian Tomacco. Kedua-dua peranti mesti berada dalam rangkaian yang sama.</translation>
     </message>
     <message>
         <source>Restart AirPlay</source>
-        <translation type="unfinished"></translation>
+        <translation>Mulakan semula AirPlay</translation>
     </message>
     <message>
         <source>Start AirPlay</source>
-        <translation type="unfinished"></translation>
+        <translation>Mulakan AirPlay</translation>
     </message>
     <message>
         <source>An agent is waiting for you: %1</source>
-        <translation type="unfinished"></translation>
+        <translation>Seorang ejen sedang menunggu anda: %1</translation>
     </message>
     <message>
         <source>In use elsewhere</source>
-        <translation type="unfinished"></translation>
+        <translation>Digunakan di tempat lain</translation>
     </message>
     <message>
         <source>Reconnecting</source>
-        <translation type="unfinished"></translation>
+        <translation>Menyambung semula</translation>
     </message>
     <message>
         <source>Screenshot saved</source>
-        <translation type="unfinished"></translation>
+        <translation>Tangkapan skrin disimpan</translation>
     </message>
     <message>
         <source>Show file</source>
-        <translation type="unfinished"></translation>
+        <translation>Tunjukkan fail</translation>
     </message>
     <message>
         <source>Your turn</source>
-        <translation type="unfinished"></translation>
+        <translation>Giliran anda</translation>
     </message>
     <message>
         <source>Claude Code Codex Gemini Cursor VS Code Zed OpenCode Grok Hermes omp MCP</source>
-        <translation type="unfinished"></translation>
+        <translation>Claude Code Codex Gemini Cursor VS Code Zed OpenCode Grok Hermes omp MCP</translation>
     </message>
 </context>
 <context>
     <name>Operations</name>
     <message>
         <source>Check for updates</source>
-        <translation type="unfinished"></translation>
+        <translation>Semak kemas kini</translation>
     </message>
     <message>
         <source>Install update</source>
-        <translation type="unfinished"></translation>
+        <translation>Pasang kemas kini</translation>
     </message>
     <message>
         <source>Update status</source>
-        <translation type="unfinished"></translation>
+        <translation>Status kemas kini</translation>
     </message>
     <message>
         <source>Roll back update</source>
-        <translation type="unfinished"></translation>
+        <translation>Kembalikan kemas kini</translation>
     </message>
     <message>
         <source>Analyze performance profile</source>
-        <translation type="unfinished"></translation>
+        <translation>Analisis profil prestasi</translation>
     </message>
     <message>
         <source>Android emulators</source>
-        <translation type="unfinished"></translation>
+        <translation>Emulator Android</translation>
     </message>
     <message>
         <source>Android over Wi-Fi</source>
-        <translation type="unfinished"></translation>
+        <translation>Android melalui Wi-Fi</translation>
     </message>
     <message>
         <source>App data files</source>
-        <translation type="unfinished"></translation>
+        <translation>Fail data aplikasi</translation>
     </message>
     <message>
         <source>App permission</source>
-        <translation type="unfinished"></translation>
+        <translation>Kebenaran aplikasi</translation>
     </message>
     <message>
         <source>Apple devices on the Mac</source>
-        <translation type="unfinished"></translation>
+        <translation>Peranti Apple pada Mac</translation>
     </message>
     <message>
         <source>Browser console</source>
-        <translation type="unfinished"></translation>
+        <translation>Konsol pelayar</translation>
     </message>
     <message>
         <source>Page errors</source>
-        <translation type="unfinished"></translation>
+        <translation>Ralat halaman</translation>
     </message>
     <message>
         <source>Build &amp; run on device</source>
-        <translation type="unfinished"></translation>
+        <translation>Bina &amp; jalankan pada peranti</translation>
     </message>
     <message>
         <source>Watch and rerun app</source>
-        <translation type="unfinished"></translation>
+        <translation>Pantau dan jalankan semula aplikasi</translation>
     </message>
     <message>
         <source>Build iOS graphics compiler plugin</source>
-        <translation type="unfinished"></translation>
+        <translation>Bina pemalam pengkompil grafik iOS</translation>
     </message>
     <message>
         <source>Build native iOS app</source>
-        <translation type="unfinished"></translation>
+        <translation>Bina aplikasi iOS asli</translation>
     </message>
     <message>
         <source>Build native iOS guest tools</source>
-        <translation type="unfinished"></translation>
+        <translation>Bina alat tetamu iOS asli</translation>
     </message>
     <message>
         <source>Cancel job</source>
-        <translation type="unfinished"></translation>
+        <translation>Batalkan tugas</translation>
     </message>
     <message>
         <source>Capture Android profile</source>
-        <translation type="unfinished"></translation>
+        <translation>Tangkap profil Android</translation>
     </message>
     <message>
         <source>Capture device matrix</source>
-        <translation type="unfinished"></translation>
+        <translation>Tangkap matriks peranti</translation>
     </message>
     <message>
         <source>Capture preview</source>
-        <translation type="unfinished"></translation>
+        <translation>Tangkap pratonton</translation>
     </message>
     <message>
         <source>Check Mac</source>
-        <translation type="unfinished"></translation>
+        <translation>Semak Mac</translation>
     </message>
     <message>
         <source>Check PMP execution</source>
-        <translation type="unfinished"></translation>
+        <translation>Semak pelaksanaan PMP</translation>
     </message>
     <message>
         <source>Check iOS emulator</source>
-        <translation type="unfinished"></translation>
+        <translation>Semak emulator iOS</translation>
     </message>
     <message>
         <source>Check iPhone development on Linux</source>
-        <translation type="unfinished"></translation>
+        <translation>Semak pembangunan iPhone pada Linux</translation>
     </message>
     <message>
         <source>Check layout</source>
-        <translation type="unfinished"></translation>
+        <translation>Semak reka letak</translation>
     </message>
     <message>
         <source>Check performance budget</source>
-        <translation type="unfinished"></translation>
+        <translation>Semak bajet prestasi</translation>
     </message>
     <message>
         <source>Run Macrobenchmark</source>
-        <translation type="unfinished"></translation>
+        <translation>Jalankan Macrobenchmark</translation>
     </message>
     <message>
         <source>Read Macrobenchmark results</source>
-        <translation type="unfinished"></translation>
+        <translation>Baca hasil Macrobenchmark</translation>
     </message>
     <message>
         <source>Generate Baseline Profile</source>
-        <translation type="unfinished"></translation>
+        <translation>Jana Baseline Profile</translation>
     </message>
     <message>
         <source>Read Baseline Profile rules</source>
-        <translation type="unfinished"></translation>
+        <translation>Baca peraturan Baseline Profile</translation>
     </message>
     <message>
         <source>Install Baseline Profile</source>
-        <translation type="unfinished"></translation>
+        <translation>Pasang Baseline Profile</translation>
     </message>
     <message>
         <source>Compare startup with and without Baseline Profile</source>
-        <translation type="unfinished"></translation>
+        <translation>Bandingkan permulaan dengan dan tanpa Baseline Profile</translation>
     </message>
     <message>
         <source>Compare performance reports</source>
-        <translation type="unfinished"></translation>
+        <translation>Bandingkan laporan prestasi</translation>
     </message>
     <message>
         <source>Measure app startup</source>
-        <translation type="unfinished"></translation>
+        <translation>Ukur permulaan aplikasi</translation>
     </message>
     <message>
         <source>Measure frame rendering</source>
-        <translation type="unfinished"></translation>
+        <translation>Ukur pemaparan bingkai</translation>
     </message>
     <message>
         <source>Measure app memory</source>
-        <translation type="unfinished"></translation>
+        <translation>Ukur memori aplikasi</translation>
     </message>
     <message>
         <source>Measure CPU and battery use</source>
-        <translation type="unfinished"></translation>
+        <translation>Ukur penggunaan CPU dan bateri</translation>
     </message>
     <message>
         <source>Check toolchain</source>
-        <translation type="unfinished"></translation>
+        <translation>Semak rantai alat</translation>
     </message>
     <message>
         <source>What this computer can do</source>
-        <translation type="unfinished"></translation>
+        <translation>Apa yang boleh dilakukan oleh komputer ini</translation>
     </message>
     <message>
         <source>Click element</source>
-        <translation type="unfinished"></translation>
+        <translation>Klik elemen</translation>
     </message>
     <message>
         <source>Commit Google Play change</source>
-        <translation type="unfinished"></translation>
+        <translation>Komit perubahan Google Play</translation>
     </message>
     <message>
         <source>Compile / test Swift</source>
-        <translation type="unfinished"></translation>
+        <translation>Kompil / uji Swift</translation>
     </message>
     <message>
         <source>Configure preview</source>
-        <translation type="unfinished"></translation>
+        <translation>Konfigurasikan pratonton</translation>
     </message>
     <message>
         <source>Configure project</source>
-        <translation type="unfinished"></translation>
+        <translation>Konfigurasikan projek</translation>
     </message>
     <message>
         <source>Connect Mac</source>
-        <translation type="unfinished"></translation>
+        <translation>Sambungkan Mac</translation>
     </message>
     <message>
         <source>Connect Swift to the Android NDK</source>
-        <translation type="unfinished"></translation>
+        <translation>Sambungkan Swift ke NDK Android</translation>
     </message>
     <message>
         <source>Connect dev server</source>
-        <translation type="unfinished"></translation>
+        <translation>Sambungkan pelayan pembangunan</translation>
     </message>
     <message>
         <source>Connect native runtime</source>
-        <translation type="unfinished"></translation>
+        <translation>Sambungkan masa jalan asli</translation>
     </message>
     <message>
         <source>Control Apple Simulator</source>
-        <translation type="unfinished"></translation>
+        <translation>Kawal Apple Simulator</translation>
     </message>
     <message>
         <source>Control app</source>
-        <translation type="unfinished"></translation>
+        <translation>Kawal aplikasi</translation>
     </message>
     <message>
         <source>Control debugger</source>
-        <translation type="unfinished"></translation>
+        <translation>Kawal penyahpepijat</translation>
     </message>
     <message>
         <source>Control emulator</source>
-        <translation type="unfinished"></translation>
+        <translation>Kawal emulator</translation>
     </message>
     <message>
         <source>Control iPhone on the Mac</source>
-        <translation type="unfinished"></translation>
+        <translation>Kawal iPhone pada Mac</translation>
     </message>
     <message>
         <source>Control native iOS guest programs</source>
-        <translation type="unfinished"></translation>
+        <translation>Kawal program tetamu iOS asli</translation>
     </message>
     <message>
         <source>Create emulator</source>
-        <translation type="unfinished"></translation>
+        <translation>Cipta emulator</translation>
     </message>
     <message>
         <source>Create iOS archive</source>
-        <translation type="unfinished"></translation>
+        <translation>Cipta arkib iOS</translation>
     </message>
     <message>
         <source>Create project</source>
-        <translation type="unfinished"></translation>
+        <translation>Cipta projek</translation>
     </message>
     <message>
         <source>Create project folder</source>
-        <translation type="unfinished"></translation>
+        <translation>Cipta folder projek</translation>
     </message>
     <message>
         <source>Create signing key</source>
-        <translation type="unfinished"></translation>
+        <translation>Cipta kunci tandatangan</translation>
     </message>
     <message>
         <source>Debug sessions</source>
-        <translation type="unfinished"></translation>
+        <translation>Sesi nyahpepijat</translation>
     </message>
     <message>
         <source>Debugger events</source>
-        <translation type="unfinished"></translation>
+        <translation>Peristiwa penyahpepijat</translation>
     </message>
     <message>
         <source>Debugger status</source>
-        <translation type="unfinished"></translation>
+        <translation>Status penyahpepijat</translation>
     </message>
     <message>
         <source>Desktop status</source>
-        <translation type="unfinished"></translation>
+        <translation>Status desktop</translation>
     </message>
     <message>
         <source>Device catalog</source>
-        <translation type="unfinished"></translation>
+        <translation>Katalog peranti</translation>
     </message>
     <message>
         <source>Device image for agents</source>
-        <translation type="unfinished"></translation>
+        <translation>Imej peranti untuk ejen</translation>
     </message>
     <message>
         <source>Device information</source>
-        <translation type="unfinished"></translation>
+        <translation>Maklumat peranti</translation>
     </message>
     <message>
         <source>Device logs</source>
-        <translation type="unfinished"></translation>
+        <translation>Log peranti</translation>
     </message>
     <message>
         <source>Device screenshot</source>
-        <translation type="unfinished"></translation>
+        <translation>Tangkapan skrin peranti</translation>
     </message>
     <message>
         <source>Device settings for tests</source>
-        <translation type="unfinished"></translation>
+        <translation>Tetapan peranti untuk ujian</translation>
     </message>
     <message>
         <source>Discard Google Play draft</source>
-        <translation type="unfinished"></translation>
+        <translation>Buang draf Google Play</translation>
     </message>
     <message>
         <source>Disconnect runtime</source>
-        <translation type="unfinished"></translation>
+        <translation>Putuskan sambungan masa jalan</translation>
     </message>
     <message>
         <source>Display orientation and size</source>
-        <translation type="unfinished"></translation>
+        <translation>Orientasi dan saiz paparan</translation>
     </message>
     <message>
         <source>Download Mac artifact</source>
-        <translation type="unfinished"></translation>
+        <translation>Muat turun artifak Mac</translation>
     </message>
     <message>
         <source>Evaluate expression</source>
-        <translation type="unfinished"></translation>
+        <translation>Nilaikan ungkapan</translation>
     </message>
     <message>
         <source>Examine iOS kernel boot</source>
-        <translation type="unfinished"></translation>
+        <translation>Periksa but kernel iOS</translation>
     </message>
     <message>
         <source>Export and fetch IPA</source>
-        <translation type="unfinished"></translation>
+        <translation>Eksport dan ambil IPA</translation>
     </message>
     <message>
         <source>Export model</source>
-        <translation type="unfinished"></translation>
+        <translation>Eksport model</translation>
     </message>
     <message>
         <source>Fetch result of an iOS guest job</source>
-        <translation type="unfinished"></translation>
+        <translation>Ambil hasil tugas tetamu iOS</translation>
     </message>
     <message>
         <source>Fill in form</source>
-        <translation type="unfinished"></translation>
+        <translation>Isi borang</translation>
     </message>
     <message>
         <source>Find Android element</source>
-        <translation type="unfinished"></translation>
+        <translation>Cari elemen Android</translation>
     </message>
     <message>
         <source>Find devices</source>
-        <translation type="unfinished"></translation>
+        <translation>Cari peranti</translation>
     </message>
     <message>
         <source>Send a command to a job</source>
-        <translation type="unfinished"></translation>
+        <translation>Hantar arahan kepada tugas</translation>
     </message>
     <message>
         <source>Inspect APK or AAB</source>
-        <translation type="unfinished"></translation>
+        <translation>Periksa APK atau AAB</translation>
     </message>
     <message>
         <source>Report APK or AAB size</source>
-        <translation type="unfinished"></translation>
+        <translation>Laporkan saiz APK atau AAB</translation>
     </message>
     <message>
         <source>Emulator sensors</source>
-        <translation type="unfinished"></translation>
+        <translation>Penderia emulator</translation>
     </message>
     <message>
         <source>App Links</source>
-        <translation type="unfinished"></translation>
+        <translation>App Links</translation>
     </message>
     <message>
         <source>Network capture</source>
-        <translation type="unfinished"></translation>
+        <translation>Tangkapan rangkaian</translation>
     </message>
     <message>
         <source>Install iOS toolkit</source>
-        <translation type="unfinished"></translation>
+        <translation>Pasang kit alat iOS</translation>
     </message>
     <message>
         <source>Notifications</source>
-        <translation type="unfinished"></translation>
+        <translation>Pemberitahuan</translation>
     </message>
     <message>
         <source>Prepare Flutter for iOS</source>
-        <translation type="unfinished"></translation>
+        <translation>Sediakan Flutter untuk iOS</translation>
     </message>
     <message>
         <source>Build Flutter app for iOS</source>
-        <translation type="unfinished"></translation>
+        <translation>Bina aplikasi Flutter untuk iOS</translation>
     </message>
     <message>
         <source>iPhone crash reports</source>
-        <translation type="unfinished"></translation>
+        <translation>Laporan ranap iPhone</translation>
     </message>
     <message>
         <source>Record iPhone screen</source>
-        <translation type="unfinished"></translation>
+        <translation>Rakam skrin iPhone</translation>
     </message>
     <message>
         <source>iPhone app files</source>
-        <translation type="unfinished"></translation>
+        <translation>Fail aplikasi iPhone</translation>
     </message>
     <message>
         <source>iPhone readiness</source>
-        <translation type="unfinished"></translation>
+        <translation>Kesediaan iPhone</translation>
     </message>
     <message>
         <source>iPhone signing overview</source>
-        <translation type="unfinished"></translation>
+        <translation>Gambaran keseluruhan penandatanganan iPhone</translation>
     </message>
     <message>
         <source>Read crash report</source>
-        <translation type="unfinished"></translation>
+        <translation>Baca laporan ranap</translation>
     </message>
     <message>
         <source>Inspect iOS app</source>
-        <translation type="unfinished"></translation>
+        <translation>Periksa aplikasi iOS</translation>
     </message>
     <message>
         <source>Prepare for App Store</source>
-        <translation type="unfinished"></translation>
+        <translation>Sediakan untuk App Store</translation>
     </message>
     <message>
         <source>Import Xcode project</source>
-        <translation type="unfinished"></translation>
+        <translation>Import projek Xcode</translation>
     </message>
     <message>
         <source>Find built iOS app</source>
-        <translation type="unfinished"></translation>
+        <translation>Cari aplikasi iOS yang dibina</translation>
     </message>
     <message>
         <source>Import Apple SDK</source>
-        <translation type="unfinished"></translation>
+        <translation>Import SDK Apple</translation>
     </message>
     <message>
         <source>Import models</source>
-        <translation type="unfinished"></translation>
+        <translation>Import model</translation>
     </message>
     <message>
         <source>Import original iOS system</source>
-        <translation type="unfinished"></translation>
+        <translation>Import sistem iOS asal</translation>
     </message>
     <message>
         <source>Inspect DOM</source>
-        <translation type="unfinished"></translation>
+        <translation>Periksa DOM</translation>
     </message>
     <message>
         <source>Install SDK packages</source>
-        <translation type="unfinished"></translation>
+        <translation>Pasang pakej SDK</translation>
     </message>
     <message>
         <source>Install Swift SDK</source>
-        <translation type="unfinished"></translation>
+        <translation>Pasang SDK Swift</translation>
     </message>
     <message>
         <source>Install app</source>
-        <translation type="unfinished"></translation>
+        <translation>Pasang aplikasi</translation>
     </message>
     <message>
         <source>Install iOS cryptex files</source>
-        <translation type="unfinished"></translation>
+        <translation>Pasang fail cryptex iOS</translation>
     </message>
     <message>
         <source>Install native iOS guest tools</source>
-        <translation type="unfinished"></translation>
+        <translation>Pasang alat tetamu iOS asli</translation>
     </message>
     <message>
         <source>Instruments recording</source>
-        <translation type="unfinished"></translation>
+        <translation>Rakaman Instruments</translation>
     </message>
     <message>
         <source>Job status</source>
-        <translation type="unfinished"></translation>
+        <translation>Status tugas</translation>
     </message>
     <message>
         <source>Jobs</source>
-        <translation type="unfinished"></translation>
+        <translation>Tugas</translation>
     </message>
     <message>
         <source>Live logs</source>
-        <translation type="unfinished"></translation>
+        <translation>Log langsung</translation>
     </message>
     <message>
         <source>Load agent context</source>
-        <translation type="unfinished"></translation>
+        <translation>Muatkan konteks ejen</translation>
     </message>
     <message>
         <source>Mac workspaces</source>
-        <translation type="unfinished"></translation>
+        <translation>Ruang kerja Mac</translation>
     </message>
     <message>
         <source>Native accessibility tree</source>
-        <translation type="unfinished"></translation>
+        <translation>Pepohon kebolehcapaian asli</translation>
     </message>
     <message>
         <source>Native capture</source>
-        <translation type="unfinished"></translation>
+        <translation>Tangkapan asli</translation>
     </message>
     <message>
         <source>Native input</source>
-        <translation type="unfinished"></translation>
+        <translation>Input asli</translation>
     </message>
     <message>
         <source>Native sessions</source>
-        <translation type="unfinished"></translation>
+        <translation>Sesi asli</translation>
     </message>
     <message>
         <source>Open Tomacco</source>
-        <translation type="unfinished"></translation>
+        <translation>Buka Tomacco</translation>
     </message>
     <message>
         <source>Open URL</source>
-        <translation type="unfinished"></translation>
+        <translation>Buka URL</translation>
     </message>
     <message>
         <source>Open deep link</source>
-        <translation type="unfinished"></translation>
+        <translation>Buka pautan dalam</translation>
     </message>
     <message>
         <source>Open project</source>
-        <translation type="unfinished"></translation>
+        <translation>Buka projek</translation>
     </message>
     <message>
         <source>Open source file</source>
-        <translation type="unfinished"></translation>
+        <translation>Buka fail sumber</translation>
     </message>
     <message>
         <source>Operate Android element</source>
-        <translation type="unfinished"></translation>
+        <translation>Kendalikan elemen Android</translation>
     </message>
     <message>
         <source>Operate running virtual iOS</source>
-        <translation type="unfinished"></translation>
+        <translation>Kendalikan iOS maya yang sedang berjalan</translation>
     </message>
     <message>
         <source>Performance report</source>
-        <translation type="unfinished"></translation>
+        <translation>Laporan prestasi</translation>
     </message>
     <message>
         <source>Plan Swift build</source>
-        <translation type="unfinished"></translation>
+        <translation>Rancang binaan Swift</translation>
     </message>
     <message>
         <source>Prepare Google Play release</source>
-        <translation type="unfinished"></translation>
+        <translation>Sediakan keluaran Google Play</translation>
     </message>
     <message>
         <source>Prepare PMP firmware</source>
-        <translation type="unfinished"></translation>
+        <translation>Sediakan perisian tegar PMP</translation>
     </message>
     <message>
         <source>Prepare iOS test system</source>
-        <translation type="unfinished"></translation>
+        <translation>Sediakan sistem ujian iOS</translation>
     </message>
     <message>
         <source>Prepare iPhone control</source>
-        <translation type="unfinished"></translation>
+        <translation>Sediakan kawalan iPhone</translation>
     </message>
     <message>
         <source>Prepare virtual iOS restore runtime</source>
-        <translation type="unfinished"></translation>
+        <translation>Sediakan masa jalan pemulihan iOS maya</translation>
     </message>
     <message>
         <source>Preview sessions</source>
-        <translation type="unfinished"></translation>
+        <translation>Sesi pratonton</translation>
     </message>
     <message>
         <source>Preview status</source>
-        <translation type="unfinished"></translation>
+        <translation>Status pratonton</translation>
     </message>
     <message>
         <source>Read PMP memory</source>
-        <translation type="unfinished"></translation>
+        <translation>Baca memori PMP</translation>
     </message>
     <message>
         <source>Read UI tree</source>
-        <translation type="unfinished"></translation>
+        <translation>Baca pepohon UI</translation>
     </message>
     <message>
         <source>Read Xcode project</source>
-        <translation type="unfinished"></translation>
+        <translation>Baca projek Xcode</translation>
     </message>
     <message>
         <source>Read call stack</source>
-        <translation type="unfinished"></translation>
+        <translation>Baca tindanan panggilan</translation>
     </message>
     <message>
         <source>Read iOS test run</source>
-        <translation type="unfinished"></translation>
+        <translation>Baca larian ujian iOS</translation>
     </message>
     <message>
         <source>Read model from device</source>
-        <translation type="unfinished"></translation>
+        <translation>Baca model daripada peranti</translation>
     </message>
     <message>
         <source>Read threads</source>
-        <translation type="unfinished"></translation>
+        <translation>Baca bebenang</translation>
     </message>
     <message>
         <source>Read variables</source>
-        <translation type="unfinished"></translation>
+        <translation>Baca pemboleh ubah</translation>
     </message>
     <message>
         <source>Read workspaces</source>
-        <translation type="unfinished"></translation>
+        <translation>Baca ruang kerja</translation>
     </message>
     <message>
         <source>Record display</source>
-        <translation type="unfinished"></translation>
+        <translation>Rakam paparan</translation>
     </message>
     <message>
         <source>Reload catalog</source>
-        <translation type="unfinished"></translation>
+        <translation>Muat semula katalog</translation>
     </message>
     <message>
         <source>Reload page</source>
-        <translation type="unfinished"></translation>
+        <translation>Muat semula halaman</translation>
     </message>
     <message>
         <source>Remove custom model</source>
-        <translation type="unfinished"></translation>
+        <translation>Buang model tersuai</translation>
     </message>
     <message>
         <source>Remove workspace</source>
-        <translation type="unfinished"></translation>
+        <translation>Buang ruang kerja</translation>
     </message>
     <message>
         <source>Restore virtual iOS system</source>
-        <translation type="unfinished"></translation>
+        <translation>Pulihkan sistem iOS maya</translation>
     </message>
     <message>
         <source>Run JavaScript</source>
-        <translation type="unfinished"></translation>
+        <translation>Jalankan JavaScript</translation>
     </message>
     <message>
         <source>Run PMP firmware</source>
-        <translation type="unfinished"></translation>
+        <translation>Jalankan perisian tegar PMP</translation>
     </message>
     <message>
         <source>Run XCTest / XCUITest</source>
-        <translation type="unfinished"></translation>
+        <translation>Jalankan XCTest / XCUITest</translation>
     </message>
     <message>
         <source>Run iOS guest command</source>
-        <translation type="unfinished"></translation>
+        <translation>Jalankan arahan tetamu iOS</translation>
     </message>
     <message>
         <source>Run native tests</source>
-        <translation type="unfinished"></translation>
+        <translation>Jalankan ujian asli</translation>
     </message>
     <message>
         <source>Record UI test</source>
-        <translation type="unfinished"></translation>
+        <translation>Rakam ujian UI</translation>
     </message>
     <message>
         <source>Mark tappable elements</source>
-        <translation type="unfinished"></translation>
+        <translation>Tandakan elemen yang boleh diketik</translation>
     </message>
     <message>
         <source>Tap a mark</source>
-        <translation type="unfinished"></translation>
+        <translation>Ketik tanda</translation>
     </message>
     <message>
         <source>Read UI tree as text</source>
-        <translation type="unfinished"></translation>
+        <translation>Baca pepohon UI sebagai teks</translation>
     </message>
     <message>
         <source>Read text on screen</source>
-        <translation type="unfinished"></translation>
+        <translation>Baca teks pada skrin</translation>
     </message>
     <message>
         <source>Compare two screens</source>
-        <translation type="unfinished"></translation>
+        <translation>Bandingkan dua skrin</translation>
     </message>
     <message>
         <source>Wait for text or a steady screen</source>
-        <translation type="unfinished"></translation>
+        <translation>Tunggu teks atau skrin yang stabil</translation>
     </message>
     <message>
         <source>Export a screen</source>
-        <translation type="unfinished"></translation>
+        <translation>Eksport skrin</translation>
     </message>
     <message>
         <source>Export screens of several devices</source>
-        <translation type="unfinished"></translation>
+        <translation>Eksport skrin beberapa peranti</translation>
     </message>
     <message>
         <source>Check UI test scenario</source>
-        <translation type="unfinished"></translation>
+        <translation>Semak senario ujian UI</translation>
     </message>
     <message>
         <source>Set up Android text input</source>
-        <translation type="unfinished"></translation>
+        <translation>Sediakan input teks Android</translation>
     </message>
     <message>
         <source>Check Android text input</source>
-        <translation type="unfinished"></translation>
+        <translation>Semak input teks Android</translation>
     </message>
     <message>
         <source>Clean up old jobs and reports</source>
-        <translation type="unfinished"></translation>
+        <translation>Bersihkan tugas dan laporan lama</translation>
     </message>
     <message>
         <source>Write a bug report bundle</source>
-        <translation type="unfinished"></translation>
+        <translation>Tulis himpunan laporan pepijat</translation>
     </message>
     <message>
         <source>Read test results</source>
-        <translation type="unfinished"></translation>
+        <translation>Baca hasil ujian</translation>
     </message>
     <message>
         <source>Read code coverage</source>
-        <translation type="unfinished"></translation>
+        <translation>Baca liputan kod</translation>
     </message>
     <message>
         <source>Write HTML test report</source>
-        <translation type="unfinished"></translation>
+        <translation>Tulis laporan ujian HTML</translation>
     </message>
     <message>
         <source>Test pass-rate history</source>
-        <translation type="unfinished"></translation>
+        <translation>Sejarah kadar lulus ujian</translation>
     </message>
     <message>
         <source>Select affected tests</source>
-        <translation type="unfinished"></translation>
+        <translation>Pilih ujian yang terjejas</translation>
     </message>
     <message>
         <source>Review screenshot baselines</source>
-        <translation type="unfinished"></translation>
+        <translation>Semak garis dasar tangkapan skrin</translation>
     </message>
     <message>
         <source>Find app crashes</source>
-        <translation type="unfinished"></translation>
+        <translation>Cari ranap aplikasi</translation>
     </message>
     <message>
         <source>Check Android accessibility</source>
-        <translation type="unfinished"></translation>
+        <translation>Semak kebolehcapaian Android</translation>
     </message>
     <message>
         <source>Compare with baseline image</source>
-        <translation type="unfinished"></translation>
+        <translation>Bandingkan dengan imej garis dasar</translation>
     </message>
     <message>
         <source>Run on Mac</source>
-        <translation type="unfinished"></translation>
+        <translation>Jalankan pada Mac</translation>
     </message>
     <message>
         <source>Run steps in order</source>
-        <translation type="unfinished"></translation>
+        <translation>Jalankan langkah mengikut urutan</translation>
     </message>
     <message>
         <source>Run on every Android device</source>
-        <translation type="unfinished"></translation>
+        <translation>Jalankan pada setiap peranti Android</translation>
     </message>
     <message>
         <source>Run workspace</source>
-        <translation type="unfinished"></translation>
+        <translation>Jalankan ruang kerja</translation>
     </message>
     <message>
         <source>Runtime status</source>
-        <translation type="unfinished"></translation>
+        <translation>Status masa jalan</translation>
     </message>
     <message>
         <source>SDK packages</source>
-        <translation type="unfinished"></translation>
+        <translation>Pakej SDK</translation>
     </message>
     <message>
         <source>Save source file</source>
-        <translation type="unfinished"></translation>
+        <translation>Simpan fail sumber</translation>
     </message>
     <message>
         <source>Save workspace</source>
-        <translation type="unfinished"></translation>
+        <translation>Simpan ruang kerja</translation>
     </message>
     <message>
         <source>Search project</source>
-        <translation type="unfinished"></translation>
+        <translation>Cari dalam projek</translation>
     </message>
     <message>
         <source>Set app version</source>
-        <translation type="unfinished"></translation>
+        <translation>Tetapkan versi aplikasi</translation>
     </message>
     <message>
         <source>Check Android release readiness</source>
-        <translation type="unfinished"></translation>
+        <translation>Semak kesediaan keluaran Android</translation>
     </message>
     <message>
         <source>Write Play release notes</source>
-        <translation type="unfinished"></translation>
+        <translation>Tulis nota keluaran Play</translation>
     </message>
     <message>
         <source>Set breakpoints</source>
-        <translation type="unfinished"></translation>
+        <translation>Tetapkan titik henti</translation>
     </message>
     <message>
         <source>Set emulator display</source>
-        <translation type="unfinished"></translation>
+        <translation>Tetapkan paparan emulator</translation>
     </message>
     <message>
         <source>Set emulator performance</source>
-        <translation type="unfinished"></translation>
+        <translation>Tetapkan prestasi emulator</translation>
     </message>
     <message>
         <source>Set up iPhone connection</source>
-        <translation type="unfinished"></translation>
+        <translation>Sediakan sambungan iPhone</translation>
     </message>
     <message>
         <source>Set up toolchain</source>
-        <translation type="unfinished"></translation>
+        <translation>Sediakan rantai alat</translation>
     </message>
     <message>
         <source>Set up virtual iOS device</source>
-        <translation type="unfinished"></translation>
+        <translation>Sediakan peranti iOS maya</translation>
     </message>
     <message>
         <source>Settings</source>
-        <translation type="unfinished"></translation>
+        <translation>Tetapan</translation>
     </message>
     <message>
         <source>Show Android live</source>
-        <translation type="unfinished"></translation>
+        <translation>Tunjukkan Android secara langsung</translation>
     </message>
     <message>
         <source>Show iPhone apps</source>
-        <translation type="unfinished"></translation>
+        <translation>Tunjukkan aplikasi iPhone</translation>
     </message>
     <message>
         <source>Show project files</source>
-        <translation type="unfinished"></translation>
+        <translation>Tunjukkan fail projek</translation>
     </message>
     <message>
         <source>Sign Android release</source>
-        <translation type="unfinished"></translation>
+        <translation>Tandatangani keluaran Android</translation>
     </message>
     <message>
         <source>Start Android activity</source>
-        <translation type="unfinished"></translation>
+        <translation>Mulakan aktiviti Android</translation>
     </message>
     <message>
         <source>Start build / test</source>
-        <translation type="unfinished"></translation>
+        <translation>Mulakan binaan / ujian</translation>
     </message>
     <message>
         <source>Start debugger</source>
-        <translation type="unfinished"></translation>
+        <translation>Mulakan penyahpepijat</translation>
     </message>
     <message>
         <source>Start emulator</source>
-        <translation type="unfinished"></translation>
+        <translation>Mulakan emulator</translation>
     </message>
     <message>
         <source>Start iOS test run</source>
-        <translation type="unfinished"></translation>
+        <translation>Mulakan larian ujian iOS</translation>
     </message>
     <message>
         <source>Start virtual iOS USB access</source>
-        <translation type="unfinished"></translation>
+        <translation>Mulakan akses USB iOS maya</translation>
     </message>
     <message>
         <source>Start virtual iOS platform</source>
-        <translation type="unfinished"></translation>
+        <translation>Mulakan platform iOS maya</translation>
     </message>
     <message>
         <source>Start virtual iOS device</source>
-        <translation type="unfinished"></translation>
+        <translation>Mulakan peranti iOS maya</translation>
     </message>
     <message>
         <source>Stop virtual iOS device</source>
-        <translation type="unfinished"></translation>
+        <translation>Hentikan peranti iOS maya</translation>
     </message>
     <message>
         <source>Unlock virtual iOS device</source>
-        <translation type="unfinished"></translation>
+        <translation>Buka kunci peranti iOS maya</translation>
     </message>
     <message>
         <source>Install app on running virtual iOS device</source>
-        <translation type="unfinished"></translation>
+        <translation>Pasang aplikasi pada peranti iOS maya yang sedang berjalan</translation>
     </message>
     <message>
         <source>Debug process on virtual iOS device</source>
-        <translation type="unfinished"></translation>
+        <translation>Nyahpepijat proses pada peranti iOS maya</translation>
     </message>
     <message>
         <source>Screenshot of virtual iOS device</source>
-        <translation type="unfinished"></translation>
+        <translation>Tangkapan skrin peranti iOS maya</translation>
     </message>
     <message>
         <source>Apps of virtual iOS device</source>
-        <translation type="unfinished"></translation>
+        <translation>Aplikasi peranti iOS maya</translation>
     </message>
     <message>
         <source>Save crash reports of virtual iOS device</source>
-        <translation type="unfinished"></translation>
+        <translation>Simpan laporan ranap peranti iOS maya</translation>
     </message>
     <message>
         <source>Clean up virtual iOS device disk copies</source>
-        <translation type="unfinished"></translation>
+        <translation>Bersihkan salinan cakera peranti iOS maya</translation>
     </message>
     <message>
         <source>Record virtual iOS device screen</source>
-        <translation type="unfinished"></translation>
+        <translation>Rakam skrin peranti iOS maya</translation>
     </message>
     <message>
         <source>Stream device audio</source>
-        <translation type="unfinished"></translation>
+        <translation>Strim audio peranti</translation>
     </message>
     <message>
         <source>Swift toolchain</source>
-        <translation type="unfinished"></translation>
+        <translation>Rantai alat Swift</translation>
     </message>
     <message>
         <source>Tap / swipe / input</source>
-        <translation type="unfinished"></translation>
+        <translation>Ketik / leret / input</translation>
     </message>
     <message>
         <source>Transfer project to Mac</source>
-        <translation type="unfinished"></translation>
+        <translation>Pindahkan projek ke Mac</translation>
     </message>
     <message>
         <source>Upload App Store build</source>
-        <translation type="unfinished"></translation>
+        <translation>Muat naik binaan App Store</translation>
     </message>
     <message>
         <source>Verify release signature</source>
-        <translation type="unfinished"></translation>
+        <translation>Sahkan tandatangan keluaran</translation>
     </message>
     <message>
         <source>Check signing keys</source>
-        <translation type="unfinished"></translation>
+        <translation>Semak kunci tandatangan</translation>
     </message>
     <message>
         <source>View build plan</source>
-        <translation type="unfinished"></translation>
+        <translation>Lihat pelan binaan</translation>
     </message>
     <message>
         <source>Check dependency updates</source>
-        <translation type="unfinished"></translation>
+        <translation>Semak kemas kini kebergantungan</translation>
     </message>
     <message>
         <source>Analyze project code</source>
-        <translation type="unfinished"></translation>
+        <translation>Analisis kod projek</translation>
     </message>
     <message>
         <source>Virtual iOS device: status</source>
-        <translation type="unfinished"></translation>
+        <translation>Peranti iOS maya: status</translation>
     </message>
     <message>
         <source>Set up the virtual iOS device</source>
-        <translation type="unfinished"></translation>
+        <translation>Sediakan peranti iOS maya</translation>
     </message>
     <message>
         <source>Check this machine for the virtual iOS device</source>
-        <translation type="unfinished"></translation>
+        <translation>Semak mesin ini untuk peranti iOS maya</translation>
     </message>
     <message>
         <source>Check the virtual iOS device</source>
-        <translation type="unfinished"></translation>
+        <translation>Semak peranti iOS maya</translation>
     </message>
     <message>
         <source>Wait for job</source>
-        <translation type="unfinished"></translation>
+        <translation>Tunggu tugas</translation>
     </message>
     <message>
         <source>Job timeline</source>
-        <translation type="unfinished"></translation>
+        <translation>Garis masa tugas</translation>
     </message>
     <message>
         <source>Wait for rendering</source>
-        <translation type="unfinished"></translation>
+        <translation>Tunggu pemaparan</translation>
     </message>
     <message>
         <source>Name or pin a device</source>
-        <translation type="unfinished"></translation>
+        <translation>Namakan atau semat peranti</translation>
     </message>
     <message>
         <source>Pair over Wi-Fi by QR code</source>
-        <translation type="unfinished"></translation>
+        <translation>Gandingkan melalui Wi-Fi dengan kod QR</translation>
     </message>
     <message>
         <source>Android screen preview</source>
-        <translation type="unfinished"></translation>
+        <translation>Pratonton skrin Android</translation>
     </message>
     <message>
         <source>Capture store screenshots</source>
-        <translation type="unfinished"></translation>
+        <translation>Tangkap tangkapan skrin kedai</translation>
     </message>
     <message>
         <source>Saved states of virtual iOS device</source>
-        <translation type="unfinished"></translation>
+        <translation>Keadaan disimpan peranti iOS maya</translation>
     </message>
     <message>
         <source>Save state of virtual iOS device</source>
-        <translation type="unfinished"></translation>
+        <translation>Simpan keadaan peranti iOS maya</translation>
     </message>
     <message>
         <source>Delete saved state of virtual iOS device</source>
-        <translation type="unfinished"></translation>
+        <translation>Padam keadaan disimpan peranti iOS maya</translation>
     </message>
     <message>
         <source>Start virtual iOS device from saved state</source>
-        <translation type="unfinished"></translation>
+        <translation>Mulakan peranti iOS maya daripada keadaan disimpan</translation>
     </message>
     <message>
         <source>Profiles of virtual iOS device</source>
-        <translation type="unfinished"></translation>
+        <translation>Profil peranti iOS maya</translation>
     </message>
     <message>
         <source>Log of virtual iOS device</source>
-        <translation type="unfinished"></translation>
+        <translation>Log peranti iOS maya</translation>
     </message>
     <message>
         <source>Agent policy</source>
-        <translation type="unfinished"></translation>
+        <translation>Dasar ejen</translation>
     </message>
     <message>
         <source>Audit log</source>
-        <translation type="unfinished"></translation>
+        <translation>Log audit</translation>
     </message>
     <message>
         <source>Read a saved result</source>
-        <translation type="unfinished"></translation>
+        <translation>Baca hasil yang disimpan</translation>
     </message>
     <message>
         <source>Inspect Demo Studio capabilities</source>
-        <translation type="unfinished"></translation>
+        <translation>Periksa keupayaan Demo Studio</translation>
     </message>
     <message>
         <source>Inspect local demo recording</source>
-        <translation type="unfinished"></translation>
+        <translation>Periksa rakaman demo setempat</translation>
     </message>
     <message>
         <source>Create demo scene</source>
-        <translation type="unfinished"></translation>
+        <translation>Cipta adegan demo</translation>
     </message>
     <message>
         <source>Read demo scene</source>
-        <translation type="unfinished"></translation>
+        <translation>Baca adegan demo</translation>
     </message>
     <message>
         <source>Update demo scene</source>
-        <translation type="unfinished"></translation>
+        <translation>Kemas kini adegan demo</translation>
     </message>
     <message>
         <source>Render demo preview</source>
-        <translation type="unfinished"></translation>
+        <translation>Paparkan pratonton demo</translation>
     </message>
     <message>
         <source>Export demo video</source>
-        <translation type="unfinished"></translation>
+        <translation>Eksport video demo</translation>
     </message>
     <message>
         <source>Validate demo export</source>
-        <translation type="unfinished"></translation>
+        <translation>Sahkan eksport demo</translation>
     </message>
     <message>
         <source>QA environment settings</source>
-        <translation type="unfinished"></translation>
+        <translation>Tetapan persekitaran QA</translation>
     </message>
     <message>
         <source>List QA environments</source>
-        <translation type="unfinished"></translation>
+        <translation>Senaraikan persekitaran QA</translation>
     </message>
     <message>
         <source>Read QA environment</source>
-        <translation type="unfinished"></translation>
+        <translation>Baca persekitaran QA</translation>
     </message>
     <message>
         <source>Save QA environment</source>
-        <translation type="unfinished"></translation>
+        <translation>Simpan persekitaran QA</translation>
     </message>
     <message>
         <source>Delete QA environment</source>
-        <translation type="unfinished"></translation>
+        <translation>Padam persekitaran QA</translation>
     </message>
     <message>
         <source>Export QA environment</source>
-        <translation type="unfinished"></translation>
+        <translation>Eksport persekitaran QA</translation>
     </message>
     <message>
         <source>Import QA environment</source>
-        <translation type="unfinished"></translation>
+        <translation>Import persekitaran QA</translation>
     </message>
     <message>
         <source>Read QA environment of device</source>
-        <translation type="unfinished"></translation>
+        <translation>Baca persekitaran QA peranti</translation>
     </message>
     <message>
         <source>Plan QA environment</source>
-        <translation type="unfinished"></translation>
+        <translation>Rancang persekitaran QA</translation>
     </message>
     <message>
         <source>Apply QA environment</source>
-        <translation type="unfinished"></translation>
+        <translation>Gunakan persekitaran QA</translation>
     </message>
     <message>
         <source>Restore device settings</source>
-        <translation type="unfinished"></translation>
+        <translation>Pulihkan tetapan peranti</translation>
     </message>
     <message>
         <source>List restore points</source>
-        <translation type="unfinished"></translation>
+        <translation>Senaraikan titik pemulihan</translation>
     </message>
     <message>
         <source>Emulator disk usage</source>
-        <translation type="unfinished"></translation>
+        <translation>Penggunaan cakera emulator</translation>
     </message>
     <message>
         <source>Duplicate, rename or wipe emulator</source>
-        <translation type="unfinished"></translation>
+        <translation>Pendua, namakan semula atau padam bersih emulator</translation>
     </message>
     <message>
         <source>Plan emulator setup</source>
-        <translation type="unfinished"></translation>
+        <translation>Rancang persediaan emulator</translation>
     </message>
     <message>
         <source>Set up emulator</source>
-        <translation type="unfinished"></translation>
+        <translation>Sediakan emulator</translation>
     </message>
     <message>
         <source>Ask the person to act</source>
-        <translation type="unfinished"></translation>
+        <translation>Minta orang itu bertindak</translation>
     </message>
     <message>
         <source>Draft a bug report</source>
-        <translation type="unfinished"></translation>
+        <translation>Draf laporan pepijat</translation>
     </message>
     <message>
         <source>List handoffs</source>
-        <translation type="unfinished"></translation>
+        <translation>Senaraikan serahan</translation>
     </message>
     <message>
         <source>Observe a session</source>
-        <translation type="unfinished"></translation>
+        <translation>Perhatikan sesi</translation>
     </message>
     <message>
         <source>Ordered input batch</source>
-        <translation type="unfinished"></translation>
+        <translation>Kelompok input tersusun</translation>
     </message>
     <message>
         <source>Read a handoff</source>
-        <translation type="unfinished"></translation>
+        <translation>Baca serahan</translation>
     </message>
     <message>
         <source>The person is done</source>
-        <translation type="unfinished"></translation>
+        <translation>Orang itu sudah selesai</translation>
     </message>
     <message>
         <source>Timestamped gesture trace</source>
-        <translation type="unfinished"></translation>
+        <translation>Jejak gerak isyarat bercap masa</translation>
     </message>
     <message>
         <source>Wait for the person</source>
-        <translation type="unfinished"></translation>
+        <translation>Tunggu orang itu</translation>
     </message>
     <message>
         <source>Withdraw a handoff</source>
-        <translation type="unfinished"></translation>
+        <translation>Tarik balik serahan</translation>
     </message>
     <message>
         <source>Find a device by name</source>
-        <translation type="unfinished"></translation>
+        <translation>Cari peranti mengikut nama</translation>
     </message>
     <message>
         <source>Play a GPX route</source>
-        <translation type="unfinished"></translation>
+        <translation>Mainkan laluan GPX</translation>
     </message>
     <message>
         <source>Read a GPX route</source>
-        <translation type="unfinished"></translation>
+        <translation>Baca laluan GPX</translation>
     </message>
     <message>
         <source>Route playback status</source>
-        <translation type="unfinished"></translation>
+        <translation>Status main balik laluan</translation>
     </message>
 </context>
 <context>
     <name>ProfileWorkspace</name>
     <message>
         <source>% maximum increase</source>
-        <translation type="unfinished"></translation>
+        <translation>% peningkatan maksimum</translation>
     </message>
     <message>
         <source>Analyze</source>
-        <translation type="unfinished"></translation>
+        <translation>Analisis</translation>
     </message>
     <message>
         <source>Application ID · e.g. com.example.app</source>
-        <translation type="unfinished"></translation>
+        <translation>ID aplikasi · cth. com.example.app</translation>
     </message>
     <message>
         <source>Choose file</source>
-        <translation type="unfinished"></translation>
+        <translation>Pilih fail</translation>
     </message>
     <message>
         <source>Compare</source>
-        <translation type="unfinished"></translation>
+        <translation>Bandingkan</translation>
     </message>
     <message>
         <source>Duration (seconds)</source>
-        <translation type="unfinished"></translation>
+        <translation>Tempoh (saat)</translation>
     </message>
     <message>
         <source>Frame time</source>
-        <translation type="unfinished"></translation>
+        <translation>Masa bingkai</translation>
     </message>
     <message>
         <source>Memory</source>
-        <translation type="unfinished"></translation>
+        <translation>Memori</translation>
     </message>
     <message>
         <source>Path to the Perfetto trace (.pftrace)</source>
-        <translation type="unfinished"></translation>
+        <translation>Laluan ke surih Perfetto (.pftrace)</translation>
     </message>
     <message>
         <source>Previous JSON report</source>
-        <translation type="unfinished"></translation>
+        <translation>Laporan JSON sebelumnya</translation>
     </message>
     <message>
         <source>Record</source>
-        <translation type="unfinished"></translation>
+        <translation>Rakam</translation>
     </message>
     <message>
         <source>Save JSON report as…</source>
-        <translation type="unfinished"></translation>
+        <translation>Simpan laporan JSON sebagai…</translation>
     </message>
     <message>
         <source>not available</source>
-        <translation type="unfinished"></translation>
+        <translation>tidak tersedia</translation>
     </message>
     <message>
         <source>Record a trace</source>
-        <translation type="unfinished"></translation>
+        <translation>Rakam surih</translation>
     </message>
     <message>
         <source>Use your app while it records. You get its CPU time, memory and frame times.</source>
-        <translation type="unfinished"></translation>
+        <translation>Gunakan aplikasi anda semasa ia merakam. Anda mendapat masa CPU, memori dan masa bingkainya.</translation>
     </message>
     <message>
         <source>Pick a phone under Devices first.</source>
-        <translation type="unfinished"></translation>
+        <translation>Pilih telefon di bawah Peranti dahulu.</translation>
     </message>
     <message>
         <source>Catch regressions</source>
-        <translation type="unfinished"></translation>
+        <translation>Kesan regresi</translation>
     </message>
 </context>
 <context>
     <name>ReleaseWorkspace</name>
     <message>
         <source>APK / AAB to sign</source>
-        <translation type="unfinished"></translation>
+        <translation>APK / AAB untuk ditandatangani</translation>
     </message>
     <message>
         <source>Build iOS archive</source>
-        <translation type="unfinished"></translation>
+        <translation>Bina arkib iOS</translation>
     </message>
     <message>
         <source>Commit Play change</source>
-        <translation type="unfinished"></translation>
+        <translation>Komit perubahan Play</translation>
     </message>
     <message>
         <source>Create new keystore</source>
-        <translation type="unfinished"></translation>
+        <translation>Cipta stor kunci baharu</translation>
     </message>
     <message>
         <source>Export IPA</source>
-        <translation type="unfinished"></translation>
+        <translation>Eksport IPA</translation>
     </message>
     <message>
         <source>Key alias</source>
-        <translation type="unfinished"></translation>
+        <translation>Alias kunci</translation>
     </message>
     <message>
         <source>New signed output file</source>
-        <translation type="unfinished"></translation>
+        <translation>Fail output bertandatangan baharu</translation>
     </message>
     <message>
         <source>Prepare Play upload</source>
-        <translation type="unfinished"></translation>
+        <translation>Sediakan muat naik Play</translation>
     </message>
     <message>
         <source>Protected password file · readable by its owner only</source>
-        <translation type="unfinished"></translation>
+        <translation>Fail kata laluan dilindungi · boleh dibaca oleh pemiliknya sahaja</translation>
     </message>
     <message>
         <source>Set in the open project</source>
-        <translation type="unfinished"></translation>
+        <translation>Tetapkan dalam projek yang dibuka</translation>
     </message>
     <message>
         <source>Sign &amp; verify</source>
-        <translation type="unfinished"></translation>
+        <translation>Tandatangani &amp; sahkan</translation>
     </message>
     <message>
         <source>Verify signature</source>
-        <translation type="unfinished"></translation>
+        <translation>Sahkan tandatangan</translation>
     </message>
     <message>
         <source>Version &amp; build number</source>
-        <translation type="unfinished"></translation>
+        <translation>Versi &amp; nombor binaan</translation>
     </message>
     <message>
         <source>Sign your app</source>
-        <translation type="unfinished"></translation>
+        <translation>Tandatangani aplikasi anda</translation>
     </message>
     <message>
         <source>Your keys stay on this computer. Nothing is released until the check passes.</source>
-        <translation type="unfinished"></translation>
+        <translation>Kunci anda kekal pada komputer ini. Tiada apa-apa dikeluarkan sehingga semakan lulus.</translation>
     </message>
     <message>
         <source>Google Play needs an authorized service account. Apple needs a Mac with Xcode and your signing keys.</source>
-        <translation type="unfinished"></translation>
+        <translation>Google Play memerlukan akaun perkhidmatan yang dibenarkan. Apple memerlukan Mac dengan Xcode dan kunci tandatangan anda.</translation>
     </message>
     <message>
         <source>Build number</source>
-        <translation type="unfinished"></translation>
+        <translation>Nombor binaan</translation>
     </message>
 </context>
 <context>
     <name>StageLogPane</name>
     <message>
         <source>Device log</source>
-        <translation type="unfinished"></translation>
+        <translation>Log peranti</translation>
     </message>
     <message>
         <source>Job log</source>
-        <translation type="unfinished"></translation>
+        <translation>Log tugas</translation>
     </message>
     <message>
         <source>Open under Builds &amp; jobs</source>
-        <translation type="unfinished"></translation>
+        <translation>Buka di bawah Binaan &amp; tugas</translation>
     </message>
     <message>
         <source>Hide the log</source>
-        <translation type="unfinished"></translation>
+        <translation>Sembunyikan log</translation>
     </message>
     <message>
         <source>No device is live.</source>
-        <translation type="unfinished"></translation>
+        <translation>Tiada peranti langsung.</translation>
     </message>
     <message>
         <source>Connect a device and its log runs here, beside its screen.</source>
-        <translation type="unfinished"></translation>
+        <translation>Sambungkan peranti dan lognya berjalan di sini, di sebelah skrinnya.</translation>
     </message>
     <message>
         <source>No job yet.</source>
-        <translation type="unfinished"></translation>
+        <translation>Belum ada tugas.</translation>
     </message>
     <message>
         <source>Run your app or start a build, and its log follows here.</source>
-        <translation type="unfinished"></translation>
+        <translation>Jalankan aplikasi anda atau mulakan binaan, dan lognya menyusul di sini.</translation>
     </message>
     <message>
         <source>Waiting for log lines…</source>
-        <translation type="unfinished"></translation>
+        <translation>Menunggu baris log…</translation>
     </message>
     <message>
         <source>Try again</source>
-        <translation type="unfinished"></translation>
+        <translation>Cuba lagi</translation>
     </message>
     <message>
         <source>App launch</source>
-        <translation type="unfinished"></translation>
+        <translation>Pelancaran aplikasi</translation>
     </message>
 </context>
 <context>
     <name>StudioDialog</name>
     <message>
         <source>Apply</source>
-        <translation type="unfinished"></translation>
+        <translation>Guna</translation>
     </message>
     <message>
         <source>Cancel</source>
-        <translation type="unfinished"></translation>
+        <translation>Batal</translation>
     </message>
     <message>
         <source>Close</source>
-        <translation type="unfinished"></translation>
+        <translation>Tutup</translation>
     </message>
     <message>
         <source>Discard</source>
-        <translation type="unfinished"></translation>
+        <translation>Buang</translation>
     </message>
     <message>
         <source>No</source>
-        <translation type="unfinished"></translation>
+        <translation>Tidak</translation>
     </message>
     <message>
         <source>Open</source>
-        <translation type="unfinished"></translation>
+        <translation>Buka</translation>
     </message>
     <message>
         <source>Reset</source>
-        <translation type="unfinished"></translation>
+        <translation>Tetapkan semula</translation>
     </message>
     <message>
         <source>Save</source>
-        <translation type="unfinished"></translation>
+        <translation>Simpan</translation>
     </message>
     <message>
         <source>Yes</source>
-        <translation type="unfinished"></translation>
+        <translation>Ya</translation>
     </message>
 </context>
 <context>
     <name>TestWorkspace</name>
     <message>
         <source>Accessibility description · exact</source>
-        <translation type="unfinished"></translation>
+        <translation>Penerangan kebolehcapaian · tepat</translation>
     </message>
     <message>
         <source>Choose</source>
-        <translation type="unfinished"></translation>
+        <translation>Pilih</translation>
     </message>
     <message>
         <source>Device IDs separated by commas; empty = selected device</source>
-        <translation type="unfinished"></translation>
+        <translation>ID peranti dipisahkan dengan koma; kosong = peranti yang dipilih</translation>
     </message>
     <message>
         <source>Enter a text, resource ID or description</source>
-        <translation type="unfinished"></translation>
+        <translation>Masukkan teks, ID sumber atau penerangan</translation>
     </message>
     <message>
         <source>Fill in</source>
-        <translation type="unfinished"></translation>
+        <translation>Isi</translation>
     </message>
     <message>
         <source>Find &amp; wait</source>
-        <translation type="unfinished"></translation>
+        <translation>Cari &amp; tunggu</translation>
     </message>
     <message>
         <source>Input text</source>
-        <translation type="unfinished"></translation>
+        <translation>Input teks</translation>
     </message>
     <message>
         <source>JSON scenario</source>
-        <translation type="unfinished"></translation>
+        <translation>Senario JSON</translation>
     </message>
     <message>
         <source>Long press</source>
-        <translation type="unfinished"></translation>
+        <translation>Tekan lama</translation>
     </message>
     <message>
         <source>New, empty directory for JUnit, JSON and screenshots</source>
-        <translation type="unfinished"></translation>
+        <translation>Direktori baharu yang kosong untuk JUnit, JSON dan tangkapan skrin</translation>
     </message>
     <message>
         <source>Resource ID · e.g. app.example:id/submit</source>
-        <translation type="unfinished"></translation>
+        <translation>ID sumber · cth. app.example:id/submit</translation>
     </message>
     <message>
         <source>Start scenario</source>
-        <translation type="unfinished"></translation>
+        <translation>Mulakan senario</translation>
     </message>
     <message>
         <source>Tap</source>
-        <translation type="unfinished"></translation>
+        <translation>Ketik</translation>
     </message>
     <message>
         <source>Visible text · exact</source>
-        <translation type="unfinished"></translation>
+        <translation>Teks kelihatan · tepat</translation>
     </message>
     <message>
         <source>Test your Android app</source>
-        <translation type="unfinished"></translation>
+        <translation>Uji aplikasi Android anda</translation>
     </message>
     <message>
         <source>Pick an emulator or phone under Devices first.</source>
-        <translation type="unfinished"></translation>
+        <translation>Pilih emulator atau telefon di bawah Peranti dahulu.</translation>
     </message>
     <message>
         <source>Set up text input on the device</source>
-        <translation type="unfinished"></translation>
+        <translation>Sediakan input teks pada peranti</translation>
     </message>
     <message>
         <source>Run on several devices</source>
-        <translation type="unfinished"></translation>
+        <translation>Jalankan pada beberapa peranti</translation>
     </message>
     <message>
         <source>JUnit results and the failure screenshot stay, even when a step fails.</source>
-        <translation type="unfinished"></translation>
+        <translation>Hasil JUnit dan tangkapan skrin kegagalan kekal, walaupun sesuatu langkah gagal.</translation>
     </message>
 </context>
 <context>
     <name>Workspace</name>
     <message>
         <source>%1 is missing</source>
-        <translation type="unfinished"></translation>
+        <translation>%1 tiada</translation>
     </message>
     <message>
         <source>A job is already running for this project. Use the running session or end it first.</source>
-        <translation type="unfinished"></translation>
+        <translation>Satu tugas sedang berjalan untuk projek ini. Gunakan sesi yang sedang berjalan atau tamatkannya dahulu.</translation>
     </message>
     <message>
         <source>Agents &amp; tools</source>
-        <translation type="unfinished"></translation>
+        <translation>Ejen &amp; alat</translation>
     </message>
     <message>
         <source>App running</source>
-        <translation type="unfinished"></translation>
+        <translation>Aplikasi sedang berjalan</translation>
     </message>
     <message>
         <source>App session running</source>
-        <translation type="unfinished"></translation>
+        <translation>Sesi aplikasi sedang berjalan</translation>
     </message>
     <message>
         <source>Application ID, e.g. com.example.app</source>
-        <translation type="unfinished"></translation>
+        <translation>ID aplikasi, cth. com.example.app</translation>
     </message>
     <message>
         <source>Build &amp; run</source>
-        <translation type="unfinished"></translation>
+        <translation>Bina &amp; jalankan</translation>
     </message>
     <message>
         <source>Building</source>
-        <translation type="unfinished"></translation>
+        <translation>Membina</translation>
     </message>
     <message>
         <source>Builds &amp; jobs</source>
-        <translation type="unfinished"></translation>
+        <translation>Binaan &amp; tugas</translation>
     </message>
     <message>
         <source>Calibrate model</source>
-        <translation type="unfinished"></translation>
+        <translation>Tentukur model</translation>
     </message>
     <message>
         <source>Cancel</source>
-        <translation type="unfinished"></translation>
+        <translation>Batal</translation>
     </message>
     <message>
         <source>Check code</source>
-        <translation type="unfinished"></translation>
+        <translation>Semak kod</translation>
     </message>
     <message>
         <source>Choose a smartphone or emulator</source>
-        <translation type="unfinished"></translation>
+        <translation>Pilih telefon pintar atau emulator</translation>
     </message>
     <message>
         <source>Choose folder</source>
-        <translation type="unfinished"></translation>
+        <translation>Pilih folder</translation>
     </message>
     <message>
         <source>Choose project</source>
-        <translation type="unfinished"></translation>
+        <translation>Pilih projek</translation>
     </message>
     <message>
         <source>Completed</source>
-        <translation type="unfinished"></translation>
+        <translation>Selesai</translation>
     </message>
     <message>
         <source>Configuration</source>
-        <translation type="unfinished"></translation>
+        <translation>Konfigurasi</translation>
     </message>
     <message>
         <source>Connect via Wi-Fi</source>
-        <translation type="unfinished"></translation>
+        <translation>Sambung melalui Wi-Fi</translation>
     </message>
     <message>
         <source>Copy path</source>
-        <translation type="unfinished"></translation>
+        <translation>Salin laluan</translation>
     </message>
     <message>
         <source>Devices</source>
-        <translation type="unfinished"></translation>
+        <translation>Peranti</translation>
     </message>
     <message>
         <source>Ended</source>
-        <translation type="unfinished"></translation>
+        <translation>Tamat</translation>
     </message>
     <message>
         <source>Failed</source>
-        <translation type="unfinished"></translation>
+        <translation>Gagal</translation>
     </message>
     <message>
         <source>Files</source>
-        <translation type="unfinished"></translation>
+        <translation>Fail</translation>
     </message>
     <message>
         <source>Find devices</source>
-        <translation type="unfinished"></translation>
+        <translation>Cari peranti</translation>
     </message>
     <message>
         <source>Go to project</source>
-        <translation type="unfinished"></translation>
+        <translation>Pergi ke projek</translation>
     </message>
     <message>
         <source>Information</source>
-        <translation type="unfinished"></translation>
+        <translation>Maklumat</translation>
     </message>
     <message>
         <source>Install</source>
-        <translation type="unfinished"></translation>
+        <translation>Pasang</translation>
     </message>
     <message>
         <source>Install APK</source>
-        <translation type="unfinished"></translation>
+        <translation>Pasang APK</translation>
     </message>
     <message>
         <source>Install IPA</source>
-        <translation type="unfinished"></translation>
+        <translation>Pasang IPA</translation>
     </message>
     <message>
         <source>Install app on device</source>
-        <translation type="unfinished"></translation>
+        <translation>Pasang aplikasi pada peranti</translation>
     </message>
     <message>
         <source>Job running</source>
-        <translation type="unfinished"></translation>
+        <translation>Tugas sedang berjalan</translation>
     </message>
     <message>
         <source>Job started · %1</source>
-        <translation type="unfinished"></translation>
+        <translation>Tugas dimulakan · %1</translation>
     </message>
     <message>
         <source>Load saved workspace</source>
-        <translation type="unfinished"></translation>
+        <translation>Muatkan ruang kerja yang disimpan</translation>
     </message>
     <message>
         <source>Manage devices</source>
-        <translation type="unfinished"></translation>
+        <translation>Urus peranti</translation>
     </message>
     <message>
         <source>Mobile apps (*.apk *.ipa)</source>
-        <translation type="unfinished"></translation>
+        <translation>Aplikasi mudah alih (*.apk *.ipa)</translation>
     </message>
     <message>
         <source>New project</source>
-        <translation type="unfinished"></translation>
+        <translation>Projek baharu</translation>
     </message>
     <message>
         <source>No</source>
-        <translation type="unfinished"></translation>
+        <translation>Tidak</translation>
     </message>
     <message>
         <source>No devices connected. Enable USB debugging or trust on the device.</source>
-        <translation type="unfinished"></translation>
+        <translation>Tiada peranti disambungkan. Dayakan penyahpepijatan USB atau percayai komputer ini pada peranti.</translation>
     </message>
     <message>
         <source>Open</source>
-        <translation type="unfinished"></translation>
+        <translation>Buka</translation>
     </message>
     <message>
         <source>Open a project, connect a device and start a build.</source>
-        <translation type="unfinished"></translation>
+        <translation>Buka projek, sambungkan peranti dan mulakan binaan.</translation>
     </message>
     <message>
         <source>Open files</source>
-        <translation type="unfinished"></translation>
+        <translation>Buka fail</translation>
     </message>
     <message>
         <source>Open live device</source>
-        <translation type="unfinished"></translation>
+        <translation>Buka peranti langsung</translation>
     </message>
     <message>
         <source>Package format</source>
-        <translation type="unfinished"></translation>
+        <translation>Format pakej</translation>
     </message>
     <message>
         <source>Path to your Swift, Kotlin or Flutter project</source>
-        <translation type="unfinished"></translation>
+        <translation>Laluan ke projek Swift, Kotlin atau Flutter anda</translation>
     </message>
     <message>
         <source>Platform</source>
-        <translation type="unfinished"></translation>
+        <translation>Platform</translation>
     </message>
     <message>
         <source>Project</source>
-        <translation type="unfinished"></translation>
+        <translation>Projek</translation>
     </message>
     <message>
         <source>Ready · %1</source>
-        <translation type="unfinished"></translation>
+        <translation>Sedia · %1</translation>
     </message>
     <message>
         <source>Result</source>
-        <translation type="unfinished"></translation>
+        <translation>Hasil</translation>
     </message>
     <message>
         <source>Reused running job · %1</source>
-        <translation type="unfinished"></translation>
+        <translation>Tugas yang sedang berjalan digunakan semula · %1</translation>
     </message>
     <message>
         <source>Run</source>
-        <translation type="unfinished"></translation>
+        <translation>Jalankan</translation>
     </message>
     <message>
         <source>Run on device</source>
-        <translation type="unfinished"></translation>
+        <translation>Jalankan pada peranti</translation>
     </message>
     <message>
         <source>Running</source>
-        <translation type="unfinished"></translation>
+        <translation>Sedang berjalan</translation>
     </message>
     <message>
         <source>Running…</source>
-        <translation type="unfinished"></translation>
+        <translation>Sedang berjalan…</translation>
     </message>
     <message>
         <source>SDK &amp; tool paths</source>
-        <translation type="unfinished"></translation>
+        <translation>Laluan SDK &amp; alat</translation>
     </message>
     <message>
         <source>Save</source>
-        <translation type="unfinished"></translation>
+        <translation>Simpan</translation>
     </message>
     <message>
         <source>Save device screenshot</source>
-        <translation type="unfinished"></translation>
+        <translation>Simpan tangkapan skrin peranti</translation>
     </message>
     <message>
         <source>Save workspace</source>
-        <translation type="unfinished"></translation>
+        <translation>Simpan ruang kerja</translation>
     </message>
     <message>
         <source>Search tools…</source>
-        <translation type="unfinished"></translation>
+        <translation>Cari alat…</translation>
     </message>
     <message>
         <source>Set up iPhone</source>
-        <translation type="unfinished"></translation>
+        <translation>Sediakan iPhone</translation>
     </message>
     <message>
         <source>Sign build</source>
-        <translation type="unfinished"></translation>
+        <translation>Tandatangani binaan</translation>
     </message>
     <message>
         <source>Signing &amp; release</source>
-        <translation type="unfinished"></translation>
+        <translation>Penandatanganan &amp; keluaran</translation>
     </message>
     <message>
         <source>Start with a project</source>
-        <translation type="unfinished"></translation>
+        <translation>Mulakan dengan projek</translation>
     </message>
     <message>
         <source>Stopping</source>
-        <translation type="unfinished"></translation>
+        <translation>Menghentikan</translation>
     </message>
     <message>
         <source>Streaming sound</source>
-        <translation type="unfinished"></translation>
+        <translation>Menstrim bunyi</translation>
     </message>
     <message>
         <source>Timed out</source>
-        <translation type="unfinished"></translation>
+        <translation>Tamat masa</translation>
     </message>
     <message>
         <source>UI tests</source>
-        <translation type="unfinished"></translation>
+        <translation>Ujian UI</translation>
     </message>
     <message>
         <source>Waiting</source>
-        <translation type="unfinished"></translation>
+        <translation>Menunggu</translation>
     </message>
     <message>
         <source>Waiting for project</source>
-        <translation type="unfinished"></translation>
+        <translation>Menunggu projek</translation>
     </message>
     <message>
         <source>Workspace name</source>
-        <translation type="unfinished"></translation>
+        <translation>Nama ruang kerja</translation>
     </message>
     <message>
         <source>Yes</source>
-        <translation type="unfinished"></translation>
+        <translation>Ya</translation>
     </message>
     <message>
         <source>Your next build starts here</source>
-        <translation type="unfinished"></translation>
+        <translation>Binaan anda yang seterusnya bermula di sini</translation>
     </message>
     <message>
         <source>Choose a job to read its log.</source>
-        <translation type="unfinished"></translation>
+        <translation>Pilih tugas untuk membaca lognya.</translation>
     </message>
     <message>
         <source>Open your app, build it and run it on a device.</source>
-        <translation type="unfinished"></translation>
+        <translation>Buka aplikasi anda, binanya dan jalankannya pada peranti.</translation>
     </message>
     <message>
         <source>Phones and emulators, ready to run your app.</source>
-        <translation type="unfinished"></translation>
+        <translation>Telefon dan emulator, sedia untuk menjalankan aplikasi anda.</translation>
     </message>
     <message>
         <source>Every build and agent job, with its logs and results.</source>
-        <translation type="unfinished"></translation>
+        <translation>Setiap binaan dan tugas ejen, bersama log dan hasilnya.</translation>
     </message>
     <message>
         <source>Everything your agent can do, as a form you can fill in.</source>
-        <translation type="unfinished"></translation>
+        <translation>Semua yang boleh dilakukan oleh ejen anda, sebagai borang yang boleh anda isi.</translation>
     </message>
     <message>
         <source>Pause your app and see what it&apos;s doing.</source>
-        <translation type="unfinished"></translation>
+        <translation>Jeda aplikasi anda dan lihat apa yang sedang dilakukannya.</translation>
     </message>
     <message>
         <source>Find anything in your running app and tap it.</source>
-        <translation type="unfinished"></translation>
+        <translation>Cari apa sahaja dalam aplikasi anda yang sedang berjalan dan ketiknya.</translation>
     </message>
     <message>
         <source>See where the time goes and catch regressions.</source>
-        <translation type="unfinished"></translation>
+        <translation>Lihat ke mana masa dihabiskan dan kesan regresi.</translation>
     </message>
     <message>
         <source>Search, edit and save your project&apos;s files.</source>
-        <translation type="unfinished"></translation>
+        <translation>Cari, sunting dan simpan fail projek anda.</translation>
     </message>
     <message>
         <source>Sign it, version it and ship it.</source>
-        <translation type="unfinished"></translation>
+        <translation>Tandatangani, beri versi dan terbitkan.</translation>
     </message>
     <message>
         <source>Build</source>
-        <translation type="unfinished"></translation>
+        <translation>Bina</translation>
     </message>
     <message>
         <source>Show build steps</source>
-        <translation type="unfinished"></translation>
+        <translation>Tunjukkan langkah binaan</translation>
     </message>
     <message>
         <source>Plug in a phone or start an emulator under Devices.</source>
-        <translation type="unfinished"></translation>
+        <translation>Pasangkan telefon atau mulakan emulator di bawah Peranti.</translation>
     </message>
     <message>
         <source>Remember this project, platform and device together.</source>
-        <translation type="unfinished"></translation>
+        <translation>Ingat projek, platform dan peranti ini bersama-sama.</translation>
     </message>
     <message>
         <source>No iPhone yet.</source>
-        <translation type="unfinished"></translation>
+        <translation>Belum ada iPhone.</translation>
     </message>
     <message>
         <source>No phone yet.</source>
-        <translation type="unfinished"></translation>
+        <translation>Belum ada telefon.</translation>
     </message>
     <message>
         <source>Plug it in, unlock it and trust this computer. Setup takes you through the rest.</source>
-        <translation type="unfinished"></translation>
+        <translation>Pasangkan, buka kunci dan percayai komputer ini. Persediaan akan membimbing anda melalui selebihnya.</translation>
     </message>
     <message>
         <source>Plug in a phone with USB debugging on, or start an emulator.</source>
-        <translation type="unfinished"></translation>
+        <translation>Pasangkan telefon dengan penyahpepijatan USB dihidupkan, atau mulakan emulator.</translation>
     </message>
     <message>
         <source>Build or test from the project. Your agent&apos;s jobs show up here too, with logs and results.</source>
-        <translation type="unfinished"></translation>
+        <translation>Bina atau uji daripada projek. Tugas ejen anda juga dipaparkan di sini, bersama log dan hasilnya.</translation>
     </message>
     <message>
         <source>Your agent can call every one of these over MCP or the command line.</source>
-        <translation type="unfinished"></translation>
+        <translation>Ejen anda boleh memanggil setiap satu daripada ini melalui MCP atau baris arahan.</translation>
     </message>
     <message>
         <source>The result shows up here.</source>
-        <translation type="unfinished"></translation>
+        <translation>Hasilnya dipaparkan di sini.</translation>
     </message>
     <message>
         <source>Filter the log</source>
-        <translation type="unfinished"></translation>
+        <translation>Tapis log</translation>
     </message>
     <message>
         <source>All lines</source>
-        <translation type="unfinished"></translation>
+        <translation>Semua baris</translation>
     </message>
     <message>
         <source>Warnings</source>
-        <translation type="unfinished"></translation>
+        <translation>Amaran</translation>
     </message>
     <message>
         <source>Errors</source>
-        <translation type="unfinished"></translation>
+        <translation>Ralat</translation>
     </message>
     <message numerus="yes">
         <source>%n line(s)</source>
-        <translation type="unfinished">
-            <numerusform></numerusform>
+        <translation>
+            <numerusform>%n baris</numerusform>
         </translation>
     </message>
     <message>
         <source>Copy these lines</source>
-        <translation type="unfinished"></translation>
+        <translation>Salin baris ini</translation>
     </message>
     <message>
         <source>Copy log</source>
-        <translation type="unfinished"></translation>
+        <translation>Salin log</translation>
     </message>
     <message>
         <source>No line of this log matches.</source>
-        <translation type="unfinished"></translation>
+        <translation>Tiada baris log ini yang sepadan.</translation>
     </message>
     <message>
         <source>%1 s</source>
-        <translation type="unfinished"></translation>
+        <translation>%1 s</translation>
     </message>
     <message>
         <source>%1 min %2 s</source>
-        <translation type="unfinished"></translation>
+        <translation>%1 min %2 s</translation>
     </message>
     <message>
         <source>%1 h %2 min</source>
-        <translation type="unfinished"></translation>
+        <translation>%1 j %2 min</translation>
     </message>
     <message>
         <source>All</source>
-        <translation type="unfinished"></translation>
+        <translation>Semua</translation>
     </message>
     <message>
         <source>Nothing running.</source>
-        <translation type="unfinished"></translation>
+        <translation>Tiada apa-apa yang berjalan.</translation>
     </message>
     <message>
         <source>No failed job.</source>
-        <translation type="unfinished"></translation>
+        <translation>Tiada tugas yang gagal.</translation>
     </message>
     <message>
         <source>Open log file</source>
-        <translation type="unfinished"></translation>
+        <translation>Buka fail log</translation>
     </message>
     <message>
         <source>Run again</source>
-        <translation type="unfinished"></translation>
+        <translation>Jalankan semula</translation>
     </message>
     <message>
         <source>Run again · only for jobs this window started</source>
-        <translation type="unfinished"></translation>
+        <translation>Jalankan semula · hanya untuk tugas yang dimulakan oleh tetingkap ini</translation>
     </message>
     <message>
         <source>Running</source>
         <comment>jobs filter</comment>
-        <translation type="unfinished"></translation>
+        <translation>Sedang berjalan</translation>
     </message>
     <message>
         <source>Failed</source>
         <comment>jobs filter</comment>
-        <translation type="unfinished"></translation>
+        <translation>Gagal</translation>
     </message>
     <message>
         <source>Jobs</source>
-        <translation type="unfinished"></translation>
+        <translation>Tugas</translation>
     </message>
     <message>
         <source>Tools</source>
-        <translation type="unfinished"></translation>
+        <translation>Alat</translation>
     </message>
     <message>
         <source>Log of %1</source>
-        <translation type="unfinished"></translation>
+        <translation>Log %1</translation>
     </message>
     <message>
         <source>Job log</source>
-        <translation type="unfinished"></translation>
+        <translation>Log tugas</translation>
     </message>
     <message>
         <source>Live log</source>
-        <translation type="unfinished"></translation>
+        <translation>Log langsung</translation>
     </message>
     <message>
         <source>%1 must be a number</source>
-        <translation type="unfinished"></translation>
+        <translation>%1 mestilah nombor</translation>
     </message>
     <message>
         <source>%1 is out of range: %2</source>
-        <translation type="unfinished"></translation>
+        <translation>%1 di luar julat: %2</translation>
     </message>
     <message>
         <source>Command copied</source>
-        <translation type="unfinished"></translation>
+        <translation>Arahan disalin</translation>
     </message>
     <message>
         <source>This tool changes or removes something and cannot be undone. Run it?</source>
-        <translation type="unfinished"></translation>
+        <translation>Alat ini mengubah atau membuang sesuatu dan tidak boleh dibuat asal. Jalankannya?</translation>
     </message>
     <message>
         <source>Run anyway</source>
-        <translation type="unfinished"></translation>
+        <translation>Jalankan juga</translation>
     </message>
     <message>
         <source>Asks before it runs: this tool changes or removes something</source>
-        <translation type="unfinished"></translation>
+        <translation>Bertanya sebelum dijalankan: alat ini mengubah atau membuang sesuatu</translation>
     </message>
     <message>
         <source>Copy as command</source>
-        <translation type="unfinished"></translation>
+        <translation>Salin sebagai arahan</translation>
     </message>
     <message>
         <source>Copy this call as a tomaccoctl command for a terminal or a script</source>
-        <translation type="unfinished"></translation>
+        <translation>Salin panggilan ini sebagai arahan tomaccoctl untuk terminal atau skrip</translation>
     </message>
     <message>
         <source>Try again</source>
-        <translation type="unfinished"></translation>
+        <translation>Cuba lagi</translation>
     </message>
     <message>
         <source>Dismiss</source>
-        <translation type="unfinished"></translation>
+        <translation>Ketepikan</translation>
     </message>
     <message>
         <source>What to do: %1</source>
-        <translation type="unfinished"></translation>
+        <translation>Apa yang perlu dilakukan: %1</translation>
     </message>
     <message>
         <source>No tools yet.</source>
-        <translation type="unfinished"></translation>
+        <translation>Belum ada alat.</translation>
     </message>
     <message>
         <source>The control program has not listed its tools yet.</source>
-        <translation type="unfinished"></translation>
+        <translation>Program kawalan belum menyenaraikan alatnya.</translation>
     </message>
     <message>
         <source>No tool matches “%1”.</source>
-        <translation type="unfinished"></translation>
+        <translation>Tiada alat yang sepadan dengan “%1”.</translation>
     </message>
     <message>
         <source>Demo Studio</source>
-        <translation type="unfinished"></translation>
+        <translation>Demo Studio</translation>
     </message>
     <message>
         <source>Turn a screen recording into a video with a 3D device.</source>
-        <translation type="unfinished"></translation>
+        <translation>Jadikan rakaman skrin video dengan peranti 3D.</translation>
     </message>
     <message>
         <source>All jobs</source>
-        <translation type="unfinished"></translation>
+        <translation>Semua tugas</translation>
     </message>
     <message>
         <source>Agent</source>
-        <translation type="unfinished"></translation>
+        <translation>Ejen</translation>
     </message>
     <message>
         <source>Connect your coding agent</source>
-        <translation type="unfinished"></translation>
+        <translation>Sambungkan ejen pengekodan anda</translation>
     </message>
 </context>
 <context>
     <name>main</name>
     <message>
         <source>Device profile ID from tomaccoctl call catalog.list</source>
-        <translation type="unfinished"></translation>
+        <translation>ID profil peranti daripada tomaccoctl call catalog.list</translation>
     </message>
     <message>
         <source>Duo display: closed or open</source>
-        <translation type="unfinished"></translation>
+        <translation>Paparan Duo: tertutup atau terbuka</translation>
     </message>
     <message>
         <source>Invalid orientation or fold position.
 </source>
-        <translation type="unfinished"></translation>
+        <translation>Orientasi atau kedudukan lipatan tidak sah.
+</translation>
     </message>
     <message>
         <source>Name of the agent preview session</source>
-        <translation type="unfinished"></translation>
+        <translation>Nama sesi pratonton ejen</translation>
     </message>
     <message>
         <source>No web build with index.html found.
 </source>
-        <translation type="unfinished"></translation>
+        <translation>Tiada binaan web dengan index.html ditemui.
+</translation>
     </message>
     <message>
         <source>Open a local web build</source>
-        <translation type="unfinished"></translation>
+        <translation>Buka binaan web setempat</translation>
     </message>
     <message>
         <source>Open a project in the native workspace</source>
-        <translation type="unfinished"></translation>
+        <translation>Buka projek dalam ruang kerja asli</translation>
     </message>
     <message>
         <source>Open a web address at startup</source>
-        <translation type="unfinished"></translation>
+        <translation>Buka alamat web semasa permulaan</translation>
     </message>
     <message>
         <source>Orientation: portrait or landscape</source>
-        <translation type="unfinished"></translation>
+        <translation>Orientasi: portrait atau landscape</translation>
     </message>
     <message>
         <source>Tomacco: build, run and test native Android and iOS apps on Linux.
 Licensed under the GNU General Public License, version 2 or later.</source>
-        <translation type="unfinished"></translation>
+        <translation>Tomacco: bina, jalankan dan uji aplikasi Android dan iOS asli pada Linux.
+Dilesenkan di bawah GNU General Public License, versi 2 atau lebih baharu.</translation>
     </message>
     <message>
         <source>Run the preview&apos;s interactive checks</source>
-        <translation type="unfinished"></translation>
+        <translation>Jalankan semakan interaktif pratonton</translation>
     </message>
     <message>
         <source>Save the window as a PNG for visual review and quit</source>
-        <translation type="unfinished"></translation>
+        <translation>Simpan tetingkap sebagai PNG untuk semakan visual dan keluar</translation>
     </message>
     <message>
         <source>Show only the detached device window; the main window stays hidden</source>
-        <translation type="unfinished"></translation>
+        <translation>Tunjukkan hanya tetingkap peranti yang dipisahkan; tetingkap utama kekal tersembunyi</translation>
     </message>
     <message>
         <source>Unknown device profile.
 </source>
-        <translation type="unfinished"></translation>
+        <translation>Profil peranti tidak diketahui.
+</translation>
     </message>
     <message>
         <source>Show the live session with this ID, from tomaccoctl call runtime.list</source>
-        <translation type="unfinished"></translation>
+        <translation>Tunjukkan sesi langsung dengan ID ini, daripada tomaccoctl call runtime.list</translation>
     </message>
     <message>
         <source>Invalid session ID.
 </source>
-        <translation type="unfinished"></translation>
+        <translation>ID sesi tidak sah.
+</translation>
     </message>
     <message>
         <source>Unknown workspace. See --help for the available workspaces.
 </source>
-        <translation type="unfinished"></translation>
+        <translation>Ruang kerja tidak diketahui. Lihat --help untuk ruang kerja yang tersedia.
+</translation>
     </message>
     <message>
         <source>Open a workspace: runtime, project, devices, ios-research, jobs, tools, debug, testing, profiling, files, release, demo or preview</source>
-        <translation type="unfinished"></translation>
+        <translation>Buka ruang kerja: runtime, project, devices, ios-research, jobs, tools, debug, testing, profiling, files, release, demo atau preview</translation>
     </message>
 </context>
 <context>
     <name>UpdateModel</name>
     <message>
         <source>Updated · restart</source>
-        <translation type="unfinished"></translation>
+        <translation>Dikemas kini · mulakan semula</translation>
     </message>
     <message>
         <source>Installing update</source>
-        <translation type="unfinished"></translation>
+        <translation>Memasang kemas kini</translation>
     </message>
     <message>
         <source>Update %1</source>
-        <translation type="unfinished"></translation>
+        <translation>Kemas kini %1</translation>
     </message>
     <message>
         <source>Version %1 is up to date.</source>
-        <translation type="unfinished"></translation>
+        <translation>Versi %1 adalah terkini.</translation>
     </message>
     <message>
         <source>Version %1 is available. You have %2.</source>
-        <translation type="unfinished"></translation>
+        <translation>Versi %1 tersedia. Anda mempunyai %2.</translation>
     </message>
     <message>
         <source>No release is available yet.</source>
-        <translation type="unfinished"></translation>
+        <translation>Belum ada keluaran tersedia.</translation>
     </message>
     <message>
         <source>Version %1 has no package for this system.</source>
-        <translation type="unfinished"></translation>
+        <translation>Versi %1 tiada pakej untuk sistem ini.</translation>
     </message>
     <message>
         <source>GitHub could not be reached. This computer may be offline.</source>
-        <translation type="unfinished"></translation>
+        <translation>GitHub tidak dapat dicapai. Komputer ini mungkin di luar talian.</translation>
     </message>
     <message>
         <source>The check failed: %1</source>
-        <translation type="unfinished"></translation>
+        <translation>Semakan gagal: %1</translation>
     </message>
     <message>
         <source>Version %1. Not checked yet.</source>
-        <translation type="unfinished"></translation>
+        <translation>Versi %1. Belum disemak.</translation>
     </message>
     <message>
         <source>Updates are turned off for this build or by the environment.</source>
-        <translation type="unfinished"></translation>
+        <translation>Kemas kini dimatikan untuk binaan ini atau oleh persekitaran.</translation>
     </message>
     <message>
         <source>This copy runs from a source checkout. Update it with Git and a new build.</source>
-        <translation type="unfinished"></translation>
+        <translation>Salinan ini dijalankan daripada daftar keluar sumber. Kemas kininya dengan Git dan binaan baharu.</translation>
     </message>
     <message>
         <source>This copy belongs to a system package. Update it with your package manager.</source>
-        <translation type="unfinished"></translation>
+        <translation>Salinan ini milik pakej sistem. Kemas kininya dengan pengurus pakej anda.</translation>
     </message>
     <message>
         <source>The installation cannot be written, so it cannot be updated here.</source>
-        <translation type="unfinished"></translation>
+        <translation>Pemasangan tidak dapat ditulis, jadi ia tidak dapat dikemas kini di sini.</translation>
     </message>
     <message>
         <source>This copy was not installed by its installer, so it is left alone.</source>
-        <translation type="unfinished"></translation>
+        <translation>Salinan ini tidak dipasang oleh pemasangnya, jadi ia dibiarkan.</translation>
     </message>
     <message>
         <source>This build has no release signing key, so it cannot verify or install updates.</source>
-        <translation type="unfinished"></translation>
+        <translation>Binaan ini tiada kunci tandatangan keluaran, jadi ia tidak dapat mengesahkan atau memasang kemas kini.</translation>
     </message>
     <message>
         <source>Version %1 is installed. Restart to use it.</source>
-        <translation type="unfinished"></translation>
+        <translation>Versi %1 telah dipasang. Mulakan semula untuk menggunakannya.</translation>
     </message>
     <message>
         <source>Downloading, verifying and installing the update.</source>
-        <translation type="unfinished"></translation>
+        <translation>Memuat turun, mengesahkan dan memasang kemas kini.</translation>
     </message>
     <message>
         <source>An update was interrupted. It is undone before the next installation.</source>
-        <translation type="unfinished"></translation>
+        <translation>Kemas kini telah terganggu. Ia dibuat asal sebelum pemasangan seterusnya.</translation>
     </message>
     <message>
         <source>The last installation failed: %1</source>
-        <translation type="unfinished"></translation>
+        <translation>Pemasangan terakhir gagal: %1</translation>
     </message>
     <message>
         <source>Installing has to wait until jobs, device sessions and the virtual iOS device have ended.</source>
-        <translation type="unfinished"></translation>
+        <translation>Pemasangan perlu menunggu sehingga tugas, sesi peranti dan peranti iOS maya telah tamat.</translation>
     </message>
 </context>
 <context>
     <name>UpdateNotice</name>
     <message>
         <source>Open the update settings</source>
-        <translation type="unfinished"></translation>
+        <translation>Buka tetapan kemas kini</translation>
     </message>
 </context>
 <context>
     <name>UpdateSection</name>
     <message>
         <source>Updates</source>
-        <translation type="unfinished"></translation>
+        <translation>Kemas kini</translation>
     </message>
     <message>
         <source>Off</source>
-        <translation type="unfinished"></translation>
+        <translation>Mati</translation>
     </message>
     <message>
         <source>Notify</source>
-        <translation type="unfinished"></translation>
+        <translation>Beritahu</translation>
     </message>
     <message>
         <source>Automatic</source>
-        <translation type="unfinished"></translation>
+        <translation>Automatik</translation>
     </message>
     <message>
         <source>Check now</source>
-        <translation type="unfinished"></translation>
+        <translation>Semak sekarang</translation>
     </message>
     <message>
         <source>What&apos;s new ↗</source>
-        <translation type="unfinished"></translation>
+        <translation>Apa yang baharu ↗</translation>
     </message>
     <message>
         <source>Install</source>
-        <translation type="unfinished"></translation>
+        <translation>Pasang</translation>
     </message>
     <message>
         <source>Restart</source>
-        <translation type="unfinished"></translation>
+        <translation>Mulakan semula</translation>
     </message>
     <message>
         <source>Roll back</source>
-        <translation type="unfinished"></translation>
+        <translation>Kembalikan</translation>
     </message>
     <message>
         <source>Channel</source>
-        <translation type="unfinished"></translation>
+        <translation>Saluran</translation>
     </message>
     <message>
         <source>Stable</source>
-        <translation type="unfinished"></translation>
+        <translation>Stabil</translation>
     </message>
     <message>
         <source>Pre-release</source>
-        <translation type="unfinished"></translation>
+        <translation>Pra-keluaran</translation>
     </message>
     <message>
         <source>Also offers test versions before their release. They can have more bugs.</source>
-        <translation type="unfinished"></translation>
+        <translation>Turut menawarkan versi ujian sebelum keluarannya. Ia mungkin mempunyai lebih banyak pepijat.</translation>
     </message>
     <message>
         <source>Offers only finished releases.</source>
-        <translation type="unfinished"></translation>
+        <translation>Menawarkan keluaran siap sahaja.</translation>
     </message>
     <message>
         <source>Off: nothing is sent unless you check now.</source>
-        <translation type="unfinished"></translation>
+        <translation>Mati: tiada apa-apa dihantar melainkan anda menyemak sekarang.</translation>
     </message>
     <message>
         <source>Notify: checks GitHub once a day and shows a new version at the top of the window.</source>
-        <translation type="unfinished"></translation>
+        <translation>Beritahu: menyemak GitHub sekali sehari dan menunjukkan versi baharu di bahagian atas tetingkap.</translation>
     </message>
     <message>
         <source>Automatic: also installs it by itself when nothing is running, then offers a restart.</source>
-        <translation type="unfinished"></translation>
+        <translation>Automatik: turut memasangnya sendiri apabila tiada apa-apa yang berjalan, kemudian menawarkan mula semula.</translation>
     </message>
 </context>
 <context>
     <name>AppDropArea</name>
     <message>
         <source>Drop to install on %1</source>
-        <translation type="unfinished"></translation>
+        <translation>Lepaskan untuk memasang pada %1</translation>
     </message>
 </context>
 <context>
     <name>DeviceHero</name>
     <message>
         <source>Recent</source>
-        <translation type="unfinished"></translation>
+        <translation>Terkini</translation>
     </message>
 </context>
 <context>
     <name>UpdateBanner</name>
     <message>
         <source>Updated to %1 · Restart to use it</source>
-        <translation type="unfinished"></translation>
+        <translation>Dikemas kini kepada %1 · Mulakan semula untuk menggunakannya</translation>
     </message>
     <message>
         <source>Installing Tomacco %1…</source>
-        <translation type="unfinished"></translation>
+        <translation>Memasang Tomacco %1…</translation>
     </message>
     <message>
         <source>Tomacco %1 is available</source>
-        <translation type="unfinished"></translation>
+        <translation>Tomacco %1 tersedia</translation>
     </message>
     <message>
         <source>What&apos;s new ↗</source>
-        <translation type="unfinished"></translation>
+        <translation>Apa yang baharu ↗</translation>
     </message>
     <message>
         <source>Install</source>
-        <translation type="unfinished"></translation>
+        <translation>Pasang</translation>
     </message>
     <message>
         <source>Restart now</source>
-        <translation type="unfinished"></translation>
+        <translation>Mulakan semula sekarang</translation>
     </message>
     <message>
         <source>Later</source>
-        <translation type="unfinished"></translation>
+        <translation>Kemudian</translation>
     </message>
 </context>
 <context>
     <name>OnboardingSheet</name>
     <message>
         <source>Welcome to Tomacco</source>
-        <translation type="unfinished"></translation>
+        <translation>Selamat datang ke Tomacco</translation>
     </message>
     <message>
         <source>This system lacks libraries the desktop needs. Your agent can still use Tomacco through tomaccoctl.</source>
-        <translation type="unfinished"></translation>
+        <translation>Sistem ini kekurangan pustaka yang diperlukan oleh desktop. Ejen anda masih boleh menggunakan Tomacco melalui tomaccoctl.</translation>
     </message>
     <message>
         <source>Install Java (JDK 17 or newer) and Gradle to build Android apps.</source>
-        <translation type="unfinished"></translation>
+        <translation>Pasang Java (JDK 17 atau lebih baharu) dan Gradle untuk membina aplikasi Android.</translation>
     </message>
     <message>
         <source>Install the Android SDK and an emulator. This downloads about 5 GB.</source>
-        <translation type="unfinished"></translation>
+        <translation>Pasang SDK Android dan emulator. Ini memuat turun kira-kira 5 GB.</translation>
     </message>
     <message>
         <source>Set up iOS builds. This needs an Apple account.</source>
-        <translation type="unfinished"></translation>
+        <translation>Sediakan binaan iOS. Ini memerlukan akaun Apple.</translation>
     </message>
     <message>
         <source>Optional: the virtual iPhone. It needs your own iPhone restore image, about 100 GiB of disk space and a graphics card with 16 GiB.</source>
-        <translation type="unfinished"></translation>
+        <translation>Pilihan: iPhone maya. Ia memerlukan imej pemulihan iPhone anda sendiri, kira-kira 100 GiB ruang cakera dan kad grafik dengan 16 GiB.</translation>
     </message>
     <message>
         <source>Tomacco lets your coding agent build, run and test Android and iOS apps on this computer.</source>
-        <translation type="unfinished"></translation>
+        <translation>Tomacco membolehkan ejen pengekodan anda membina, menjalankan dan menguji aplikasi Android dan iOS pada komputer ini.</translation>
     </message>
     <message>
         <source>Checking this computer…</source>
-        <translation type="unfinished"></translation>
+        <translation>Menyemak komputer ini…</translation>
     </message>
     <message>
         <source>What is left to set up:</source>
-        <translation type="unfinished"></translation>
+        <translation>Apa yang masih perlu disediakan:</translation>
     </message>
     <message>
         <source>Everything for Android and iOS builds is in place.</source>
-        <translation type="unfinished"></translation>
+        <translation>Semua yang diperlukan untuk binaan Android dan iOS sudah tersedia.</translation>
     </message>
     <message>
         <source>Your agent can do these steps for you. Connect it, then ask it to set Tomacco up.</source>
-        <translation type="unfinished"></translation>
+        <translation>Ejen anda boleh melakukan langkah ini untuk anda. Sambungkannya, kemudian minta ia menyediakan Tomacco.</translation>
     </message>
     <message>
         <source>Connect your coding agent</source>
-        <translation type="unfinished"></translation>
+        <translation>Sambungkan ejen pengekodan anda</translation>
     </message>
     <message>
         <source>Skip</source>
-        <translation type="unfinished"></translation>
+        <translation>Langkau</translation>
     </message>
 </context>
 <context>
     <name>ScreenRecorder</name>
     <message>
         <source>Starting the recording…</source>
-        <translation type="unfinished"></translation>
+        <translation>Memulakan rakaman…</translation>
     </message>
     <message>
         <source>Saving the recording…</source>
-        <translation type="unfinished"></translation>
+        <translation>Menyimpan rakaman…</translation>
     </message>
     <message>
         <source>Recording saved · %1</source>
-        <translation type="unfinished"></translation>
+        <translation>Rakaman disimpan · %1</translation>
     </message>
     <message>
         <source>The recording did not finish · details under Builds &amp; jobs</source>
-        <translation type="unfinished"></translation>
+        <translation>Rakaman tidak selesai · butiran di bawah Binaan &amp; tugas</translation>
     </message>
     <message>
         <source>Recording · press again to stop</source>
-        <translation type="unfinished"></translation>
+        <translation>Merakam · tekan sekali lagi untuk berhenti</translation>
     </message>
 </context>
 <context>
     <name>DeviceGrid</name>
     <message>
         <source>Waiting for the screen…</source>
-        <translation type="unfinished"></translation>
+        <translation>Menunggu skrin…</translation>
     </message>
     <message>
         <source>No device running.</source>
-        <translation type="unfinished"></translation>
+        <translation>Tiada peranti berjalan.</translation>
     </message>
     <message>
         <source>Start an emulator or plug in a phone with USB debugging on; each one shows here with its screen.</source>
-        <translation type="unfinished"></translation>
+        <translation>Mulakan emulator atau pasangkan telefon dengan penyahpepijatan USB dihidupkan; setiap satu dipaparkan di sini bersama skrinnya.</translation>
     </message>
 </context>
 <context>
     <name>DeviceLogPane</name>
     <message>
         <source>App ID, all apps when empty</source>
-        <translation type="unfinished"></translation>
+        <translation>ID aplikasi, semua aplikasi jika kosong</translation>
     </message>
     <message>
         <source>All</source>
-        <translation type="unfinished"></translation>
+        <translation>Semua</translation>
     </message>
     <message>
         <source>Info</source>
-        <translation type="unfinished"></translation>
+        <translation>Maklumat</translation>
     </message>
     <message>
         <source>Warnings</source>
-        <translation type="unfinished"></translation>
+        <translation>Amaran</translation>
     </message>
     <message>
         <source>Errors</source>
-        <translation type="unfinished"></translation>
+        <translation>Ralat</translation>
     </message>
     <message>
         <source>Find in the log</source>
-        <translation type="unfinished"></translation>
+        <translation>Cari dalam log</translation>
     </message>
     <message>
         <source>Resume</source>
-        <translation type="unfinished"></translation>
+        <translation>Sambung semula</translation>
     </message>
     <message>
         <source>Pause</source>
-        <translation type="unfinished"></translation>
+        <translation>Jeda</translation>
     </message>
     <message>
         <source>Clear</source>
-        <translation type="unfinished"></translation>
+        <translation>Kosongkan</translation>
     </message>
     <message>
         <source>Clear the lines shown</source>
-        <translation type="unfinished"></translation>
+        <translation>Kosongkan baris yang dipaparkan</translation>
     </message>
     <message>
         <source>Paused</source>
-        <translation type="unfinished"></translation>
+        <translation>Dijeda</translation>
     </message>
     <message>
         <source>No line contains this text.</source>
-        <translation type="unfinished"></translation>
+        <translation>Tiada baris yang mengandungi teks ini.</translation>
     </message>
     <message>
         <source>Waiting for log lines…</source>
-        <translation type="unfinished"></translation>
+        <translation>Menunggu baris log…</translation>
     </message>
     <message>
         <source>Try again</source>
-        <translation type="unfinished"></translation>
+        <translation>Cuba lagi</translation>
     </message>
 </context>
 <context>
     <name>ApprovalDialog</name>
     <message>
         <source>Allow this agent action?</source>
-        <translation type="unfinished"></translation>
+        <translation>Benarkan tindakan ejen ini?</translation>
     </message>
     <message>
         <source>An agent</source>
-        <translation type="unfinished"></translation>
+        <translation>Seorang ejen</translation>
     </message>
     <message>
         <source>%1 asks to run %2 (%3). Tomacco marks it as destructive: it may delete or overwrite data.</source>
-        <translation type="unfinished"></translation>
+        <translation>%1 meminta untuk menjalankan %2 (%3). Tomacco menandakannya sebagai merosakkan: ia mungkin memadam atau menulis ganti data.</translation>
     </message>
     <message>
         <source>Its arguments, with secrets masked:</source>
-        <translation type="unfinished"></translation>
+        <translation>Argumennya, dengan rahsia disembunyikan:</translation>
     </message>
     <message>
         <source>Arguments</source>
-        <translation type="unfinished"></translation>
+        <translation>Argumen</translation>
     </message>
     <message>
         <source>Seconds left before it is denied: %1</source>
-        <translation type="unfinished"></translation>
+        <translation>Saat yang tinggal sebelum ia ditolak: %1</translation>
     </message>
     <message>
         <source>Deny</source>
-        <translation type="unfinished"></translation>
+        <translation>Tolak</translation>
     </message>
     <message>
         <source>Approve</source>
-        <translation type="unfinished"></translation>
+        <translation>Luluskan</translation>
     </message>
 </context>
 <context>
     <name>DemoWorkspace</name>
     <message>
         <source>Save your changes before opening another scene.</source>
-        <translation type="unfinished"></translation>
+        <translation>Simpan perubahan anda sebelum membuka adegan lain.</translation>
     </message>
     <message>
         <source>App demo</source>
-        <translation type="unfinished"></translation>
+        <translation>Demo aplikasi</translation>
     </message>
     <message>
         <source>Enter a valid number.</source>
-        <translation type="unfinished"></translation>
+        <translation>Masukkan nombor yang sah.</translation>
     </message>
     <message>
         <source>Choose a different time for the new pose.</source>
-        <translation type="unfinished"></translation>
+        <translation>Pilih masa yang berbeza untuk pose baharu.</translation>
     </message>
     <message>
         <source>Save changes before rendering.</source>
-        <translation type="unfinished"></translation>
+        <translation>Simpan perubahan sebelum memaparkan.</translation>
     </message>
     <message>
         <source>Render complete.</source>
-        <translation type="unfinished"></translation>
+        <translation>Pemaparan selesai.</translation>
     </message>
     <message>
         <source>Rendering did not complete. Your scene is unchanged.</source>
-        <translation type="unfinished"></translation>
+        <translation>Pemaparan tidak selesai. Adegan anda tidak berubah.</translation>
     </message>
     <message>
         <source>Your draft has changes. Reload explicitly to replace it.</source>
-        <translation type="unfinished"></translation>
+        <translation>Draf anda mempunyai perubahan. Muat semula secara eksplisit untuk menggantikannya.</translation>
     </message>
     <message>
         <source>Scene opened.</source>
-        <translation type="unfinished"></translation>
+        <translation>Adegan dibuka.</translation>
     </message>
     <message>
         <source>Changes saved.</source>
-        <translation type="unfinished"></translation>
+        <translation>Perubahan disimpan.</translation>
     </message>
     <message>
         <source>Saved. Your newer edits are still unsaved.</source>
-        <translation type="unfinished"></translation>
+        <translation>Disimpan. Suntingan anda yang lebih baharu masih belum disimpan.</translation>
     </message>
     <message>
         <source>The render job could not be followed.</source>
-        <translation type="unfinished"></translation>
+        <translation>Tugas pemaparan tidak dapat diikuti.</translation>
     </message>
     <message>
         <source>A recording, made into a demo</source>
-        <translation type="unfinished"></translation>
+        <translation>Rakaman, dijadikan demo</translation>
     </message>
     <message>
         <source>Choose a local video, place it in a device and set its motion. Your source stays unchanged.</source>
-        <translation type="unfinished"></translation>
+        <translation>Pilih video setempat, letakkannya dalam peranti dan tetapkan gerakannya. Sumber anda kekal tidak berubah.</translation>
     </message>
     <message>
         <source>Source video</source>
-        <translation type="unfinished"></translation>
+        <translation>Video sumber</translation>
     </message>
     <message>
         <source>Choose video</source>
-        <translation type="unfinished"></translation>
+        <translation>Pilih video</translation>
     </message>
     <message>
         <source>Inspect video</source>
-        <translation type="unfinished"></translation>
+        <translation>Periksa video</translation>
     </message>
     <message>
         <source>Scene file (.json)</source>
-        <translation type="unfinished"></translation>
+        <translation>Fail adegan (.json)</translation>
     </message>
     <message>
         <source>Choose scene path</source>
-        <translation type="unfinished"></translation>
+        <translation>Pilih laluan adegan</translation>
     </message>
     <message>
         <source>Scene title</source>
-        <translation type="unfinished"></translation>
+        <translation>Tajuk adegan</translation>
     </message>
     <message>
         <source>Create scene</source>
-        <translation type="unfinished"></translation>
+        <translation>Cipta adegan</translation>
     </message>
     <message>
         <source>Open scene</source>
-        <translation type="unfinished"></translation>
+        <translation>Buka adegan</translation>
     </message>
     <message>
         <source>The video renderer is not ready. Check the rendering tools under Agents &amp; tools.</source>
-        <translation type="unfinished"></translation>
+        <translation>Pemapar video belum sedia. Semak alat pemaparan di bawah Ejen &amp; alat.</translation>
     </message>
     <message>
         <source>Scene</source>
-        <translation type="unfinished"></translation>
+        <translation>Adegan</translation>
     </message>
     <message>
         <source>Keep the original recording or crop its time. Canvas size changes the exported video.</source>
-        <translation type="unfinished"></translation>
+        <translation>Kekalkan rakaman asal atau potong masanya. Saiz kanvas mengubah video yang dieksport.</translation>
     </message>
     <message>
         <source>Title</source>
-        <translation type="unfinished"></translation>
+        <translation>Tajuk</translation>
     </message>
     <message>
         <source>Duration (seconds)</source>
-        <translation type="unfinished"></translation>
+        <translation>Tempoh (saat)</translation>
     </message>
     <message>
         <source>Canvas width</source>
-        <translation type="unfinished"></translation>
+        <translation>Lebar kanvas</translation>
     </message>
     <message>
         <source>Canvas height</source>
-        <translation type="unfinished"></translation>
+        <translation>Tinggi kanvas</translation>
     </message>
     <message>
         <source>Frames per second</source>
-        <translation type="unfinished"></translation>
+        <translation>Bingkai sesaat</translation>
     </message>
     <message>
         <source>Clip start (seconds)</source>
-        <translation type="unfinished"></translation>
+        <translation>Mula klip (saat)</translation>
     </message>
     <message>
         <source>Background color</source>
-        <translation type="unfinished"></translation>
+        <translation>Warna latar belakang</translation>
     </message>
     <message>
         <source>Second background color</source>
-        <translation type="unfinished"></translation>
+        <translation>Warna latar belakang kedua</translation>
     </message>
     <message>
         <source>Background</source>
-        <translation type="unfinished"></translation>
+        <translation>Latar belakang</translation>
     </message>
     <message>
         <source>Device finish</source>
-        <translation type="unfinished"></translation>
+        <translation>Kemasan peranti</translation>
     </message>
     <message>
         <source>Device model</source>
-        <translation type="unfinished"></translation>
+        <translation>Model peranti</translation>
     </message>
     <message>
         <source>Shadow opacity</source>
-        <translation type="unfinished"></translation>
+        <translation>Kelegapan bayang</translation>
     </message>
     <message>
         <source>Shadow</source>
-        <translation type="unfinished"></translation>
+        <translation>Bayang</translation>
     </message>
     <message>
         <source>Motion</source>
-        <translation type="unfinished"></translation>
+        <translation>Gerakan</translation>
     </message>
     <message>
         <source>Each pose sets the device at a moment in the video. The motion runs between them.</source>
-        <translation type="unfinished"></translation>
+        <translation>Setiap pose meletakkan peranti pada satu detik dalam video. Gerakan berjalan di antaranya.</translation>
     </message>
     <message>
         <source>Pose %1 · %2 s</source>
-        <translation type="unfinished"></translation>
+        <translation>Pose %1 · %2 s</translation>
     </message>
     <message>
         <source>Add pose</source>
-        <translation type="unfinished"></translation>
+        <translation>Tambah pose</translation>
     </message>
     <message>
         <source>Remove pose</source>
-        <translation type="unfinished"></translation>
+        <translation>Buang pose</translation>
     </message>
     <message>
         <source>Time (seconds)</source>
-        <translation type="unfinished"></translation>
+        <translation>Masa (saat)</translation>
     </message>
     <message>
         <source>Turn · yaw (degrees)</source>
-        <translation type="unfinished"></translation>
+        <translation>Pusing · yaw (darjah)</translation>
     </message>
     <message>
         <source>Tilt · pitch (degrees)</source>
-        <translation type="unfinished"></translation>
+        <translation>Condong · pitch (darjah)</translation>
     </message>
     <message>
         <source>Spin · roll (degrees)</source>
-        <translation type="unfinished"></translation>
+        <translation>Putar · roll (darjah)</translation>
     </message>
     <message>
         <source>Scale</source>
-        <translation type="unfinished"></translation>
+        <translation>Skala</translation>
     </message>
     <message>
         <source>Horizontal position (0–1)</source>
-        <translation type="unfinished"></translation>
+        <translation>Kedudukan mendatar (0–1)</translation>
     </message>
     <message>
         <source>Vertical position (0–1)</source>
-        <translation type="unfinished"></translation>
+        <translation>Kedudukan menegak (0–1)</translation>
     </message>
     <message>
         <source>Motion curve</source>
-        <translation type="unfinished"></translation>
+        <translation>Lengkung gerakan</translation>
     </message>
     <message>
         <source>Saving…</source>
-        <translation type="unfinished"></translation>
+        <translation>Menyimpan…</translation>
     </message>
     <message>
         <source>Save changes</source>
-        <translation type="unfinished"></translation>
+        <translation>Simpan perubahan</translation>
     </message>
     <message>
         <source>Reload saved scene</source>
-        <translation type="unfinished"></translation>
+        <translation>Muat semula adegan yang disimpan</translation>
     </message>
     <message>
         <source>Unsaved changes · save before rendering.</source>
-        <translation type="unfinished"></translation>
+        <translation>Perubahan belum disimpan · simpan sebelum memaparkan.</translation>
     </message>
     <message>
         <source>Preview &amp; export</source>
-        <translation type="unfinished"></translation>
+        <translation>Pratonton &amp; eksport</translation>
     </message>
     <message>
         <source>Preview one frame, then export a silent MP4. A poster and a render record are saved beside it.</source>
-        <translation type="unfinished"></translation>
+        <translation>Pratonton satu bingkai, kemudian eksport MP4 tanpa bunyi. Poster dan rekod pemaparan disimpan di sebelahnya.</translation>
     </message>
     <message>
         <source>Your rendered preview appears here.</source>
-        <translation type="unfinished"></translation>
+        <translation>Pratonton yang dipaparkan muncul di sini.</translation>
     </message>
     <message>
         <source>This image shows the last completed render.</source>
-        <translation type="unfinished"></translation>
+        <translation>Imej ini menunjukkan pemaparan terakhir yang selesai.</translation>
     </message>
     <message>
         <source>Preview time (seconds)</source>
-        <translation type="unfinished"></translation>
+        <translation>Masa pratonton (saat)</translation>
     </message>
     <message>
         <source>Render preview</source>
-        <translation type="unfinished"></translation>
+        <translation>Paparkan pratonton</translation>
     </message>
     <message>
         <source>Export MP4</source>
-        <translation type="unfinished"></translation>
+        <translation>Eksport MP4</translation>
     </message>
     <message>
         <source>Show exported video</source>
-        <translation type="unfinished"></translation>
+        <translation>Tunjukkan video yang dieksport</translation>
     </message>
     <message>
         <source>Waiting to render…</source>
-        <translation type="unfinished"></translation>
+        <translation>Menunggu untuk memaparkan…</translation>
     </message>
     <message>
         <source>Rendering…</source>
-        <translation type="unfinished"></translation>
+        <translation>Memaparkan…</translation>
     </message>
     <message>
         <source>Render failed.</source>
-        <translation type="unfinished"></translation>
+        <translation>Pemaparan gagal.</translation>
     </message>
     <message>
         <source>Render cancelled.</source>
-        <translation type="unfinished"></translation>
+        <translation>Pemaparan dibatalkan.</translation>
     </message>
     <message>
         <source>Render timed out.</source>
-        <translation type="unfinished"></translation>
+        <translation>Pemaparan tamat masa.</translation>
     </message>
     <message>
         <source>Videos (*.mp4 *.mov *.mkv *.webm)</source>
-        <translation type="unfinished"></translation>
+        <translation>Video (*.mp4 *.mov *.mkv *.webm)</translation>
     </message>
     <message>
         <source>Scenes (*.json)</source>
-        <translation type="unfinished"></translation>
+        <translation>Adegan (*.json)</translation>
     </message>
     <message>
         <source>PNG image (*.png)</source>
-        <translation type="unfinished"></translation>
+        <translation>Imej PNG (*.png)</translation>
     </message>
     <message>
         <source>MP4 video (*.mp4)</source>
-        <translation type="unfinished"></translation>
+        <translation>Video MP4 (*.mp4)</translation>
     </message>
     <message>
         <source>Discard unsaved changes?</source>
-        <translation type="unfinished"></translation>
+        <translation>Buang perubahan yang belum disimpan?</translation>
     </message>
     <message>
         <source>Reload the saved scene and replace your draft. The video source stays unchanged.</source>
-        <translation type="unfinished"></translation>
+        <translation>Muat semula adegan yang disimpan dan gantikan draf anda. Sumber video kekal tidak berubah.</translation>
     </message>
     <message>
         <source>Keep editing</source>
-        <translation type="unfinished"></translation>
+        <translation>Terus menyunting</translation>
     </message>
     <message>
         <source>Discard and reload</source>
-        <translation type="unfinished"></translation>
+        <translation>Buang dan muat semula</translation>
     </message>
 </context>
 <context>
     <name>EnvironmentPanel</name>
     <message>
         <source>Dark mode</source>
-        <translation type="unfinished"></translation>
+        <translation>Mod gelap</translation>
     </message>
     <message>
         <source>Font size</source>
-        <translation type="unfinished"></translation>
+        <translation>Saiz fon</translation>
     </message>
     <message>
         <source>Animations</source>
-        <translation type="unfinished"></translation>
+        <translation>Animasi</translation>
     </message>
     <message>
         <source>Airplane mode</source>
-        <translation type="unfinished"></translation>
+        <translation>Mod pesawat</translation>
     </message>
     <message>
         <source>App language</source>
-        <translation type="unfinished"></translation>
+        <translation>Bahasa aplikasi</translation>
     </message>
     <message>
         <source>GPS location</source>
-        <translation type="unfinished"></translation>
+        <translation>Lokasi GPS</translation>
     </message>
     <message>
         <source>TalkBack</source>
-        <translation type="unfinished"></translation>
+        <translation>TalkBack</translation>
     </message>
     <message>
         <source>On</source>
-        <translation type="unfinished"></translation>
+        <translation>Hidup</translation>
     </message>
     <message>
         <source>Off</source>
-        <translation type="unfinished"></translation>
+        <translation>Mati</translation>
     </message>
     <message>
         <source>Automatic</source>
-        <translation type="unfinished"></translation>
+        <translation>Automatik</translation>
     </message>
     <message>
         <source>Device language</source>
-        <translation type="unfinished"></translation>
+        <translation>Bahasa peranti</translation>
     </message>
     <message>
         <source>Will change</source>
-        <translation type="unfinished"></translation>
+        <translation>Akan berubah</translation>
     </message>
     <message>
         <source>Already set</source>
-        <translation type="unfinished"></translation>
+        <translation>Sudah ditetapkan</translation>
     </message>
     <message>
         <source>Not supported here</source>
-        <translation type="unfinished"></translation>
+        <translation>Tidak disokong di sini</translation>
     </message>
     <message>
         <source>Applied and read back</source>
-        <translation type="unfinished"></translation>
+        <translation>Digunakan dan dibaca semula</translation>
     </message>
     <message>
         <source>Applied, not read back</source>
-        <translation type="unfinished"></translation>
+        <translation>Digunakan, tidak dibaca semula</translation>
     </message>
     <message>
         <source>Android did not apply it</source>
-        <translation type="unfinished"></translation>
+        <translation>Android tidak menggunakannya</translation>
     </message>
     <message>
         <source>Restored</source>
-        <translation type="unfinished"></translation>
+        <translation>Dipulihkan</translation>
     </message>
     <message>
         <source>Cannot be restored</source>
-        <translation type="unfinished"></translation>
+        <translation>Tidak dapat dipulihkan</translation>
     </message>
     <message>
         <source>Not restored</source>
-        <translation type="unfinished"></translation>
+        <translation>Tidak dipulihkan</translation>
     </message>
     <message>
         <source>Preset saved.</source>
-        <translation type="unfinished"></translation>
+        <translation>Pratetap disimpan.</translation>
     </message>
     <message>
         <source>Preset updated to revision %1.</source>
-        <translation type="unfinished"></translation>
+        <translation>Pratetap dikemas kini kepada semakan %1.</translation>
     </message>
     <message>
         <source>Preset deleted.</source>
-        <translation type="unfinished"></translation>
+        <translation>Pratetap dipadam.</translation>
     </message>
     <message>
         <source>Preset exported to %1.</source>
-        <translation type="unfinished"></translation>
+        <translation>Pratetap dieksport ke %1.</translation>
     </message>
     <message>
         <source>Plan ready. This device does not support: %1.</source>
-        <translation type="unfinished"></translation>
+        <translation>Pelan sedia. Peranti ini tidak menyokong: %1.</translation>
     </message>
     <message>
         <source>Plan ready. Nothing has changed on the device yet.</source>
-        <translation type="unfinished"></translation>
+        <translation>Pelan sedia. Belum ada apa-apa yang berubah pada peranti.</translation>
     </message>
     <message>
         <source>Applied and read back. You can restore the previous settings.</source>
-        <translation type="unfinished"></translation>
+        <translation>Digunakan dan dibaca semula. Anda boleh memulihkan tetapan sebelumnya.</translation>
     </message>
     <message>
         <source>Previous settings restored.</source>
-        <translation type="unfinished"></translation>
+        <translation>Tetapan sebelumnya dipulihkan.</translation>
     </message>
     <message>
         <source>QA environments</source>
-        <translation type="unfinished"></translation>
+        <translation>Persekitaran QA</translation>
     </message>
     <message>
         <source>Save a combination of theme, font size, animations, airplane mode, app language, GPS and TalkBack under a name, then apply it to one device you choose.</source>
-        <translation type="unfinished"></translation>
+        <translation>Simpan gabungan tema, saiz fon, animasi, mod pesawat, bahasa aplikasi, GPS dan TalkBack di bawah satu nama, kemudian gunakannya pada satu peranti yang anda pilih.</translation>
     </message>
     <message>
         <source>New preset</source>
-        <translation type="unfinished"></translation>
+        <translation>Pratetap baharu</translation>
     </message>
     <message>
         <source>ID · e.g. dark-large-text</source>
-        <translation type="unfinished"></translation>
+        <translation>ID · cth. dark-large-text</translation>
     </message>
     <message>
         <source>Name</source>
-        <translation type="unfinished"></translation>
+        <translation>Nama</translation>
     </message>
     <message>
         <source>Leave as it is</source>
-        <translation type="unfinished"></translation>
+        <translation>Biarkan seperti sedia ada</translation>
     </message>
     <message>
         <source>Set</source>
-        <translation type="unfinished"></translation>
+        <translation>Tetapkan</translation>
     </message>
     <message>
         <source>Latitude, longitude</source>
-        <translation type="unfinished"></translation>
+        <translation>Latitud, longitud</translation>
     </message>
     <message>
         <source>0.5 to 2</source>
-        <translation type="unfinished"></translation>
+        <translation>0.5 hingga 2</translation>
     </message>
     <message>
         <source>Language tags · e.g. de-DE</source>
-        <translation type="unfinished"></translation>
+        <translation>Tag bahasa · cth. de-DE</translation>
     </message>
     <message>
         <source>GPS works on emulators only and cannot be read back or restored. App language needs Android 13; airplane mode needs Android 11.</source>
-        <translation type="unfinished"></translation>
+        <translation>GPS berfungsi pada emulator sahaja dan tidak dapat dibaca semula atau dipulihkan. Bahasa aplikasi memerlukan Android 13; mod pesawat memerlukan Android 11.</translation>
     </message>
     <message>
         <source>Save preset</source>
-        <translation type="unfinished"></translation>
+        <translation>Simpan pratetap</translation>
     </message>
     <message>
         <source>Import…</source>
-        <translation type="unfinished"></translation>
+        <translation>Import…</translation>
     </message>
     <message>
         <source>Export…</source>
-        <translation type="unfinished"></translation>
+        <translation>Eksport…</translation>
     </message>
     <message>
         <source>Delete preset</source>
-        <translation type="unfinished"></translation>
+        <translation>Padam pratetap</translation>
     </message>
     <message numerus="yes">
         <source>%n preset file(s) could not be read and are not listed.</source>
-        <translation type="unfinished">
-            <numerusform></numerusform>
+        <translation>
+            <numerusform>%n fail pratetap tidak dapat dibaca dan tidak disenaraikan.</numerusform>
         </translation>
     </message>
     <message>
         <source>Apply to a device</source>
-        <translation type="unfinished"></translation>
+        <translation>Gunakan pada peranti</translation>
     </message>
     <message>
         <source>Choose the device here. Tomacco reads it first, shows what would change, and applies only that plan to that device.</source>
-        <translation type="unfinished"></translation>
+        <translation>Pilih peranti di sini. Tomacco membacanya dahulu, menunjukkan apa yang akan berubah, dan hanya menggunakan pelan itu pada peranti tersebut.</translation>
     </message>
     <message>
         <source>Choose the target device</source>
-        <translation type="unfinished"></translation>
+        <translation>Pilih peranti sasaran</translation>
     </message>
     <message>
         <source>App ID for the app language · optional</source>
-        <translation type="unfinished"></translation>
+        <translation>ID aplikasi untuk bahasa aplikasi · pilihan</translation>
     </message>
     <message>
         <source>Read device</source>
-        <translation type="unfinished"></translation>
+        <translation>Baca peranti</translation>
     </message>
     <message>
         <source>Plan</source>
-        <translation type="unfinished"></translation>
+        <translation>Pelan</translation>
     </message>
     <message>
         <source>Apply plan</source>
-        <translation type="unfinished"></translation>
+        <translation>Gunakan pelan</translation>
     </message>
     <message>
         <source>Restore previous settings</source>
-        <translation type="unfinished"></translation>
+        <translation>Pulihkan tetapan sebelumnya</translation>
     </message>
     <message>
         <source>Skip the settings this device does not support</source>
-        <translation type="unfinished"></translation>
+        <translation>Langkau tetapan yang tidak disokong oleh peranti ini</translation>
     </message>
     <message>
         <source>Plan for %1 (%2) · preset revision %3</source>
-        <translation type="unfinished"></translation>
+        <translation>Pelan untuk %1 (%2) · semakan pratetap %3</translation>
     </message>
     <message>
         <source>TalkBack here switches the screen reader on the device and keeps your other accessibility services. It does not show that your app works with a screen reader; the accessibility audit only checks the screen&apos;s structure.</source>
-        <translation type="unfinished"></translation>
+        <translation>TalkBack di sini menghidupkan pembaca skrin pada peranti dan mengekalkan perkhidmatan kebolehcapaian anda yang lain. Ia tidak menunjukkan bahawa aplikasi anda berfungsi dengan pembaca skrin; audit kebolehcapaian hanya menyemak struktur skrin.</translation>
     </message>
     <message>
         <source>QA environment (*.json)</source>
-        <translation type="unfinished"></translation>
+        <translation>Persekitaran QA (*.json)</translation>
     </message>
     <message>
         <source>Delete this preset?</source>
-        <translation type="unfinished"></translation>
+        <translation>Padam pratetap ini?</translation>
     </message>
     <message>
         <source>The preset is removed from this computer. Devices keep their settings, and restore points stay.</source>
-        <translation type="unfinished"></translation>
+        <translation>Pratetap dibuang daripada komputer ini. Peranti mengekalkan tetapannya, dan titik pemulihan kekal.</translation>
     </message>
     <message>
         <source>Keep preset</source>
-        <translation type="unfinished"></translation>
+        <translation>Kekalkan pratetap</translation>
     </message>
     <message>
         <source>%1 points, %2 km, %3 min recorded</source>
-        <translation type="unfinished"></translation>
+        <translation>%1 titik, %2 km, %3 min direkodkan</translation>
     </message>
     <message>
         <source>%1 points, %2 km, no times: one point per second</source>
-        <translation type="unfinished"></translation>
+        <translation>%1 titik, %2 km, tiada masa: satu titik sesaat</translation>
     </message>
     <message>
         <source>Change route…</source>
-        <translation type="unfinished"></translation>
+        <translation>Tukar laluan…</translation>
     </message>
     <message>
         <source>Choose a GPX file…</source>
-        <translation type="unfinished"></translation>
+        <translation>Pilih fail GPX…</translation>
     </message>
     <message>
         <source>Finished. The last position stays on the emulator.</source>
-        <translation type="unfinished"></translation>
+        <translation>Selesai. Kedudukan terakhir kekal pada emulator.</translation>
     </message>
     <message>
         <source>GPX route (*.gpx)</source>
-        <translation type="unfinished"></translation>
+        <translation>Laluan GPX (*.gpx)</translation>
     </message>
     <message>
         <source>No route chosen</source>
-        <translation type="unfinished"></translation>
+        <translation>Tiada laluan dipilih</translation>
     </message>
     <message>
         <source>Pause</source>
-        <translation type="unfinished"></translation>
+        <translation>Jeda</translation>
     </message>
     <message>
         <source>Paused at %1</source>
-        <translation type="unfinished"></translation>
+        <translation>Dijeda pada %1</translation>
     </message>
     <message>
         <source>Play a GPX route on the chosen emulator&apos;s location. Timed points keep their timing; untimed points play one per second.</source>
-        <translation type="unfinished"></translation>
+        <translation>Mainkan laluan GPX pada lokasi emulator yang dipilih. Titik bermasa mengekalkan pemasaannya; titik tanpa masa dimainkan satu sesaat.</translation>
     </message>
     <message>
         <source>Play route</source>
-        <translation type="unfinished"></translation>
+        <translation>Mainkan laluan</translation>
     </message>
     <message>
         <source>Playback ended: %1</source>
-        <translation type="unfinished"></translation>
+        <translation>Main balik tamat: %1</translation>
     </message>
     <message>
         <source>Playing %1</source>
-        <translation type="unfinished"></translation>
+        <translation>Memainkan %1</translation>
     </message>
     <message>
         <source>Playing the route on %1. The previous position is not known and will not be restored.</source>
-        <translation type="unfinished"></translation>
+        <translation>Memainkan laluan pada %1. Kedudukan sebelumnya tidak diketahui dan tidak akan dipulihkan.</translation>
     </message>
     <message>
         <source>Playing…</source>
-        <translation type="unfinished"></translation>
+        <translation>Memainkan…</translation>
     </message>
     <message>
         <source>Reading the route…</source>
-        <translation type="unfinished"></translation>
+        <translation>Membaca laluan…</translation>
     </message>
     <message>
         <source>Repeat the route</source>
-        <translation type="unfinished"></translation>
+        <translation>Ulang laluan</translation>
     </message>
     <message>
         <source>Resume</source>
-        <translation type="unfinished"></translation>
+        <translation>Sambung semula</translation>
     </message>
     <message>
         <source>Route playback</source>
-        <translation type="unfinished"></translation>
+        <translation>Main balik laluan</translation>
     </message>
     <message>
         <source>Route playback reaches emulators only. A phone takes no mock location from here.</source>
-        <translation type="unfinished"></translation>
+        <translation>Main balik laluan hanya sampai ke emulator. Telefon tidak menerima lokasi olok-olok dari sini.</translation>
     </message>
     <message>
         <source>Speed · 1 is real time</source>
-        <translation type="unfinished"></translation>
+        <translation>Kelajuan · 1 ialah masa nyata</translation>
     </message>
     <message>
         <source>Starting playback…</source>
-        <translation type="unfinished"></translation>
+        <translation>Memulakan main balik…</translation>
     </message>
     <message>
         <source>Stop</source>
-        <translation type="unfinished"></translation>
+        <translation>Hentikan</translation>
     </message>
     <message>
         <source>Stopped. The last position stays on the emulator.</source>
-        <translation type="unfinished"></translation>
+        <translation>Dihentikan. Kedudukan terakhir kekal pada emulator.</translation>
     </message>
     <message>
         <source>The emulator does not report its position, so the position before playback is unknown and is not restored. Set one in the preset&apos;s GPS field afterwards if you need it.</source>
-        <translation type="unfinished"></translation>
+        <translation>Emulator tidak melaporkan kedudukannya, jadi kedudukan sebelum main balik tidak diketahui dan tidak dipulihkan. Tetapkan satu dalam medan GPS pratetap selepas itu jika anda memerlukannya.</translation>
     </message>
     <message>
         <source>point %1 of %2</source>
-        <translation type="unfinished"></translation>
+        <translation>titik %1 daripada %2</translation>
     </message>
 </context>
 <context>
     <name>HandoffBanner</name>
     <message>
         <source>%1 · an agent is waiting for you</source>
-        <translation type="unfinished"></translation>
+        <translation>%1 · seorang ejen sedang menunggu anda</translation>
     </message>
     <message>
         <source>%1 · an agent is waiting for you (%2 more)</source>
-        <translation type="unfinished"></translation>
+        <translation>%1 · seorang ejen sedang menunggu anda (%2 lagi)</translation>
     </message>
     <message>
         <source>Cancel</source>
-        <translation type="unfinished"></translation>
+        <translation>Batal</translation>
     </message>
     <message>
         <source>Do it on the device itself. Tomacco never asks for your passcode or password.</source>
-        <translation type="unfinished"></translation>
+        <translation>Lakukannya pada peranti itu sendiri. Tomacco tidak pernah meminta kod laluan atau kata laluan anda.</translation>
     </message>
     <message>
         <source>Done</source>
-        <translation type="unfinished"></translation>
+        <translation>Selesai</translation>
     </message>
     <message>
         <source>Done: I did it on the device</source>
-        <translation type="unfinished"></translation>
+        <translation>Selesai: saya telah melakukannya pada peranti</translation>
     </message>
 </context>
 <context>
     <name>HandoffModel</name>
     <message>
         <source>Face ID or Touch ID</source>
-        <translation type="unfinished"></translation>
+        <translation>Face ID atau Touch ID</translation>
     </message>
     <message>
         <source>Passcode</source>
-        <translation type="unfinished"></translation>
+        <translation>Kod laluan</translation>
     </message>
     <message>
         <source>Permission</source>
-        <translation type="unfinished"></translation>
+        <translation>Kebenaran</translation>
     </message>
     <message>
         <source>Purchase</source>
-        <translation type="unfinished"></translation>
+        <translation>Pembelian</translation>
     </message>
     <message>
         <source>Sign-in</source>
-        <translation type="unfinished"></translation>
+        <translation>Log masuk</translation>
     </message>
     <message>
         <source>Your turn on the device</source>
-        <translation type="unfinished"></translation>
+        <translation>Giliran anda pada peranti</translation>
     </message>
 </context>
 <context>
     <name>MobileNav</name>
     <message>
         <source>Ctrl</source>
-        <translation type="unfinished"></translation>
+        <translation>Ctrl</translation>
     </message>
     <message>
         <source>More</source>
         <comment>navigation</comment>
-        <translation type="unfinished"></translation>
+        <translation>Lagi</translation>
     </message>
 </context>
 <context>
     <name>AgentClientDialog</name>
     <message>
         <source>Connect your coding agent</source>
-        <translation type="unfinished"></translation>
+        <translation>Sambungkan ejen pengekodan anda</translation>
     </message>
     <message>
         <source>Done</source>
-        <translation type="unfinished"></translation>
+        <translation>Selesai</translation>
     </message>
     <message>
         <source>Pick your agent. Tomacco shows whether it is connected and the exact setting it reads.</source>
-        <translation type="unfinished"></translation>
+        <translation>Pilih ejen anda. Tomacco menunjukkan sama ada ia disambungkan dan tetapan tepat yang dibacanya.</translation>
     </message>
 </context>
 <context>
     <name>AgentClientPicker</name>
     <message>
         <source>%1 is not installed here. Install it first, or copy the text for another computer.</source>
-        <translation type="unfinished"></translation>
+        <translation>%1 tidak dipasang di sini. Pasangnya dahulu, atau salin teks untuk komputer lain.</translation>
     </message>
     <message>
         <source>%1 starts Tomacco when it needs it. Nothing to do.</source>
-        <translation type="unfinished"></translation>
+        <translation>%1 memulakan Tomacco apabila memerlukannya. Tiada apa-apa yang perlu dilakukan.</translation>
     </message>
     <message>
         <source>Add it by hand</source>
         <comment>agent client</comment>
-        <translation type="unfinished"></translation>
+        <translation>Tambah secara manual</translation>
     </message>
     <message>
         <source>Add this to %1:</source>
-        <translation type="unfinished"></translation>
+        <translation>Tambahkan ini pada %1:</translation>
     </message>
     <message>
         <source>Another entry is in the way</source>
         <comment>agent client</comment>
-        <translation type="unfinished"></translation>
+        <translation>Entri lain menghalang</translation>
     </message>
     <message>
         <source>Check again</source>
-        <translation type="unfinished"></translation>
+        <translation>Semak semula</translation>
     </message>
     <message>
         <source>Connect</source>
-        <translation type="unfinished"></translation>
+        <translation>Sambung</translation>
     </message>
     <message>
         <source>Connected</source>
         <comment>agent client</comment>
-        <translation type="unfinished"></translation>
+        <translation>Disambungkan</translation>
     </message>
     <message>
         <source>Connected.</source>
-        <translation type="unfinished"></translation>
+        <translation>Disambungkan.</translation>
     </message>
     <message>
         <source>Connected. The previous file is saved as %1.</source>
-        <translation type="unfinished"></translation>
+        <translation>Disambungkan. Fail sebelumnya disimpan sebagai %1.</translation>
     </message>
     <message>
         <source>Connecting…</source>
-        <translation type="unfinished"></translation>
+        <translation>Menyambung…</translation>
     </message>
     <message>
         <source>Copied</source>
-        <translation type="unfinished"></translation>
+        <translation>Disalin</translation>
     </message>
     <message>
         <source>Copy command</source>
-        <translation type="unfinished"></translation>
+        <translation>Salin arahan</translation>
     </message>
     <message>
         <source>Copy text</source>
-        <translation type="unfinished"></translation>
+        <translation>Salin teks</translation>
     </message>
     <message>
         <source>Left unchanged</source>
         <comment>agent client</comment>
-        <translation type="unfinished"></translation>
+        <translation>Dibiarkan tidak berubah</translation>
     </message>
     <message>
         <source>Looking for coding agents…</source>
-        <translation type="unfinished"></translation>
+        <translation>Mencari ejen pengekodan…</translation>
     </message>
     <message>
         <source>Needs an update</source>
         <comment>agent client</comment>
-        <translation type="unfinished"></translation>
+        <translation>Perlu dikemas kini</translation>
     </message>
     <message>
         <source>Not connected</source>
         <comment>agent client</comment>
-        <translation type="unfinished"></translation>
+        <translation>Tidak disambungkan</translation>
     </message>
     <message>
         <source>Not found on this computer</source>
         <comment>agent client</comment>
-        <translation type="unfinished"></translation>
+        <translation>Tidak ditemui pada komputer ini</translation>
     </message>
     <message>
         <source>Or run this in a terminal:</source>
-        <translation type="unfinished"></translation>
+        <translation>Atau jalankan ini dalam terminal:</translation>
     </message>
     <message>
         <source>Remove Tomacco</source>
-        <translation type="unfinished"></translation>
+        <translation>Buang Tomacco</translation>
     </message>
     <message>
         <source>Removed</source>
         <comment>agent client</comment>
-        <translation type="unfinished"></translation>
+        <translation>Dibuang</translation>
     </message>
     <message>
         <source>Removes only the entry setup added; the rest of the file stays.</source>
-        <translation type="unfinished"></translation>
+        <translation>Hanya membuang entri yang ditambah oleh persediaan; selebihnya fail kekal.</translation>
     </message>
     <message>
         <source>Setup adds Tomacco to %1&apos;s settings and keeps a backup of the file.</source>
-        <translation type="unfinished"></translation>
+        <translation>Persediaan menambah Tomacco pada tetapan %1 dan menyimpan sandaran fail tersebut.</translation>
     </message>
     <message>
         <source>Setup did not report on this agent.</source>
-        <translation type="unfinished"></translation>
+        <translation>Persediaan tidak melaporkan tentang ejen ini.</translation>
     </message>
     <message>
         <source>Setup failed</source>
         <comment>agent client</comment>
-        <translation type="unfinished"></translation>
+        <translation>Persediaan gagal</translation>
     </message>
     <message>
         <source>Setup failed.</source>
-        <translation type="unfinished"></translation>
+        <translation>Persediaan gagal.</translation>
     </message>
     <message>
         <source>Something else in %1&apos;s settings uses the name. Setup leaves it alone; add Tomacco by hand under another name.</source>
-        <translation type="unfinished"></translation>
+        <translation>Sesuatu yang lain dalam tetapan %1 menggunakan nama itu. Persediaan membiarkannya; tambah Tomacco secara manual di bawah nama lain.</translation>
     </message>
     <message>
         <source>The agent list could not be requested.</source>
-        <translation type="unfinished"></translation>
+        <translation>Senarai ejen tidak dapat diminta.</translation>
     </message>
     <message>
         <source>This file is not one Tomacco rewrites. Add the text below yourself.</source>
-        <translation type="unfinished"></translation>
+        <translation>Fail ini bukan fail yang ditulis semula oleh Tomacco. Tambah teks di bawah sendiri.</translation>
     </message>
     <message>
         <source>This version of tomaccoctl cannot list coding agents.</source>
-        <translation type="unfinished"></translation>
+        <translation>Versi tomaccoctl ini tidak dapat menyenaraikan ejen pengekodan.</translation>
     </message>
     <message>
         <source>Tomacco could not tell which settings layout %1 reads. Add the text below yourself, or run setup in a terminal with the version.</source>
-        <translation type="unfinished"></translation>
+        <translation>Tomacco tidak dapat menentukan susun atur tetapan yang dibaca oleh %1. Tambah teks di bawah sendiri, atau jalankan persediaan dalam terminal dengan versi tersebut.</translation>
     </message>
     <message>
         <source>Tomacco&apos;s entry is switched off in %1. Setup leaves your choice alone; switch it on there.</source>
-        <translation type="unfinished"></translation>
+        <translation>Entri Tomacco dimatikan dalam %1. Persediaan tidak mengubah pilihan anda; hidupkannya di sana.</translation>
     </message>
     <message>
         <source>Tomacco&apos;s entry points to another program or older settings. Update rewrites only that entry and keeps a backup.</source>
-        <translation type="unfinished"></translation>
+        <translation>Entri Tomacco menghala ke program lain atau tetapan yang lebih lama. Kemas kini hanya menulis semula entri itu dan menyimpan sandaran.</translation>
     </message>
     <message>
         <source>Tomacco&apos;s entry was removed; the rest of the file is unchanged.</source>
-        <translation type="unfinished"></translation>
+        <translation>Entri Tomacco telah dibuang; selebihnya fail tidak berubah.</translation>
     </message>
     <message>
         <source>Turned off in its settings</source>
         <comment>agent client</comment>
-        <translation type="unfinished"></translation>
+        <translation>Dimatikan dalam tetapannya</translation>
     </message>
     <message>
         <source>Update entry</source>
-        <translation type="unfinished"></translation>
+        <translation>Kemas kini entri</translation>
     </message>
     <message>
         <source>Version unclear</source>
         <comment>agent client</comment>
-        <translation type="unfinished"></translation>
+        <translation>Versi tidak jelas</translation>
     </message>
 </context>
 </TS>
