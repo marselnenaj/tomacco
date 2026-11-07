@@ -1,0 +1,198 @@
+{
+  "package_id": "northern",
+  "target_locales": [
+    "fi",
+    "et",
+    "lt",
+    "lv",
+    "hu",
+    "is"
+  ],
+  "model": "claude-opus-5-5",
+  "branch": "finish/languages-northern",
+  "base": "df0a353bd2bdae96a337920674f5c4e979085647",
+  "updated_at": "2026-11-07T04:14:26+00:00",
+  "source_digest": "3390181968e6",
+  "source_count": 1800,
+  "languages": {
+    "fi": {
+      "name": "Suomi",
+      "plural": "english",
+      "plural_forms": 2,
+      "finished": 1800,
+      "unfinished": 0,
+      "stale": 0,
+      "problems": [],
+      "menu_entry": "6/6",
+      "registry_complete": true,
+      "status": "complete",
+      "suspicious": [
+        "Main: 'xtool sdk install /path/to/Xcode.xip\\nxtool setup'",
+        "NativeWorkspace: 'Claude Code Codex Gemini Cursor VS Code Zed OpenCode Grok He'"
+      ],
+      "suspicious_review": "Reviewed: the 2 flagged texts are legitimately identical to the source: the shell commands 'xtool sdk install /path/to/Xcode.xip / xtool setup' (Main) and the list of agent product names 'Claude Code Codex Gemini … MCP' (NativeWorkspace). Short identical texts (Ctrl, %1 s, %1 ms, App Links, Demo Studio, TalkBack) are names/units.",
+      "commit": "28d308e"
+    },
+    "et": {
+      "name": "Eesti",
+      "plural": "english",
+      "plural_forms": 2,
+      "finished": 1800,
+      "unfinished": 0,
+      "stale": 0,
+      "problems": [],
+      "menu_entry": "6/6",
+      "registry_complete": true,
+      "status": "complete",
+      "suspicious": [
+        "Main: 'xtool sdk install /path/to/Xcode.xip\\nxtool setup'",
+        "NativeWorkspace: 'Claude Code Codex Gemini Cursor VS Code Zed OpenCode Grok He'"
+      ],
+      "suspicious_review": "Reviewed: the 2 flagged texts are legitimately identical to the source: the shell commands 'xtool sdk install /path/to/Xcode.xip / xtool setup' (Main) and the list of agent product names 'Claude Code Codex Gemini … MCP' (NativeWorkspace). Short identical texts (Ctrl, %1 s, %1 ms, App Links, Demo Studio, TalkBack) are names/units.",
+      "commit": "de84746"
+    },
+    "lt": {
+      "name": "Lietuvių",
+      "plural": "lithuanian",
+      "plural_forms": 3,
+      "finished": 1800,
+      "unfinished": 0,
+      "stale": 0,
+      "problems": [],
+      "menu_entry": "6/6",
+      "registry_complete": true,
+      "status": "complete",
+      "suspicious": [
+        "Main: 'xtool sdk install /path/to/Xcode.xip\\nxtool setup'",
+        "NativeWorkspace: 'Claude Code Codex Gemini Cursor VS Code Zed OpenCode Grok He'"
+      ],
+      "suspicious_review": "Reviewed: the 2 flagged texts are legitimately identical to the source: the shell commands 'xtool sdk install /path/to/Xcode.xip / xtool setup' (Main) and the list of agent product names 'Claude Code Codex Gemini … MCP' (NativeWorkspace). Short identical texts (Ctrl, %1 s, %1 ms, App Links, Demo Studio, TalkBack) are names/units.",
+      "commit": "c2fec2e"
+    },
+    "lv": {
+      "name": "Latviešu",
+      "plural": "latvian",
+      "plural_forms": 3,
+      "finished": 1800,
+      "unfinished": 0,
+      "stale": 0,
+      "problems": [],
+      "menu_entry": "6/6",
+      "registry_complete": true,
+      "status": "complete",
+      "suspicious": [
+        "Main: 'xtool sdk install /path/to/Xcode.xip\\nxtool setup'",
+        "NativeWorkspace: 'Claude Code Codex Gemini Cursor VS Code Zed OpenCode Grok He'",
+        "DemoWorkspace: 'MP4 video (*.mp4)'"
+      ],
+      "suspicious_review": "Reviewed: the 2 common flags (xtool shell commands, agent product-name list) are legitimately identical; 'MP4 video (*.mp4)' is correct Latvian ('video' is the Latvian word), so it intentionally matches the source.",
+      "commit": "7123d09"
+    },
+    "hu": {
+      "name": "Magyar",
+      "plural": "universal",
+      "plural_forms": 1,
+      "finished": 1800,
+      "unfinished": 0,
+      "stale": 0,
+      "problems": [],
+      "menu_entry": "6/6",
+      "registry_complete": true,
+      "status": "complete",
+      "suspicious": [
+        "Main: 'xtool sdk install /path/to/Xcode.xip\\nxtool setup'",
+        "NativeWorkspace: 'Claude Code Codex Gemini Cursor VS Code Zed OpenCode Grok He'"
+      ],
+      "suspicious_review": "Reviewed: the 2 flagged texts are legitimately identical to the source: the shell commands 'xtool sdk install /path/to/Xcode.xip / xtool setup' (Main) and the list of agent product names 'Claude Code Codex Gemini … MCP' (NativeWorkspace). Short identical texts (Ctrl, %1 s, %1 ms, App Links, Demo Studio, TalkBack) are names/units.",
+      "commit": "89d35e9"
+    },
+    "is": {
+      "name": "Íslenska",
+      "plural": "icelandic",
+      "plural_forms": 2,
+      "finished": 1800,
+      "unfinished": 0,
+      "stale": 0,
+      "problems": [],
+      "menu_entry": "6/6",
+      "registry_complete": true,
+      "status": "complete",
+      "suspicious": [
+        "Main: 'xtool sdk install /path/to/Xcode.xip\\nxtool setup'",
+        "NativeWorkspace: 'Claude Code Codex Gemini Cursor VS Code Zed OpenCode Grok He'"
+      ],
+      "suspicious_review": "Reviewed: the 2 flagged texts are legitimately identical to the source: the shell commands 'xtool sdk install /path/to/Xcode.xip / xtool setup' (Main) and the list of agent product names 'Claude Code Codex Gemini … MCP' (NativeWorkspace). Short identical texts (Ctrl, %1 s, %1 ms, App Links, Demo Studio, TalkBack) are names/units.",
+      "commit": "c96102a"
+    }
+  },
+  "completed": [
+    "fi",
+    "et",
+    "lt",
+    "lv",
+    "hu",
+    "is"
+  ],
+  "remaining": {},
+  "repository_complete_after_package": [
+    "ar",
+    "da",
+    "de",
+    "es",
+    "es-MX",
+    "et",
+    "fi",
+    "fr",
+    "hu",
+    "id",
+    "is",
+    "it",
+    "ja",
+    "lt",
+    "lv",
+    "nl",
+    "no",
+    "pl",
+    "pt",
+    "pt-BR",
+    "ru",
+    "sv",
+    "uk",
+    "zh-CN",
+    "zh-TW"
+  ],
+  "commits": [
+    "e02dc4f i18n(northern): tranche 0-199 for fi, et, lt, lv, hu, is (work in progress)",
+    "b4b0cdf i18n(northern): tranche 200-499 for fi, et, lt, lv, hu, is (work in progress)",
+    "e01d9ac i18n(northern): tranche 500-699 for fi, et, lt, lv, hu, is (work in progress)",
+    "0b9f574 i18n(northern): tranche 700-899 for fi, et, lt, lv, hu, is (work in progress)",
+    "81f9009 i18n(northern): tranche 900-1099 for fi, et, lt, lv, hu, is (work in progress)",
+    "eb97f44 i18n(northern): tranche 1100-1299 for fi, et, lt, lv, hu, is (work in progress)",
+    "43ef2d9 i18n(northern): tranche 1300-1499 for fi, et, lt, lv, hu, is (work in progress)",
+    "f0d5a1a i18n(northern): tranche 1500-1699 for fi, et, lt, lv, hu, is (work in progress)",
+    "28d308e i18n: complete fi (all current source texts, menu entry, registry complete)",
+    "de84746 i18n: complete et (all current source texts, menu entry, registry complete)",
+    "c2fec2e i18n: complete lt (all current source texts, menu entry, registry complete)",
+    "7123d09 i18n: complete lv (all current source texts, menu entry, registry complete)",
+    "89d35e9 i18n: complete hu (all current source texts, menu entry, registry complete)",
+    "c96102a i18n: complete is (all current source texts, menu entry, registry complete)"
+  ],
+  "tests": {
+    "strict_i18n": "PYTHONPATH=.:tools:tests/python TMPDIR=/tmp python3 -m unittest tests/python/test_i18n.py: Ran 18 tests, OK (after every language commit and on the final head)",
+    "catalog_apply_checks": "All 14 tranche files per language and 1 fix file went through tools/i18n_catalog.py apply (digest 3390181968e6, placeholders, plural form counts, mark-up, line breaks, edge white space): 0 rejected lines",
+    "qm_readback": "tools/ts2qm.py compiled each of fi, et, lt, lv, hu, is into a temporary .qm; tomacco_i18n.read_qm read it back: 1800/1800 messages identical to the finished .ts forms, language tag and numerus rules match the registry rule (lt: 0/11 -> form 3, 21 -> form 1; lv: 0 -> zero form, 21 -> singular; is: 21 -> singular) (.scratch/tools/qm_readback.py)",
+    "lrelease": "not available on this host (no lrelease/lrelease-qt6 binary); Qt lrelease parity was NOT run; the repository fallback compiler tools/ts2qm.py was used instead",
+    "heuristic_review": ".scratch/tools/qa_northern.py: identical-to-source, end punctuation, ellipsis/middle-dot/arrow counts, '...' and doubled spaces; all remaining hits reviewed (names, units, commands, Lithuanian unit abbreviations 'min.'/'val.')",
+    "not_covered": "No app rendering, font, layout or device test: Qt font/layout qualification belongs to the final integration; no Pixel/MacBook/device/network access was used"
+  },
+  "terminology": {
+    "fi": "job = työ, build = käännös, agent = agentti, device = laite, emulator = emulaattori, firmware = laiteohjelmisto, preset = esiasetus; imperative UI voice",
+    "et": "job = töö, build = ehitus, agent = agent, device = seade, emulator = emulaator, firmware = püsivara, run (iOS research) = käitus, preset = eelseadistus; informal 'sina'",
+    "lt": "job = užduotis, build = kompiliavimas/versija, agent = agentas, device = įrenginys, emulator = emuliatorius, firmware = aparatinė programinė įranga, preset = išankstinis nustatymas; infinitive buttons, polite plural instructions, brand names in „“ quotes",
+    "lv": "job = darbs, build = būvējums, agent = aģents, device = ierīce, emulator = emulators, firmware = aparātprogrammatūra, run = izpilde, preset = priekšiestatījums; infinitive buttons, polite plural instructions",
+    "hu": "job = feladat, build = build, agent = ügynök, device = eszköz, emulator = emulátor, firmware = firmware, run = futtatás, preset = előbeállítás; nominal button labels, informal 'te' instructions, a(z) before placeholders",
+    "is": "job = verk, build = smíð, agent = fulltrúi, device = tæki, emulator = hermir, firmware = fastbúnaður, run = keyrsla, preset = forstilling, log = annáll; infinitive buttons, informal imperative instructions, gender-neutral wording"
+  },
+  "integration_boundary": "This package is frozen to the 1800-text source baseline 3390181968e6 at base df0a353. It does not claim the final product UI is fully translated: texts added or changed by the native UI worker after df0a353 are not in these catalogs. Root merges this branch semantically (never by wholesale catalog replacement), syncs the catalogs to the final source inventory and translates the remaining delta for fi, et, lt, lv, hu, is.",
+  "next_step": "Root: merge finish/languages-northern semantically into integration/finish-tomacco, run tools/i18n_catalog.py sync for the final UI head, translate the final-UI delta for fi/et/lt/lv/hu/is, then rerun the strict i18n tests and Qt lrelease parity on a host with qt6-tools; font/layout checks belong to final integration."
+}

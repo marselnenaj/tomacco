@@ -176,7 +176,7 @@
       "zeroDigit": "0",
       "plural": "english",
       "omarchy": true,
-      "complete": false
+      "complete": true
     },
     {
       "code": "fa",
@@ -204,7 +204,7 @@
       "zeroDigit": "0",
       "plural": "english",
       "omarchy": true,
-      "complete": false
+      "complete": true
     },
     {
       "code": "fil",
@@ -302,7 +302,7 @@
       "zeroDigit": "0",
       "plural": "universal",
       "omarchy": true,
-      "complete": false
+      "complete": true
     },
     {
       "code": "id",
@@ -330,7 +330,7 @@
       "zeroDigit": "0",
       "plural": "icelandic",
       "omarchy": true,
-      "complete": false
+      "complete": true
     },
     {
       "code": "it",
@@ -386,7 +386,7 @@
       "zeroDigit": "0",
       "plural": "lithuanian",
       "omarchy": true,
-      "complete": false
+      "complete": true
     },
     {
       "code": "lv",
@@ -400,7 +400,7 @@
       "zeroDigit": "0",
       "plural": "latvian",
       "omarchy": true,
-      "complete": false
+      "complete": true
     },
     {
       "code": "ms",

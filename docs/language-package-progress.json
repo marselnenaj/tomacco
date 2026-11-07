@@ -13,6 +13,23 @@
         "bg"
       ],
       "conflicts_resolved": [],
+      "catalogs_1800_complete_verified": true,
+      "merge_commit": "6d85007d1e51cdb290209fb8b16871dc8b15cb1f"
+    },
+    {
+      "name": "northern",
+      "head": "dd9d5c0701f53064fee5207565000e90810d8151",
+      "codes": [
+        "fi",
+        "et",
+        "lt",
+        "lv",
+        "hu",
+        "is"
+      ],
+      "conflicts_resolved": [
+        "docs/language-package-progress.json"
+      ],
       "catalogs_1800_complete_verified": true
     }
   ]
