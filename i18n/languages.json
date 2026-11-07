@@ -400,7 +400,7 @@
       "zeroDigit": "0",
       "plural": "latvian",
       "omarchy": true,
-      "complete": false
+      "complete": true
     },
     {
       "code": "ms",

@@ -24,6 +24,7 @@ GenericName[id]=Lingkungan pengembangan seluler
 GenericName[fi]=Mobiilikehityksen työtila
 GenericName[et]=Mobiiliarenduse tööala
 GenericName[lt]=Mobiliųjų programų kūrimo aplinka
+GenericName[lv]=Mobilās izstrādes darbvieta
 Comment=Build, run and test native Android and iOS apps
 Comment[de]=Native Android- und iOS-Apps bauen, starten und testen
 Comment[fr]=Compiler, lancer et tester des apps Android et iOS natives
@@ -47,6 +48,7 @@ Comment[id]=Build, jalankan, dan uji aplikasi Android dan iOS native
 Comment[fi]=Käännä, aja ja testaa natiiveja Android- ja iOS-sovelluksia
 Comment[et]=Ehita, käivita ja testi Androidi ja iOS-i omarakendusi
 Comment[lt]=Kompiliuokite, vykdykite ir testuokite vietines Android ir iOS programas
+Comment[lv]=Būvējiet, palaidiet un testējiet vietējās Android un iOS lietotnes
 Exec=tomacco
 Icon=io.github.marselnenaj.tomacco
 Terminal=false
@@ -74,6 +76,7 @@ Keywords[id]=Android;iPhone;iOS;Swift;Kotlin;Flutter;Emulator;MCP;Agen;Ponsel;
 Keywords[fi]=Android;iPhone;iOS;Swift;Kotlin;Flutter;Emulaattori;MCP;Agentti;Älypuhelin;
 Keywords[et]=Android;iPhone;iOS;Swift;Kotlin;Flutter;Emulaator;MCP;Agent;Nutitelefon;
 Keywords[lt]=Android;iPhone;iOS;Swift;Kotlin;Flutter;Emuliatorius;MCP;Agentas;Išmanusis telefonas;
+Keywords[lv]=Android;iPhone;iOS;Swift;Kotlin;Flutter;Emulators;MCP;Aģents;Viedtālrunis;
 StartupNotify=true
 StartupWMClass=io.github.marselnenaj.tomacco
 Actions=Project;Devices;Jobs;
@@ -102,6 +105,7 @@ Name[id]=Proyek
 Name[fi]=Projekti
 Name[et]=Projekt
 Name[lt]=Projektas
+Name[lv]=Projekts
 Exec=tomacco --workspace project
 
 [Desktop Action Devices]
@@ -128,6 +132,7 @@ Name[id]=Perangkat
 Name[fi]=Laitteet
 Name[et]=Seadmed
 Name[lt]=Įrenginiai
+Name[lv]=Ierīces
 Exec=tomacco --workspace devices
 
 [Desktop Action Jobs]
@@ -154,4 +159,5 @@ Name[id]=Build & tugas
 Name[fi]=Käännökset ja työt
 Name[et]=Ehitused ja tööd
 Name[lt]=Kompiliavimai ir užduotys
+Name[lv]=Būvējumi un darbi
 Exec=tomacco --workspace jobs
