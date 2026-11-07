@@ -364,6 +364,15 @@ with the button held is a swipe. Typed text goes through a US keyboard layout, H
 Command-H, and the side buttons work. A mouse has one pointer, so there is no pinch or other
 gesture with several fingers.
 
+If the phone stops listening, for example after a Bluetooth reconnect, the pointer lets go of any
+button it held, and the next press first moves there and rests. Without Bluetooth the session
+advertises no input in `input_capabilities`.
+
+Sound plays through UxPlay as it arrives, not on the phone's clock. When it comes late in a burst,
+Tomacco keeps at most 100 ms of it waiting for the speaker and drops the oldest, so a Wi-Fi stall
+does not leave the sound behind for the rest of the mirror. A sink chosen with `as` in UxPlay's own
+startup file (`~/.uxplayrc`) is used as set, without this limit.
+
 A phone paired with Tomacco 1.3 or earlier knows the old device description and does not get the
 absolute pointer. Forget **Tomacco** in its Bluetooth settings, and on the computer remove the
 phone with `bluetoothctl remove ADDRESS`, then pair again.

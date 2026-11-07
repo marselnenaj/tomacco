@@ -7,6 +7,7 @@
 //! settings; it may do so only in the pairing window after the start.
 use super::*;
 use std::collections::HashMap;
+use std::sync::atomic::AtomicU64;
 use zbus::{
     Connection, ObjectPath, OwnedObjectPath, OwnedVariant as OwnedValue, Variant, fdo, interface,
 };
@@ -94,6 +95,14 @@ impl Service {
     }
 }
 
+/// Whether the phone listens to a characteristic, and how often it began to:
+/// a new start after a reconnect means the phone forgot what it held before.
+#[derive(Default)]
+struct Notify {
+    on: AtomicBool,
+    starts: AtomicU64,
+}
+
 /// One characteristic; reports keep their latest value for reads and send
 /// changes as notifications while the phone listens.
 struct Characteristic {
@@ -101,7 +110,7 @@ struct Characteristic {
     service: OwnedObjectPath,
     flags: Vec<String>,
     value: Vec<u8>,
-    notifying: Arc<AtomicBool>,
+    notifying: Arc<Notify>,
 }
 #[interface(name = "org.bluez.GattCharacteristic1")]
 impl Characteristic {
@@ -136,10 +145,11 @@ impl Characteristic {
         }
     }
     fn start_notify(&self) {
-        self.notifying.store(true, Ordering::Relaxed);
+        self.notifying.starts.fetch_add(1, Ordering::Relaxed);
+        self.notifying.on.store(true, Ordering::Relaxed);
     }
     fn stop_notify(&self) {
-        self.notifying.store(false, Ordering::Relaxed);
+        self.notifying.on.store(false, Ordering::Relaxed);
     }
 }
 
@@ -266,7 +276,7 @@ impl Agent {
 pub struct Hid {
     rt: tokio::runtime::Runtime,
     connection: Connection,
-    reports: HashMap<u8, (OwnedObjectPath, Arc<AtomicBool>)>,
+    reports: HashMap<u8, (OwnedObjectPath, Arc<Notify>)>,
     buttons: u8,
     /// The last absolute report: iOS ignores one equal to the one before.
     last_point: Option<(u8, u16, u16)>,
@@ -293,7 +303,13 @@ impl Hid {
     pub fn listening(&self) -> bool {
         self.reports
             .get(&POINTER)
-            .is_some_and(|(_, on)| on.load(Ordering::Relaxed))
+            .is_some_and(|(_, n)| n.on.load(Ordering::Relaxed))
+    }
+    /// How often the phone began to listen to the pointer.
+    pub fn subscriptions(&self) -> u64 {
+        self.reports
+            .get(&POINTER)
+            .map_or(0, |(_, n)| n.starts.load(Ordering::Relaxed))
     }
     /// Puts the phone's pointer at (x, y), 0..1 of the screen as the phone
     /// shows it, with `buttons` held. A press lands where the pointer was
@@ -306,10 +322,10 @@ impl Hid {
         self.send(POINTER, point_report(report))
     }
     fn send(&self, id: u8, report: Vec<u8>) -> Result<bool> {
-        let Some((at, on)) = self.reports.get(&id) else {
+        let Some((at, notify)) = self.reports.get(&id) else {
             return Ok(false);
         };
-        if !on.load(Ordering::Relaxed) {
+        if !notify.on.load(Ordering::Relaxed) {
             return Ok(false);
         }
         let connection = self.connection.clone();
@@ -337,6 +353,33 @@ impl Hid {
     pub fn consumer(&mut self, usage: u16) -> Result<bool> {
         let delivered = self.send(CONSUMER, usage.to_le_bytes().to_vec())?;
         Ok(delivered && self.send(CONSUMER, vec![0, 0])?)
+    }
+}
+
+/// What AirPlay control needs of the served device, so that its pointer
+/// logic runs against a recording fake in tests.
+pub trait Link: Send {
+    fn listening(&self) -> bool;
+    fn subscriptions(&self) -> u64;
+    fn point(&mut self, x: f64, y: f64, buttons: u8) -> Result<bool>;
+    fn keys(&mut self, modifiers: u8, key: u8) -> Result<bool>;
+    fn consumer(&mut self, usage: u16) -> Result<bool>;
+}
+impl Link for Hid {
+    fn listening(&self) -> bool {
+        Hid::listening(self)
+    }
+    fn subscriptions(&self) -> u64 {
+        Hid::subscriptions(self)
+    }
+    fn point(&mut self, x: f64, y: f64, buttons: u8) -> Result<bool> {
+        Hid::point(self, x, y, buttons)
+    }
+    fn keys(&mut self, modifiers: u8, key: u8) -> Result<bool> {
+        Hid::keys(self, modifiers, key)
+    }
+    fn consumer(&mut self, usage: u16) -> Result<bool> {
+        Hid::consumer(self, usage)
     }
 }
 impl Drop for Hid {
@@ -449,7 +492,7 @@ fn log_line(log: &Path, line: &str) {
 async fn serve(
     pairing: Arc<AtomicBool>,
     log: PathBuf,
-) -> Result<(Connection, HashMap<u8, (OwnedObjectPath, Arc<AtomicBool>)>)> {
+) -> Result<(Connection, HashMap<u8, (OwnedObjectPath, Arc<Notify>)>)> {
     let log_path = log.clone();
     let connection = Connection::system().await.map_err(bus)?;
     let adapter = adapter(&connection).await?;
@@ -516,7 +559,7 @@ async fn serve(
             .map_err(bus)?;
         for (c, (char_uuid, flags, value, reference)) in characteristics.into_iter().enumerate() {
             let char_path = path(&format!("{}/char{c}", service_path.as_str()));
-            let notifying = Arc::new(AtomicBool::new(false));
+            let notifying = Arc::new(Notify::default());
             server
                 .at(
                     &char_path,
@@ -737,6 +780,24 @@ mod tests {
             .count();
         let closes = REPORT_MAP.iter().filter(|b| **b == 0xC0).count();
         assert_eq!(opens, closes);
+    }
+    #[test]
+    fn each_subscription_of_the_phone_is_counted() {
+        let notify = Arc::new(Notify::default());
+        let report = Characteristic {
+            uuid: uuid(0x2A4D),
+            service: path(APP),
+            flags: vec![],
+            value: vec![],
+            notifying: notify.clone(),
+        };
+        report.start_notify();
+        report.stop_notify();
+        assert!(!notify.on.load(Ordering::Relaxed));
+        // A reconnect subscribes again: the count tells it from the same subscription.
+        report.start_notify();
+        assert!(notify.on.load(Ordering::Relaxed));
+        assert_eq!(notify.starts.load(Ordering::Relaxed), 2);
     }
     #[test]
     fn the_absolute_pointer_spans_the_screen_and_is_never_repeated() {

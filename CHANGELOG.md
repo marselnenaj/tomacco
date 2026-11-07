@@ -117,6 +117,20 @@ operations and their JSON results.
 - **Demo Studio errors.** An unknown `demo.*` operation answers `operation_not_found` like every
   other area, and the agent guide lists the `tomacco://docs/demo-studio` resource.
 
+- **AirPlay sound that fell behind for good.** UxPlay plays mirror audio unsynchronised (`-vsync no`),
+  so audio that arrived late in a burst (a Wi-Fi stall, a resent packet) was played in full and its
+  delay stayed until the mirror ended. A queue before the audio sink now keeps at most 100 ms of it
+  and drops the oldest; ordinary jitter loses nothing (`tests/airplay_audio_backlog_integration.py`,
+  a fixture, not a measurement on a phone). A sink chosen in UxPlay's own startup file stays as set;
+  `runtime.state` `audio_backlog_ms` is then null.
+- **AirPlay pointer after a Bluetooth reconnect.** A button held when the phone stopped listening
+  (a release that could not reach it) is no longer held when it listens again, so plain mouse moves
+  no longer drag. A hover never carries a button, the last of quick mouse moves is paced instead of
+  dropped, a drag's release first reaches the point where the mouse let go, and a cancel lifts the
+  finger where it is.
+- **AirPlay without Bluetooth.** `input_capabilities` no longer advertise touch, keys or text when
+  BlueZ serves no pointer for the session.
+
 ### Changed
 - A USB iPhone's point size is cached and refreshed only after a rotation or when its MJPEG frames
   change size, instead of one `/window/size` request before every tap. An unchanged frame is not

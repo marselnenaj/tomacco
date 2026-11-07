@@ -24,13 +24,21 @@ pub fn validate(_a: &Value) -> Result<()> {
 pub struct Airplay {
     _process: ManagedProcess,
     shared: Shared,
+    control: Control,
+}
+/// The phone's pointer and keyboard over Bluetooth, apart from UxPlay.
+struct Control {
     /// The Bluetooth pointer and keyboard that carry input, when BlueZ serves them.
-    hid: Option<bluetooth::Hid>,
+    hid: Option<Box<dyn bluetooth::Link>>,
+    /// Why BlueZ serves none.
+    unavailable: String,
     /// Where the phone's pointer is, 0..1 of the picture, and since when.
     last: Option<(f64, f64, Instant)>,
     /// When the last pointer report went out, to pace them.
     sent: Option<Instant>,
     held: u8,
+    /// The phone's subscriptions to the pointer when it last heard from us.
+    subscriptions: u64,
 }
 // The pointer is absolute (bluetooth::POINTER): it sits where the desktop's
 // is. Timings measured by Jalrux's iphone-control on iOS 26.5.2 (MIT):
@@ -44,6 +52,70 @@ const PACE: Duration = Duration::from_millis(8);
 /// A swipe moves the pointer this often.
 const DRAG_STEP: Duration = Duration::from_millis(12);
 
+/// Decoded audio that may wait for UxPlay's audio sink, at most.
+const AUDIO_BACKLOG_MS: u64 = 100;
+/// Before UxPlay's audio sink, a queue that drops its oldest audio beyond
+/// AUDIO_BACKLOG_MS. With -vsync no the sink plays unsynchronised
+/// (sync=false, no timestamps) and never skips: audio that arrives late in a
+/// burst, after a Wi-Fi stall or UxPlay's wait for a resent packet, was
+/// played in full afterwards and its delay stayed for the rest of the mirror.
+/// Ordinary jitter below the bound loses nothing, and the sink's own buffer
+/// is unchanged (tests/airplay_audio_backlog_integration.py).
+const AUDIO_QUEUE: &str =
+    "queue max-size-buffers=0 max-size-bytes=0 max-size-time=100000000 leaky=downstream";
+
+/// UxPlay's options after its path.
+fn uxplay_options(fps: u64, pipeline: &str, audio_sink: Option<&str>) -> Vec<String> {
+    let fps = fps.to_string();
+    let mut options = argv(&[
+        "-n",
+        RECEIVER,
+        "-nh",
+        // The fixed ports a firewall rule can name: TCP 7000-7001, 7100, UDP 6000-6001, 7011.
+        "-p",
+        // With -vrtp UxPlay timestamps no video either way (video_renderer.c
+        // sets sync only for its own sinks), so this decides audio alone: it
+        // plays as it arrives instead of on the phone's clock.
+        "-vsync",
+        "no",
+        "-fps",
+        &fps,
+        // An iPhone Air's own panel; the phone fits its picture into this size.
+        "-s",
+        "1260x2736@60",
+        // The phone's own reports of the frame rate it sends, in the log.
+        "-FPSdata",
+    ]);
+    if let Some(sink) = audio_sink {
+        options.extend(argv(&["-as", sink]));
+    }
+    options.extend(argv(&["-vrtp", pipeline]));
+    options
+}
+/// The startup file UxPlay reads itself: $UXPLAYRC, ~/.uxplayrc or ~/.config/uxplayrc.
+fn uxplay_config() -> Option<String> {
+    let home = std::env::var_os("HOME").map(PathBuf::from);
+    std::env::var_os("UXPLAYRC")
+        .map(PathBuf::from)
+        .into_iter()
+        .chain(
+            home.iter()
+                .flat_map(|h| [h.join(".uxplayrc"), h.join(".config/uxplayrc")]),
+        )
+        .find(|path| path.exists())
+        .and_then(|path| fs::read_to_string(path).ok())
+}
+/// UxPlay's -as: its default sink behind AUDIO_QUEUE, unless the person's
+/// UxPlay startup file chooses the sink, which then stays as they set it.
+fn audio_sink(config: Option<&str>) -> Option<String> {
+    let chosen = config.is_some_and(|text| {
+        text.lines().any(|line| {
+            !line.starts_with('#') && matches!(line.split_whitespace().next(), Some("as" | "-as"))
+        })
+    });
+    (!chosen).then(|| format!("{AUDIO_QUEUE} ! autoaudiosink"))
+}
+
 pub fn connect(a: &Value, shared: Shared, dir: &Path) -> Result<Airplay> {
     validate(a)?;
     let listener = TcpListener::bind((Ipv4Addr::LOCALHOST, 0))?;
@@ -55,34 +127,15 @@ pub fn connect(a: &Value, shared: Shared, dir: &Path) -> Result<Airplay> {
         "config-interval=1 ! rtph264depay ! h264parse config-interval=-1 ! video/x-h264,stream-format=byte-stream ! tcpclientsink host=127.0.0.1 port={port}"
     );
     let log = dir.join("uxplay.log");
+    let audio = audio_sink(uxplay_config().as_deref());
     // UxPlay buffers its log when it is not a terminal; line buffering lets the
     // session read who connected while the mirror runs.
-    let process = spawn(
-        &argv(&[
-            &tc::find("stdbuf")?,
-            "-oL",
-            "-eL",
-            &tc::find("uxplay")?,
-            "-n",
-            RECEIVER,
-            "-nh",
-            // The fixed ports a firewall rule can name: TCP 7000-7001, 7100, UDP 6000-6001, 7011.
-            "-p",
-            "-vsync",
-            "no",
-            "-fps",
-            &fps.to_string(),
-            // An iPhone Air's own panel; the phone fits its picture into this size.
-            "-s",
-            "1260x2736@60",
-            // The phone's own reports of the frame rate it sends, in the log.
-            "-FPSdata",
-            "-vrtp",
-            &pipeline,
-        ]),
-        &log,
-    )?;
-    shared.lock().unwrap().update(json!({"name":"iPhone (AirPlay)","transport":"wifi/airplay","codec":"h264","receiver":RECEIVER,"mirroring":false,"mac_required":false}))?;
+    let mut command = argv(&[&tc::find("stdbuf")?, "-oL", "-eL", &tc::find("uxplay")?]);
+    command.extend(uxplay_options(fps, &pipeline, audio.as_deref()));
+    let process = spawn(&command, &log)?;
+    // audio_backlog_ms is null when the person's UxPlay startup file picks the sink.
+    shared.lock().unwrap().update(json!({"name":"iPhone (AirPlay)","transport":"wifi/airplay","codec":"h264","receiver":RECEIVER,"mirroring":false,"mac_required":false,
+        "audio_backlog_ms":audio.as_ref().map(|_| AUDIO_BACKLOG_MS)}))?;
     // The session ends when UxPlay does, with its own reason, such as ports
     // another receiver holds.
     let pid = process.0.id();
@@ -164,29 +217,26 @@ pub fn connect(a: &Value, shared: Shared, dir: &Path) -> Result<Airplay> {
         }
     });
     // Input goes over Bluetooth; without it the mirror still shows.
-    let hid = match bluetooth::Hid::start(pairing, dir.join("bluetooth.log")) {
+    let control = match bluetooth::Hid::start(pairing, dir.join("bluetooth.log")) {
         Ok(hid) => {
             shared
                 .lock()
                 .unwrap()
                 .update(json!({"bluetooth":{"status":"advertising","name":bluetooth::NAME}}))?;
-            Some(hid)
+            Control::new(Some(Box::new(hid)), String::new())
         }
         Err(e) => {
             shared
                 .lock()
                 .unwrap()
                 .update(json!({"bluetooth":{"status":"unavailable","error":e.message}}))?;
-            None
+            Control::new(None, e.message)
         }
     };
     Ok(Airplay {
         _process: process,
         shared,
-        hid,
-        last: None,
-        sent: None,
-        held: 0,
+        control,
     })
 }
 
@@ -370,7 +420,28 @@ fn flags(unit: &[u8]) -> (bool, bool) {
 
 const NOT_PAIRED: &str = "While the iPhone mirrors to Tomacco, pair it under Settings > Bluetooth and turn on Settings > Accessibility > Touch > AssistiveTouch";
 
-impl Airplay {
+impl Control {
+    fn new(hid: Option<Box<dyn bluetooth::Link>>, unavailable: String) -> Control {
+        Control {
+            hid,
+            unavailable,
+            last: None,
+            sent: None,
+            held: 0,
+            subscriptions: 0,
+        }
+    }
+    fn listening(&self) -> bool {
+        self.hid.as_ref().is_some_and(|hid| hid.listening())
+    }
+    /// The phone stopped listening or listens anew, as after a Bluetooth
+    /// reconnect: it let go of any button it held, and where its pointer is
+    /// now is unknown. A button kept held here would turn every later plain
+    /// move into a drag.
+    fn forget(&mut self) {
+        self.held = 0;
+        self.last = None;
+    }
     /// Sends the pointer to (x, y) with `buttons` held, paced to the link.
     fn report(&mut self, x: f64, y: f64, buttons: u8) -> Result<bool> {
         if let Some(gap) = self.sent.map(|t| t.elapsed()).filter(|e| *e < PACE) {
@@ -385,11 +456,13 @@ impl Airplay {
         }
         Ok(ok)
     }
+    fn at(&self, x: f64, y: f64) -> bool {
+        matches!(self.last, Some((lx, ly, _)) if lx == x.clamp(0.0, 1.0) && ly == y.clamp(0.0, 1.0))
+    }
     /// Presses at (x, y): moves there, lets the pointer rest, then presses.
     fn press(&mut self, x: f64, y: f64) -> Result<bool> {
         let mut ok = true;
-        if !matches!(self.last, Some((lx, ly, _)) if lx == x.clamp(0.0, 1.0) && ly == y.clamp(0.0, 1.0))
-        {
+        if !self.at(x, y) {
             ok &= self.report(x, y, 0)?;
         }
         if let Some(rest) = self
@@ -403,36 +476,39 @@ impl Airplay {
         self.held = 1;
         Ok(ok)
     }
+    /// Lets go at (x, y). A held drag first moves there: a button change
+    /// lands where the pointer was before its report (see SETTLE), so a
+    /// release that also moved would end the drag short of (x, y).
     fn release(&mut self, x: f64, y: f64) -> Result<bool> {
-        self.held = 0;
-        self.report(x, y, 0)
-    }
-    fn note(&self, hid_listening: bool) {
-        let mut hub = self.shared.lock().unwrap();
-        if hub.state["bluetooth"]["listening"].as_bool() != Some(hid_listening) {
-            let _ = hub.update(json!({"bluetooth":{"status":if hid_listening{"connected"}else{"advertising"},"name":bluetooth::NAME,"listening":hid_listening}}));
+        let mut ok = true;
+        if self.held != 0 && !self.at(x, y) {
+            ok &= self.report(x, y, self.held)?;
         }
+        self.held = 0;
+        Ok(ok && self.report(x, y, 0)?)
     }
-}
-
-impl Device for Airplay {
     fn input(&mut self, a: &Value) -> Result {
         let action = s(a, "action");
-        let listening = self.hid.as_ref().is_some_and(|hid| hid.listening());
-        if self.hid.is_some() {
-            self.note(listening);
-        }
+        let listening = self.listening();
         // Pointer moves without a button reach nobody before pairing; that is
         // no error, or every mouse move over the window would report it.
         if !listening {
+            self.forget();
             if action == "touch" && ["hover", "move", "cancel"].contains(&s(a, "phase")) {
                 return Ok(json!({"delivered":false}));
             }
             if self.hid.is_none() {
-                let reason = s(&self.shared.lock().unwrap().state["bluetooth"], "error").to_owned();
-                return Err(err(format!("Control needs Bluetooth: {reason}")));
+                return Err(err(format!(
+                    "Control needs Bluetooth: {}",
+                    self.unavailable
+                )));
             }
             return Err(Error::new("bluetooth_not_paired", NOT_PAIRED));
+        }
+        let subscriptions = self.hid.as_ref().unwrap().subscriptions();
+        if subscriptions != self.subscriptions {
+            self.subscriptions = subscriptions;
+            self.forget();
         }
         let delivered = match action {
             "touch" => {
@@ -440,12 +516,20 @@ impl Device for Airplay {
                 match s(a, "phase") {
                     "down" => self.press(x, y)?,
                     "up" => self.release(x, y)?,
-                    // The pointer left the window: a held button lets go there.
-                    "cancel" if self.held != 0 => self.release(x, y)?,
+                    // The pointer left the window: a held button lets go where
+                    // the pointer is, without moving it on.
+                    "cancel" if self.held != 0 => match self.last {
+                        Some((lx, ly, _)) => self.release(lx, ly)?,
+                        None => self.release(x, y)?,
+                    },
                     "cancel" => true,
+                    // A pointer without a button presses nothing: it never
+                    // carries one, and does not move a finger that is down.
+                    "hover" if self.held != 0 => false,
                     // Plain moves come with every mouse move over the picture;
-                    // one faster than the link would only queue up as lag.
-                    "hover" if self.sent.is_some_and(|t| t.elapsed() < PACE) => true,
+                    // report() paces them, and the desktop keeps only the
+                    // newest one waiting, so the last position always lands.
+                    "hover" => self.report(x, y, 0)?,
                     _ => self.report(x, y, self.held)?,
                 }
             }
@@ -511,6 +595,45 @@ impl Device for Airplay {
         };
         Ok(json!({"delivered":delivered}))
     }
+}
+
+impl Airplay {
+    fn note(&self, hid_listening: bool) {
+        let mut hub = self.shared.lock().unwrap();
+        if hub.state["bluetooth"]["listening"].as_bool() != Some(hid_listening) {
+            let _ = hub.update(json!({"bluetooth":{"status":if hid_listening{"connected"}else{"advertising"},"name":bluetooth::NAME,"listening":hid_listening}}));
+        }
+    }
+}
+
+/// What AirPlay input can do: everything goes over the Bluetooth pointer and
+/// keyboard, so without one BlueZ serves there is no input at all.
+fn capabilities(bluetooth: bool) -> Value {
+    let mut c = json!({"transport":"wifi/airplay","evidence":"device","capture":false,"hierarchy":false,
+        "live_touch":true,"atomic_trace":false,"max_contacts":1,"pinch":false,"fill":"types into the focused field",
+        "text":"US-layout keys","rotate":false,"exact_scroll":"pointer drag",
+        "keys":["home","volume_up","volume_down","enter","escape","backspace","tab","delete","right","left","down","up"],
+        "note":"A Bluetooth pointer with AssistiveTouch: one contact, live, once the phone is paired and listens (runtime.state bluetooth.listening). Screenshots come from the desktop window, not this session; runtime.observe and screen.* on this session answer an error."});
+    if !bluetooth {
+        for key in ["live_touch", "fill", "text", "exact_scroll"] {
+            c[key] = json!(false);
+        }
+        c["max_contacts"] = json!(0);
+        c["keys"] = json!([]);
+        c["note"] = json!(
+            "No input: AirPlay carries none, and Bluetooth is unavailable for this session (runtime.state bluetooth.error). Screenshots come from the desktop window, not this session; runtime.observe and screen.* on this session answer an error."
+        );
+    }
+    c
+}
+
+impl Device for Airplay {
+    fn input(&mut self, a: &Value) -> Result {
+        if self.control.hid.is_some() {
+            self.note(self.control.listening());
+        }
+        self.control.input(a)
+    }
     fn capture(&mut self, _path: &Path) -> Result {
         Err(err("Capture the AirPlay mirror from the desktop window"))
     }
@@ -518,17 +641,230 @@ impl Device for Airplay {
         Err(err("AirPlay mirroring has no accessibility tree"))
     }
     fn capabilities(&self) -> Value {
-        json!({"transport":"wifi/airplay","evidence":"device","capture":false,"hierarchy":false,
-            "live_touch":true,"atomic_trace":false,"max_contacts":1,"pinch":false,"fill":"types into the focused field",
-            "text":"US-layout keys","rotate":false,"exact_scroll":"pointer drag",
-            "keys":["home","volume_up","volume_down","enter","escape","backspace","tab","delete","right","left","down","up"],
-            "note":"A Bluetooth pointer with AssistiveTouch: one contact, live. Screenshots come from the desktop window, not this session; runtime.observe and screen.* on this session answer an error."})
+        capabilities(self.control.hid.is_some())
     }
 }
 
 #[cfg(test)]
 mod tests {
     use super::*;
+    use std::sync::atomic::AtomicU64;
+
+    /// A pointer report: when, x, y, buttons.
+    type Report = (Instant, f64, f64, u8);
+    /// A Bluetooth link that records each pointer report with its time.
+    #[derive(Clone, Default)]
+    struct Fake {
+        listening: Arc<AtomicBool>,
+        subscriptions: Arc<AtomicU64>,
+        reports: Arc<Mutex<Vec<Report>>>,
+    }
+    impl bluetooth::Link for Fake {
+        fn listening(&self) -> bool {
+            self.listening.load(Ordering::Relaxed)
+        }
+        fn subscriptions(&self) -> u64 {
+            self.subscriptions.load(Ordering::Relaxed)
+        }
+        fn point(&mut self, x: f64, y: f64, buttons: u8) -> Result<bool> {
+            self.reports
+                .lock()
+                .unwrap()
+                .push((Instant::now(), x, y, buttons));
+            Ok(true)
+        }
+        fn keys(&mut self, _modifiers: u8, _key: u8) -> Result<bool> {
+            Ok(true)
+        }
+        fn consumer(&mut self, _usage: u16) -> Result<bool> {
+            Ok(true)
+        }
+    }
+    impl Fake {
+        /// The phone subscribes (again), as on pairing or a reconnect.
+        fn subscribe(&self) {
+            self.subscriptions.fetch_add(1, Ordering::Relaxed);
+            self.listening.store(true, Ordering::Relaxed);
+        }
+        fn take(&self) -> Vec<Report> {
+            std::mem::take(&mut *self.reports.lock().unwrap())
+        }
+        fn points(&self) -> Vec<(f64, f64, u8)> {
+            self.take()
+                .into_iter()
+                .map(|(_, x, y, b)| (x, y, b))
+                .collect()
+        }
+    }
+    fn control() -> (Control, Fake) {
+        let fake = Fake::default();
+        fake.subscribe();
+        (
+            Control::new(Some(Box::new(fake.clone())), String::new()),
+            fake,
+        )
+    }
+    fn touch(phase: &str, x: f64, y: f64) -> Value {
+        json!({"action":"touch","phase":phase,"x":x,"y":y})
+    }
+
+    #[test]
+    fn a_button_held_when_the_phone_stopped_listening_is_not_held_after_it_listens_again() {
+        let (mut c, fake) = control();
+        c.input(&touch("down", 0.2, 0.2)).unwrap();
+        // The Bluetooth link drops mid-drag; the release cannot reach the phone.
+        fake.listening.store(false, Ordering::Relaxed);
+        assert_eq!(
+            c.input(&touch("up", 0.3, 0.3)).unwrap_err().code,
+            "bluetooth_not_paired"
+        );
+        fake.subscribe();
+        fake.take();
+        // A plain mouse move afterwards moves the pointer, with no button.
+        assert_eq!(
+            c.input(&touch("hover", 0.6, 0.6)).unwrap()["delivered"],
+            true
+        );
+        assert_eq!(fake.points(), vec![(0.6, 0.6, 0)]);
+        // The same after a reconnect between two inputs, seen only by the new subscription.
+        c.input(&touch("down", 0.6, 0.6)).unwrap();
+        fake.subscribe();
+        fake.take();
+        c.input(&touch("hover", 0.7, 0.7)).unwrap();
+        assert_eq!(fake.points(), vec![(0.7, 0.7, 0)]);
+    }
+
+    #[test]
+    fn after_a_reconnect_a_press_moves_and_settles_first() {
+        let (mut c, fake) = control();
+        c.input(&touch("hover", 0.4, 0.4)).unwrap();
+        thread::sleep(SETTLE);
+        fake.take();
+        // Resting where the pointer is, a press goes out at once.
+        c.input(&touch("down", 0.4, 0.4)).unwrap();
+        c.input(&touch("up", 0.4, 0.4)).unwrap();
+        assert_eq!(fake.points(), vec![(0.4, 0.4, 1), (0.4, 0.4, 0)]);
+        thread::sleep(SETTLE);
+        // The phone reconnected: where its pointer is is unknown.
+        fake.subscribe();
+        c.input(&touch("down", 0.4, 0.4)).unwrap();
+        let reports = fake.take();
+        assert_eq!(reports.len(), 2);
+        assert_eq!((reports[0].3, reports[1].3), (0, 1));
+        assert!(reports[1].0 - reports[0].0 >= SETTLE);
+    }
+
+    #[test]
+    fn a_hover_never_carries_a_button() {
+        let (mut c, fake) = control();
+        c.input(&touch("down", 0.2, 0.2)).unwrap();
+        fake.take();
+        // Hover while a finger is down neither drags it nor lifts it.
+        assert_eq!(
+            c.input(&touch("hover", 0.8, 0.8)).unwrap()["delivered"],
+            false
+        );
+        assert!(fake.points().is_empty());
+        c.input(&touch("move", 0.3, 0.3)).unwrap();
+        c.input(&touch("up", 0.3, 0.3)).unwrap();
+        assert_eq!(fake.points(), vec![(0.3, 0.3, 1), (0.3, 0.3, 0)]);
+    }
+
+    #[test]
+    fn the_last_of_quick_mouse_moves_reaches_the_phone() {
+        let (mut c, fake) = control();
+        for i in 1..=4 {
+            c.input(&touch("hover", 0.1 * i as f64, 0.5)).unwrap();
+        }
+        let reports = fake.take();
+        // None is dropped for coming within PACE of the one before; each waits.
+        let xs: Vec<f64> = reports.iter().map(|r| r.1).collect();
+        assert_eq!(xs, vec![0.1, 0.2, 0.30000000000000004, 0.4]);
+        for pair in reports.windows(2) {
+            assert!(pair[1].0 - pair[0].0 >= PACE);
+        }
+        assert!(reports.iter().all(|r| r.3 == 0));
+    }
+
+    #[test]
+    fn a_drag_ends_where_the_mouse_let_go_and_a_cancel_lifts_in_place() {
+        let (mut c, fake) = control();
+        c.input(&touch("down", 0.5, 0.8)).unwrap();
+        c.input(&touch("move", 0.5, 0.6)).unwrap();
+        // The release comes at a point the last move did not reach.
+        c.input(&touch("up", 0.5, 0.4)).unwrap();
+        assert_eq!(
+            fake.points(),
+            vec![
+                (0.5, 0.8, 0),
+                (0.5, 0.8, 1),
+                (0.5, 0.6, 1),
+                (0.5, 0.4, 1),
+                (0.5, 0.4, 0)
+            ]
+        );
+        c.input(&touch("down", 0.5, 0.4)).unwrap();
+        c.input(&touch("move", 0.5, 0.2)).unwrap();
+        fake.take();
+        // Leaving the window lifts the finger where it is.
+        c.input(&touch("cancel", 0.9, 0.9)).unwrap();
+        assert_eq!(fake.points(), vec![(0.5, 0.2, 0)]);
+        assert_eq!(
+            c.input(&touch("cancel", 0.9, 0.9)).unwrap()["delivered"],
+            true
+        );
+        assert!(fake.points().is_empty());
+        // A swipe ends on its last step: one release, no extra move.
+        c.input(&json!({"action":"swipe","x":0.5,"y":0.8,"x2":0.5,"y2":0.2,"duration":0.05}))
+            .unwrap();
+        let swipe = fake.points();
+        assert_eq!(swipe.last(), Some(&(0.5, 0.2, 0)));
+        assert_eq!(swipe[swipe.len() - 2], (0.5, 0.2, 1));
+        assert_eq!(swipe.iter().filter(|r| r.2 == 1).count(), swipe.len() - 2);
+    }
+
+    #[test]
+    fn without_bluetooth_no_input_is_advertised() {
+        let none = capabilities(false);
+        assert_eq!(none["live_touch"], false);
+        assert_eq!(none["max_contacts"], 0);
+        assert_eq!(none["keys"], json!([]));
+        assert_eq!(none["text"], false);
+        assert_eq!(none["fill"], false);
+        let served = capabilities(true);
+        assert_eq!(served["live_touch"], true);
+        assert_eq!(served["max_contacts"], 1);
+        assert_eq!(served["keys"].as_array().unwrap().len(), 12);
+        let mut c = Control::new(None, "Bluetooth is off".into());
+        assert_eq!(
+            c.input(&touch("hover", 0.5, 0.5)).unwrap()["delivered"],
+            false
+        );
+        let e = c.input(&touch("down", 0.5, 0.5)).unwrap_err();
+        assert_eq!(e.message, "Control needs Bluetooth: Bluetooth is off");
+    }
+
+    #[test]
+    fn uxplay_bounds_the_audio_backlog_unless_its_startup_file_picks_the_sink() {
+        assert!(AUDIO_QUEUE.contains(&format!("max-size-time={}", AUDIO_BACKLOG_MS * 1_000_000)));
+        assert!(AUDIO_QUEUE.contains("leaky=downstream"));
+        let sink = audio_sink(None).unwrap();
+        assert_eq!(sink, format!("{AUDIO_QUEUE} ! autoaudiosink"));
+        assert_eq!(
+            audio_sink(Some("# as pulsesink\nfps 30\n")).as_deref(),
+            Some(sink.as_str())
+        );
+        assert_eq!(audio_sink(Some("nh\nas pipewiresink\n")), None);
+        assert_eq!(audio_sink(Some("-as 0\n")), None);
+        let options = uxplay_options(60, "PIPE", Some(&sink));
+        let at = |o: &str| options.iter().position(|v| v == o).unwrap();
+        assert_eq!(options[at("-as") + 1], sink);
+        // Video stays unsynchronised and last; the other options are as before.
+        assert_eq!(options[at("-vsync") + 1], "no");
+        assert_eq!(&options[options.len() - 2..], ["-vrtp", "PIPE"]);
+        assert_eq!(&options[..4], ["-n", RECEIVER, "-nh", "-p"]);
+        assert!(!uxplay_options(60, "PIPE", None).contains(&"-as".to_string()));
+    }
     #[test]
     fn the_byte_stream_is_cut_into_units_across_reads() {
         let sps = [0, 0, 0, 1, 0x67, 0x42, 0, 0x1f];
