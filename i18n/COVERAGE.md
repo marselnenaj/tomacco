@@ -35,7 +35,7 @@ review list, not an error count.
 | it | Italiano (Italian) | ltr | 2 (english) | 1800/1800 | 0 | 1 | 0 | 6/6 | complete |
 | ja | 日本語 (Japanese) | ltr | 1 (universal) | 1800/1800 | 0 | 1 | 0 | 6/6 | complete |
 | ko | 한국어 (Korean) | ltr | 1 (universal) | 0/1800 | 1800 | 0 | 0 | 0/6 | untranslated |
-| lt | Lietuvių (Lithuanian) | ltr | 3 (lithuanian) | 1700/1800 | 100 | 2 | 0 | 0/6 | partial |
+| lt | Lietuvių (Lithuanian) | ltr | 3 (lithuanian) | 1800/1800 | 0 | 2 | 0 | 6/6 | complete |
 | lv | Latviešu (Latvian) | ltr | 3 (latvian) | 1700/1800 | 100 | 3 | 0 | 0/6 | partial |
 | ms | Bahasa Melayu (Malay) | ltr | 1 (universal) | 0/1800 | 1800 | 0 | 0 | 0/6 | untranslated |
 | nl | Nederlands (Dutch) | ltr | 2 (english) | 1800/1800 | 0 | 1 | 0 | 6/6 | complete |
@@ -61,6 +61,6 @@ review list, not an error count.
 | zh-CN | 简体中文 (Chinese (Simplified)) | ltr | 1 (universal) | 1800/1800 | 0 | 1 | 0 | 6/6 | complete |
 | zh-TW | 繁體中文 (Chinese (Traditional)) | ltr | 1 (universal) | 1800/1800 | 0 | 1 | 0 | 6/6 | complete |
 
-Complete: 21 of 50 translated languages: ar, da, de, es, es-MX, et, fi, fr, id, it, ja, nl, no, pl, pt, pt-BR, ru, sv, uk, zh-CN, zh-TW
+Complete: 22 of 50 translated languages: ar, da, de, es, es-MX, et, fi, fr, id, it, ja, lt, nl, no, pl, pt, pt-BR, ru, sv, uk, zh-CN, zh-TW
 
-Not complete: bg, bn, ca, cs, el, fa, fil, ga, he, hi, hr, hu, is, ko, lt, lv, ms, ro, si, sk, sl, sr, sw, ta, th, tr, ur, uz, vi
+Not complete: bg, bn, ca, cs, el, fa, fil, ga, he, hi, hr, hu, is, ko, lv, ms, ro, si, sk, sl, sr, sw, ta, th, tr, ur, uz, vi

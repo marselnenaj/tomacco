@@ -6990,434 +6990,434 @@ Licencijuota pagal GNU General Public License 2 ar vėlesnę versiją.</translat
     </message>
     <message>
         <source>Import…</source>
-        <translation type="unfinished"></translation>
+        <translation>Importuoti…</translation>
     </message>
     <message>
         <source>Export…</source>
-        <translation type="unfinished"></translation>
+        <translation>Eksportuoti…</translation>
     </message>
     <message>
         <source>Delete preset</source>
-        <translation type="unfinished"></translation>
+        <translation>Ištrinti išankstinį nustatymą</translation>
     </message>
     <message numerus="yes">
         <source>%n preset file(s) could not be read and are not listed.</source>
-        <translation type="unfinished">
-            <numerusform></numerusform>
-            <numerusform></numerusform>
-            <numerusform></numerusform>
+        <translation>
+            <numerusform>Nepavyko perskaityti %n išankstinių nustatymų failo, todėl jis neišvardytas.</numerusform>
+            <numerusform>Nepavyko perskaityti %n išankstinių nustatymų failų, todėl jie neišvardyti.</numerusform>
+            <numerusform>Nepavyko perskaityti %n išankstinių nustatymų failų, todėl jie neišvardyti.</numerusform>
         </translation>
     </message>
     <message>
         <source>Apply to a device</source>
-        <translation type="unfinished"></translation>
+        <translation>Taikyti įrenginiui</translation>
     </message>
     <message>
         <source>Choose the device here. Tomacco reads it first, shows what would change, and applies only that plan to that device.</source>
-        <translation type="unfinished"></translation>
+        <translation>Čia pasirinkite įrenginį. Tomacco pirmiausia jį nuskaito, parodo, kas pasikeistų, ir tam įrenginiui taiko tik tą planą.</translation>
     </message>
     <message>
         <source>Choose the target device</source>
-        <translation type="unfinished"></translation>
+        <translation>Pasirinkite tikslinį įrenginį</translation>
     </message>
     <message>
         <source>App ID for the app language · optional</source>
-        <translation type="unfinished"></translation>
+        <translation>Programos ID programos kalbai · neprivaloma</translation>
     </message>
     <message>
         <source>Read device</source>
-        <translation type="unfinished"></translation>
+        <translation>Nuskaityti įrenginį</translation>
     </message>
     <message>
         <source>Plan</source>
-        <translation type="unfinished"></translation>
+        <translation>Planuoti</translation>
     </message>
     <message>
         <source>Apply plan</source>
-        <translation type="unfinished"></translation>
+        <translation>Taikyti planą</translation>
     </message>
     <message>
         <source>Restore previous settings</source>
-        <translation type="unfinished"></translation>
+        <translation>Atkurti ankstesnius nustatymus</translation>
     </message>
     <message>
         <source>Skip the settings this device does not support</source>
-        <translation type="unfinished"></translation>
+        <translation>Praleisti nustatymus, kurių šis įrenginys nepalaiko</translation>
     </message>
     <message>
         <source>Plan for %1 (%2) · preset revision %3</source>
-        <translation type="unfinished"></translation>
+        <translation>Planas įrenginiui %1 (%2) · išankstinio nustatymo redakcija %3</translation>
     </message>
     <message>
         <source>TalkBack here switches the screen reader on the device and keeps your other accessibility services. It does not show that your app works with a screen reader; the accessibility audit only checks the screen&apos;s structure.</source>
-        <translation type="unfinished"></translation>
+        <translation>TalkBack čia įjungia ekrano skaitytuvą įrenginyje ir išlaiko kitas jūsų pritaikymo neįgaliesiems paslaugas. Tai neparodo, kad jūsų programa veikia su ekrano skaitytuvu; pritaikymo neįgaliesiems auditas tikrina tik ekrano struktūrą.</translation>
     </message>
     <message>
         <source>QA environment (*.json)</source>
-        <translation type="unfinished"></translation>
+        <translation>QA aplinka (*.json)</translation>
     </message>
     <message>
         <source>Delete this preset?</source>
-        <translation type="unfinished"></translation>
+        <translation>Ištrinti šį išankstinį nustatymą?</translation>
     </message>
     <message>
         <source>The preset is removed from this computer. Devices keep their settings, and restore points stay.</source>
-        <translation type="unfinished"></translation>
+        <translation>Išankstinis nustatymas pašalinamas iš šio kompiuterio. Įrenginiai išlaiko savo nustatymus, o atkūrimo taškai lieka.</translation>
     </message>
     <message>
         <source>Keep preset</source>
-        <translation type="unfinished"></translation>
+        <translation>Palikti išankstinį nustatymą</translation>
     </message>
     <message>
         <source>%1 points, %2 km, %3 min recorded</source>
-        <translation type="unfinished"></translation>
+        <translation>Taškų: %1, %2 km, įrašyta %3 min.</translation>
     </message>
     <message>
         <source>%1 points, %2 km, no times: one point per second</source>
-        <translation type="unfinished"></translation>
+        <translation>Taškų: %1, %2 km, be laikų: vienas taškas per sekundę</translation>
     </message>
     <message>
         <source>Change route…</source>
-        <translation type="unfinished"></translation>
+        <translation>Keisti maršrutą…</translation>
     </message>
     <message>
         <source>Choose a GPX file…</source>
-        <translation type="unfinished"></translation>
+        <translation>Pasirinkite GPX failą…</translation>
     </message>
     <message>
         <source>Finished. The last position stays on the emulator.</source>
-        <translation type="unfinished"></translation>
+        <translation>Baigta. Paskutinė vieta lieka emuliatoriuje.</translation>
     </message>
     <message>
         <source>GPX route (*.gpx)</source>
-        <translation type="unfinished"></translation>
+        <translation>GPX maršrutas (*.gpx)</translation>
     </message>
     <message>
         <source>No route chosen</source>
-        <translation type="unfinished"></translation>
+        <translation>Maršrutas nepasirinktas</translation>
     </message>
     <message>
         <source>Pause</source>
-        <translation type="unfinished"></translation>
+        <translation>Pristabdyti</translation>
     </message>
     <message>
         <source>Paused at %1</source>
-        <translation type="unfinished"></translation>
+        <translation>Pristabdyta ties %1</translation>
     </message>
     <message>
         <source>Play a GPX route on the chosen emulator&apos;s location. Timed points keep their timing; untimed points play one per second.</source>
-        <translation type="unfinished"></translation>
+        <translation>Atkurkite GPX maršrutą pasirinkto emuliatoriaus vietoje. Taškai su laiku išlaiko savo laiką; taškai be laiko atkuriami po vieną per sekundę.</translation>
     </message>
     <message>
         <source>Play route</source>
-        <translation type="unfinished"></translation>
+        <translation>Atkurti maršrutą</translation>
     </message>
     <message>
         <source>Playback ended: %1</source>
-        <translation type="unfinished"></translation>
+        <translation>Atkūrimas baigtas: %1</translation>
     </message>
     <message>
         <source>Playing %1</source>
-        <translation type="unfinished"></translation>
+        <translation>Atkuriama %1</translation>
     </message>
     <message>
         <source>Playing the route on %1. The previous position is not known and will not be restored.</source>
-        <translation type="unfinished"></translation>
+        <translation>Maršrutas atkuriamas %1. Ankstesnė vieta nežinoma ir nebus atkurta.</translation>
     </message>
     <message>
         <source>Playing…</source>
-        <translation type="unfinished"></translation>
+        <translation>Atkuriama…</translation>
     </message>
     <message>
         <source>Reading the route…</source>
-        <translation type="unfinished"></translation>
+        <translation>Skaitomas maršrutas…</translation>
     </message>
     <message>
         <source>Repeat the route</source>
-        <translation type="unfinished"></translation>
+        <translation>Kartoti maršrutą</translation>
     </message>
     <message>
         <source>Resume</source>
-        <translation type="unfinished"></translation>
+        <translation>Tęsti</translation>
     </message>
     <message>
         <source>Route playback</source>
-        <translation type="unfinished"></translation>
+        <translation>Maršruto atkūrimas</translation>
     </message>
     <message>
         <source>Route playback reaches emulators only. A phone takes no mock location from here.</source>
-        <translation type="unfinished"></translation>
+        <translation>Maršruto atkūrimas pasiekia tik emuliatorius. Telefonas iš čia nepriima imituotos vietos.</translation>
     </message>
     <message>
         <source>Speed · 1 is real time</source>
-        <translation type="unfinished"></translation>
+        <translation>Greitis · 1 yra realus laikas</translation>
     </message>
     <message>
         <source>Starting playback…</source>
-        <translation type="unfinished"></translation>
+        <translation>Pradedamas atkūrimas…</translation>
     </message>
     <message>
         <source>Stop</source>
-        <translation type="unfinished"></translation>
+        <translation>Stabdyti</translation>
     </message>
     <message>
         <source>Stopped. The last position stays on the emulator.</source>
-        <translation type="unfinished"></translation>
+        <translation>Sustabdyta. Paskutinė vieta lieka emuliatoriuje.</translation>
     </message>
     <message>
         <source>The emulator does not report its position, so the position before playback is unknown and is not restored. Set one in the preset&apos;s GPS field afterwards if you need it.</source>
-        <translation type="unfinished"></translation>
+        <translation>Emuliatorius nepraneša savo vietos, todėl vieta prieš atkūrimą nežinoma ir neatkuriama. Jei reikia, vėliau nustatykite ją išankstinio nustatymo GPS lauke.</translation>
     </message>
     <message>
         <source>point %1 of %2</source>
-        <translation type="unfinished"></translation>
+        <translation>taškas %1 iš %2</translation>
     </message>
 </context>
 <context>
     <name>HandoffBanner</name>
     <message>
         <source>%1 · an agent is waiting for you</source>
-        <translation type="unfinished"></translation>
+        <translation>%1 · agentas laukia jūsų</translation>
     </message>
     <message>
         <source>%1 · an agent is waiting for you (%2 more)</source>
-        <translation type="unfinished"></translation>
+        <translation>%1 · agentas laukia jūsų (dar %2)</translation>
     </message>
     <message>
         <source>Cancel</source>
-        <translation type="unfinished"></translation>
+        <translation>Atšaukti</translation>
     </message>
     <message>
         <source>Do it on the device itself. Tomacco never asks for your passcode or password.</source>
-        <translation type="unfinished"></translation>
+        <translation>Atlikite tai pačiame įrenginyje. Tomacco niekada neprašo jūsų kodo ar slaptažodžio.</translation>
     </message>
     <message>
         <source>Done</source>
-        <translation type="unfinished"></translation>
+        <translation>Atlikta</translation>
     </message>
     <message>
         <source>Done: I did it on the device</source>
-        <translation type="unfinished"></translation>
+        <translation>Atlikta: padariau tai įrenginyje</translation>
     </message>
 </context>
 <context>
     <name>HandoffModel</name>
     <message>
         <source>Face ID or Touch ID</source>
-        <translation type="unfinished"></translation>
+        <translation>Face ID arba Touch ID</translation>
     </message>
     <message>
         <source>Passcode</source>
-        <translation type="unfinished"></translation>
+        <translation>Kodas</translation>
     </message>
     <message>
         <source>Permission</source>
-        <translation type="unfinished"></translation>
+        <translation>Leidimas</translation>
     </message>
     <message>
         <source>Purchase</source>
-        <translation type="unfinished"></translation>
+        <translation>Pirkimas</translation>
     </message>
     <message>
         <source>Sign-in</source>
-        <translation type="unfinished"></translation>
+        <translation>Prisijungimas</translation>
     </message>
     <message>
         <source>Your turn on the device</source>
-        <translation type="unfinished"></translation>
+        <translation>Jūsų eilė įrenginyje</translation>
     </message>
 </context>
 <context>
     <name>MobileNav</name>
     <message>
         <source>Ctrl</source>
-        <translation type="unfinished"></translation>
+        <translation>Ctrl</translation>
     </message>
     <message>
         <source>More</source>
         <comment>navigation</comment>
-        <translation type="unfinished"></translation>
+        <translation>Daugiau</translation>
     </message>
 </context>
 <context>
     <name>AgentClientDialog</name>
     <message>
         <source>Connect your coding agent</source>
-        <translation type="unfinished"></translation>
+        <translation>Prijunkite savo programavimo agentą</translation>
     </message>
     <message>
         <source>Done</source>
-        <translation type="unfinished"></translation>
+        <translation>Atlikta</translation>
     </message>
     <message>
         <source>Pick your agent. Tomacco shows whether it is connected and the exact setting it reads.</source>
-        <translation type="unfinished"></translation>
+        <translation>Pasirinkite savo agentą. Tomacco rodo, ar jis prijungtas, ir tikslų nustatymą, kurį jis skaito.</translation>
     </message>
 </context>
 <context>
     <name>AgentClientPicker</name>
     <message>
         <source>%1 is not installed here. Install it first, or copy the text for another computer.</source>
-        <translation type="unfinished"></translation>
+        <translation>%1 čia neįdiegtas. Pirmiausia jį įdiekite arba nukopijuokite tekstą kitam kompiuteriui.</translation>
     </message>
     <message>
         <source>%1 starts Tomacco when it needs it. Nothing to do.</source>
-        <translation type="unfinished"></translation>
+        <translation>%1 paleidžia Tomacco, kai jos reikia. Nieko daryti nereikia.</translation>
     </message>
     <message>
         <source>Add it by hand</source>
         <comment>agent client</comment>
-        <translation type="unfinished"></translation>
+        <translation>Pridėti rankiniu būdu</translation>
     </message>
     <message>
         <source>Add this to %1:</source>
-        <translation type="unfinished"></translation>
+        <translation>Pridėkite tai prie %1:</translation>
     </message>
     <message>
         <source>Another entry is in the way</source>
         <comment>agent client</comment>
-        <translation type="unfinished"></translation>
+        <translation>Trukdo kitas įrašas</translation>
     </message>
     <message>
         <source>Check again</source>
-        <translation type="unfinished"></translation>
+        <translation>Tikrinti dar kartą</translation>
     </message>
     <message>
         <source>Connect</source>
-        <translation type="unfinished"></translation>
+        <translation>Prijungti</translation>
     </message>
     <message>
         <source>Connected</source>
         <comment>agent client</comment>
-        <translation type="unfinished"></translation>
+        <translation>Prijungtas</translation>
     </message>
     <message>
         <source>Connected.</source>
-        <translation type="unfinished"></translation>
+        <translation>Prijungta.</translation>
     </message>
     <message>
         <source>Connected. The previous file is saved as %1.</source>
-        <translation type="unfinished"></translation>
+        <translation>Prijungta. Ankstesnis failas išsaugotas kaip %1.</translation>
     </message>
     <message>
         <source>Connecting…</source>
-        <translation type="unfinished"></translation>
+        <translation>Jungiamasi…</translation>
     </message>
     <message>
         <source>Copied</source>
-        <translation type="unfinished"></translation>
+        <translation>Nukopijuota</translation>
     </message>
     <message>
         <source>Copy command</source>
-        <translation type="unfinished"></translation>
+        <translation>Kopijuoti komandą</translation>
     </message>
     <message>
         <source>Copy text</source>
-        <translation type="unfinished"></translation>
+        <translation>Kopijuoti tekstą</translation>
     </message>
     <message>
         <source>Left unchanged</source>
         <comment>agent client</comment>
-        <translation type="unfinished"></translation>
+        <translation>Paliktas nepakeistas</translation>
     </message>
     <message>
         <source>Looking for coding agents…</source>
-        <translation type="unfinished"></translation>
+        <translation>Ieškoma programavimo agentų…</translation>
     </message>
     <message>
         <source>Needs an update</source>
         <comment>agent client</comment>
-        <translation type="unfinished"></translation>
+        <translation>Reikia atnaujinti</translation>
     </message>
     <message>
         <source>Not connected</source>
         <comment>agent client</comment>
-        <translation type="unfinished"></translation>
+        <translation>Neprijungtas</translation>
     </message>
     <message>
         <source>Not found on this computer</source>
         <comment>agent client</comment>
-        <translation type="unfinished"></translation>
+        <translation>Šiame kompiuteryje nerastas</translation>
     </message>
     <message>
         <source>Or run this in a terminal:</source>
-        <translation type="unfinished"></translation>
+        <translation>Arba paleiskite tai terminale:</translation>
     </message>
     <message>
         <source>Remove Tomacco</source>
-        <translation type="unfinished"></translation>
+        <translation>Pašalinti Tomacco</translation>
     </message>
     <message>
         <source>Removed</source>
         <comment>agent client</comment>
-        <translation type="unfinished"></translation>
+        <translation>Pašalintas</translation>
     </message>
     <message>
         <source>Removes only the entry setup added; the rest of the file stays.</source>
-        <translation type="unfinished"></translation>
+        <translation>Pašalina tik sąrankos pridėtą įrašą; likusi failo dalis lieka.</translation>
     </message>
     <message>
         <source>Setup adds Tomacco to %1&apos;s settings and keeps a backup of the file.</source>
-        <translation type="unfinished"></translation>
+        <translation>Sąranka prideda Tomacco prie %1 nustatymų ir pasilieka failo atsarginę kopiją.</translation>
     </message>
     <message>
         <source>Setup did not report on this agent.</source>
-        <translation type="unfinished"></translation>
+        <translation>Sąranka apie šį agentą nepranešė.</translation>
     </message>
     <message>
         <source>Setup failed</source>
         <comment>agent client</comment>
-        <translation type="unfinished"></translation>
+        <translation>Sąranka nepavyko</translation>
     </message>
     <message>
         <source>Setup failed.</source>
-        <translation type="unfinished"></translation>
+        <translation>Sąranka nepavyko.</translation>
     </message>
     <message>
         <source>Something else in %1&apos;s settings uses the name. Setup leaves it alone; add Tomacco by hand under another name.</source>
-        <translation type="unfinished"></translation>
+        <translation>Kas nors kita %1 nustatymuose naudoja šį pavadinimą. Sąranka to neliečia; pridėkite Tomacco rankiniu būdu kitu pavadinimu.</translation>
     </message>
     <message>
         <source>The agent list could not be requested.</source>
-        <translation type="unfinished"></translation>
+        <translation>Nepavyko gauti agentų sąrašo.</translation>
     </message>
     <message>
         <source>This file is not one Tomacco rewrites. Add the text below yourself.</source>
-        <translation type="unfinished"></translation>
+        <translation>Tomacco šio failo neperrašo. Pridėkite žemiau esantį tekstą patys.</translation>
     </message>
     <message>
         <source>This version of tomaccoctl cannot list coding agents.</source>
-        <translation type="unfinished"></translation>
+        <translation>Ši tomaccoctl versija negali išvardyti programavimo agentų.</translation>
     </message>
     <message>
         <source>Tomacco could not tell which settings layout %1 reads. Add the text below yourself, or run setup in a terminal with the version.</source>
-        <translation type="unfinished"></translation>
+        <translation>Tomacco nepavyko nustatyti, kokį nustatymų išdėstymą skaito %1. Pridėkite žemiau esantį tekstą patys arba paleiskite sąranką terminale su versija.</translation>
     </message>
     <message>
         <source>Tomacco&apos;s entry is switched off in %1. Setup leaves your choice alone; switch it on there.</source>
-        <translation type="unfinished"></translation>
+        <translation>Tomacco įrašas %1 yra išjungtas. Sąranka gerbia jūsų pasirinkimą; įjunkite jį ten.</translation>
     </message>
     <message>
         <source>Tomacco&apos;s entry points to another program or older settings. Update rewrites only that entry and keeps a backup.</source>
-        <translation type="unfinished"></translation>
+        <translation>Tomacco įrašas nurodo kitą programą arba senesnius nustatymus. Atnaujinimas perrašo tik tą įrašą ir pasilieka atsarginę kopiją.</translation>
     </message>
     <message>
         <source>Tomacco&apos;s entry was removed; the rest of the file is unchanged.</source>
-        <translation type="unfinished"></translation>
+        <translation>Tomacco įrašas pašalintas; likusi failo dalis nepakeista.</translation>
     </message>
     <message>
         <source>Turned off in its settings</source>
         <comment>agent client</comment>
-        <translation type="unfinished"></translation>
+        <translation>Išjungtas savo nustatymuose</translation>
     </message>
     <message>
         <source>Update entry</source>
-        <translation type="unfinished"></translation>
+        <translation>Atnaujinti įrašą</translation>
     </message>
     <message>
         <source>Version unclear</source>
         <comment>agent client</comment>
-        <translation type="unfinished"></translation>
+        <translation>Versija neaiški</translation>
     </message>
 </context>
 </TS>

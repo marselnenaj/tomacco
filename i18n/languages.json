@@ -386,7 +386,7 @@
       "zeroDigit": "0",
       "plural": "lithuanian",
       "omarchy": true,
-      "complete": false
+      "complete": true
     },
     {
       "code": "lv",
