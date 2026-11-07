@@ -1,0 +1,34 @@
+{
+  "package_id": "rtl_indic",
+  "branch": "finish/languages-rtl_indic",
+  "target_locales": ["fa", "he", "ur", "hi", "bn"],
+  "base": "df0a353",
+  "source_digest": "3390181968e6",
+  "source_count": 1800,
+  "languages": {
+    "fa": {"finished": 1800, "unfinished": 0, "problems": 0, "plural_forms": "1 (universal)", "direction": "rtl", "menu": "6/6", "registry_complete": true, "suspicious": 3, "commit": "c7d0512"},
+    "he": {"finished": 1800, "unfinished": 0, "problems": 0, "plural_forms": "2 (english)", "direction": "rtl", "menu": "6/6", "registry_complete": true, "suspicious": 2, "commit": "15c3792"},
+    "ur": {"finished": 1800, "unfinished": 0, "problems": 0, "plural_forms": "2 (english)", "direction": "rtl", "menu": "6/6", "registry_complete": true, "suspicious": 3, "commit": "a40f6d3"},
+    "hi": {"finished": 1800, "unfinished": 0, "problems": 0, "plural_forms": "2 (english)", "direction": "ltr", "menu": "6/6", "registry_complete": true, "suspicious": 3, "commit": "5f04281"},
+    "bn": {"finished": 1800, "unfinished": 0, "problems": 0, "plural_forms": "2 (english)", "direction": "ltr", "menu": "6/6", "registry_complete": true, "suspicious": 3, "commit": "79ea445"}
+  },
+  "suspicious_review": [
+    {"locales": ["fa", "he", "ur", "hi", "bn"], "context": "NativeWorkspace", "source": "Claude Code Codex Gemini Cursor VS Code Zed OpenCode Grok He…", "verdict": "kept: list of agent product names, identical by design"},
+    {"locales": ["fa", "he", "ur", "hi", "bn"], "context": "Main", "source": "xtool sdk install /path/to/Xcode.xip\\nxtool setup", "verdict": "kept: literal shell commands, must not be translated"},
+    {"locales": ["fa", "ur", "hi", "bn"], "context": "AndroidDevices", "source": "the Android SDK", "verdict": "kept: product name 'Android SDK'; these languages have no article (Hebrew uses ה־Android SDK and is not flagged)"},
+    {"locales": ["fa", "he", "ur", "hi", "bn"], "context": "various", "source": "short Latin-only names below the three-word threshold (TalkBack, Ctrl, Demo Studio, Face ID or Touch ID)", "verdict": "kept: product/key names; reviewed manually, not counted by the detector"}
+  ],
+  "verification": {
+    "catalog_apply": "tools/i18n_catalog.py apply per tranche: 0 rejected in every tranche for every locale",
+    "report": "tools/i18n_catalog.py report: fa/he/ur/hi/bn 1800/1800, 0 unfinished, 0 problems, menu 6/6, status complete",
+    "tests": "PYTHONPATH=.:tools:tests/python TMPDIR=/tmp python3 -m unittest tests/python/test_i18n.py: Ran 18 tests, OK (run before each of the five commits)",
+    "qm": "tools/ts2qm.py (project fallback compiler) into /tmp, read back with tomacco_i18n.read_qm: 1800 messages and 1800 hashes per locale; fa 211889 B, he 198882 B, ur 213728 B, hi 215170 B, bn 215508 B",
+    "lrelease": "unavailable on this host (no lrelease/lrelease6/lrelease-qt6); Qt's own lrelease was not run"
+  },
+  "commits": ["c7d0512", "15c3792", "a40f6d3", "5f04281", "79ea445"],
+  "completed": ["fa", "he", "ur", "hi", "bn"],
+  "remaining": [],
+  "untouched": "existing complete locales and all unassigned catalogs unchanged; no QML/C++/extraction rules changed",
+  "integration_boundary": "Translations match source digest 3390181968e6 (base df0a353). UI texts added or changed after that base (final UI delta on integration/finish-tomacco) are not included; after merging, run tools/i18n_catalog.py sync and translate the new unfinished texts for these five locales.",
+  "next_step": "Merge finish/languages-rtl_indic into integration/finish-tomacco, then sync catalogs against the final UI delta and translate only the newly unfinished texts; optionally verify with Qt lrelease on a host with qt6-tools."
+}
