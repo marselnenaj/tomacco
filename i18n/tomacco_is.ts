@@ -3694,812 +3694,812 @@ SSH notar fyrirliggjandi lykla þína og þekkt auðkenni hýsils.</translation>
     </message>
     <message>
         <source>Completed after %1</source>
-        <translation type="unfinished"></translation>
+        <translation>Lokið eftir %1</translation>
     </message>
     <message>
         <source>Failed after %1</source>
-        <translation type="unfinished"></translation>
+        <translation>Mistókst eftir %1</translation>
     </message>
     <message>
         <source>Timed out after %1</source>
-        <translation type="unfinished"></translation>
+        <translation>Tími rann út eftir %1</translation>
     </message>
     <message>
         <source>Notifications</source>
-        <translation type="unfinished"></translation>
+        <translation>Tilkynningar</translation>
     </message>
     <message>
         <source>When a job ends in the background</source>
-        <translation type="unfinished"></translation>
+        <translation>Þegar verki lýkur í bakgrunni</translation>
     </message>
     <message>
         <source>Touches and coordinates</source>
-        <translation type="unfinished"></translation>
+        <translation>Snertingar og hnit</translation>
     </message>
     <message>
         <source>Hide touches and pointer coordinates</source>
-        <translation type="unfinished"></translation>
+        <translation>Fela snertingar og hnit bendils</translation>
     </message>
     <message>
         <source>Show touches and pointer coordinates, for writing UI tests</source>
-        <translation type="unfinished"></translation>
+        <translation>Sýna snertingar og hnit bendils, til að skrifa viðmótsprófanir</translation>
     </message>
     <message>
         <source>Show touches and pointer coordinates</source>
-        <translation type="unfinished"></translation>
+        <translation>Sýna snertingar og hnit bendils</translation>
     </message>
     <message>
         <source>Another computer</source>
-        <translation type="unfinished"></translation>
+        <translation>Önnur tölva</translation>
     </message>
     <message>
         <source>Appearance, language, notifications, updates and the device view&apos;s choices, as a JSON file. Paths, window sizes and history stay on this computer.</source>
-        <translation type="unfinished"></translation>
+        <translation>Útlit, tungumál, tilkynningar, uppfærslur og val í tækjayfirliti, sem JSON-skrá. Slóðir, gluggastærðir og saga verða eftir á þessari tölvu.</translation>
     </message>
     <message>
         <source>Export settings…</source>
-        <translation type="unfinished"></translation>
+        <translation>Flytja út stillingar…</translation>
     </message>
     <message>
         <source>Import settings…</source>
-        <translation type="unfinished"></translation>
+        <translation>Flytja inn stillingar…</translation>
     </message>
     <message>
         <source>Export settings</source>
-        <translation type="unfinished"></translation>
+        <translation>Flytja út stillingar</translation>
     </message>
     <message>
         <source>Import settings</source>
-        <translation type="unfinished"></translation>
+        <translation>Flytja inn stillingar</translation>
     </message>
     <message>
         <source>Tomacco settings (*.json)</source>
-        <translation type="unfinished"></translation>
+        <translation>Tomacco-stillingar (*.json)</translation>
     </message>
     <message>
         <source>Settings saved to %1</source>
-        <translation type="unfinished"></translation>
+        <translation>Stillingar vistaðar í %1</translation>
     </message>
     <message numerus="yes">
         <source>%n setting(s) imported</source>
-        <translation type="unfinished">
-            <numerusform></numerusform>
-            <numerusform></numerusform>
+        <translation>
+            <numerusform>%n stilling flutt inn</numerusform>
+            <numerusform>%n stillingar fluttar inn</numerusform>
         </translation>
     </message>
     <message numerus="yes">
         <source>%n ignored</source>
-        <translation type="unfinished">
-            <numerusform></numerusform>
-            <numerusform></numerusform>
+        <translation>
+            <numerusform>%n hunsuð</numerusform>
+            <numerusform>%n hunsaðar</numerusform>
         </translation>
     </message>
     <message>
         <source>Tomacco %1 is available</source>
-        <translation type="unfinished"></translation>
+        <translation>Tomacco %1 er tiltækt</translation>
     </message>
     <message>
         <source>Open Tomacco to see what&apos;s new and install it.</source>
-        <translation type="unfinished"></translation>
+        <translation>Opnaðu Tomacco til að sjá hvað er nýtt og setja það upp.</translation>
     </message>
     <message>
         <source>Tomacco could not be started again. Close it and open it from the application menu.</source>
-        <translation type="unfinished"></translation>
+        <translation>Ekki tókst að ræsa Tomacco aftur. Lokaðu því og opnaðu það úr forritavalmyndinni.</translation>
     </message>
     <message>
         <source>What&apos;s new in %1</source>
-        <translation type="unfinished"></translation>
+        <translation>Nýtt í %1</translation>
     </message>
     <message>
         <source>Tomacco is now version %1. The release notes list what changed.</source>
-        <translation type="unfinished"></translation>
+        <translation>Tomacco er nú í útgáfu %1. Útgáfuþættirnir telja upp breytingarnar.</translation>
     </message>
     <message>
         <source>On GitHub ↗</source>
-        <translation type="unfinished"></translation>
+        <translation>Á GitHub ↗</translation>
     </message>
     <message>
         <source>Get started</source>
-        <translation type="unfinished"></translation>
+        <translation>Hefjast handa</translation>
     </message>
     <message>
         <source>Connect your coding agent</source>
-        <translation type="unfinished"></translation>
+        <translation>Tengdu forritunarfulltrúann þinn</translation>
     </message>
     <message>
         <source>Connect an Android device to record its screen.</source>
-        <translation type="unfinished"></translation>
+        <translation>Tengdu Android-tæki til að taka upp skjá þess.</translation>
     </message>
     <message>
         <source>Stop recording</source>
-        <translation type="unfinished"></translation>
+        <translation>Stöðva upptöku</translation>
     </message>
     <message>
         <source>Record the screen</source>
-        <translation type="unfinished"></translation>
+        <translation>Taka upp skjáinn</translation>
     </message>
     <message>
         <source>Stop and save the recording · %1 s</source>
-        <translation type="unfinished"></translation>
+        <translation>Stöðva og vista upptökuna · %1 s</translation>
     </message>
     <message>
         <source>Record the screen to a video, at most 3 minutes</source>
-        <translation type="unfinished"></translation>
+        <translation>Taka skjáinn upp á myndband, í mesta lagi 3 mínútur</translation>
     </message>
     <message>
         <source>Hide the log beside the device</source>
-        <translation type="unfinished"></translation>
+        <translation>Fela annálinn við hlið tækisins</translation>
     </message>
     <message>
         <source>Show the log beside the device</source>
-        <translation type="unfinished"></translation>
+        <translation>Sýna annálinn við hlið tækisins</translation>
     </message>
     <message>
         <source>Split view</source>
-        <translation type="unfinished"></translation>
+        <translation>Skipt yfirlit</translation>
     </message>
     <message>
         <source>Log beside the device</source>
-        <translation type="unfinished"></translation>
+        <translation>Annáll við hlið tækisins</translation>
     </message>
     <message>
         <source>Show the device&apos;s or a job&apos;s log beside the device</source>
-        <translation type="unfinished"></translation>
+        <translation>Sýna annál tækisins eða verks við hlið tækisins</translation>
     </message>
     <message>
         <source>Agent activity</source>
-        <translation type="unfinished"></translation>
+        <translation>Virkni fulltrúa</translation>
     </message>
     <message>
         <source>Session log, e.g. %1</source>
-        <translation type="unfinished"></translation>
+        <translation>Lotuannáll, t.d. %1</translation>
     </message>
     <message>
         <source>Set TOMACCO_SESSION_LOG to this file in your agent&apos;s MCP settings, and the activity panel lists every operation it calls, with its duration and result.</source>
-        <translation type="unfinished"></translation>
+        <translation>Stilltu TOMACCO_SESSION_LOG á þessa skrá í MCP-stillingum fulltrúans þíns, og virknispjaldið telur upp hverja aðgerð sem hann kallar á, með tímalengd og niðurstöðu.</translation>
     </message>
     <message>
         <source>Try again</source>
-        <translation type="unfinished"></translation>
+        <translation>Reyna aftur</translation>
     </message>
     <message>
         <source>What to do: %1</source>
-        <translation type="unfinished"></translation>
+        <translation>Hvað skal gera: %1</translation>
     </message>
     <message>
         <source>Open the update settings to install it.</source>
-        <translation type="unfinished"></translation>
+        <translation>Opnaðu uppfærslustillingarnar til að setja hana upp.</translation>
     </message>
     <message>
         <source>Version %1 is installed. Restart to use it.</source>
-        <translation type="unfinished"></translation>
+        <translation>Útgáfa %1 er uppsett. Endurræstu til að nota hana.</translation>
     </message>
     <message>
         <source>Updates</source>
-        <translation type="unfinished"></translation>
+        <translation>Uppfærslur</translation>
     </message>
     <message>
         <source>Cancelled after %1</source>
-        <translation type="unfinished"></translation>
+        <translation>Hætt við eftir %1</translation>
     </message>
     <message>
         <source>Save the current layout</source>
-        <translation type="unfinished"></translation>
+        <translation>Vista núverandi uppröðun</translation>
     </message>
     <message>
         <source>Window layouts</source>
-        <translation type="unfinished"></translation>
+        <translation>Gluggauppröðun</translation>
     </message>
     <message>
         <source>Use window layout %1</source>
-        <translation type="unfinished"></translation>
+        <translation>Nota gluggauppröðun %1</translation>
     </message>
     <message>
         <source>At most %1 window layouts are kept. Delete one first.</source>
-        <translation type="unfinished"></translation>
+        <translation>Í mesta lagi %1 gluggauppröðunum er haldið. Eyðdu fyrst einni.</translation>
     </message>
     <message>
         <source>Window layout “%1” saved</source>
-        <translation type="unfinished"></translation>
+        <translation>Gluggauppröðun „%1“ vistuð</translation>
     </message>
     <message>
         <source>Window layout “%1”</source>
-        <translation type="unfinished"></translation>
+        <translation>Gluggauppröðun „%1“</translation>
     </message>
     <message>
         <source>Search settings</source>
-        <translation type="unfinished"></translation>
+        <translation>Leita í stillingum</translation>
     </message>
     <message>
         <source>No setting matches “%1”.</source>
-        <translation type="unfinished"></translation>
+        <translation>Engin stilling passar við „%1“.</translation>
     </message>
     <message>
         <source>Use the Omarchy theme&apos;s accent</source>
-        <translation type="unfinished"></translation>
+        <translation>Nota áherslulit Omarchy-þemans</translation>
     </message>
     <message>
         <source>Theme</source>
-        <translation type="unfinished"></translation>
+        <translation>Þema</translation>
     </message>
     <message>
         <source>The accent of %1 does not read clearly on this background, so Tomacco keeps its own.</source>
-        <translation type="unfinished"></translation>
+        <translation>Áherslulitur %1 sést ekki skýrt á þessum bakgrunni, svo Tomacco heldur sínum eigin.</translation>
     </message>
     <message>
         <source>Accent from the Omarchy theme %1.</source>
-        <translation type="unfinished"></translation>
+        <translation>Áherslulitur úr Omarchy-þemanu %1.</translation>
     </message>
     <message>
         <source>A layout keeps the open view, the activity panel, the log beside the device and its width, the device windows and the window&apos;s size.</source>
-        <translation type="unfinished"></translation>
+        <translation>Uppröðun geymir opna yfirlitið, virknispjaldið, annálinn við hlið tækisins og breidd hans, tækjagluggana og stærð gluggans.</translation>
     </message>
     <message>
         <source>Use</source>
-        <translation type="unfinished"></translation>
+        <translation>Nota</translation>
     </message>
     <message>
         <source>Delete</source>
-        <translation type="unfinished"></translation>
+        <translation>Eyða</translation>
     </message>
     <message>
         <source>Delete window layout %1</source>
-        <translation type="unfinished"></translation>
+        <translation>Eyða gluggauppröðun %1</translation>
     </message>
     <message>
         <source>Name, e.g. testing or debugging</source>
-        <translation type="unfinished"></translation>
+        <translation>Nafn, t.d. prófanir eða villuleit</translation>
     </message>
     <message>
         <source>Restarting AirPlay. Then choose Tomacco again in the iPhone&apos;s Screen Mirroring.</source>
-        <translation type="unfinished"></translation>
+        <translation>Endurræsir AirPlay. Veldu síðan Tomacco aftur í Skjáspeglun á iPhone.</translation>
     </message>
     <message>
         <source>iPhone over Wi-Fi</source>
-        <translation type="unfinished"></translation>
+        <translation>iPhone um Wi-Fi</translation>
     </message>
     <message>
         <source>Waiting for a new iPhone picture</source>
-        <translation type="unfinished"></translation>
+        <translation>Bíður eftir nýrri mynd frá iPhone</translation>
     </message>
     <message>
         <source>Ready for your iPhone</source>
-        <translation type="unfinished"></translation>
+        <translation>Tilbúið fyrir iPhone-símann þinn</translation>
     </message>
     <message>
         <source>Connect your iPhone over Wi-Fi</source>
-        <translation type="unfinished"></translation>
+        <translation>Tengdu iPhone-símann þinn um Wi-Fi</translation>
     </message>
     <message>
         <source>If no picture appears, stop Screen Mirroring on the iPhone and select Tomacco again. Restart AirPlay below if the receiver stopped responding.</source>
-        <translation type="unfinished"></translation>
+        <translation>Ef engin mynd birtist skaltu stöðva Skjáspeglun á iPhone og velja Tomacco aftur. Endurræstu AirPlay hér fyrir neðan ef mótttakarinn hætti að svara.</translation>
     </message>
     <message>
         <source>Open Control Center on the iPhone, choose Screen Mirroring, then Tomacco. Both devices must be on the same network.</source>
-        <translation type="unfinished"></translation>
+        <translation>Opnaðu Stjórnstöð á iPhone, veldu Skjáspeglun og síðan Tomacco. Bæði tækin verða að vera á sama neti.</translation>
     </message>
     <message>
         <source>Restart AirPlay</source>
-        <translation type="unfinished"></translation>
+        <translation>Endurræsa AirPlay</translation>
     </message>
     <message>
         <source>Start AirPlay</source>
-        <translation type="unfinished"></translation>
+        <translation>Ræsa AirPlay</translation>
     </message>
     <message>
         <source>An agent is waiting for you: %1</source>
-        <translation type="unfinished"></translation>
+        <translation>Fulltrúi bíður eftir þér: %1</translation>
     </message>
     <message>
         <source>In use elsewhere</source>
-        <translation type="unfinished"></translation>
+        <translation>Í notkun annars staðar</translation>
     </message>
     <message>
         <source>Reconnecting</source>
-        <translation type="unfinished"></translation>
+        <translation>Tengist aftur</translation>
     </message>
     <message>
         <source>Screenshot saved</source>
-        <translation type="unfinished"></translation>
+        <translation>Skjámynd vistuð</translation>
     </message>
     <message>
         <source>Show file</source>
-        <translation type="unfinished"></translation>
+        <translation>Sýna skrá</translation>
     </message>
     <message>
         <source>Your turn</source>
-        <translation type="unfinished"></translation>
+        <translation>Þín röð</translation>
     </message>
     <message>
         <source>Claude Code Codex Gemini Cursor VS Code Zed OpenCode Grok Hermes omp MCP</source>
-        <translation type="unfinished"></translation>
+        <translation>Claude Code Codex Gemini Cursor VS Code Zed OpenCode Grok Hermes omp MCP</translation>
     </message>
 </context>
 <context>
     <name>Operations</name>
     <message>
         <source>Check for updates</source>
-        <translation type="unfinished"></translation>
+        <translation>Leita að uppfærslum</translation>
     </message>
     <message>
         <source>Install update</source>
-        <translation type="unfinished"></translation>
+        <translation>Setja upp uppfærslu</translation>
     </message>
     <message>
         <source>Update status</source>
-        <translation type="unfinished"></translation>
+        <translation>Staða uppfærslu</translation>
     </message>
     <message>
         <source>Roll back update</source>
-        <translation type="unfinished"></translation>
+        <translation>Afturkalla uppfærslu</translation>
     </message>
     <message>
         <source>Analyze performance profile</source>
-        <translation type="unfinished"></translation>
+        <translation>Greina afkastasnið</translation>
     </message>
     <message>
         <source>Android emulators</source>
-        <translation type="unfinished"></translation>
+        <translation>Android-hermar</translation>
     </message>
     <message>
         <source>Android over Wi-Fi</source>
-        <translation type="unfinished"></translation>
+        <translation>Android um Wi-Fi</translation>
     </message>
     <message>
         <source>App data files</source>
-        <translation type="unfinished"></translation>
+        <translation>Gagnaskrár apps</translation>
     </message>
     <message>
         <source>App permission</source>
-        <translation type="unfinished"></translation>
+        <translation>Heimild apps</translation>
     </message>
     <message>
         <source>Apple devices on the Mac</source>
-        <translation type="unfinished"></translation>
+        <translation>Apple-tæki á Mac</translation>
     </message>
     <message>
         <source>Browser console</source>
-        <translation type="unfinished"></translation>
+        <translation>Vafraskel</translation>
     </message>
     <message>
         <source>Page errors</source>
-        <translation type="unfinished"></translation>
+        <translation>Síðuvillur</translation>
     </message>
     <message>
         <source>Build &amp; run on device</source>
-        <translation type="unfinished"></translation>
+        <translation>Smíða og keyra á tæki</translation>
     </message>
     <message>
         <source>Watch and rerun app</source>
-        <translation type="unfinished"></translation>
+        <translation>Fylgjast með og endurkeyra app</translation>
     </message>
     <message>
         <source>Build iOS graphics compiler plugin</source>
-        <translation type="unfinished"></translation>
+        <translation>Smíða viðbót fyrir grafíkþýðanda iOS</translation>
     </message>
     <message>
         <source>Build native iOS app</source>
-        <translation type="unfinished"></translation>
+        <translation>Smíða innbyggð iOS-app</translation>
     </message>
     <message>
         <source>Build native iOS guest tools</source>
-        <translation type="unfinished"></translation>
+        <translation>Smíða innbyggð gestaverkfæri fyrir iOS</translation>
     </message>
     <message>
         <source>Cancel job</source>
-        <translation type="unfinished"></translation>
+        <translation>Hætta við verk</translation>
     </message>
     <message>
         <source>Capture Android profile</source>
-        <translation type="unfinished"></translation>
+        <translation>Taka upp Android-snið</translation>
     </message>
     <message>
         <source>Capture device matrix</source>
-        <translation type="unfinished"></translation>
+        <translation>Taka upp tækjafylki</translation>
     </message>
     <message>
         <source>Capture preview</source>
-        <translation type="unfinished"></translation>
+        <translation>Taka upp forskoðun</translation>
     </message>
     <message>
         <source>Check Mac</source>
-        <translation type="unfinished"></translation>
+        <translation>Athuga Mac</translation>
     </message>
     <message>
         <source>Check PMP execution</source>
-        <translation type="unfinished"></translation>
+        <translation>Athuga keyrslu PMP</translation>
     </message>
     <message>
         <source>Check iOS emulator</source>
-        <translation type="unfinished"></translation>
+        <translation>Athuga iOS-hermi</translation>
     </message>
     <message>
         <source>Check iPhone development on Linux</source>
-        <translation type="unfinished"></translation>
+        <translation>Athuga iPhone-þróun á Linux</translation>
     </message>
     <message>
         <source>Check layout</source>
-        <translation type="unfinished"></translation>
+        <translation>Athuga útlit</translation>
     </message>
     <message>
         <source>Check performance budget</source>
-        <translation type="unfinished"></translation>
+        <translation>Athuga afkastakvóta</translation>
     </message>
     <message>
         <source>Run Macrobenchmark</source>
-        <translation type="unfinished"></translation>
+        <translation>Keyra Macrobenchmark</translation>
     </message>
     <message>
         <source>Read Macrobenchmark results</source>
-        <translation type="unfinished"></translation>
+        <translation>Lesa niðurstöður Macrobenchmark</translation>
     </message>
     <message>
         <source>Generate Baseline Profile</source>
-        <translation type="unfinished"></translation>
+        <translation>Búa til Baseline Profile</translation>
     </message>
     <message>
         <source>Read Baseline Profile rules</source>
-        <translation type="unfinished"></translation>
+        <translation>Lesa reglur Baseline Profile</translation>
     </message>
     <message>
         <source>Install Baseline Profile</source>
-        <translation type="unfinished"></translation>
+        <translation>Setja upp Baseline Profile</translation>
     </message>
     <message>
         <source>Compare startup with and without Baseline Profile</source>
-        <translation type="unfinished"></translation>
+        <translation>Bera saman ræsingu með og án Baseline Profile</translation>
     </message>
     <message>
         <source>Compare performance reports</source>
-        <translation type="unfinished"></translation>
+        <translation>Bera saman afkastaskýrslur</translation>
     </message>
     <message>
         <source>Measure app startup</source>
-        <translation type="unfinished"></translation>
+        <translation>Mæla ræsingu apps</translation>
     </message>
     <message>
         <source>Measure frame rendering</source>
-        <translation type="unfinished"></translation>
+        <translation>Mæla teiknun ramma</translation>
     </message>
     <message>
         <source>Measure app memory</source>
-        <translation type="unfinished"></translation>
+        <translation>Mæla minni apps</translation>
     </message>
     <message>
         <source>Measure CPU and battery use</source>
-        <translation type="unfinished"></translation>
+        <translation>Mæla notkun örgjörva og rafhlöðu</translation>
     </message>
     <message>
         <source>Check toolchain</source>
-        <translation type="unfinished"></translation>
+        <translation>Athuga verkfærakjörn</translation>
     </message>
     <message>
         <source>What this computer can do</source>
-        <translation type="unfinished"></translation>
+        <translation>Hvað þessi tölva getur gert</translation>
     </message>
     <message>
         <source>Click element</source>
-        <translation type="unfinished"></translation>
+        <translation>Smella á einingu</translation>
     </message>
     <message>
         <source>Commit Google Play change</source>
-        <translation type="unfinished"></translation>
+        <translation>Staðfesta breytingu á Google Play</translation>
     </message>
     <message>
         <source>Compile / test Swift</source>
-        <translation type="unfinished"></translation>
+        <translation>Þýða / prófa Swift</translation>
     </message>
     <message>
         <source>Configure preview</source>
-        <translation type="unfinished"></translation>
+        <translation>Stilla forskoðun</translation>
     </message>
     <message>
         <source>Configure project</source>
-        <translation type="unfinished"></translation>
+        <translation>Stilla verkefni</translation>
     </message>
     <message>
         <source>Connect Mac</source>
-        <translation type="unfinished"></translation>
+        <translation>Tengja Mac</translation>
     </message>
     <message>
         <source>Connect Swift to the Android NDK</source>
-        <translation type="unfinished"></translation>
+        <translation>Tengja Swift við Android NDK</translation>
     </message>
     <message>
         <source>Connect dev server</source>
-        <translation type="unfinished"></translation>
+        <translation>Tengja þróunarþjón</translation>
     </message>
     <message>
         <source>Connect native runtime</source>
-        <translation type="unfinished"></translation>
+        <translation>Tengja innbyggt keyrsluumhverfi</translation>
     </message>
     <message>
         <source>Control Apple Simulator</source>
-        <translation type="unfinished"></translation>
+        <translation>Stýra Apple-hermi</translation>
     </message>
     <message>
         <source>Control app</source>
-        <translation type="unfinished"></translation>
+        <translation>Stýra appi</translation>
     </message>
     <message>
         <source>Control debugger</source>
-        <translation type="unfinished"></translation>
+        <translation>Stýra villuleitarforriti</translation>
     </message>
     <message>
         <source>Control emulator</source>
-        <translation type="unfinished"></translation>
+        <translation>Stýra hermi</translation>
     </message>
     <message>
         <source>Control iPhone on the Mac</source>
-        <translation type="unfinished"></translation>
+        <translation>Stýra iPhone á Mac</translation>
     </message>
     <message>
         <source>Control native iOS guest programs</source>
-        <translation type="unfinished"></translation>
+        <translation>Stýra innbyggðum iOS-gestaforritum</translation>
     </message>
     <message>
         <source>Create emulator</source>
-        <translation type="unfinished"></translation>
+        <translation>Búa til hermi</translation>
     </message>
     <message>
         <source>Create iOS archive</source>
-        <translation type="unfinished"></translation>
+        <translation>Búa til iOS-safn</translation>
     </message>
     <message>
         <source>Create project</source>
-        <translation type="unfinished"></translation>
+        <translation>Búa til verkefni</translation>
     </message>
     <message>
         <source>Create project folder</source>
-        <translation type="unfinished"></translation>
+        <translation>Búa til verkefnismöppu</translation>
     </message>
     <message>
         <source>Create signing key</source>
-        <translation type="unfinished"></translation>
+        <translation>Búa til undirritunarlykil</translation>
     </message>
     <message>
         <source>Debug sessions</source>
-        <translation type="unfinished"></translation>
+        <translation>Villuleitarlotur</translation>
     </message>
     <message>
         <source>Debugger events</source>
-        <translation type="unfinished"></translation>
+        <translation>Atburðir villuleitarforrits</translation>
     </message>
     <message>
         <source>Debugger status</source>
-        <translation type="unfinished"></translation>
+        <translation>Staða villuleitarforrits</translation>
     </message>
     <message>
         <source>Desktop status</source>
-        <translation type="unfinished"></translation>
+        <translation>Staða skjáborðsforrits</translation>
     </message>
     <message>
         <source>Device catalog</source>
-        <translation type="unfinished"></translation>
+        <translation>Tækjaskrá</translation>
     </message>
     <message>
         <source>Device image for agents</source>
-        <translation type="unfinished"></translation>
+        <translation>Mynd af tæki fyrir fulltrúa</translation>
     </message>
     <message>
         <source>Device information</source>
-        <translation type="unfinished"></translation>
+        <translation>Upplýsingar um tæki</translation>
     </message>
     <message>
         <source>Device logs</source>
-        <translation type="unfinished"></translation>
+        <translation>Annálar tækis</translation>
     </message>
     <message>
         <source>Device screenshot</source>
-        <translation type="unfinished"></translation>
+        <translation>Skjámynd tækis</translation>
     </message>
     <message>
         <source>Device settings for tests</source>
-        <translation type="unfinished"></translation>
+        <translation>Tækisstillingar fyrir prófanir</translation>
     </message>
     <message>
         <source>Discard Google Play draft</source>
-        <translation type="unfinished"></translation>
+        <translation>Henda drögum á Google Play</translation>
     </message>
     <message>
         <source>Disconnect runtime</source>
-        <translation type="unfinished"></translation>
+        <translation>Aftengja keyrsluumhverfi</translation>
     </message>
     <message>
         <source>Display orientation and size</source>
-        <translation type="unfinished"></translation>
+        <translation>Stefna og stærð skjás</translation>
     </message>
     <message>
         <source>Download Mac artifact</source>
-        <translation type="unfinished"></translation>
+        <translation>Sækja Mac-smíðisgrip</translation>
     </message>
     <message>
         <source>Evaluate expression</source>
-        <translation type="unfinished"></translation>
+        <translation>Meta segð</translation>
     </message>
     <message>
         <source>Examine iOS kernel boot</source>
-        <translation type="unfinished"></translation>
+        <translation>Rannsaka ræsingu iOS-kjarna</translation>
     </message>
     <message>
         <source>Export and fetch IPA</source>
-        <translation type="unfinished"></translation>
+        <translation>Flytja út og sækja IPA</translation>
     </message>
     <message>
         <source>Export model</source>
-        <translation type="unfinished"></translation>
+        <translation>Flytja út gerð</translation>
     </message>
     <message>
         <source>Fetch result of an iOS guest job</source>
-        <translation type="unfinished"></translation>
+        <translation>Sækja niðurstöðu iOS-gestaverks</translation>
     </message>
     <message>
         <source>Fill in form</source>
-        <translation type="unfinished"></translation>
+        <translation>Fylla út eyðublað</translation>
     </message>
     <message>
         <source>Find Android element</source>
-        <translation type="unfinished"></translation>
+        <translation>Finna Android-einingu</translation>
     </message>
     <message>
         <source>Find devices</source>
-        <translation type="unfinished"></translation>
+        <translation>Finna tæki</translation>
     </message>
     <message>
         <source>Send a command to a job</source>
-        <translation type="unfinished"></translation>
+        <translation>Senda skipun til verks</translation>
     </message>
     <message>
         <source>Inspect APK or AAB</source>
-        <translation type="unfinished"></translation>
+        <translation>Skoða APK eða AAB</translation>
     </message>
     <message>
         <source>Report APK or AAB size</source>
-        <translation type="unfinished"></translation>
+        <translation>Tilkynna stærð APK eða AAB</translation>
     </message>
     <message>
         <source>Emulator sensors</source>
-        <translation type="unfinished"></translation>
+        <translation>Skynjarar hermis</translation>
     </message>
     <message>
         <source>App Links</source>
-        <translation type="unfinished"></translation>
+        <translation>App Links</translation>
     </message>
     <message>
         <source>Network capture</source>
-        <translation type="unfinished"></translation>
+        <translation>Upptaka netumferðar</translation>
     </message>
     <message>
         <source>Install iOS toolkit</source>
-        <translation type="unfinished"></translation>
+        <translation>Setja upp iOS-verkfærasett</translation>
     </message>
     <message>
         <source>Notifications</source>
-        <translation type="unfinished"></translation>
+        <translation>Tilkynningar</translation>
     </message>
     <message>
         <source>Prepare Flutter for iOS</source>
-        <translation type="unfinished"></translation>
+        <translation>Undirbúa Flutter fyrir iOS</translation>
     </message>
     <message>
         <source>Build Flutter app for iOS</source>
-        <translation type="unfinished"></translation>
+        <translation>Smíða Flutter-app fyrir iOS</translation>
     </message>
     <message>
         <source>iPhone crash reports</source>
-        <translation type="unfinished"></translation>
+        <translation>Hrunskýrslur iPhone</translation>
     </message>
     <message>
         <source>Record iPhone screen</source>
-        <translation type="unfinished"></translation>
+        <translation>Taka upp skjá iPhone</translation>
     </message>
     <message>
         <source>iPhone app files</source>
-        <translation type="unfinished"></translation>
+        <translation>Skrár iPhone-appa</translation>
     </message>
     <message>
         <source>iPhone readiness</source>
-        <translation type="unfinished"></translation>
+        <translation>Viðbúnaður iPhone</translation>
     </message>
     <message>
         <source>iPhone signing overview</source>
-        <translation type="unfinished"></translation>
+        <translation>Yfirlit yfir undirritun iPhone</translation>
     </message>
     <message>
         <source>Read crash report</source>
-        <translation type="unfinished"></translation>
+        <translation>Lesa hrunskýrslu</translation>
     </message>
     <message>
         <source>Inspect iOS app</source>
-        <translation type="unfinished"></translation>
+        <translation>Skoða iOS-app</translation>
     </message>
     <message>
         <source>Prepare for App Store</source>
-        <translation type="unfinished"></translation>
+        <translation>Undirbúa fyrir App Store</translation>
     </message>
     <message>
         <source>Import Xcode project</source>
-        <translation type="unfinished"></translation>
+        <translation>Flytja inn Xcode-verkefni</translation>
     </message>
     <message>
         <source>Find built iOS app</source>
-        <translation type="unfinished"></translation>
+        <translation>Finna smíðað iOS-app</translation>
     </message>
     <message>
         <source>Import Apple SDK</source>
-        <translation type="unfinished"></translation>
+        <translation>Flytja inn SDK Apple</translation>
     </message>
     <message>
         <source>Import models</source>
-        <translation type="unfinished"></translation>
+        <translation>Flytja inn gerðir</translation>
     </message>
     <message>
         <source>Import original iOS system</source>
-        <translation type="unfinished"></translation>
+        <translation>Flytja inn upprunalegt iOS-kerfi</translation>
     </message>
     <message>
         <source>Inspect DOM</source>
-        <translation type="unfinished"></translation>
+        <translation>Skoða DOM</translation>
     </message>
     <message>
         <source>Install SDK packages</source>
-        <translation type="unfinished"></translation>
+        <translation>Setja upp SDK-pakka</translation>
     </message>
     <message>
         <source>Install Swift SDK</source>
-        <translation type="unfinished"></translation>
+        <translation>Setja upp Swift SDK</translation>
     </message>
     <message>
         <source>Install app</source>
-        <translation type="unfinished"></translation>
+        <translation>Setja upp app</translation>
     </message>
     <message>
         <source>Install iOS cryptex files</source>
-        <translation type="unfinished"></translation>
+        <translation>Setja upp iOS cryptex-skrár</translation>
     </message>
     <message>
         <source>Install native iOS guest tools</source>
-        <translation type="unfinished"></translation>
+        <translation>Setja upp innbyggð iOS-gestaverkfæri</translation>
     </message>
     <message>
         <source>Instruments recording</source>
-        <translation type="unfinished"></translation>
+        <translation>Instruments-upptaka</translation>
     </message>
     <message>
         <source>Job status</source>
-        <translation type="unfinished"></translation>
+        <translation>Staða verks</translation>
     </message>
     <message>
         <source>Jobs</source>
-        <translation type="unfinished"></translation>
+        <translation>Verk</translation>
     </message>
     <message>
         <source>Live logs</source>
-        <translation type="unfinished"></translation>
+        <translation>Annálar í beinni</translation>
     </message>
     <message>
         <source>Load agent context</source>
-        <translation type="unfinished"></translation>
+        <translation>Hlaða samhengi fulltrúa</translation>
     </message>
     <message>
         <source>Mac workspaces</source>
-        <translation type="unfinished"></translation>
+        <translation>Vinnusvæði á Mac</translation>
     </message>
     <message>
         <source>Native accessibility tree</source>
-        <translation type="unfinished"></translation>
+        <translation>Innbyggt aðgengistré</translation>
     </message>
     <message>
         <source>Native capture</source>
-        <translation type="unfinished"></translation>
+        <translation>Innbyggð upptaka</translation>
     </message>
     <message>
         <source>Native input</source>
-        <translation type="unfinished"></translation>
+        <translation>Innbyggt inntak</translation>
     </message>
     <message>
         <source>Native sessions</source>
-        <translation type="unfinished"></translation>
+        <translation>Innbyggðar lotur</translation>
     </message>
     <message>
         <source>Open Tomacco</source>

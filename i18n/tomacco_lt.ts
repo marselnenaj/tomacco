@@ -3701,814 +3701,814 @@ SSH naudoja jūsų esamus raktus ir žinomą pagrindinio kompiuterio tapatybę.<
     </message>
     <message>
         <source>Completed after %1</source>
-        <translation type="unfinished"></translation>
+        <translation>Baigta po %1</translation>
     </message>
     <message>
         <source>Failed after %1</source>
-        <translation type="unfinished"></translation>
+        <translation>Nepavyko po %1</translation>
     </message>
     <message>
         <source>Timed out after %1</source>
-        <translation type="unfinished"></translation>
+        <translation>Baigėsi laikas po %1</translation>
     </message>
     <message>
         <source>Notifications</source>
-        <translation type="unfinished"></translation>
+        <translation>Pranešimai</translation>
     </message>
     <message>
         <source>When a job ends in the background</source>
-        <translation type="unfinished"></translation>
+        <translation>Kai užduotis baigiasi fone</translation>
     </message>
     <message>
         <source>Touches and coordinates</source>
-        <translation type="unfinished"></translation>
+        <translation>Prisilietimai ir koordinatės</translation>
     </message>
     <message>
         <source>Hide touches and pointer coordinates</source>
-        <translation type="unfinished"></translation>
+        <translation>Slėpti prisilietimus ir žymeklio koordinates</translation>
     </message>
     <message>
         <source>Show touches and pointer coordinates, for writing UI tests</source>
-        <translation type="unfinished"></translation>
+        <translation>Rodyti prisilietimus ir žymeklio koordinates, kai rašomi sąsajos testai</translation>
     </message>
     <message>
         <source>Show touches and pointer coordinates</source>
-        <translation type="unfinished"></translation>
+        <translation>Rodyti prisilietimus ir žymeklio koordinates</translation>
     </message>
     <message>
         <source>Another computer</source>
-        <translation type="unfinished"></translation>
+        <translation>Kitas kompiuteris</translation>
     </message>
     <message>
         <source>Appearance, language, notifications, updates and the device view&apos;s choices, as a JSON file. Paths, window sizes and history stay on this computer.</source>
-        <translation type="unfinished"></translation>
+        <translation>Išvaizda, kalba, pranešimai, naujinimai ir įrenginio rodinio pasirinkimai JSON faile. Keliai, langų dydžiai ir istorija lieka šiame kompiuteryje.</translation>
     </message>
     <message>
         <source>Export settings…</source>
-        <translation type="unfinished"></translation>
+        <translation>Eksportuoti nustatymus…</translation>
     </message>
     <message>
         <source>Import settings…</source>
-        <translation type="unfinished"></translation>
+        <translation>Importuoti nustatymus…</translation>
     </message>
     <message>
         <source>Export settings</source>
-        <translation type="unfinished"></translation>
+        <translation>Eksportuoti nustatymus</translation>
     </message>
     <message>
         <source>Import settings</source>
-        <translation type="unfinished"></translation>
+        <translation>Importuoti nustatymus</translation>
     </message>
     <message>
         <source>Tomacco settings (*.json)</source>
-        <translation type="unfinished"></translation>
+        <translation>Tomacco nustatymai (*.json)</translation>
     </message>
     <message>
         <source>Settings saved to %1</source>
-        <translation type="unfinished"></translation>
+        <translation>Nustatymai išsaugoti į %1</translation>
     </message>
     <message numerus="yes">
         <source>%n setting(s) imported</source>
-        <translation type="unfinished">
-            <numerusform></numerusform>
-            <numerusform></numerusform>
-            <numerusform></numerusform>
+        <translation>
+            <numerusform>Importuotas %n nustatymas</numerusform>
+            <numerusform>Importuoti %n nustatymai</numerusform>
+            <numerusform>Importuota %n nustatymų</numerusform>
         </translation>
     </message>
     <message numerus="yes">
         <source>%n ignored</source>
-        <translation type="unfinished">
-            <numerusform></numerusform>
-            <numerusform></numerusform>
-            <numerusform></numerusform>
+        <translation>
+            <numerusform>%n praleistas</numerusform>
+            <numerusform>%n praleisti</numerusform>
+            <numerusform>%n praleista</numerusform>
         </translation>
     </message>
     <message>
         <source>Tomacco %1 is available</source>
-        <translation type="unfinished"></translation>
+        <translation>Tomacco %1 jau prieinama</translation>
     </message>
     <message>
         <source>Open Tomacco to see what&apos;s new and install it.</source>
-        <translation type="unfinished"></translation>
+        <translation>Atidarykite Tomacco, kad pamatytumėte naujoves ir ją įdiegtumėte.</translation>
     </message>
     <message>
         <source>Tomacco could not be started again. Close it and open it from the application menu.</source>
-        <translation type="unfinished"></translation>
+        <translation>Nepavyko iš naujo paleisti Tomacco. Uždarykite ją ir atidarykite iš programų meniu.</translation>
     </message>
     <message>
         <source>What&apos;s new in %1</source>
-        <translation type="unfinished"></translation>
+        <translation>Kas naujo %1 versijoje</translation>
     </message>
     <message>
         <source>Tomacco is now version %1. The release notes list what changed.</source>
-        <translation type="unfinished"></translation>
+        <translation>Tomacco dabar yra %1 versijos. Leidimo pastabose išvardyti pakeitimai.</translation>
     </message>
     <message>
         <source>On GitHub ↗</source>
-        <translation type="unfinished"></translation>
+        <translation>„GitHub“ svetainėje ↗</translation>
     </message>
     <message>
         <source>Get started</source>
-        <translation type="unfinished"></translation>
+        <translation>Pradėti</translation>
     </message>
     <message>
         <source>Connect your coding agent</source>
-        <translation type="unfinished"></translation>
+        <translation>Prijunkite savo programavimo agentą</translation>
     </message>
     <message>
         <source>Connect an Android device to record its screen.</source>
-        <translation type="unfinished"></translation>
+        <translation>Prijunkite Android įrenginį, kad įrašytumėte jo ekraną.</translation>
     </message>
     <message>
         <source>Stop recording</source>
-        <translation type="unfinished"></translation>
+        <translation>Stabdyti įrašymą</translation>
     </message>
     <message>
         <source>Record the screen</source>
-        <translation type="unfinished"></translation>
+        <translation>Įrašyti ekraną</translation>
     </message>
     <message>
         <source>Stop and save the recording · %1 s</source>
-        <translation type="unfinished"></translation>
+        <translation>Sustabdyti ir išsaugoti įrašą · %1 s</translation>
     </message>
     <message>
         <source>Record the screen to a video, at most 3 minutes</source>
-        <translation type="unfinished"></translation>
+        <translation>Įrašyti ekraną į vaizdo įrašą, daugiausia 3 minutes</translation>
     </message>
     <message>
         <source>Hide the log beside the device</source>
-        <translation type="unfinished"></translation>
+        <translation>Slėpti žurnalą šalia įrenginio</translation>
     </message>
     <message>
         <source>Show the log beside the device</source>
-        <translation type="unfinished"></translation>
+        <translation>Rodyti žurnalą šalia įrenginio</translation>
     </message>
     <message>
         <source>Split view</source>
-        <translation type="unfinished"></translation>
+        <translation>Padalytas rodinys</translation>
     </message>
     <message>
         <source>Log beside the device</source>
-        <translation type="unfinished"></translation>
+        <translation>Žurnalas šalia įrenginio</translation>
     </message>
     <message>
         <source>Show the device&apos;s or a job&apos;s log beside the device</source>
-        <translation type="unfinished"></translation>
+        <translation>Rodyti įrenginio ar užduoties žurnalą šalia įrenginio</translation>
     </message>
     <message>
         <source>Agent activity</source>
-        <translation type="unfinished"></translation>
+        <translation>Agento veikla</translation>
     </message>
     <message>
         <source>Session log, e.g. %1</source>
-        <translation type="unfinished"></translation>
+        <translation>Seanso žurnalas, pvz., %1</translation>
     </message>
     <message>
         <source>Set TOMACCO_SESSION_LOG to this file in your agent&apos;s MCP settings, and the activity panel lists every operation it calls, with its duration and result.</source>
-        <translation type="unfinished"></translation>
+        <translation>Agento MCP nustatymuose nustatykite TOMACCO_SESSION_LOG į šį failą, ir veiklos skydelis išvardys kiekvieną jo iškviestą operaciją su trukme ir rezultatu.</translation>
     </message>
     <message>
         <source>Try again</source>
-        <translation type="unfinished"></translation>
+        <translation>Bandyti dar kartą</translation>
     </message>
     <message>
         <source>What to do: %1</source>
-        <translation type="unfinished"></translation>
+        <translation>Ką daryti: %1</translation>
     </message>
     <message>
         <source>Open the update settings to install it.</source>
-        <translation type="unfinished"></translation>
+        <translation>Atidarykite naujinimų nustatymus, kad jį įdiegtumėte.</translation>
     </message>
     <message>
         <source>Version %1 is installed. Restart to use it.</source>
-        <translation type="unfinished"></translation>
+        <translation>Įdiegta versija %1. Paleiskite iš naujo, kad ją naudotumėte.</translation>
     </message>
     <message>
         <source>Updates</source>
-        <translation type="unfinished"></translation>
+        <translation>Naujinimai</translation>
     </message>
     <message>
         <source>Cancelled after %1</source>
-        <translation type="unfinished"></translation>
+        <translation>Atšaukta po %1</translation>
     </message>
     <message>
         <source>Save the current layout</source>
-        <translation type="unfinished"></translation>
+        <translation>Išsaugoti dabartinį išdėstymą</translation>
     </message>
     <message>
         <source>Window layouts</source>
-        <translation type="unfinished"></translation>
+        <translation>Langų išdėstymai</translation>
     </message>
     <message>
         <source>Use window layout %1</source>
-        <translation type="unfinished"></translation>
+        <translation>Naudoti langų išdėstymą %1</translation>
     </message>
     <message>
         <source>At most %1 window layouts are kept. Delete one first.</source>
-        <translation type="unfinished"></translation>
+        <translation>Saugoma daugiausia %1 langų išdėstymų. Pirmiausia ištrinkite vieną.</translation>
     </message>
     <message>
         <source>Window layout “%1” saved</source>
-        <translation type="unfinished"></translation>
+        <translation>Langų išdėstymas „%1“ išsaugotas</translation>
     </message>
     <message>
         <source>Window layout “%1”</source>
-        <translation type="unfinished"></translation>
+        <translation>Langų išdėstymas „%1“</translation>
     </message>
     <message>
         <source>Search settings</source>
-        <translation type="unfinished"></translation>
+        <translation>Ieškoti nustatymų</translation>
     </message>
     <message>
         <source>No setting matches “%1”.</source>
-        <translation type="unfinished"></translation>
+        <translation>Joks nustatymas neatitinka „%1“.</translation>
     </message>
     <message>
         <source>Use the Omarchy theme&apos;s accent</source>
-        <translation type="unfinished"></translation>
+        <translation>Naudoti Omarchy temos akcentą</translation>
     </message>
     <message>
         <source>Theme</source>
-        <translation type="unfinished"></translation>
+        <translation>Tema</translation>
     </message>
     <message>
         <source>The accent of %1 does not read clearly on this background, so Tomacco keeps its own.</source>
-        <translation type="unfinished"></translation>
+        <translation>%1 akcentas šiame fone nepakankamai ryškus, todėl Tomacco naudoja savo.</translation>
     </message>
     <message>
         <source>Accent from the Omarchy theme %1.</source>
-        <translation type="unfinished"></translation>
+        <translation>Akcentas iš Omarchy temos %1.</translation>
     </message>
     <message>
         <source>A layout keeps the open view, the activity panel, the log beside the device and its width, the device windows and the window&apos;s size.</source>
-        <translation type="unfinished"></translation>
+        <translation>Išdėstymas išsaugo atidarytą rodinį, veiklos skydelį, žurnalą šalia įrenginio ir jo plotį, įrenginių langus ir lango dydį.</translation>
     </message>
     <message>
         <source>Use</source>
-        <translation type="unfinished"></translation>
+        <translation>Naudoti</translation>
     </message>
     <message>
         <source>Delete</source>
-        <translation type="unfinished"></translation>
+        <translation>Ištrinti</translation>
     </message>
     <message>
         <source>Delete window layout %1</source>
-        <translation type="unfinished"></translation>
+        <translation>Ištrinti langų išdėstymą %1</translation>
     </message>
     <message>
         <source>Name, e.g. testing or debugging</source>
-        <translation type="unfinished"></translation>
+        <translation>Pavadinimas, pvz., testavimas arba derinimas</translation>
     </message>
     <message>
         <source>Restarting AirPlay. Then choose Tomacco again in the iPhone&apos;s Screen Mirroring.</source>
-        <translation type="unfinished"></translation>
+        <translation>AirPlay paleidžiamas iš naujo. Tada „iPhone“ Ekrano dubliavime vėl pasirinkite Tomacco.</translation>
     </message>
     <message>
         <source>iPhone over Wi-Fi</source>
-        <translation type="unfinished"></translation>
+        <translation>„iPhone“ per Wi-Fi</translation>
     </message>
     <message>
         <source>Waiting for a new iPhone picture</source>
-        <translation type="unfinished"></translation>
+        <translation>Laukiama naujo „iPhone“ vaizdo</translation>
     </message>
     <message>
         <source>Ready for your iPhone</source>
-        <translation type="unfinished"></translation>
+        <translation>Paruošta jūsų „iPhone“</translation>
     </message>
     <message>
         <source>Connect your iPhone over Wi-Fi</source>
-        <translation type="unfinished"></translation>
+        <translation>Prijunkite savo „iPhone“ per Wi-Fi</translation>
     </message>
     <message>
         <source>If no picture appears, stop Screen Mirroring on the iPhone and select Tomacco again. Restart AirPlay below if the receiver stopped responding.</source>
-        <translation type="unfinished"></translation>
+        <translation>Jei vaizdas nepasirodo, sustabdykite Ekrano dubliavimą „iPhone“ ir vėl pasirinkite Tomacco. Jei imtuvas nustojo reaguoti, žemiau paleiskite AirPlay iš naujo.</translation>
     </message>
     <message>
         <source>Open Control Center on the iPhone, choose Screen Mirroring, then Tomacco. Both devices must be on the same network.</source>
-        <translation type="unfinished"></translation>
+        <translation>„iPhone“ atidarykite Valdymo centrą, pasirinkite Ekrano dubliavimas, tada Tomacco. Abu įrenginiai turi būti tame pačiame tinkle.</translation>
     </message>
     <message>
         <source>Restart AirPlay</source>
-        <translation type="unfinished"></translation>
+        <translation>Iš naujo paleisti AirPlay</translation>
     </message>
     <message>
         <source>Start AirPlay</source>
-        <translation type="unfinished"></translation>
+        <translation>Paleisti AirPlay</translation>
     </message>
     <message>
         <source>An agent is waiting for you: %1</source>
-        <translation type="unfinished"></translation>
+        <translation>Agentas laukia jūsų: %1</translation>
     </message>
     <message>
         <source>In use elsewhere</source>
-        <translation type="unfinished"></translation>
+        <translation>Naudojama kitur</translation>
     </message>
     <message>
         <source>Reconnecting</source>
-        <translation type="unfinished"></translation>
+        <translation>Jungiamasi iš naujo</translation>
     </message>
     <message>
         <source>Screenshot saved</source>
-        <translation type="unfinished"></translation>
+        <translation>Ekrano kopija išsaugota</translation>
     </message>
     <message>
         <source>Show file</source>
-        <translation type="unfinished"></translation>
+        <translation>Rodyti failą</translation>
     </message>
     <message>
         <source>Your turn</source>
-        <translation type="unfinished"></translation>
+        <translation>Jūsų eilė</translation>
     </message>
     <message>
         <source>Claude Code Codex Gemini Cursor VS Code Zed OpenCode Grok Hermes omp MCP</source>
-        <translation type="unfinished"></translation>
+        <translation>Claude Code Codex Gemini Cursor VS Code Zed OpenCode Grok Hermes omp MCP</translation>
     </message>
 </context>
 <context>
     <name>Operations</name>
     <message>
         <source>Check for updates</source>
-        <translation type="unfinished"></translation>
+        <translation>Ieškoti naujinimų</translation>
     </message>
     <message>
         <source>Install update</source>
-        <translation type="unfinished"></translation>
+        <translation>Įdiegti naujinimą</translation>
     </message>
     <message>
         <source>Update status</source>
-        <translation type="unfinished"></translation>
+        <translation>Naujinimo būsena</translation>
     </message>
     <message>
         <source>Roll back update</source>
-        <translation type="unfinished"></translation>
+        <translation>Atšaukti naujinimą</translation>
     </message>
     <message>
         <source>Analyze performance profile</source>
-        <translation type="unfinished"></translation>
+        <translation>Analizuoti našumo profilį</translation>
     </message>
     <message>
         <source>Android emulators</source>
-        <translation type="unfinished"></translation>
+        <translation>Android emuliatoriai</translation>
     </message>
     <message>
         <source>Android over Wi-Fi</source>
-        <translation type="unfinished"></translation>
+        <translation>Android per Wi-Fi</translation>
     </message>
     <message>
         <source>App data files</source>
-        <translation type="unfinished"></translation>
+        <translation>Programos duomenų failai</translation>
     </message>
     <message>
         <source>App permission</source>
-        <translation type="unfinished"></translation>
+        <translation>Programos leidimas</translation>
     </message>
     <message>
         <source>Apple devices on the Mac</source>
-        <translation type="unfinished"></translation>
+        <translation>„Apple“ įrenginiai „Mac“ kompiuteryje</translation>
     </message>
     <message>
         <source>Browser console</source>
-        <translation type="unfinished"></translation>
+        <translation>Naršyklės konsolė</translation>
     </message>
     <message>
         <source>Page errors</source>
-        <translation type="unfinished"></translation>
+        <translation>Puslapio klaidos</translation>
     </message>
     <message>
         <source>Build &amp; run on device</source>
-        <translation type="unfinished"></translation>
+        <translation>Kompiliuoti ir vykdyti įrenginyje</translation>
     </message>
     <message>
         <source>Watch and rerun app</source>
-        <translation type="unfinished"></translation>
+        <translation>Stebėti ir iš naujo paleisti programą</translation>
     </message>
     <message>
         <source>Build iOS graphics compiler plugin</source>
-        <translation type="unfinished"></translation>
+        <translation>Kompiliuoti iOS grafikos kompiliatoriaus papildį</translation>
     </message>
     <message>
         <source>Build native iOS app</source>
-        <translation type="unfinished"></translation>
+        <translation>Kompiliuoti vietinę iOS programą</translation>
     </message>
     <message>
         <source>Build native iOS guest tools</source>
-        <translation type="unfinished"></translation>
+        <translation>Kompiliuoti vietinius iOS svečio įrankius</translation>
     </message>
     <message>
         <source>Cancel job</source>
-        <translation type="unfinished"></translation>
+        <translation>Atšaukti užduotį</translation>
     </message>
     <message>
         <source>Capture Android profile</source>
-        <translation type="unfinished"></translation>
+        <translation>Įrašyti Android profilį</translation>
     </message>
     <message>
         <source>Capture device matrix</source>
-        <translation type="unfinished"></translation>
+        <translation>Užfiksuoti įrenginių matricą</translation>
     </message>
     <message>
         <source>Capture preview</source>
-        <translation type="unfinished"></translation>
+        <translation>Užfiksuoti peržiūrą</translation>
     </message>
     <message>
         <source>Check Mac</source>
-        <translation type="unfinished"></translation>
+        <translation>Patikrinti „Mac“</translation>
     </message>
     <message>
         <source>Check PMP execution</source>
-        <translation type="unfinished"></translation>
+        <translation>Patikrinti PMP vykdymą</translation>
     </message>
     <message>
         <source>Check iOS emulator</source>
-        <translation type="unfinished"></translation>
+        <translation>Patikrinti iOS emuliatorių</translation>
     </message>
     <message>
         <source>Check iPhone development on Linux</source>
-        <translation type="unfinished"></translation>
+        <translation>Patikrinti „iPhone“ kūrimą Linux sistemoje</translation>
     </message>
     <message>
         <source>Check layout</source>
-        <translation type="unfinished"></translation>
+        <translation>Patikrinti išdėstymą</translation>
     </message>
     <message>
         <source>Check performance budget</source>
-        <translation type="unfinished"></translation>
+        <translation>Patikrinti našumo biudžetą</translation>
     </message>
     <message>
         <source>Run Macrobenchmark</source>
-        <translation type="unfinished"></translation>
+        <translation>Vykdyti Macrobenchmark</translation>
     </message>
     <message>
         <source>Read Macrobenchmark results</source>
-        <translation type="unfinished"></translation>
+        <translation>Skaityti Macrobenchmark rezultatus</translation>
     </message>
     <message>
         <source>Generate Baseline Profile</source>
-        <translation type="unfinished"></translation>
+        <translation>Generuoti Baseline Profile</translation>
     </message>
     <message>
         <source>Read Baseline Profile rules</source>
-        <translation type="unfinished"></translation>
+        <translation>Skaityti Baseline Profile taisykles</translation>
     </message>
     <message>
         <source>Install Baseline Profile</source>
-        <translation type="unfinished"></translation>
+        <translation>Įdiegti Baseline Profile</translation>
     </message>
     <message>
         <source>Compare startup with and without Baseline Profile</source>
-        <translation type="unfinished"></translation>
+        <translation>Palyginti paleidimą su Baseline Profile ir be jo</translation>
     </message>
     <message>
         <source>Compare performance reports</source>
-        <translation type="unfinished"></translation>
+        <translation>Palyginti našumo ataskaitas</translation>
     </message>
     <message>
         <source>Measure app startup</source>
-        <translation type="unfinished"></translation>
+        <translation>Matuoti programos paleidimą</translation>
     </message>
     <message>
         <source>Measure frame rendering</source>
-        <translation type="unfinished"></translation>
+        <translation>Matuoti kadrų atvaizdavimą</translation>
     </message>
     <message>
         <source>Measure app memory</source>
-        <translation type="unfinished"></translation>
+        <translation>Matuoti programos atmintį</translation>
     </message>
     <message>
         <source>Measure CPU and battery use</source>
-        <translation type="unfinished"></translation>
+        <translation>Matuoti procesoriaus ir baterijos naudojimą</translation>
     </message>
     <message>
         <source>Check toolchain</source>
-        <translation type="unfinished"></translation>
+        <translation>Patikrinti įrankių grandinę</translation>
     </message>
     <message>
         <source>What this computer can do</source>
-        <translation type="unfinished"></translation>
+        <translation>Ką gali šis kompiuteris</translation>
     </message>
     <message>
         <source>Click element</source>
-        <translation type="unfinished"></translation>
+        <translation>Spustelėti elementą</translation>
     </message>
     <message>
         <source>Commit Google Play change</source>
-        <translation type="unfinished"></translation>
+        <translation>Patvirtinti „Google Play“ pakeitimą</translation>
     </message>
     <message>
         <source>Compile / test Swift</source>
-        <translation type="unfinished"></translation>
+        <translation>Kompiliuoti / testuoti Swift</translation>
     </message>
     <message>
         <source>Configure preview</source>
-        <translation type="unfinished"></translation>
+        <translation>Konfigūruoti peržiūrą</translation>
     </message>
     <message>
         <source>Configure project</source>
-        <translation type="unfinished"></translation>
+        <translation>Konfigūruoti projektą</translation>
     </message>
     <message>
         <source>Connect Mac</source>
-        <translation type="unfinished"></translation>
+        <translation>Prijungti „Mac“</translation>
     </message>
     <message>
         <source>Connect Swift to the Android NDK</source>
-        <translation type="unfinished"></translation>
+        <translation>Sujungti Swift su Android NDK</translation>
     </message>
     <message>
         <source>Connect dev server</source>
-        <translation type="unfinished"></translation>
+        <translation>Prijungti kūrimo serverį</translation>
     </message>
     <message>
         <source>Connect native runtime</source>
-        <translation type="unfinished"></translation>
+        <translation>Prijungti vietinę vykdymo aplinką</translation>
     </message>
     <message>
         <source>Control Apple Simulator</source>
-        <translation type="unfinished"></translation>
+        <translation>Valdyti „Apple“ simuliatorių</translation>
     </message>
     <message>
         <source>Control app</source>
-        <translation type="unfinished"></translation>
+        <translation>Valdyti programą</translation>
     </message>
     <message>
         <source>Control debugger</source>
-        <translation type="unfinished"></translation>
+        <translation>Valdyti derintuvą</translation>
     </message>
     <message>
         <source>Control emulator</source>
-        <translation type="unfinished"></translation>
+        <translation>Valdyti emuliatorių</translation>
     </message>
     <message>
         <source>Control iPhone on the Mac</source>
-        <translation type="unfinished"></translation>
+        <translation>Valdyti „iPhone“ „Mac“ kompiuteryje</translation>
     </message>
     <message>
         <source>Control native iOS guest programs</source>
-        <translation type="unfinished"></translation>
+        <translation>Valdyti vietines iOS svečio programas</translation>
     </message>
     <message>
         <source>Create emulator</source>
-        <translation type="unfinished"></translation>
+        <translation>Sukurti emuliatorių</translation>
     </message>
     <message>
         <source>Create iOS archive</source>
-        <translation type="unfinished"></translation>
+        <translation>Sukurti iOS archyvą</translation>
     </message>
     <message>
         <source>Create project</source>
-        <translation type="unfinished"></translation>
+        <translation>Sukurti projektą</translation>
     </message>
     <message>
         <source>Create project folder</source>
-        <translation type="unfinished"></translation>
+        <translation>Sukurti projekto aplanką</translation>
     </message>
     <message>
         <source>Create signing key</source>
-        <translation type="unfinished"></translation>
+        <translation>Sukurti pasirašymo raktą</translation>
     </message>
     <message>
         <source>Debug sessions</source>
-        <translation type="unfinished"></translation>
+        <translation>Derinimo seansai</translation>
     </message>
     <message>
         <source>Debugger events</source>
-        <translation type="unfinished"></translation>
+        <translation>Derintuvo įvykiai</translation>
     </message>
     <message>
         <source>Debugger status</source>
-        <translation type="unfinished"></translation>
+        <translation>Derintuvo būsena</translation>
     </message>
     <message>
         <source>Desktop status</source>
-        <translation type="unfinished"></translation>
+        <translation>Darbalaukio programos būsena</translation>
     </message>
     <message>
         <source>Device catalog</source>
-        <translation type="unfinished"></translation>
+        <translation>Įrenginių katalogas</translation>
     </message>
     <message>
         <source>Device image for agents</source>
-        <translation type="unfinished"></translation>
+        <translation>Įrenginio vaizdas agentams</translation>
     </message>
     <message>
         <source>Device information</source>
-        <translation type="unfinished"></translation>
+        <translation>Įrenginio informacija</translation>
     </message>
     <message>
         <source>Device logs</source>
-        <translation type="unfinished"></translation>
+        <translation>Įrenginio žurnalai</translation>
     </message>
     <message>
         <source>Device screenshot</source>
-        <translation type="unfinished"></translation>
+        <translation>Įrenginio ekrano kopija</translation>
     </message>
     <message>
         <source>Device settings for tests</source>
-        <translation type="unfinished"></translation>
+        <translation>Įrenginio nustatymai testams</translation>
     </message>
     <message>
         <source>Discard Google Play draft</source>
-        <translation type="unfinished"></translation>
+        <translation>Atmesti „Google Play“ juodraštį</translation>
     </message>
     <message>
         <source>Disconnect runtime</source>
-        <translation type="unfinished"></translation>
+        <translation>Atjungti vykdymo aplinką</translation>
     </message>
     <message>
         <source>Display orientation and size</source>
-        <translation type="unfinished"></translation>
+        <translation>Ekrano orientacija ir dydis</translation>
     </message>
     <message>
         <source>Download Mac artifact</source>
-        <translation type="unfinished"></translation>
+        <translation>Atsisiųsti „Mac“ artefaktą</translation>
     </message>
     <message>
         <source>Evaluate expression</source>
-        <translation type="unfinished"></translation>
+        <translation>Įvertinti išraišką</translation>
     </message>
     <message>
         <source>Examine iOS kernel boot</source>
-        <translation type="unfinished"></translation>
+        <translation>Tirti iOS branduolio paleidimą</translation>
     </message>
     <message>
         <source>Export and fetch IPA</source>
-        <translation type="unfinished"></translation>
+        <translation>Eksportuoti ir gauti IPA</translation>
     </message>
     <message>
         <source>Export model</source>
-        <translation type="unfinished"></translation>
+        <translation>Eksportuoti modelį</translation>
     </message>
     <message>
         <source>Fetch result of an iOS guest job</source>
-        <translation type="unfinished"></translation>
+        <translation>Gauti iOS svečio užduoties rezultatą</translation>
     </message>
     <message>
         <source>Fill in form</source>
-        <translation type="unfinished"></translation>
+        <translation>Užpildyti formą</translation>
     </message>
     <message>
         <source>Find Android element</source>
-        <translation type="unfinished"></translation>
+        <translation>Rasti Android elementą</translation>
     </message>
     <message>
         <source>Find devices</source>
-        <translation type="unfinished"></translation>
+        <translation>Rasti įrenginius</translation>
     </message>
     <message>
         <source>Send a command to a job</source>
-        <translation type="unfinished"></translation>
+        <translation>Siųsti komandą užduočiai</translation>
     </message>
     <message>
         <source>Inspect APK or AAB</source>
-        <translation type="unfinished"></translation>
+        <translation>Tirti APK arba AAB</translation>
     </message>
     <message>
         <source>Report APK or AAB size</source>
-        <translation type="unfinished"></translation>
+        <translation>Pateikti APK arba AAB dydį</translation>
     </message>
     <message>
         <source>Emulator sensors</source>
-        <translation type="unfinished"></translation>
+        <translation>Emuliatoriaus jutikliai</translation>
     </message>
     <message>
         <source>App Links</source>
-        <translation type="unfinished"></translation>
+        <translation>App Links</translation>
     </message>
     <message>
         <source>Network capture</source>
-        <translation type="unfinished"></translation>
+        <translation>Tinklo srauto fiksavimas</translation>
     </message>
     <message>
         <source>Install iOS toolkit</source>
-        <translation type="unfinished"></translation>
+        <translation>Įdiegti iOS įrankių rinkinį</translation>
     </message>
     <message>
         <source>Notifications</source>
-        <translation type="unfinished"></translation>
+        <translation>Pranešimai</translation>
     </message>
     <message>
         <source>Prepare Flutter for iOS</source>
-        <translation type="unfinished"></translation>
+        <translation>Paruošti Flutter iOS sistemai</translation>
     </message>
     <message>
         <source>Build Flutter app for iOS</source>
-        <translation type="unfinished"></translation>
+        <translation>Kompiliuoti Flutter programą iOS sistemai</translation>
     </message>
     <message>
         <source>iPhone crash reports</source>
-        <translation type="unfinished"></translation>
+        <translation>„iPhone“ strigičių ataskaitos</translation>
     </message>
     <message>
         <source>Record iPhone screen</source>
-        <translation type="unfinished"></translation>
+        <translation>Įrašyti „iPhone“ ekraną</translation>
     </message>
     <message>
         <source>iPhone app files</source>
-        <translation type="unfinished"></translation>
+        <translation>„iPhone“ programų failai</translation>
     </message>
     <message>
         <source>iPhone readiness</source>
-        <translation type="unfinished"></translation>
+        <translation>„iPhone“ parengtis</translation>
     </message>
     <message>
         <source>iPhone signing overview</source>
-        <translation type="unfinished"></translation>
+        <translation>„iPhone“ pasirašymo apžvalga</translation>
     </message>
     <message>
         <source>Read crash report</source>
-        <translation type="unfinished"></translation>
+        <translation>Skaityti strigties ataskaitą</translation>
     </message>
     <message>
         <source>Inspect iOS app</source>
-        <translation type="unfinished"></translation>
+        <translation>Tirti iOS programą</translation>
     </message>
     <message>
         <source>Prepare for App Store</source>
-        <translation type="unfinished"></translation>
+        <translation>Paruošti „App Store“</translation>
     </message>
     <message>
         <source>Import Xcode project</source>
-        <translation type="unfinished"></translation>
+        <translation>Importuoti Xcode projektą</translation>
     </message>
     <message>
         <source>Find built iOS app</source>
-        <translation type="unfinished"></translation>
+        <translation>Rasti sukompiliuotą iOS programą</translation>
     </message>
     <message>
         <source>Import Apple SDK</source>
-        <translation type="unfinished"></translation>
+        <translation>Importuoti „Apple“ SDK</translation>
     </message>
     <message>
         <source>Import models</source>
-        <translation type="unfinished"></translation>
+        <translation>Importuoti modelius</translation>
     </message>
     <message>
         <source>Import original iOS system</source>
-        <translation type="unfinished"></translation>
+        <translation>Importuoti originalią iOS sistemą</translation>
     </message>
     <message>
         <source>Inspect DOM</source>
-        <translation type="unfinished"></translation>
+        <translation>Tirti DOM</translation>
     </message>
     <message>
         <source>Install SDK packages</source>
-        <translation type="unfinished"></translation>
+        <translation>Įdiegti SDK paketus</translation>
     </message>
     <message>
         <source>Install Swift SDK</source>
-        <translation type="unfinished"></translation>
+        <translation>Įdiegti Swift SDK</translation>
     </message>
     <message>
         <source>Install app</source>
-        <translation type="unfinished"></translation>
+        <translation>Įdiegti programą</translation>
     </message>
     <message>
         <source>Install iOS cryptex files</source>
-        <translation type="unfinished"></translation>
+        <translation>Įdiegti iOS cryptex failus</translation>
     </message>
     <message>
         <source>Install native iOS guest tools</source>
-        <translation type="unfinished"></translation>
+        <translation>Įdiegti vietinius iOS svečio įrankius</translation>
     </message>
     <message>
         <source>Instruments recording</source>
-        <translation type="unfinished"></translation>
+        <translation>Instruments įrašas</translation>
     </message>
     <message>
         <source>Job status</source>
-        <translation type="unfinished"></translation>
+        <translation>Užduoties būsena</translation>
     </message>
     <message>
         <source>Jobs</source>
-        <translation type="unfinished"></translation>
+        <translation>Užduotys</translation>
     </message>
     <message>
         <source>Live logs</source>
-        <translation type="unfinished"></translation>
+        <translation>Tiesioginiai žurnalai</translation>
     </message>
     <message>
         <source>Load agent context</source>
-        <translation type="unfinished"></translation>
+        <translation>Įkelti agento kontekstą</translation>
     </message>
     <message>
         <source>Mac workspaces</source>
-        <translation type="unfinished"></translation>
+        <translation>„Mac“ darbo sritys</translation>
     </message>
     <message>
         <source>Native accessibility tree</source>
-        <translation type="unfinished"></translation>
+        <translation>Vietinis pritaikymo neįgaliesiems medis</translation>
     </message>
     <message>
         <source>Native capture</source>
-        <translation type="unfinished"></translation>
+        <translation>Vietinis fiksavimas</translation>
     </message>
     <message>
         <source>Native input</source>
-        <translation type="unfinished"></translation>
+        <translation>Vietinė įvestis</translation>
     </message>
     <message>
         <source>Native sessions</source>
-        <translation type="unfinished"></translation>
+        <translation>Vietiniai seansai</translation>
     </message>
     <message>
         <source>Open Tomacco</source>

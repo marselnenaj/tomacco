@@ -3694,812 +3694,812 @@ SSH kasutab sinu olemasolevaid võtmeid ja teadaolevat hosti identiteeti.</trans
     </message>
     <message>
         <source>Completed after %1</source>
-        <translation type="unfinished"></translation>
+        <translation>Lõpetatud %1 järel</translation>
     </message>
     <message>
         <source>Failed after %1</source>
-        <translation type="unfinished"></translation>
+        <translation>Ebaõnnestus %1 järel</translation>
     </message>
     <message>
         <source>Timed out after %1</source>
-        <translation type="unfinished"></translation>
+        <translation>Aegus %1 järel</translation>
     </message>
     <message>
         <source>Notifications</source>
-        <translation type="unfinished"></translation>
+        <translation>Teavitused</translation>
     </message>
     <message>
         <source>When a job ends in the background</source>
-        <translation type="unfinished"></translation>
+        <translation>Kui töö taustal lõppeb</translation>
     </message>
     <message>
         <source>Touches and coordinates</source>
-        <translation type="unfinished"></translation>
+        <translation>Puudutused ja koordinaadid</translation>
     </message>
     <message>
         <source>Hide touches and pointer coordinates</source>
-        <translation type="unfinished"></translation>
+        <translation>Peida puudutused ja kursori koordinaadid</translation>
     </message>
     <message>
         <source>Show touches and pointer coordinates, for writing UI tests</source>
-        <translation type="unfinished"></translation>
+        <translation>Näita puudutusi ja kursori koordinaate kasutajaliidese testide kirjutamiseks</translation>
     </message>
     <message>
         <source>Show touches and pointer coordinates</source>
-        <translation type="unfinished"></translation>
+        <translation>Näita puudutusi ja kursori koordinaate</translation>
     </message>
     <message>
         <source>Another computer</source>
-        <translation type="unfinished"></translation>
+        <translation>Teine arvuti</translation>
     </message>
     <message>
         <source>Appearance, language, notifications, updates and the device view&apos;s choices, as a JSON file. Paths, window sizes and history stay on this computer.</source>
-        <translation type="unfinished"></translation>
+        <translation>Välimus, keel, teavitused, uuendused ja seadmevaate valikud JSON-failina. Teed, akende suurused ja ajalugu jäävad sellesse arvutisse.</translation>
     </message>
     <message>
         <source>Export settings…</source>
-        <translation type="unfinished"></translation>
+        <translation>Ekspordi seaded…</translation>
     </message>
     <message>
         <source>Import settings…</source>
-        <translation type="unfinished"></translation>
+        <translation>Impordi seaded…</translation>
     </message>
     <message>
         <source>Export settings</source>
-        <translation type="unfinished"></translation>
+        <translation>Ekspordi seaded</translation>
     </message>
     <message>
         <source>Import settings</source>
-        <translation type="unfinished"></translation>
+        <translation>Impordi seaded</translation>
     </message>
     <message>
         <source>Tomacco settings (*.json)</source>
-        <translation type="unfinished"></translation>
+        <translation>Tomacco seaded (*.json)</translation>
     </message>
     <message>
         <source>Settings saved to %1</source>
-        <translation type="unfinished"></translation>
+        <translation>Seaded salvestatud asukohta %1</translation>
     </message>
     <message numerus="yes">
         <source>%n setting(s) imported</source>
-        <translation type="unfinished">
-            <numerusform></numerusform>
-            <numerusform></numerusform>
+        <translation>
+            <numerusform>%n seade imporditud</numerusform>
+            <numerusform>%n seadet imporditud</numerusform>
         </translation>
     </message>
     <message numerus="yes">
         <source>%n ignored</source>
-        <translation type="unfinished">
-            <numerusform></numerusform>
-            <numerusform></numerusform>
+        <translation>
+            <numerusform>%n eiratud</numerusform>
+            <numerusform>%n eiratud</numerusform>
         </translation>
     </message>
     <message>
         <source>Tomacco %1 is available</source>
-        <translation type="unfinished"></translation>
+        <translation>Tomacco %1 on saadaval</translation>
     </message>
     <message>
         <source>Open Tomacco to see what&apos;s new and install it.</source>
-        <translation type="unfinished"></translation>
+        <translation>Ava Tomacco, et näha uuendusi ja see paigaldada.</translation>
     </message>
     <message>
         <source>Tomacco could not be started again. Close it and open it from the application menu.</source>
-        <translation type="unfinished"></translation>
+        <translation>Tomaccot ei õnnestunud uuesti käivitada. Sulge see ja ava rakenduste menüüst.</translation>
     </message>
     <message>
         <source>What&apos;s new in %1</source>
-        <translation type="unfinished"></translation>
+        <translation>Mis on uut versioonis %1</translation>
     </message>
     <message>
         <source>Tomacco is now version %1. The release notes list what changed.</source>
-        <translation type="unfinished"></translation>
+        <translation>Tomacco on nüüd versioonis %1. Väljalaskemärkmetes on muudatuste loend.</translation>
     </message>
     <message>
         <source>On GitHub ↗</source>
-        <translation type="unfinished"></translation>
+        <translation>GitHubis ↗</translation>
     </message>
     <message>
         <source>Get started</source>
-        <translation type="unfinished"></translation>
+        <translation>Alusta</translation>
     </message>
     <message>
         <source>Connect your coding agent</source>
-        <translation type="unfinished"></translation>
+        <translation>Ühenda oma koodiagent</translation>
     </message>
     <message>
         <source>Connect an Android device to record its screen.</source>
-        <translation type="unfinished"></translation>
+        <translation>Ekraani salvestamiseks ühenda Android-seade.</translation>
     </message>
     <message>
         <source>Stop recording</source>
-        <translation type="unfinished"></translation>
+        <translation>Peata salvestamine</translation>
     </message>
     <message>
         <source>Record the screen</source>
-        <translation type="unfinished"></translation>
+        <translation>Salvesta ekraan</translation>
     </message>
     <message>
         <source>Stop and save the recording · %1 s</source>
-        <translation type="unfinished"></translation>
+        <translation>Peata ja salvesta salvestis · %1 s</translation>
     </message>
     <message>
         <source>Record the screen to a video, at most 3 minutes</source>
-        <translation type="unfinished"></translation>
+        <translation>Salvesta ekraan videona, kuni 3 minutit</translation>
     </message>
     <message>
         <source>Hide the log beside the device</source>
-        <translation type="unfinished"></translation>
+        <translation>Peida logi seadme kõrval</translation>
     </message>
     <message>
         <source>Show the log beside the device</source>
-        <translation type="unfinished"></translation>
+        <translation>Näita logi seadme kõrval</translation>
     </message>
     <message>
         <source>Split view</source>
-        <translation type="unfinished"></translation>
+        <translation>Jagatud vaade</translation>
     </message>
     <message>
         <source>Log beside the device</source>
-        <translation type="unfinished"></translation>
+        <translation>Logi seadme kõrval</translation>
     </message>
     <message>
         <source>Show the device&apos;s or a job&apos;s log beside the device</source>
-        <translation type="unfinished"></translation>
+        <translation>Näita seadme või töö logi seadme kõrval</translation>
     </message>
     <message>
         <source>Agent activity</source>
-        <translation type="unfinished"></translation>
+        <translation>Agendi tegevus</translation>
     </message>
     <message>
         <source>Session log, e.g. %1</source>
-        <translation type="unfinished"></translation>
+        <translation>Seansi logi, nt %1</translation>
     </message>
     <message>
         <source>Set TOMACCO_SESSION_LOG to this file in your agent&apos;s MCP settings, and the activity panel lists every operation it calls, with its duration and result.</source>
-        <translation type="unfinished"></translation>
+        <translation>Määra oma agendi MCP seadetes TOMACCO_SESSION_LOG sellele failile ja tegevuspaneel loetleb iga selle kutsutud toimingu koos kestuse ja tulemusega.</translation>
     </message>
     <message>
         <source>Try again</source>
-        <translation type="unfinished"></translation>
+        <translation>Proovi uuesti</translation>
     </message>
     <message>
         <source>What to do: %1</source>
-        <translation type="unfinished"></translation>
+        <translation>Mida teha: %1</translation>
     </message>
     <message>
         <source>Open the update settings to install it.</source>
-        <translation type="unfinished"></translation>
+        <translation>Paigaldamiseks ava uuendusseaded.</translation>
     </message>
     <message>
         <source>Version %1 is installed. Restart to use it.</source>
-        <translation type="unfinished"></translation>
+        <translation>Versioon %1 on paigaldatud. Kasutamiseks taaskäivita.</translation>
     </message>
     <message>
         <source>Updates</source>
-        <translation type="unfinished"></translation>
+        <translation>Uuendused</translation>
     </message>
     <message>
         <source>Cancelled after %1</source>
-        <translation type="unfinished"></translation>
+        <translation>Tühistatud %1 järel</translation>
     </message>
     <message>
         <source>Save the current layout</source>
-        <translation type="unfinished"></translation>
+        <translation>Salvesta praegune paigutus</translation>
     </message>
     <message>
         <source>Window layouts</source>
-        <translation type="unfinished"></translation>
+        <translation>Aknapaigutused</translation>
     </message>
     <message>
         <source>Use window layout %1</source>
-        <translation type="unfinished"></translation>
+        <translation>Kasuta aknapaigutust %1</translation>
     </message>
     <message>
         <source>At most %1 window layouts are kept. Delete one first.</source>
-        <translation type="unfinished"></translation>
+        <translation>Alles hoitakse kuni %1 aknapaigutust. Kustuta kõigepealt üks.</translation>
     </message>
     <message>
         <source>Window layout “%1” saved</source>
-        <translation type="unfinished"></translation>
+        <translation>Aknapaigutus „%1“ salvestatud</translation>
     </message>
     <message>
         <source>Window layout “%1”</source>
-        <translation type="unfinished"></translation>
+        <translation>Aknapaigutus „%1“</translation>
     </message>
     <message>
         <source>Search settings</source>
-        <translation type="unfinished"></translation>
+        <translation>Otsi seadetest</translation>
     </message>
     <message>
         <source>No setting matches “%1”.</source>
-        <translation type="unfinished"></translation>
+        <translation>Ükski seade ei vasta otsingule „%1“.</translation>
     </message>
     <message>
         <source>Use the Omarchy theme&apos;s accent</source>
-        <translation type="unfinished"></translation>
+        <translation>Kasuta Omarchy teema rõhuvärvi</translation>
     </message>
     <message>
         <source>Theme</source>
-        <translation type="unfinished"></translation>
+        <translation>Teema</translation>
     </message>
     <message>
         <source>The accent of %1 does not read clearly on this background, so Tomacco keeps its own.</source>
-        <translation type="unfinished"></translation>
+        <translation>Teema %1 rõhuvärv pole sellel taustal selgelt loetav, seega jääb Tomacco oma värvi juurde.</translation>
     </message>
     <message>
         <source>Accent from the Omarchy theme %1.</source>
-        <translation type="unfinished"></translation>
+        <translation>Rõhuvärv Omarchy teemast %1.</translation>
     </message>
     <message>
         <source>A layout keeps the open view, the activity panel, the log beside the device and its width, the device windows and the window&apos;s size.</source>
-        <translation type="unfinished"></translation>
+        <translation>Paigutus jätab meelde avatud vaate, tegevuspaneeli, seadme kõrval oleva logi ja selle laiuse, seadmeaknad ning akna suuruse.</translation>
     </message>
     <message>
         <source>Use</source>
-        <translation type="unfinished"></translation>
+        <translation>Kasuta</translation>
     </message>
     <message>
         <source>Delete</source>
-        <translation type="unfinished"></translation>
+        <translation>Kustuta</translation>
     </message>
     <message>
         <source>Delete window layout %1</source>
-        <translation type="unfinished"></translation>
+        <translation>Kustuta aknapaigutus %1</translation>
     </message>
     <message>
         <source>Name, e.g. testing or debugging</source>
-        <translation type="unfinished"></translation>
+        <translation>Nimi, nt testimine või silumine</translation>
     </message>
     <message>
         <source>Restarting AirPlay. Then choose Tomacco again in the iPhone&apos;s Screen Mirroring.</source>
-        <translation type="unfinished"></translation>
+        <translation>AirPlay taaskäivitub. Seejärel vali iPhone&apos;i ekraani peegeldamises uuesti Tomacco.</translation>
     </message>
     <message>
         <source>iPhone over Wi-Fi</source>
-        <translation type="unfinished"></translation>
+        <translation>iPhone WiFi kaudu</translation>
     </message>
     <message>
         <source>Waiting for a new iPhone picture</source>
-        <translation type="unfinished"></translation>
+        <translation>Uue iPhone&apos;i pildi ootamine</translation>
     </message>
     <message>
         <source>Ready for your iPhone</source>
-        <translation type="unfinished"></translation>
+        <translation>Valmis sinu iPhone&apos;i jaoks</translation>
     </message>
     <message>
         <source>Connect your iPhone over Wi-Fi</source>
-        <translation type="unfinished"></translation>
+        <translation>Ühenda oma iPhone WiFi kaudu</translation>
     </message>
     <message>
         <source>If no picture appears, stop Screen Mirroring on the iPhone and select Tomacco again. Restart AirPlay below if the receiver stopped responding.</source>
-        <translation type="unfinished"></translation>
+        <translation>Kui pilti ei ilmu, peata iPhone&apos;is ekraani peegeldamine ja vali uuesti Tomacco. Kui vastuvõtja lakkas vastamast, taaskäivita allpool AirPlay.</translation>
     </message>
     <message>
         <source>Open Control Center on the iPhone, choose Screen Mirroring, then Tomacco. Both devices must be on the same network.</source>
-        <translation type="unfinished"></translation>
+        <translation>Ava iPhone&apos;is juhtimiskeskus, vali Ekraani peegeldamine ja seejärel Tomacco. Mõlemad seadmed peavad olema samas võrgus.</translation>
     </message>
     <message>
         <source>Restart AirPlay</source>
-        <translation type="unfinished"></translation>
+        <translation>Taaskäivita AirPlay</translation>
     </message>
     <message>
         <source>Start AirPlay</source>
-        <translation type="unfinished"></translation>
+        <translation>Käivita AirPlay</translation>
     </message>
     <message>
         <source>An agent is waiting for you: %1</source>
-        <translation type="unfinished"></translation>
+        <translation>Agent ootab sind: %1</translation>
     </message>
     <message>
         <source>In use elsewhere</source>
-        <translation type="unfinished"></translation>
+        <translation>Mujal kasutusel</translation>
     </message>
     <message>
         <source>Reconnecting</source>
-        <translation type="unfinished"></translation>
+        <translation>Taasühendamine</translation>
     </message>
     <message>
         <source>Screenshot saved</source>
-        <translation type="unfinished"></translation>
+        <translation>Ekraanipilt salvestatud</translation>
     </message>
     <message>
         <source>Show file</source>
-        <translation type="unfinished"></translation>
+        <translation>Näita faili</translation>
     </message>
     <message>
         <source>Your turn</source>
-        <translation type="unfinished"></translation>
+        <translation>Sinu kord</translation>
     </message>
     <message>
         <source>Claude Code Codex Gemini Cursor VS Code Zed OpenCode Grok Hermes omp MCP</source>
-        <translation type="unfinished"></translation>
+        <translation>Claude Code Codex Gemini Cursor VS Code Zed OpenCode Grok Hermes omp MCP</translation>
     </message>
 </context>
 <context>
     <name>Operations</name>
     <message>
         <source>Check for updates</source>
-        <translation type="unfinished"></translation>
+        <translation>Kontrolli uuendusi</translation>
     </message>
     <message>
         <source>Install update</source>
-        <translation type="unfinished"></translation>
+        <translation>Paigalda uuendus</translation>
     </message>
     <message>
         <source>Update status</source>
-        <translation type="unfinished"></translation>
+        <translation>Uuenduse olek</translation>
     </message>
     <message>
         <source>Roll back update</source>
-        <translation type="unfinished"></translation>
+        <translation>Võta uuendus tagasi</translation>
     </message>
     <message>
         <source>Analyze performance profile</source>
-        <translation type="unfinished"></translation>
+        <translation>Analüüsi jõudlusprofiili</translation>
     </message>
     <message>
         <source>Android emulators</source>
-        <translation type="unfinished"></translation>
+        <translation>Androidi emulaatorid</translation>
     </message>
     <message>
         <source>Android over Wi-Fi</source>
-        <translation type="unfinished"></translation>
+        <translation>Android WiFi kaudu</translation>
     </message>
     <message>
         <source>App data files</source>
-        <translation type="unfinished"></translation>
+        <translation>Rakenduse andmefailid</translation>
     </message>
     <message>
         <source>App permission</source>
-        <translation type="unfinished"></translation>
+        <translation>Rakenduse luba</translation>
     </message>
     <message>
         <source>Apple devices on the Mac</source>
-        <translation type="unfinished"></translation>
+        <translation>Apple&apos;i seadmed Macis</translation>
     </message>
     <message>
         <source>Browser console</source>
-        <translation type="unfinished"></translation>
+        <translation>Brauseri konsool</translation>
     </message>
     <message>
         <source>Page errors</source>
-        <translation type="unfinished"></translation>
+        <translation>Lehe vead</translation>
     </message>
     <message>
         <source>Build &amp; run on device</source>
-        <translation type="unfinished"></translation>
+        <translation>Ehita ja käivita seadmes</translation>
     </message>
     <message>
         <source>Watch and rerun app</source>
-        <translation type="unfinished"></translation>
+        <translation>Jälgi ja käivita rakendus uuesti</translation>
     </message>
     <message>
         <source>Build iOS graphics compiler plugin</source>
-        <translation type="unfinished"></translation>
+        <translation>Ehita iOS-i graafikakompilaatori pistikprogramm</translation>
     </message>
     <message>
         <source>Build native iOS app</source>
-        <translation type="unfinished"></translation>
+        <translation>Ehita iOS-i omarakendus</translation>
     </message>
     <message>
         <source>Build native iOS guest tools</source>
-        <translation type="unfinished"></translation>
+        <translation>Ehita iOS-i külalistööriistad</translation>
     </message>
     <message>
         <source>Cancel job</source>
-        <translation type="unfinished"></translation>
+        <translation>Tühista töö</translation>
     </message>
     <message>
         <source>Capture Android profile</source>
-        <translation type="unfinished"></translation>
+        <translation>Jäädvusta Androidi profiil</translation>
     </message>
     <message>
         <source>Capture device matrix</source>
-        <translation type="unfinished"></translation>
+        <translation>Jäädvusta seadmemaatriks</translation>
     </message>
     <message>
         <source>Capture preview</source>
-        <translation type="unfinished"></translation>
+        <translation>Jäädvusta eelvaade</translation>
     </message>
     <message>
         <source>Check Mac</source>
-        <translation type="unfinished"></translation>
+        <translation>Kontrolli Maci</translation>
     </message>
     <message>
         <source>Check PMP execution</source>
-        <translation type="unfinished"></translation>
+        <translation>Kontrolli PMP täitmist</translation>
     </message>
     <message>
         <source>Check iOS emulator</source>
-        <translation type="unfinished"></translation>
+        <translation>Kontrolli iOS-emulaatorit</translation>
     </message>
     <message>
         <source>Check iPhone development on Linux</source>
-        <translation type="unfinished"></translation>
+        <translation>Kontrolli iPhone&apos;i arendust Linuxis</translation>
     </message>
     <message>
         <source>Check layout</source>
-        <translation type="unfinished"></translation>
+        <translation>Kontrolli paigutust</translation>
     </message>
     <message>
         <source>Check performance budget</source>
-        <translation type="unfinished"></translation>
+        <translation>Kontrolli jõudluseelarvet</translation>
     </message>
     <message>
         <source>Run Macrobenchmark</source>
-        <translation type="unfinished"></translation>
+        <translation>Käivita Macrobenchmark</translation>
     </message>
     <message>
         <source>Read Macrobenchmark results</source>
-        <translation type="unfinished"></translation>
+        <translation>Loe Macrobenchmarki tulemusi</translation>
     </message>
     <message>
         <source>Generate Baseline Profile</source>
-        <translation type="unfinished"></translation>
+        <translation>Genereeri Baseline Profile</translation>
     </message>
     <message>
         <source>Read Baseline Profile rules</source>
-        <translation type="unfinished"></translation>
+        <translation>Loe Baseline Profile&apos;i reegleid</translation>
     </message>
     <message>
         <source>Install Baseline Profile</source>
-        <translation type="unfinished"></translation>
+        <translation>Paigalda Baseline Profile</translation>
     </message>
     <message>
         <source>Compare startup with and without Baseline Profile</source>
-        <translation type="unfinished"></translation>
+        <translation>Võrdle käivitust Baseline Profile&apos;iga ja ilma</translation>
     </message>
     <message>
         <source>Compare performance reports</source>
-        <translation type="unfinished"></translation>
+        <translation>Võrdle jõudlusaruandeid</translation>
     </message>
     <message>
         <source>Measure app startup</source>
-        <translation type="unfinished"></translation>
+        <translation>Mõõda rakenduse käivitust</translation>
     </message>
     <message>
         <source>Measure frame rendering</source>
-        <translation type="unfinished"></translation>
+        <translation>Mõõda kaadrite renderdamist</translation>
     </message>
     <message>
         <source>Measure app memory</source>
-        <translation type="unfinished"></translation>
+        <translation>Mõõda rakenduse mälu</translation>
     </message>
     <message>
         <source>Measure CPU and battery use</source>
-        <translation type="unfinished"></translation>
+        <translation>Mõõda protsessori ja aku kasutust</translation>
     </message>
     <message>
         <source>Check toolchain</source>
-        <translation type="unfinished"></translation>
+        <translation>Kontrolli tööriistaketti</translation>
     </message>
     <message>
         <source>What this computer can do</source>
-        <translation type="unfinished"></translation>
+        <translation>Mida see arvuti suudab</translation>
     </message>
     <message>
         <source>Click element</source>
-        <translation type="unfinished"></translation>
+        <translation>Klõpsa elementi</translation>
     </message>
     <message>
         <source>Commit Google Play change</source>
-        <translation type="unfinished"></translation>
+        <translation>Kinnita Google Play muudatus</translation>
     </message>
     <message>
         <source>Compile / test Swift</source>
-        <translation type="unfinished"></translation>
+        <translation>Kompileeri / testi Swifti</translation>
     </message>
     <message>
         <source>Configure preview</source>
-        <translation type="unfinished"></translation>
+        <translation>Seadista eelvaade</translation>
     </message>
     <message>
         <source>Configure project</source>
-        <translation type="unfinished"></translation>
+        <translation>Seadista projekt</translation>
     </message>
     <message>
         <source>Connect Mac</source>
-        <translation type="unfinished"></translation>
+        <translation>Ühenda Mac</translation>
     </message>
     <message>
         <source>Connect Swift to the Android NDK</source>
-        <translation type="unfinished"></translation>
+        <translation>Ühenda Swift Android NDK-ga</translation>
     </message>
     <message>
         <source>Connect dev server</source>
-        <translation type="unfinished"></translation>
+        <translation>Ühenda arendusserver</translation>
     </message>
     <message>
         <source>Connect native runtime</source>
-        <translation type="unfinished"></translation>
+        <translation>Ühenda omakäituskeskkond</translation>
     </message>
     <message>
         <source>Control Apple Simulator</source>
-        <translation type="unfinished"></translation>
+        <translation>Juhi Apple&apos;i simulaatorit</translation>
     </message>
     <message>
         <source>Control app</source>
-        <translation type="unfinished"></translation>
+        <translation>Juhi rakendust</translation>
     </message>
     <message>
         <source>Control debugger</source>
-        <translation type="unfinished"></translation>
+        <translation>Juhi silujat</translation>
     </message>
     <message>
         <source>Control emulator</source>
-        <translation type="unfinished"></translation>
+        <translation>Juhi emulaatorit</translation>
     </message>
     <message>
         <source>Control iPhone on the Mac</source>
-        <translation type="unfinished"></translation>
+        <translation>Juhi iPhone&apos;i Macis</translation>
     </message>
     <message>
         <source>Control native iOS guest programs</source>
-        <translation type="unfinished"></translation>
+        <translation>Juhi iOS-i omakülalisprogramme</translation>
     </message>
     <message>
         <source>Create emulator</source>
-        <translation type="unfinished"></translation>
+        <translation>Loo emulaator</translation>
     </message>
     <message>
         <source>Create iOS archive</source>
-        <translation type="unfinished"></translation>
+        <translation>Loo iOS-i arhiiv</translation>
     </message>
     <message>
         <source>Create project</source>
-        <translation type="unfinished"></translation>
+        <translation>Loo projekt</translation>
     </message>
     <message>
         <source>Create project folder</source>
-        <translation type="unfinished"></translation>
+        <translation>Loo projektikaust</translation>
     </message>
     <message>
         <source>Create signing key</source>
-        <translation type="unfinished"></translation>
+        <translation>Loo allkirjastamisvõti</translation>
     </message>
     <message>
         <source>Debug sessions</source>
-        <translation type="unfinished"></translation>
+        <translation>Silumisseansid</translation>
     </message>
     <message>
         <source>Debugger events</source>
-        <translation type="unfinished"></translation>
+        <translation>Siluja sündmused</translation>
     </message>
     <message>
         <source>Debugger status</source>
-        <translation type="unfinished"></translation>
+        <translation>Siluja olek</translation>
     </message>
     <message>
         <source>Desktop status</source>
-        <translation type="unfinished"></translation>
+        <translation>Töölauarakenduse olek</translation>
     </message>
     <message>
         <source>Device catalog</source>
-        <translation type="unfinished"></translation>
+        <translation>Seadmekataloog</translation>
     </message>
     <message>
         <source>Device image for agents</source>
-        <translation type="unfinished"></translation>
+        <translation>Seadme pilt agentidele</translation>
     </message>
     <message>
         <source>Device information</source>
-        <translation type="unfinished"></translation>
+        <translation>Seadme teave</translation>
     </message>
     <message>
         <source>Device logs</source>
-        <translation type="unfinished"></translation>
+        <translation>Seadme logid</translation>
     </message>
     <message>
         <source>Device screenshot</source>
-        <translation type="unfinished"></translation>
+        <translation>Seadme ekraanipilt</translation>
     </message>
     <message>
         <source>Device settings for tests</source>
-        <translation type="unfinished"></translation>
+        <translation>Seadme seaded testide jaoks</translation>
     </message>
     <message>
         <source>Discard Google Play draft</source>
-        <translation type="unfinished"></translation>
+        <translation>Loobu Google Play mustandist</translation>
     </message>
     <message>
         <source>Disconnect runtime</source>
-        <translation type="unfinished"></translation>
+        <translation>Katkesta käituskeskkond</translation>
     </message>
     <message>
         <source>Display orientation and size</source>
-        <translation type="unfinished"></translation>
+        <translation>Ekraani suund ja suurus</translation>
     </message>
     <message>
         <source>Download Mac artifact</source>
-        <translation type="unfinished"></translation>
+        <translation>Laadi Maci artefakt alla</translation>
     </message>
     <message>
         <source>Evaluate expression</source>
-        <translation type="unfinished"></translation>
+        <translation>Väärtusta avaldis</translation>
     </message>
     <message>
         <source>Examine iOS kernel boot</source>
-        <translation type="unfinished"></translation>
+        <translation>Uuri iOS-i tuuma alglaadimist</translation>
     </message>
     <message>
         <source>Export and fetch IPA</source>
-        <translation type="unfinished"></translation>
+        <translation>Ekspordi ja hangi IPA</translation>
     </message>
     <message>
         <source>Export model</source>
-        <translation type="unfinished"></translation>
+        <translation>Ekspordi mudel</translation>
     </message>
     <message>
         <source>Fetch result of an iOS guest job</source>
-        <translation type="unfinished"></translation>
+        <translation>Hangi iOS-i külalistöö tulemus</translation>
     </message>
     <message>
         <source>Fill in form</source>
-        <translation type="unfinished"></translation>
+        <translation>Täida vorm</translation>
     </message>
     <message>
         <source>Find Android element</source>
-        <translation type="unfinished"></translation>
+        <translation>Leia Androidi element</translation>
     </message>
     <message>
         <source>Find devices</source>
-        <translation type="unfinished"></translation>
+        <translation>Leia seadmeid</translation>
     </message>
     <message>
         <source>Send a command to a job</source>
-        <translation type="unfinished"></translation>
+        <translation>Saada tööle käsk</translation>
     </message>
     <message>
         <source>Inspect APK or AAB</source>
-        <translation type="unfinished"></translation>
+        <translation>Uuri APK-d või AAB-d</translation>
     </message>
     <message>
         <source>Report APK or AAB size</source>
-        <translation type="unfinished"></translation>
+        <translation>Teata APK või AAB suurus</translation>
     </message>
     <message>
         <source>Emulator sensors</source>
-        <translation type="unfinished"></translation>
+        <translation>Emulaatori andurid</translation>
     </message>
     <message>
         <source>App Links</source>
-        <translation type="unfinished"></translation>
+        <translation>App Links</translation>
     </message>
     <message>
         <source>Network capture</source>
-        <translation type="unfinished"></translation>
+        <translation>Võrguliikluse salvestus</translation>
     </message>
     <message>
         <source>Install iOS toolkit</source>
-        <translation type="unfinished"></translation>
+        <translation>Paigalda iOS-i tööriistakomplekt</translation>
     </message>
     <message>
         <source>Notifications</source>
-        <translation type="unfinished"></translation>
+        <translation>Teavitused</translation>
     </message>
     <message>
         <source>Prepare Flutter for iOS</source>
-        <translation type="unfinished"></translation>
+        <translation>Valmista Flutter iOS-i jaoks ette</translation>
     </message>
     <message>
         <source>Build Flutter app for iOS</source>
-        <translation type="unfinished"></translation>
+        <translation>Ehita Flutteri rakendus iOS-i jaoks</translation>
     </message>
     <message>
         <source>iPhone crash reports</source>
-        <translation type="unfinished"></translation>
+        <translation>iPhone&apos;i krahhiaruanded</translation>
     </message>
     <message>
         <source>Record iPhone screen</source>
-        <translation type="unfinished"></translation>
+        <translation>Salvesta iPhone&apos;i ekraan</translation>
     </message>
     <message>
         <source>iPhone app files</source>
-        <translation type="unfinished"></translation>
+        <translation>iPhone&apos;i rakenduste failid</translation>
     </message>
     <message>
         <source>iPhone readiness</source>
-        <translation type="unfinished"></translation>
+        <translation>iPhone&apos;i valmisolek</translation>
     </message>
     <message>
         <source>iPhone signing overview</source>
-        <translation type="unfinished"></translation>
+        <translation>iPhone&apos;i allkirjastamise ülevaade</translation>
     </message>
     <message>
         <source>Read crash report</source>
-        <translation type="unfinished"></translation>
+        <translation>Loe krahhiaruannet</translation>
     </message>
     <message>
         <source>Inspect iOS app</source>
-        <translation type="unfinished"></translation>
+        <translation>Uuri iOS-i rakendust</translation>
     </message>
     <message>
         <source>Prepare for App Store</source>
-        <translation type="unfinished"></translation>
+        <translation>Valmista ette App Store&apos;i jaoks</translation>
     </message>
     <message>
         <source>Import Xcode project</source>
-        <translation type="unfinished"></translation>
+        <translation>Impordi Xcode&apos;i projekt</translation>
     </message>
     <message>
         <source>Find built iOS app</source>
-        <translation type="unfinished"></translation>
+        <translation>Leia ehitatud iOS-i rakendus</translation>
     </message>
     <message>
         <source>Import Apple SDK</source>
-        <translation type="unfinished"></translation>
+        <translation>Impordi Apple&apos;i SDK</translation>
     </message>
     <message>
         <source>Import models</source>
-        <translation type="unfinished"></translation>
+        <translation>Impordi mudeleid</translation>
     </message>
     <message>
         <source>Import original iOS system</source>
-        <translation type="unfinished"></translation>
+        <translation>Impordi algne iOS-i süsteem</translation>
     </message>
     <message>
         <source>Inspect DOM</source>
-        <translation type="unfinished"></translation>
+        <translation>Uuri DOM-i</translation>
     </message>
     <message>
         <source>Install SDK packages</source>
-        <translation type="unfinished"></translation>
+        <translation>Paigalda SDK pakette</translation>
     </message>
     <message>
         <source>Install Swift SDK</source>
-        <translation type="unfinished"></translation>
+        <translation>Paigalda Swift SDK</translation>
     </message>
     <message>
         <source>Install app</source>
-        <translation type="unfinished"></translation>
+        <translation>Paigalda rakendus</translation>
     </message>
     <message>
         <source>Install iOS cryptex files</source>
-        <translation type="unfinished"></translation>
+        <translation>Paigalda iOS-i cryptex-failid</translation>
     </message>
     <message>
         <source>Install native iOS guest tools</source>
-        <translation type="unfinished"></translation>
+        <translation>Paigalda iOS-i omakülalistööriistad</translation>
     </message>
     <message>
         <source>Instruments recording</source>
-        <translation type="unfinished"></translation>
+        <translation>Instrumentsi salvestis</translation>
     </message>
     <message>
         <source>Job status</source>
-        <translation type="unfinished"></translation>
+        <translation>Töö olek</translation>
     </message>
     <message>
         <source>Jobs</source>
-        <translation type="unfinished"></translation>
+        <translation>Tööd</translation>
     </message>
     <message>
         <source>Live logs</source>
-        <translation type="unfinished"></translation>
+        <translation>Reaalajas logid</translation>
     </message>
     <message>
         <source>Load agent context</source>
-        <translation type="unfinished"></translation>
+        <translation>Laadi agendi kontekst</translation>
     </message>
     <message>
         <source>Mac workspaces</source>
-        <translation type="unfinished"></translation>
+        <translation>Maci tööalad</translation>
     </message>
     <message>
         <source>Native accessibility tree</source>
-        <translation type="unfinished"></translation>
+        <translation>Omaligipääsetavuse puu</translation>
     </message>
     <message>
         <source>Native capture</source>
-        <translation type="unfinished"></translation>
+        <translation>Omajäädvustus</translation>
     </message>
     <message>
         <source>Native input</source>
-        <translation type="unfinished"></translation>
+        <translation>Omasisend</translation>
     </message>
     <message>
         <source>Native sessions</source>
-        <translation type="unfinished"></translation>
+        <translation>Omaseansid</translation>
     </message>
     <message>
         <source>Open Tomacco</source>
