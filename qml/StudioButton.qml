@@ -1,5 +1,6 @@
 import QtQuick
 import QtQuick.Controls
+import QtQuick.Layouts
 import "."
 
 // The one button: outlined by default, quiet for secondary actions, accent for
@@ -24,6 +25,11 @@ Button {
     property string keyHint: ""
     property bool alignLeft: false
     property int size: Theme.fontBody
+    // A phone target: at least 48 logical px high (and wide for an icon), scaled
+    // with the interface size like every other length, and never squeezed below
+    // that by a layout. Only phone-wide layouts set it.
+    property bool touch: false
+    readonly property int touchSize: touch ? Math.max(Theme.controlHeight,Theme.mobileTouch) : Theme.controlHeight
     readonly property bool iconOnly: !!iconName && !displayText
     readonly property int iconSpace: Theme.iconSize+(marker?Theme.gapLg:Theme.gapSm)
     readonly property int hintSpace: keyHint ? hint.implicitWidth+Theme.gapMd : 0
@@ -32,8 +38,10 @@ Button {
         : danger ? Theme.danger
         : selected ? Theme.text
         : quiet && !hovered ? Theme.muted : Theme.text
-    implicitHeight: Theme.controlHeight
-    implicitWidth: iconOnly ? Theme.controlHeight : Math.max(Theme.controlHeight,label.implicitWidth+(iconName?iconSpace:0)+hintSpace+leftPadding+rightPadding)
+    implicitHeight: touchSize
+    implicitWidth: iconOnly ? touchSize : Math.max(touchSize,label.implicitWidth+(iconName?iconSpace:0)+hintSpace+leftPadding+rightPadding)
+    Layout.minimumHeight: touch ? touchSize : 0
+    Layout.minimumWidth: touch && iconOnly ? touchSize : 0
     hoverEnabled: true
     focusPolicy: Qt.StrongFocus
     leftPadding: iconOnly ? 0 : marker ? Theme.gapSm : Theme.gapMd

@@ -26,6 +26,10 @@ ColumnLayout {
     readonly property var profiles: Studio.models.filter(p=>p.platform==="android")
     readonly property var selectedProfile: profiles[modelPicker.currentIndex] || ({})
     readonly property var phones: workspace.devices.filter(d=>d.platform==="android")
+    // A phone-wide workspace: one row per emulator and phone; a tap opens its page (Workspace.phoneDevice).
+    readonly property bool phone: workspace.phone===true
+    function stateLabel(avd) {const connected=deviceFor(avd.name);return connected?(connected.state==="device"?qsTr("Connected"):connected.state):pendingBoots[avd.name]?qsTr("Starting…"):qsTr("Off")}
+    function showOnPhone(id,device) {if(device && device.state==="device"){workspace.selectedDevice=device.id;workspace.selectedPlatform="android"}workspace.phoneDevice=id}
     // Pinned emulators first, then the others as android.avds lists them.
     // All screens: the running devices side by side instead of the list.
     property bool gridMode: false
@@ -146,10 +150,12 @@ ColumnLayout {
             if(op==="android.avd_plan"){library.planning=false;library.plan=response.ok?response.result:{error:response.error.message};return}
             if(!response.ok){library.notice=response.error.message;library.failed=true;if(op==="android.avd_configure")library.savingPerformance=false;if(op==="android.avd_create" || op==="android.avd_setup")library.submitting=false;if(op==="android.avd_manage")library.manageAction="";if(op==="android.avd_start"){let next=Object.assign({},library.pendingBoots);delete next[context.args.name];library.pendingBoots=next}return}
             let value=response.result
-            if(op==="android.avds"){library.avds=value.avds;library.images=value.system_images || []}
+            // Only a changed answer replaces the lists: an equal one would rebuild every row and drop a tap in progress.
+            if(op==="android.avds"){if(JSON.stringify(value.avds)!==JSON.stringify(library.avds))library.avds=value.avds;const images=value.system_images || [];if(JSON.stringify(images)!==JSON.stringify(library.images))library.images=images}
             if(op==="catalog.import"){Studio.reloadModels();library.notice=qsTr("Model imported");library.failed=false;Qt.callLater(()=>{let index=library.profiles.findIndex(p=>value.imported.indexOf(p.id)>=0);if(index>=0){modelPicker.currentIndex=index;nameField.text="Tomacco-"+library.selectedProfile.id}else library.notice=qsTr("Imported · contains no Android model")})}
             if(op==="device.list"){
-                workspace.devices=workspace.devices.filter(d=>d.platform!=="android").concat(value.devices)
+                const devices=workspace.devices.filter(d=>d.platform!=="android").concat(value.devices)
+                if(JSON.stringify(devices)!==JSON.stringify(workspace.devices))workspace.devices=devices
                 let next=Object.assign({},library.pendingBoots)
                 for(let name in next){let device=value.devices.find(d=>d.avd===name && d.state==="device" && d.booted!==false);if(device){delete next[name];library.openDevice(device);library.notice=qsTr("Emulator ready")}}
                 library.pendingBoots=next
@@ -177,18 +183,48 @@ ColumnLayout {
             }
         }
     }
-    RowLayout {Layout.fillWidth:true;spacing:Theme.gapMd
+    RowLayout {Layout.fillWidth:true;spacing:Theme.gapMd;visible:!library.phone
         Text {Layout.fillWidth:true;text:qsTr("Each emulator keeps its own model and app data.");color:Theme.muted;font.pixelSize:Theme.fontBody;wrapMode:Text.WordWrap}
         StudioButton {objectName:"deviceGridToggle";text:library.gridMode?qsTr("List"):qsTr("All screens");displayText:library.width<Theme.px(760)?"":text;iconName:library.gridMode?"devices":"grid";quiet:true;selected:library.gridMode;tip:library.gridMode?qsTr("Show the device list"):qsTr("Show every running device's screen side by side");onClicked:library.gridMode=!library.gridMode}
         StudioButton {objectName:"createAndroidEmulator";text:library.createJob?qsTr("Creating…"):qsTr("Add device");iconName:"plus";accent:true;enabled:!library.createJob && !library.submitting;onClicked:library.newEmulator()}
     }
     DeviceGrid {
-        objectName:"androidDeviceGrid";Layout.fillWidth:true;Layout.fillHeight:true;Layout.minimumHeight:Theme.px(320);visible:library.gridMode
+        objectName:"androidDeviceGrid";Layout.fillWidth:true;Layout.fillHeight:true;Layout.minimumHeight:Theme.px(320);visible:library.gridMode && !library.phone
         devices:library.runningPhones;selected:workspace.selectedDevice
         onChosen:device=>{workspace.selectedDevice=device.id;library.openDevice(device)}
     }
+    // The phone's list: the action that adds a device first, then a row per device with its state on the title line.
+    StudioButton {objectName:"createAndroidEmulatorPhone";visible:library.phone;Layout.fillWidth:true;Layout.leftMargin:Theme.mobileGutter;Layout.rightMargin:Theme.mobileGutter;touch:true;accent:true;iconName:"plus";text:library.createJob?qsTr("Creating…"):qsTr("Add device");enabled:!library.createJob && !library.submitting;onClicked:library.newEmulator()}
+    Column {
+        objectName:"androidPhoneList";visible:library.phone;Layout.fillWidth:true
+        Repeater {model:library.phone?library.shownAvds:[]
+            MobileRow {
+                required property var modelData
+                readonly property var connected:library.deviceFor(modelData.name)
+                objectName:"avdRow-"+modelData.name;width:parent.width
+                title:modelData.nickname || modelData.profile_name || modelData.name
+                detail:modelData.name+" · "+(modelData.display && modelData.display.width?modelData.display.width+" × "+modelData.display.height:qsTr("External profile"))+(modelData.pinned?" · "+qsTr("Pinned"):"")
+                meta:library.stateLabel(modelData)
+                dot:connected?Theme.success:library.pendingBoots[modelData.name]?Theme.warning:Theme.faint
+                highlighted:workspace.phoneDevice==="avd:"+modelData.name
+                onClicked:library.showOnPhone("avd:"+modelData.name,connected)
+            }
+        }
+        Repeater {model:library.phone?library.phones.filter(d=>!library.avds.some(a=>a.name===d.avd)):[]
+            MobileRow {
+                required property var modelData
+                objectName:"phoneRow-"+modelData.id;width:parent.width
+                title:modelData.name;detail:modelData.id;monoDetail:true
+                meta:modelData.state==="device"?qsTr("Connected"):modelData.state
+                dot:modelData.state==="device"?Theme.success:modelData.state==="unauthorized"?Theme.warning:Theme.faint
+                highlighted:workspace.phoneDevice===modelData.id
+                onClicked:library.showOnPhone(modelData.id,modelData)
+            }
+        }
+        StudioEmptyState {visible:!library.avds.length && !library.phones.length;width:parent.width;topPadding:Theme.gapXl;showMark:false;title:qsTr("No phone yet.");body:qsTr("Add an emulator, or plug in a phone with USB debugging on.")}
+    }
     StudioScrollView {
-        Layout.fillWidth:true;Layout.fillHeight:true;clip:true;contentWidth:availableWidth;visible:!library.gridMode
+        Layout.fillWidth:true;Layout.fillHeight:true;clip:true;contentWidth:availableWidth;visible:!library.gridMode && !library.phone
         Column {width:parent.width-Theme.gapMd;spacing:Theme.gapXs
             Repeater {model:library.shownAvds
                 Rectangle {
@@ -232,7 +268,7 @@ ColumnLayout {
             StudioEmptyState {visible:!library.avds.length && !library.phones.length;width:Math.min(parent.width,Theme.px(520));topPadding:Theme.gapXxl;title:qsTr("No phone yet.");body:qsTr("Add an emulator, or plug in a phone with USB debugging on.")}
         }
     }
-    RowLayout {Layout.fillWidth:true;visible:!!library.notice
+    RowLayout {Layout.fillWidth:true;visible:!!library.notice;Layout.leftMargin:library.phone?Theme.mobileGutter:0;Layout.rightMargin:Layout.leftMargin
         Text {Layout.fillWidth:true;text:library.notice;color:library.failed?Theme.danger:Theme.muted;font.pixelSize:Theme.fontSmall;wrapMode:Text.WordWrap}
         StudioButton {visible:library.failed && !!workspace.selectedJob;text:qsTr("Open job");quiet:true;onClicked:workspace.showTab("jobs")}
     }

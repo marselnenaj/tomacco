@@ -699,6 +699,46 @@ Rectangle {
     // and pages stack. Measured in logical pixels after the UI scale, so a 393 px
     // phone at 100 % and a 1440 px window at 200 % behave alike.
     readonly property bool phone: width<Theme.px(600)
+    // What covers the window on a phone: the system bars and cut-outs (Qt's
+    // SafeArea, 0 on a desktop) and the on-screen keyboard, as the overlap of
+    // the input method's rectangle with this window. Properties, so a test can
+    // stand in for a keyboard or a notch; touch geometry never depends on the
+    // device picture's own scale.
+    property real insetTop: SafeArea.margins.top
+    property real insetBottom: SafeArea.margins.bottom
+    property real insetLeft: SafeArea.margins.left
+    property real insetRight: SafeArea.margins.right
+    property real keyboardInset: Qt.inputMethod.visible && Qt.inputMethod.keyboardRectangle.height>0 ? Math.max(0,height-Qt.inputMethod.keyboardRectangle.y) : 0
+    readonly property bool keyboardOpen: phone && keyboardInset>0
+    // The phone's More sheet also holds what the desktop's title bar offers.
+    readonly property var phoneExtras: [
+        {id:"settings",label:qsTr("Settings"),icon:"settings",key:","},
+        {id:"web-preview",label:qsTr("Web preview"),icon:"web",key:""},
+        {id:"about",label:qsTr("About Tomacco"),icon:"info",key:""}
+    ]
+    function phoneNavigate(section) {
+        if(section==="settings")settingsDialog.open()
+        else if(section==="web-preview")view.webRequested()
+        else if(section==="about")about.open()
+        else view.navigate(section)
+    }
+    // A field that takes the focus on a phone scrolls into the part of its page
+    // the keyboard leaves free, with a little room around it.
+    function revealFocus() {
+        const item=view.Window.activeFocusItem
+        if(!view.phone || !item)return
+        for(let p=item.parent;p;p=p.parent) {
+            if(p.contentY===undefined || p.contentHeight===undefined || p.flickableDirection===undefined || !p.contentItem)continue
+            if(p.contentHeight<=p.height)continue
+            const at=item.mapToItem(p.contentItem,0,0)
+            const top=at.y-Theme.gapLg,bottom=at.y+item.height+Theme.gapLg
+            if(bottom>p.contentY+p.height)p.contentY=Math.max(0,Math.min(p.contentHeight-p.height,bottom-p.height))
+            else if(top<p.contentY)p.contentY=Math.max(0,top)
+            return
+        }
+    }
+    Connections {target:view.Window.window;ignoreUnknownSignals:true;function onActiveFocusItemChanged(){Qt.callLater(view.revealFocus)}}
+    onKeyboardInsetChanged:Qt.callLater(revealFocus)
     // Below this the device bar's actions are icons and the bar's name goes.
     readonly property bool tight: width<Theme.px(760)
     // In a narrow window the activity panel takes the whole stage while it is open.
@@ -839,6 +879,8 @@ Rectangle {
     Shortcut {sequence:"Ctrl+0";enabled:view.visible;onActivated:view.navigate("tools")}
     ColumnLayout {
         anchors.fill:parent;spacing:0
+        anchors.topMargin:view.insetTop;anchors.leftMargin:view.insetLeft;anchors.rightMargin:view.insetRight
+        anchors.bottomMargin:Math.max(view.insetBottom,view.keyboardOpen?view.keyboardInset:0)
         // The title bar: who, what, and the ways out.
         Rectangle {
             Layout.fillWidth:true;Layout.preferredHeight:Theme.barHeight;color:Theme.surface
@@ -858,11 +900,12 @@ Rectangle {
                 StudioComboBox {visible:Object.keys(view.saved).length>0 && !view.compact;Layout.preferredWidth:Theme.px(170);model:Object.keys(view.saved);displayText:qsTr("Switch workspace");onActivated:view.request("workspace.context",{name:currentText})}
                 Item {Layout.fillWidth:true}
                 StudioButton {objectName:"commandButton";text:qsTr("Search");displayText:view.width<Theme.px(760)?"":text;iconName:"search";keyHint:view.width<Theme.px(760)?"":qsTr("Ctrl")+" K";tip:qsTr("Search navigation and all tools · Ctrl+K");onClicked:commandPalette.open()}
-                StudioButton {text:qsTr("Web preview");displayText:view.compact?"":text;iconName:"web";quiet:true;tip:qsTr("Web preview");onClicked:view.webRequested()}
-                StudioButton {text:qsTr("Open project");displayText:view.compact?"":text;iconName:"files";quiet:true;tip:qsTr("Open a project folder · Ctrl+O");onClicked:projectFolder.open()}
+                // On a phone these live in the More sheet and the project list.
+                StudioButton {visible:!view.phone;text:qsTr("Web preview");displayText:view.compact?"":text;iconName:"web";quiet:true;tip:qsTr("Web preview");onClicked:view.webRequested()}
+                StudioButton {visible:!view.phone;text:qsTr("Open project");displayText:view.compact?"":text;iconName:"files";quiet:true;tip:qsTr("Open a project folder · Ctrl+O");onClicked:projectFolder.open()}
                 StudioButton {objectName:"activityButton";iconName:"activity";displayText:"";text:qsTr("Activity");quiet:true;selected:view.activityVisible;visible:!workspace.opened;tip:qsTr("Jobs and agent calls · Ctrl+J");onClicked:view.toggleActivity()}
-                StudioButton {objectName:"settingsButton";iconName:"settings";displayText:"";text:qsTr("Settings");quiet:true;tip:qsTr("Appearance and language · Ctrl+,");onClicked:settingsDialog.open()}
-                StudioButton {objectName:"aboutButton";iconName:"info";quiet:true;tip:qsTr("About Tomacco · version, license and source code");Accessible.name:qsTr("About Tomacco");onClicked:about.open()}
+                StudioButton {objectName:"settingsButton";visible:!view.phone;iconName:"settings";displayText:"";text:qsTr("Settings");quiet:true;tip:qsTr("Appearance and language · Ctrl+,");onClicked:settingsDialog.open()}
+                StudioButton {objectName:"aboutButton";visible:!view.phone;iconName:"info";quiet:true;tip:qsTr("About Tomacco · version, license and source code");Accessible.name:qsTr("About Tomacco");onClicked:about.open()}
             }
             Rectangle {anchors.bottom:parent.bottom;width:parent.width;height:1;color:Theme.subtle}
         }
@@ -1186,7 +1229,8 @@ Rectangle {
             }
         }
         // The phone's bottom navigation: four destinations and the rest behind More.
-        MobileNav {objectName:"mobileNav";Layout.fillWidth:true;visible:view.phone;navigation:view.navigation;current:view.currentSection;onNavigate:section=>view.navigate(section)}
+        // While the keyboard is open it gives way, so the field and its page keep the room above the keyboard.
+        MobileNav {objectName:"mobileNav";Layout.fillWidth:true;visible:view.phone && !view.keyboardOpen;navigation:view.navigation;extras:view.phoneExtras;current:view.currentSection;onNavigate:section=>view.phoneNavigate(section)}
         Rectangle {
             Layout.fillWidth:true;Layout.preferredHeight:view.notice?noticeLabel.implicitHeight+Theme.gapMd*2:0;visible:!!view.notice;color:view.failed?Theme.dangerSurface:Theme.elevated
             Rectangle {width:Theme.gapXxs;height:parent.height;color:view.failed?Theme.danger:Theme.accent}
@@ -1200,6 +1244,7 @@ Rectangle {
         }
         // The status line: one block that says what the device is doing, then the facts, in mono.
         Rectangle {
+            objectName:"statusLine";visible:!view.keyboardOpen
             Layout.fillWidth:true;Layout.preferredHeight:Theme.statusHeight;color:Theme.surface
             Rectangle {width:parent.width;height:1;color:Theme.subtle}
             RowLayout {anchors.fill:parent;anchors.topMargin:1;anchors.rightMargin:Theme.gapMd;spacing:Theme.gapMd
@@ -1225,6 +1270,19 @@ Rectangle {
     // What the search holds when the dialog opens, for commands that open one section.
     property string settingsOpenQuery: ""
     function openSettings(query) {settingsOpenQuery=query || "";settingsDialog.open()}
+    readonly property var systemSettings: [
+        {id:"agent",title:qsTr("Connect your coding agent"),detail:qsTr("Setup state and the exact setting for each client"),search:"Claude Code Codex Gemini Cursor VS Code Zed OpenCode Grok Hermes omp MCP"},
+        {id:"policy",operation:"agent.policy",title:qsTr("Agent policy"),detail:qsTr("What an agent may run and where it asks first")},
+        {id:"hosts",operation:"remote.list",title:qsTr("Mac hosts"),detail:qsTr("SSH Macs for iOS builds, each set up explicitly"),search:"SSH remote Xcode"},
+        {id:"toolchain",operation:"settings.configure",title:qsTr("SDK & tool paths"),detail:qsTr("Android SDK, JDK and executables, updates and parallel jobs"),search:"download"},
+        {id:"storage",operation:"storage.prune",title:qsTr("Storage"),detail:qsTr("Lists old jobs, logs and reports; removes them only after you confirm"),search:qsTr("Clean up old jobs and reports")},
+        {id:"diagnostics",operation:"diagnostics.bundle",title:qsTr("Bug report bundle"),detail:qsTr("Writes one .tar.gz on this computer; nothing is sent"),search:qsTr("Diagnostics")}
+    ]
+    function runSystemSetting(entry) {
+        settingsDialog.close()
+        if(!entry.operation){view.connectAgent();return}
+        workspace.showAction(entry.operation);workspace.open()
+    }
     function settingShown(words) {
         const query=settingsQuery.trim().toLowerCase()
         if(!query)return true
@@ -1232,13 +1290,19 @@ Rectangle {
         return query.split(/\s+/).every(word=>text.indexOf(word)>=0)
     }
     StudioDialog {
-        id:settingsDialog;objectName:"settingsDialog";title:qsTr("Settings");anchors.centerIn:parent;width:Math.min(view.width-Theme.gapXxxl,Theme.px(460));height:Math.min(view.height-Theme.gapLg,implicitHeight);modal:true;standardButtons:Dialog.Close
+        id:settingsDialog;objectName:"settingsDialog";title:qsTr("Settings");modal:true;standardButtons:Dialog.Close
+        // A phone shows the settings as a sheet over the whole free area, above the keyboard when it is open.
+        sheet:view.phone
+        x:view.phone?view.insetLeft:Math.round((view.width-width)/2);y:view.phone?view.insetTop:Math.round((view.height-height)/2)
+        width:view.phone?view.width-view.insetLeft-view.insetRight:Math.min(view.width-Theme.gapXxxl,Theme.px(460))
+        height:view.phone?view.height-view.insetTop-Math.max(view.insetBottom,view.keyboardInset):Math.min(view.height-Theme.gapLg,implicitHeight)
         onOpened:{view.settingsTransfer="";settingsSearch.text=view.settingsOpenQuery;view.settingsOpenQuery="";Studio.reloadOmarchyTheme();settingsSearch.forceActiveFocus()}
-        readonly property bool nothingShown:!appearanceSection.visible && !scaleSection.visible && !languageSection.visible && !notificationsSection.visible && !agentSection.visible && !updatesSection.visible && !layoutsSection.visible && !transferSection.visible
+        readonly property bool nothingShown:!appearanceSection.visible && !scaleSection.visible && !languageSection.visible && !notificationsSection.visible && !agentSection.visible && !systemSection.visible && !updatesSection.visible && !layoutsSection.visible && !transferSection.visible
         contentItem:ColumnLayout {spacing:Theme.gapMd
             StudioTextField {
                 id:settingsSearch;objectName:"settingsSearch";Layout.fillWidth:true;Layout.rightMargin:Theme.gapMd
                 placeholderText:qsTr("Search settings");Accessible.name:qsTr("Search settings")
+                Layout.preferredHeight:view.phone?Math.max(implicitHeight,Theme.mobileTouch):implicitHeight
                 onTextChanged:view.settingsQuery=text
                 // Esc empties the search first, then closes the dialog.
                 Keys.onEscapePressed:event=>{if(text){text="";event.accepted=true}else{event.accepted=false;settingsDialog.close()}}
@@ -1251,7 +1315,7 @@ Rectangle {
                 Text {text:qsTr("Appearance");color:Theme.muted;font.pixelSize:Theme.fontSmall}
                 // System follows the desktop's dark or light preference at once.
                 StudioSegmented {
-                    objectName:"appearancePicker";Layout.fillWidth:true;current:Studio.appearance
+                    objectName:"appearancePicker";Layout.fillWidth:true;touch:view.phone;current:Studio.appearance
                     model:[{id:"system",label:qsTr("System")},{id:"dark",label:qsTr("Dark")},{id:"light",label:qsTr("Light")}]
                     onChosen:id=>Studio.setAppearance(id)
                 }
@@ -1270,10 +1334,10 @@ Rectangle {
                 visible:view.settingShown([qsTr("Interface size"),qsTr("Larger interface"),qsTr("Smaller interface"),qsTr("Reset interface size"),"4K HiDPI Zoom Ctrl Alt"])
                 Text {text:qsTr("Interface size");color:Theme.muted;font.pixelSize:Theme.fontSmall}
                 RowLayout {Layout.fillWidth:true;spacing:Theme.gapXs
-                    StudioButton {objectName:"interfaceSmaller";text:qsTr("Smaller interface");displayText:"";iconName:"minus";enabled:Studio.uiScale>75;tip:text+" · Ctrl+Alt+−";onClicked:Studio.setUiScale(Studio.uiScale-25)}
+                    StudioButton {objectName:"interfaceSmaller";touch:view.phone;text:qsTr("Smaller interface");displayText:"";iconName:"minus";enabled:Studio.uiScale>75;tip:text+" · Ctrl+Alt+−";onClicked:Studio.setUiScale(Studio.uiScale-25)}
                     Text {objectName:"interfaceScaleValue";Layout.fillWidth:true;text:Studio.uiScale+" %";color:Theme.text;font.family:Theme.mono;font.pixelSize:Theme.fontBody;horizontalAlignment:Text.AlignHCenter;Accessible.name:qsTr("Interface size")+": "+text}
-                    StudioButton {objectName:"interfaceLarger";text:qsTr("Larger interface");displayText:"";iconName:"plus";enabled:Studio.uiScale<200;tip:text+" · Ctrl+Alt++";onClicked:Studio.setUiScale(Studio.uiScale+25)}
-                    StudioButton {objectName:"interfaceReset";text:qsTr("Reset");enabled:Studio.uiScale!==100;tip:qsTr("Reset interface size")+" · Ctrl+Alt+0";onClicked:Studio.setUiScale(100)}
+                    StudioButton {objectName:"interfaceLarger";touch:view.phone;text:qsTr("Larger interface");displayText:"";iconName:"plus";enabled:Studio.uiScale<200;tip:text+" · Ctrl+Alt++";onClicked:Studio.setUiScale(Studio.uiScale+25)}
+                    StudioButton {objectName:"interfaceReset";touch:view.phone;text:qsTr("Reset");enabled:Studio.uiScale!==100;tip:qsTr("Reset interface size")+" · Ctrl+Alt+0";onClicked:Studio.setUiScale(100)}
                 }
                 Text {Layout.fillWidth:true;text:qsTr("Text, controls and spacing in Tomacco. Device zoom and screenshots keep their own size.");color:Theme.faint;font.pixelSize:Theme.fontSmall;wrapMode:Text.WordWrap}
             }
@@ -1313,6 +1377,18 @@ Rectangle {
                 }
                 Text {Layout.fillWidth:true;text:qsTr("Set TOMACCO_SESSION_LOG to this file in your agent's MCP settings, and the activity panel lists every operation it calls, with its duration and result.");color:Theme.faint;font.pixelSize:Theme.fontSmall;wrapMode:Text.WordWrap}
             }
+            // Agents, Mac hosts, storage and diagnostics: each opens its own form under Agents & tools,
+            // where it runs only when asked, and asks again where it removes something.
+            ColumnLayout {id:systemSection;objectName:"settingsSystem";Layout.fillWidth:true;spacing:view.phone?0:Theme.gapXs
+                visible:view.settingShown([qsTr("Agents and system")].concat(view.systemSettings.map(x=>x.title+" "+x.detail+" "+(x.search || ""))))
+                Text {text:qsTr("Agents and system");color:Theme.muted;font.pixelSize:Theme.fontSmall}
+                Repeater {model:view.systemSettings.filter(x=>view.settingShown([qsTr("Agents and system"),x.title,x.detail,x.search || ""]))
+                    ColumnLayout {required property var modelData;Layout.fillWidth:true;spacing:0
+                        MobileRow {objectName:"settingsSystem-"+modelData.id;visible:view.phone;Layout.fillWidth:true;leftPadding:0;rightPadding:0;showDot:false;title:modelData.title;detail:modelData.detail;onClicked:view.runSystemSetting(modelData)}
+                        StudioButton {objectName:"settingsSystemDesktop-"+modelData.id;visible:!view.phone;Layout.fillWidth:true;quiet:true;alignLeft:true;text:modelData.title;tip:modelData.detail;onClicked:view.runSystemSetting(modelData)}
+                    }
+                }
+            }
             UpdateSection {id:updatesSection;objectName:"settingsUpdates";Layout.fillWidth:true;model:updates;visible:view.settingShown(keywords)}
             // Named window layouts: which views and panes are open, how wide, and the device windows.
             ColumnLayout {id:layoutsSection;objectName:"settingsLayouts";Layout.fillWidth:true;spacing:Theme.gapSm
@@ -1350,7 +1426,9 @@ Rectangle {
     FileDialog {id:settingsExport;title:qsTr("Export settings");fileMode:FileDialog.SaveFile;defaultSuffix:"json";nameFilters:[qsTr("Tomacco settings (*.json)")];onAccepted:view.exportSettingsTo(decodeURIComponent(selectedFile.toString().replace(/^file:\/\//,"")))}
     FileDialog {id:settingsImport;title:qsTr("Import settings");nameFilters:[qsTr("Tomacco settings (*.json)")];onAccepted:view.importSettingsFrom(decodeURIComponent(selectedFile.toString().replace(/^file:\/\//,"")))}
     OnboardingSheet {id:onboarding;anchors.centerIn:parent;width:Math.min(view.width-Theme.gapXxxl,Theme.px(560));height:Math.min(view.height-Theme.gapLg,implicitHeight);onConnectRequested:view.connectAgent()}
-    AgentClientDialog {id:agentClients;anchors.centerIn:parent;width:Math.min(view.width-Theme.gapLg,Theme.px(860));height:Math.min(view.height-Theme.gapLg,Math.max(implicitHeight,Theme.px(420)))}
+    AgentClientDialog {id:agentClients;sheet:view.phone;x:view.phone?view.insetLeft:Math.round((view.width-width)/2);y:view.phone?view.insetTop:Math.round((view.height-height)/2)
+        width:view.phone?view.width-view.insetLeft-view.insetRight:Math.min(view.width-Theme.gapLg,Theme.px(860))
+        height:view.phone?view.height-view.insetTop-Math.max(view.insetBottom,view.keyboardInset):Math.min(view.height-Theme.gapLg,Math.max(implicitHeight,Theme.px(420)))}
     // Connect a coding agent: one picker for every entry point.
     function connectAgent(){agentClients.open()}
     StudioDialog {

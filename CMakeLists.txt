@@ -82,7 +82,7 @@ target_compile_definitions(tomacco PRIVATE TOMACCO_VERSION="${PROJECT_VERSION}")
 set(TOMACCO_QML_RESOURCES
     qml/StudioScrollView.qml qml/StudioScrollBar.qml qml/AppDropArea.qml qml/AppFiles.js qml/LogFilter.js qml/Fuzzy.js qml/Numbers.js qml/DropOverlay.qml
     qml/NativeDeviceFrame.qml qml/DeviceWindow.qml qml/NativeProfiles.js qml/AndroidDevices.qml qml/IosResearch.qml qml/IosGuestView.qml qml/ScreenRecorder.qml qml/DeviceGrid.qml qml/DeviceLogPane.qml qml/StageLogPane.qml
-    qml/qmldir qml/Theme.qml qml/Theme.js qml/ActivityPanel.qml qml/StudioHeading.qml qml/StudioBand.qml qml/BrandMark.qml qml/DeviceHero.qml qml/StudioStatus.qml qml/StudioSection.qml qml/StudioPanel.qml qml/StudioEmptyState.qml qml/StudioSegmented.qml qml/StudioSpinBox.qml qml/StudioCodeView.qml qml/OperationTitles.js qml/ColorNames.js qml/StudioIcon.qml qml/StudioTextField.qml qml/StudioComboBox.qml qml/StudioCheckBox.qml qml/StudioDialog.qml qml/CommandPalette.qml qml/Main.qml qml/StudioButton.qml qml/Device.qml qml/Workspace.qml qml/NativeWorkspace.qml qml/DebugWorkspace.qml qml/TestWorkspace.qml qml/ProfileWorkspace.qml qml/FileWorkspace.qml qml/ReleaseWorkspace.qml qml/DemoWorkspace.qml qml/EnvironmentPanel.qml qml/PreviewAutomation.qml qml/PreviewProtocol.qml qml/SystemStatus.qml qml/UpdateModel.qml qml/UpdateSection.qml qml/UpdateNotice.qml qml/UpdateBanner.qml qml/HandoffModel.qml qml/HandoffBanner.qml qml/OnboardingSheet.qml qml/ApprovalDialog.qml qml/NotificationCentre.qml qml/MobileNav.qml qml/MobileRow.qml qml/AgentClientPicker.qml qml/AgentClientDialog.qml assets/models.json assets/demo.html assets/page-errors.js assets/icon.svg assets/logo.svg assets/fonts/archivo-var.ttf assets/fonts/jetbrains-mono-var.ttf i18n/languages.json)
+    qml/qmldir qml/Theme.qml qml/Theme.js qml/ActivityPanel.qml qml/StudioHeading.qml qml/StudioBand.qml qml/BrandMark.qml qml/DeviceHero.qml qml/StudioStatus.qml qml/StudioSection.qml qml/StudioPanel.qml qml/StudioEmptyState.qml qml/StudioSegmented.qml qml/StudioSpinBox.qml qml/StudioCodeView.qml qml/OperationTitles.js qml/ColorNames.js qml/StudioIcon.qml qml/StudioTextField.qml qml/StudioComboBox.qml qml/StudioCheckBox.qml qml/StudioDialog.qml qml/CommandPalette.qml qml/Main.qml qml/StudioButton.qml qml/Device.qml qml/Workspace.qml qml/NativeWorkspace.qml qml/DebugWorkspace.qml qml/TestWorkspace.qml qml/ProfileWorkspace.qml qml/FileWorkspace.qml qml/ReleaseWorkspace.qml qml/DemoWorkspace.qml qml/EnvironmentPanel.qml qml/PreviewAutomation.qml qml/PreviewProtocol.qml qml/SystemStatus.qml qml/UpdateModel.qml qml/UpdateSection.qml qml/UpdateNotice.qml qml/UpdateBanner.qml qml/HandoffModel.qml qml/HandoffBanner.qml qml/OnboardingSheet.qml qml/ApprovalDialog.qml qml/NotificationCentre.qml qml/MobileNav.qml qml/MobileRow.qml qml/MobileTopBar.qml qml/AgentClientPicker.qml qml/AgentClientDialog.qml assets/models.json assets/demo.html assets/page-errors.js assets/icon.svg assets/logo.svg assets/fonts/archivo-var.ttf assets/fonts/jetbrains-mono-var.ttf i18n/languages.json)
 qt_add_resources(tomacco resources PREFIX / FILES ${TOMACCO_QML_RESOURCES})
 # Interface translations. English is the source language: its file only
 # carries plural forms. i18n/languages.json is the registry of every other
@@ -256,6 +256,21 @@ if(BUILD_TESTING)
     endif()
     add_test(NAME desktop-ui COMMAND test-desktop-ui)
     set_tests_properties(desktop-ui PROPERTIES ENVIRONMENT "QT_QPA_PLATFORM=offscreen;QT_QUICK_BACKEND=software;QT_QUICK_CONTROLS_STYLE=Basic;QT_QPA_PLATFORMTHEME=generic;QT_FORCE_STDERR_LOGGING=1;TOMACCO_UPDATES=off")
+    # The phone routes of the real app (Main.qml with backend and control program) on a phone-sized offscreen screen.
+    qt_add_executable(test-phone-routes tests/phone_routes_test.cpp src/backend.cpp src/backend.h src/control.cpp src/control.h src/nativeview.cpp src/nativeview.h)
+    set_target_properties(test-phone-routes PROPERTIES QT_QML_MODULE_NO_IMPORT_SCAN TRUE)
+    add_dependencies(test-phone-routes tomacco-core)
+    qt_add_resources(test-phone-routes phone-ui-resources PREFIX / FILES ${TOMACCO_QML_RESOURCES})
+    qt_add_resources(test-phone-routes phone-ui-translations PREFIX /i18n FILES ${TOMACCO_QM_FILES})
+    target_include_directories(test-phone-routes PRIVATE src)
+    target_compile_definitions(test-phone-routes PRIVATE TOMACCO_SOURCE_DIR="${CMAKE_CURRENT_SOURCE_DIR}")
+    target_link_libraries(test-phone-routes PRIVATE Qt6::Test Qt6::Quick Qt6::QuickControls2 Qt6::WebEngineQuick Qt6::Network PkgConfig::AV)
+    if(TARGET Qt6::DBus)
+        target_link_libraries(test-phone-routes PRIVATE Qt6::DBus)
+        target_compile_definitions(test-phone-routes PRIVATE TOMACCO_HAVE_DBUS)
+    endif()
+    add_test(NAME phone-routes COMMAND test-phone-routes)
+    set_tests_properties(phone-routes PROPERTIES ENVIRONMENT "QT_QUICK_BACKEND=software;QT_QUICK_CONTROLS_STYLE=Basic;QT_QPA_PLATFORMTHEME=generic;QT_FORCE_STDERR_LOGGING=1;TOMACCO_UPDATES=off")
     qt_add_executable(test-backend tests/backend_test.cpp src/backend.cpp src/backend.h)
     qt_add_resources(test-backend fixtures PREFIX / FILES assets/models.json i18n/languages.json)
     qt_add_resources(test-backend translations PREFIX /i18n FILES ${TOMACCO_QM_FILES})

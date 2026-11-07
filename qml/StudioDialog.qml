@@ -4,8 +4,11 @@ import "."
 
 Dialog {
     id: control
-    padding: Theme.gapXl
-    topPadding: Theme.gapLg
+    // A phone sheet: the dialog fills the area it is given (its owner sets x, y,
+    // width and height), with the 16 px phone gutter and a smaller title.
+    property bool sheet: false
+    padding: sheet ? Theme.mobileGutter : Theme.gapXl
+    topPadding: sheet ? Theme.gapMd : Theme.gapLg
     font.pixelSize: Theme.fontBody
     background: Rectangle {
         color: Theme.surface; border.color: Theme.border
@@ -24,21 +27,21 @@ Dialog {
             id: titleLabel
             width: parent.width
             text: control.title
-            leftPadding: Theme.gapXl
-            rightPadding: Theme.gapXl
-            topPadding: Theme.gapXl
+            leftPadding: control.sheet ? Theme.mobileGutter : Theme.gapXl
+            rightPadding: control.sheet ? Theme.mobileGutter : Theme.gapXl
+            topPadding: control.sheet ? Theme.gapLg : Theme.gapXl
             color: Theme.text
-            font.pixelSize: Theme.fontDisplay
-            font.weight: Font.Black
-            font.letterSpacing: -Theme.fontDisplay*.038
+            font.pixelSize: control.sheet ? Theme.mobileFontTitle : Theme.fontDisplay
+            font.weight: control.sheet ? Font.DemiBold : Font.Black
+            font.letterSpacing: control.sheet ? 0 : -Theme.fontDisplay*.038
             wrapMode: Text.WordWrap
         }
     }
     footer: DialogButtonBox {
         visible: count>0
-        implicitHeight: count>0 ? Theme.controlHeight+Theme.gapXl+Theme.gapLg : 0
-        leftPadding: Theme.gapXl
-        rightPadding: Theme.gapXl
+        implicitHeight: count>0 ? (control.sheet ? Math.max(Theme.controlHeight,Theme.mobileTouch) : Theme.controlHeight)+Theme.gapXl+Theme.gapLg : 0
+        leftPadding: control.sheet ? Theme.mobileGutter : Theme.gapXl
+        rightPadding: control.sheet ? Theme.mobileGutter : Theme.gapXl
         topPadding: Theme.gapSm
         bottomPadding: Theme.gapLg
         spacing: Theme.gapSm
@@ -48,6 +51,7 @@ Dialog {
             // Qt's own button texts are English unless its translations are installed.
             displayText: ({"Close":qsTr("Close"),"Cancel":qsTr("Cancel"),"Yes":qsTr("Yes"),"No":qsTr("No"),"Discard":qsTr("Discard"),"Save":qsTr("Save"),"Open":qsTr("Open"),"Apply":qsTr("Apply"),"Reset":qsTr("Reset")})[text] || text
             accent: DialogButtonBox.buttonRole===DialogButtonBox.AcceptRole || DialogButtonBox.buttonRole===DialogButtonBox.YesRole
+            touch: control.sheet
         }
         background: Item {}
     }

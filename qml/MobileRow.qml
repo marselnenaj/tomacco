@@ -20,6 +20,10 @@ ItemDelegate {
     property bool chevron: true
     // Paths, operation names and code read better in the mono face.
     property bool monoDetail: false
+    // Narrower than 300 logical px (a 412 px phone at 200 %), the meta text moves
+    // under the title instead of taking 40 % beside it, so the title keeps a
+    // readable measure.
+    readonly property bool stacked: availableWidth<Theme.px(300)
     implicitWidth: Theme.px(393)
     implicitHeight: Math.max(Theme.mobileRow, contentItem.implicitHeight+topPadding+bottomPadding)
     padding: 0
@@ -47,6 +51,12 @@ ItemDelegate {
                 wrapMode: Text.Wrap; lineHeight: 1.3
             }
             Text {
+                objectName: "rowMetaStacked"; visible: row.stacked && row.meta.length>0; Layout.fillWidth: true
+                text: row.meta; color: Theme.faint
+                font.family: Theme.sans; font.pixelSize: Theme.mobileFontMeta
+                wrapMode: Text.Wrap
+            }
+            Text {
                 objectName: "rowDetail"; visible: row.detail.length>0; Layout.fillWidth: true
                 text: row.detail; color: Theme.muted
                 font.family: row.monoDetail ? Theme.mono : Theme.sans
@@ -55,7 +65,7 @@ ItemDelegate {
             }
         }
         Text {
-            objectName: "rowMeta"; visible: row.meta.length>0
+            objectName: "rowMeta"; visible: !row.stacked && row.meta.length>0
             text: row.meta; color: Theme.faint
             font.family: Theme.sans; font.pixelSize: Theme.mobileFontMeta
             Layout.alignment: Qt.AlignTop; Layout.topMargin: Theme.px(2)

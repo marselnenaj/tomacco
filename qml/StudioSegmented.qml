@@ -9,7 +9,9 @@ Rectangle {
     property var model: []
     property string current: ""
     signal chosen(string id)
-    implicitHeight: Theme.controlHeight
+    // A phone target: at least 48 logical px high, scaled with the interface size.
+    property bool touch: false
+    implicitHeight: touch ? Math.max(Theme.controlHeight,Theme.mobileTouch) : Theme.controlHeight
     implicitWidth: buttons.implicitWidth+2
     color: "transparent"
     radius: Theme.radiusSmall
@@ -27,7 +29,7 @@ Rectangle {
                 text: modelData.label
                 Layout.fillWidth: true
                 Layout.fillHeight: true
-                implicitHeight: Theme.controlHeight-2
+                implicitHeight: control.implicitHeight-2
                 quiet: true
                 selected: control.current===modelData.id
                 onClicked: control.chosen(modelData.id)

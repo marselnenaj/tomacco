@@ -840,7 +840,9 @@ k,v=actions[tuple(a)];s[k]=v;p.write_text(json.dumps(s));print('ok')
         // At 200%, 120 logical pixels keep the editor readable even when the
         // browser, tabs and toolbar need more height than the short window.
         QTRY_VERIFY_WITH_TIMEOUT(code->property("availableHeight").toReal()>=240-1,patient(1500));
-        QTRY_VERIFY_WITH_TIMEOUT(page->property("contentY").toReal()>0,patient(1500));
+        // At 200 % this window is 480 logical px wide, a phone (Workspace.phone): the open file is
+        // the whole pane, without the browser above it, so the page has nothing to scroll past.
+        QTRY_VERIFY_WITH_TIMEOUT(workspace->property("phone").toBool()?!item("fileBrowserPane")->isVisible() && item("fileEditorPane")->isVisible():page->property("contentY").toReal()>0,patient(1500));
         const qreal pageHeight=page->property("contentHeight").toReal();
         QVERIFY(pageHeight<=outer->height()*3);
         QString longText;for(int line=0;line<2000;++line)longText+=QString("// Unsaved fixture line %1\n").arg(line);
@@ -4413,8 +4415,8 @@ for line in sys.stdin:
             QTRY_COMPARE(workspace->property("selectedJob").toString(),QString("phone-failed"));
             QTRY_VERIFY(!item("jobListColumn")->isVisible());
             auto *back=item("jobBack");QVERIFY(back && back->isVisible());
-            // 48 px touch target for this in-page back button is still open (docs/finish-progress.json).
-            QVERIFY(back->height()>=30);
+            // The in-page back target is a 48 px phone target (MobileTopBar), at 100 % here.
+            QVERIFY2(back->height()>=48 && back->width()>=48,qPrintable(QString("%1x%2").arg(back->width()).arg(back->height())));
             // Back by keyboard (Space on the focused button): reachable without a pointer, too.
             back->forceActiveFocus();QTRY_VERIFY(back->hasActiveFocus());QTest::keyClick(window,Qt::Key_Space);
             QTRY_COMPARE(workspace->property("selectedJob").toString(),QString());

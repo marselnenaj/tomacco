@@ -15,9 +15,11 @@ Rectangle {
     property string current: ""
     // Which sections sit in the bar itself; the others go into More.
     property var primary: ["project","devices","jobs","files"]
+    // Entries that are not sections but belong in More on a phone, such as Settings: {id, label, icon, key}.
+    property var extras: []
     signal navigate(string section)
     readonly property var primaryEntries: primary.map(id=>navigation.find(x=>x.id===id)).filter(x=>!!x)
-    readonly property var moreEntries: navigation.filter(x=>primary.indexOf(x.id)<0)
+    readonly property var moreEntries: navigation.filter(x=>primary.indexOf(x.id)<0).concat(extras)
     readonly property bool moreActive: moreEntries.some(x=>x.id===current)
     readonly property int itemHeight: Math.max(Theme.mobileNav,Theme.controlHeight*2)
     implicitHeight: itemHeight
