@@ -12,7 +12,7 @@ review list, not an error count.
 |---|---|---|---|---|---|---|---|---|---|
 | ar | العربية (Arabic) | rtl | 6 (arabic) | 1800/1800 | 0 | 1 | 0 | 6/6 | complete |
 | bg | Български (Bulgarian) | ltr | 2 (english) | 0/1800 | 1800 | 0 | 0 | 0/6 | untranslated |
-| bn | বাংলা (Bengali) | ltr | 2 (english) | 0/1800 | 1800 | 0 | 0 | 0/6 | untranslated |
+| bn | বাংলা (Bengali) | ltr | 2 (english) | 1800/1800 | 0 | 3 | 0 | 0/6 | partial |
 | ca | Català (Catalan) | ltr | 2 (english) | 0/1800 | 1800 | 0 | 0 | 0/6 | untranslated |
 | cs | Čeština (Czech) | ltr | 3 (slovak) | 0/1800 | 1800 | 0 | 0 | 0/6 | untranslated |
 | da | Dansk (Danish) | ltr | 2 (english) | 1800/1800 | 0 | 2 | 0 | 6/6 | complete |
@@ -21,13 +21,13 @@ review list, not an error count.
 | es | Español (Spanish) | ltr | 2 (english) | 1800/1800 | 0 | 0 | 0 | 6/6 | complete |
 | es-MX | Español (México) (Spanish (Mexico)) | ltr | 2 (english) | 1800/1800 | 0 | 1 | 0 | 6/6 | complete |
 | et | Eesti (Estonian) | ltr | 2 (english) | 0/1800 | 1800 | 0 | 0 | 0/6 | untranslated |
-| fa | فارسی (Persian) | rtl | 1 (universal) | 0/1800 | 1800 | 0 | 0 | 0/6 | untranslated |
+| fa | فارسی (Persian) | rtl | 1 (universal) | 1800/1800 | 0 | 3 | 0 | 6/6 | complete |
 | fi | Suomi (Finnish) | ltr | 2 (english) | 0/1800 | 1800 | 0 | 0 | 0/6 | untranslated |
 | fil | Filipino (Filipino) | ltr | 3 (tagalog) | 0/1800 | 1800 | 0 | 0 | 0/6 | untranslated |
 | fr | Français (French) | ltr | 2 (french) | 1800/1800 | 0 | 0 | 0 | 6/6 | complete |
 | ga | Gaeilge (Irish) | ltr | 3 (irish) | 0/1800 | 1800 | 0 | 0 | 0/6 | untranslated |
-| he | עברית (Hebrew) | rtl | 2 (english) | 0/1800 | 1800 | 0 | 0 | 0/6 | untranslated |
-| hi | हिन्दी (Hindi) | ltr | 2 (english) | 0/1800 | 1800 | 0 | 0 | 0/6 | untranslated |
+| he | עברית (Hebrew) | rtl | 2 (english) | 1800/1800 | 0 | 2 | 0 | 0/6 | partial |
+| hi | हिन्दी (Hindi) | ltr | 2 (english) | 1800/1800 | 0 | 3 | 0 | 0/6 | partial |
 | hr | Hrvatski (Croatian) | ltr | 3 (russian) | 0/1800 | 1800 | 0 | 0 | 0/6 | untranslated |
 | hu | Magyar (Hungarian) | ltr | 1 (universal) | 0/1800 | 1800 | 0 | 0 | 0/6 | untranslated |
 | id | Bahasa Indonesia (Indonesian) | ltr | 1 (universal) | 1800/1800 | 0 | 0 | 0 | 6/6 | complete |
@@ -55,12 +55,12 @@ review list, not an error count.
 | th | ไทย (Thai) | ltr | 1 (universal) | 0/1800 | 1800 | 0 | 0 | 0/6 | untranslated |
 | tr | Türkçe (Turkish) | ltr | 1 (universal) | 0/1800 | 1800 | 0 | 0 | 0/6 | untranslated |
 | uk | Українська (Ukrainian) | ltr | 3 (russian) | 1800/1800 | 0 | 1 | 0 | 6/6 | complete |
-| ur | اردو (Urdu) | rtl | 2 (english) | 0/1800 | 1800 | 0 | 0 | 0/6 | untranslated |
+| ur | اردو (Urdu) | rtl | 2 (english) | 1800/1800 | 0 | 3 | 0 | 0/6 | partial |
 | uz | Oʻzbekcha (Uzbek) | ltr | 2 (english) | 0/1800 | 1800 | 0 | 0 | 0/6 | untranslated |
 | vi | Tiếng Việt (Vietnamese) | ltr | 1 (universal) | 0/1800 | 1800 | 0 | 0 | 0/6 | untranslated |
 | zh-CN | 简体中文 (Chinese (Simplified)) | ltr | 1 (universal) | 1800/1800 | 0 | 1 | 0 | 6/6 | complete |
 | zh-TW | 繁體中文 (Chinese (Traditional)) | ltr | 1 (universal) | 1800/1800 | 0 | 1 | 0 | 6/6 | complete |
 
-Complete: 19 of 50 translated languages: ar, da, de, es, es-MX, fr, id, it, ja, nl, no, pl, pt, pt-BR, ru, sv, uk, zh-CN, zh-TW
+Complete: 20 of 50 translated languages: ar, da, de, es, es-MX, fa, fr, id, it, ja, nl, no, pl, pt, pt-BR, ru, sv, uk, zh-CN, zh-TW
 
-Not complete: bg, bn, ca, cs, el, et, fa, fi, fil, ga, he, hi, hr, hu, is, ko, lt, lv, ms, ro, si, sk, sl, sr, sw, ta, th, tr, ur, uz, vi
+Not complete: bg, bn, ca, cs, el, et, fi, fil, ga, he, hi, hr, hu, is, ko, lt, lv, ms, ro, si, sk, sl, sr, sw, ta, th, tr, ur, uz, vi
