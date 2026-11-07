@@ -2891,812 +2891,813 @@ xtool setup</translation>
     </message>
     <message>
         <source>Connect a device to take a screenshot.</source>
-        <translation type="unfinished"></translation>
+        <translation>Pievienojiet ierīci, lai uzņemtu ekrānuzņēmumu.</translation>
     </message>
     <message>
         <source>Screenshot saved and copied · %1</source>
-        <translation type="unfinished"></translation>
+        <translation>Ekrānuzņēmums saglabāts un nokopēts · %1</translation>
     </message>
     <message>
         <source>Save and copy a device screenshot</source>
-        <translation type="unfinished"></translation>
+        <translation>Saglabāt un kopēt ierīces ekrānuzņēmumu</translation>
     </message>
     <message>
         <source>Save and copy a screenshot</source>
-        <translation type="unfinished"></translation>
+        <translation>Saglabāt un kopēt ekrānuzņēmumu</translation>
     </message>
     <message>
         <source>Choose a device first, then drop the app on it.</source>
-        <translation type="unfinished"></translation>
+        <translation>Vispirms izvēlieties ierīci, pēc tam nometiet uz tās lietotni.</translation>
     </message>
     <message>
         <source>Android devices install .apk files.</source>
-        <translation type="unfinished"></translation>
+        <translation>Android ierīces instalē .apk failus.</translation>
     </message>
     <message>
         <source>An iPhone installs one signed .ipa file.</source>
-        <translation type="unfinished"></translation>
+        <translation>iPhone instalē vienu parakstītu .ipa failu.</translation>
     </message>
     <message>
         <source>Apps for the Mac&apos;s simulator are installed with Apple&apos;s tools.</source>
-        <translation type="unfinished"></translation>
+        <translation>Mac simulatora lietotnes instalē ar Apple rīkiem.</translation>
     </message>
     <message>
         <source>Installing %1 on %2…</source>
-        <translation type="unfinished"></translation>
+        <translation>Instalē %1 ierīcē %2…</translation>
     </message>
     <message>
         <source>Installing · progress under Builds &amp; jobs</source>
-        <translation type="unfinished"></translation>
+        <translation>Instalē · progress sadaļā Būvējumi un darbi</translation>
     </message>
     <message numerus="yes">
         <source>%n tool(s) available to agents through the CLI and MCP</source>
-        <translation type="unfinished">
-            <numerusform></numerusform>
-            <numerusform></numerusform>
-            <numerusform></numerusform>
+        <translation>
+            <numerusform>Aģentiem caur CLI un MCP pieejams %n rīks</numerusform>
+            <numerusform>Aģentiem caur CLI un MCP pieejami %n rīki</numerusform>
+            <numerusform>Aģentiem caur CLI un MCP pieejami %n rīku</numerusform>
         </translation>
     </message>
     <message>
         <source>A job is already running for this project. You can open or stop it under Builds &amp; jobs.</source>
-        <translation type="unfinished"></translation>
+        <translation>Šim projektam jau notiek darbs. To var atvērt vai apturēt sadaļā Būvējumi un darbi.</translation>
     </message>
     <message>
         <source>AUTOMATION</source>
-        <translation type="unfinished"></translation>
+        <translation>AUTOMATIZĀCIJA</translation>
     </message>
     <message>
         <source>About Tomacco</source>
-        <translation type="unfinished"></translation>
+        <translation>Par Tomacco</translation>
     </message>
     <message>
         <source>About Tomacco · version, license and source code</source>
-        <translation type="unfinished"></translation>
+        <translation>Par Tomacco · versija, licence un pirmkods</translation>
     </message>
     <message>
         <source>Agent API not ready</source>
-        <translation type="unfinished"></translation>
+        <translation>Aģentu API nav gatavs</translation>
     </message>
     <message>
         <source>Agents</source>
-        <translation type="unfinished"></translation>
+        <translation>Aģenti</translation>
     </message>
     <message>
         <source>All files (*)</source>
-        <translation type="unfinished"></translation>
+        <translation>Visi faili (*)</translation>
     </message>
     <message>
         <source>Android is starting…</source>
-        <translation type="unfinished"></translation>
+        <translation>Android tiek palaists…</translation>
     </message>
     <message>
         <source>App launch: %1. Details under Builds &amp; jobs.</source>
-        <translation type="unfinished"></translation>
+        <translation>Lietotnes palaišana: %1. Detaļas sadaļā Būvējumi un darbi.</translation>
     </message>
     <message>
         <source>App launched</source>
-        <translation type="unfinished"></translation>
+        <translation>Lietotne palaista</translation>
     </message>
     <message>
         <source>App running on %1 · end the session before switching targets</source>
-        <translation type="unfinished"></translation>
+        <translation>Lietotne darbojas ierīcē %1 · pirms mērķa maiņas beidziet sesiju</translation>
     </message>
     <message>
         <source>App running · apply changes with Hot Reload</source>
-        <translation type="unfinished"></translation>
+        <translation>Lietotne darbojas · piemērojiet izmaiņas ar Hot Reload</translation>
     </message>
     <message>
         <source>Apple SDK</source>
-        <translation type="unfinished"></translation>
+        <translation>Apple SDK</translation>
     </message>
     <message>
         <source>Apple sign-in</source>
-        <translation type="unfinished"></translation>
+        <translation>Apple pieteikšanās</translation>
     </message>
     <message>
         <source>Apple sign-in opened in the local terminal</source>
-        <translation type="unfinished"></translation>
+        <translation>Apple pieteikšanās atvērta lokālajā terminālī</translation>
     </message>
     <message>
         <source>Applying changes to the running app…</source>
-        <translation type="unfinished"></translation>
+        <translation>Piemēro izmaiņas darbojošajai lietotnei…</translation>
     </message>
     <message>
         <source>Back</source>
-        <translation type="unfinished"></translation>
+        <translation>Atpakaļ</translation>
     </message>
     <message>
         <source>Build running…</source>
-        <translation type="unfinished"></translation>
+        <translation>Notiek būvēšana…</translation>
     </message>
     <message>
         <source>Build, run and test native Android and iOS apps on Linux, by hand or with your agents.</source>
-        <translation type="unfinished"></translation>
+        <translation>Būvējiet, palaidiet un testējiet vietejās Android un iOS lietotnes Linux vidē — manuāli vai ar saviem aģentiem.</translation>
     </message>
     <message>
         <source>Builds &amp; jobs</source>
-        <translation type="unfinished"></translation>
+        <translation>Būvējumi un darbi</translation>
     </message>
     <message>
         <source>Capture saved · %1</source>
-        <translation type="unfinished"></translation>
+        <translation>Ieraksts saglabāts · %1</translation>
     </message>
     <message>
         <source>Case color</source>
-        <translation type="unfinished"></translation>
+        <translation>Korpusa krāsa</translation>
     </message>
     <message>
         <source>Check again</source>
-        <translation type="unfinished"></translation>
+        <translation>Pārbaudīt vēlreiz</translation>
     </message>
     <message>
         <source>Choose a Mac</source>
-        <translation type="unfinished"></translation>
+        <translation>Izvēlieties Mac</translation>
     </message>
     <message>
         <source>Choose a device</source>
-        <translation type="unfinished"></translation>
+        <translation>Izvēlieties ierīci</translation>
     </message>
     <message>
         <source>Choose ‘Sign in to Apple’ and finish signing in in the local terminal.</source>
-        <translation type="unfinished"></translation>
+        <translation>Izvēlieties „Pieteikties Apple” un pabeidziet pieteikšanos lokālajā terminālī.</translation>
     </message>
     <message>
         <source>Color</source>
-        <translation type="unfinished"></translation>
+        <translation>Krāsa</translation>
     </message>
     <message>
         <source>Connect</source>
-        <translation type="unfinished"></translation>
+        <translation>Savienot</translation>
     </message>
     <message>
         <source>Connect Mac</source>
-        <translation type="unfinished"></translation>
+        <translation>Pievienot Mac</translation>
     </message>
     <message>
         <source>Connect an iPhone or iPad via USB and confirm ‘Trust This Computer’.</source>
-        <translation type="unfinished"></translation>
+        <translation>Pievienojiet iPhone vai iPad, izmantojot USB, un apstipriniet „Uzticēties šim datoram”.</translation>
     </message>
     <message>
         <source>Connect the Apple simulator to Linux</source>
-        <translation type="unfinished"></translation>
+        <translation>Savienot Apple simulatoru ar Linux</translation>
     </message>
     <message>
         <source>Connect the unlocked iPhone. The usbmuxd service must be available.</source>
-        <translation type="unfinished"></translation>
+        <translation>Pievienojiet atbloķētu iPhone. Pakalpojumam usbmuxd jābūt pieejamam.</translation>
     </message>
     <message>
         <source>Connected</source>
-        <translation type="unfinished"></translation>
+        <translation>Savienots</translation>
     </message>
     <message>
         <source>Connecting</source>
-        <translation type="unfinished"></translation>
+        <translation>Savieno</translation>
     </message>
     <message>
         <source>Connecting the picture…</source>
-        <translation type="unfinished"></translation>
+        <translation>Savieno attēlu…</translation>
     </message>
     <message>
         <source>Not mirroring</source>
-        <translation type="unfinished"></translation>
+        <translation>Nav spoguļošanas</translation>
     </message>
     <message>
         <source>On the iPhone, open Control Center, tap Screen Mirroring and choose %1.</source>
-        <translation type="unfinished"></translation>
+        <translation>iPhone tālrunī atveriet Vadības centru, pieskarieties Ekrāna spoguļošana un izvēlieties %1.</translation>
     </message>
     <message>
         <source>Connecting…</source>
-        <translation type="unfinished"></translation>
+        <translation>Savieno…</translation>
     </message>
     <message>
         <source>Connection name, e.g. build-mac</source>
-        <translation type="unfinished"></translation>
+        <translation>Savienojuma nosaukums, piem., build-mac</translation>
     </message>
     <message>
         <source>Control program</source>
-        <translation type="unfinished"></translation>
+        <translation>Vadības programma</translation>
     </message>
     <message>
         <source>Control program unavailable</source>
-        <translation type="unfinished"></translation>
+        <translation>Vadības programma nav pieejama</translation>
     </message>
     <message>
         <source>Copy companion command</source>
-        <translation type="unfinished"></translation>
+        <translation>Kopēt palīgprogrammas komandu</translation>
     </message>
     <message>
         <source>Copy context</source>
-        <translation type="unfinished"></translation>
+        <translation>Kopēt kontekstu</translation>
     </message>
     <message>
         <source>DEVELOPMENT</source>
-        <translation type="unfinished"></translation>
+        <translation>IZSTRĀDE</translation>
     </message>
     <message>
         <source>Detach the device into its own window</source>
-        <translation type="unfinished"></translation>
+        <translation>Atdalīt ierīci atsevišķā logā</translation>
     </message>
     <message>
         <source>Device pairing</source>
-        <translation type="unfinished"></translation>
+        <translation>Ierīces sapārošana</translation>
     </message>
     <message>
         <source>Devices</source>
-        <translation type="unfinished"></translation>
+        <translation>Ierīces</translation>
     </message>
     <message>
         <source>Disconnect</source>
-        <translation type="unfinished"></translation>
+        <translation>Atvienot</translation>
     </message>
     <message>
         <source>Dismiss notice</source>
-        <translation type="unfinished"></translation>
+        <translation>Nerādīt paziņojumu</translation>
     </message>
     <message>
         <source>Dock</source>
-        <translation type="unfinished"></translation>
+        <translation>Piestiprināt</translation>
     </message>
     <message>
         <source>Download SDK from Apple</source>
-        <translation type="unfinished"></translation>
+        <translation>Lejupielādēt SDK no Apple</translation>
     </message>
     <message>
         <source>Download control package</source>
-        <translation type="unfinished"></translation>
+        <translation>Lejupielādēt vadības pakotni</translation>
     </message>
     <message>
         <source>Download the Xcode archive from Apple, then choose ‘Import SDK’. Processing runs on Linux.</source>
-        <translation type="unfinished"></translation>
+        <translation>Lejupielādējiet Xcode arhīvu no Apple, pēc tam izvēlieties „Importēt SDK”. Apstrāde notiek Linux vidē.</translation>
     </message>
     <message>
         <source>Ending the session…</source>
-        <translation type="unfinished"></translation>
+        <translation>Beidz sesiju…</translation>
     </message>
     <message>
         <source>Enter text</source>
-        <translation type="unfinished"></translation>
+        <translation>Ievadiet tekstu</translation>
     </message>
     <message>
         <source>Files</source>
-        <translation type="unfinished"></translation>
+        <translation>Faili</translation>
     </message>
     <message>
         <source>First click into the app&apos;s text field. This text is pasted through the device clipboard.</source>
-        <translation type="unfinished"></translation>
+        <translation>Vispirms noklikšķiniet lietotnes teksta laukā. Šis teksts tiek ielīmēts caur ierīces starpliktuvi.</translation>
     </message>
     <message>
         <source>First click the text field you want in the app. Its entire accessible value is replaced, umlauts and emoji included.</source>
-        <translation type="unfinished"></translation>
+        <translation>Vispirms noklikšķiniet vēlamajā lietotnes teksta laukā. Visa tā pieejamā vērtība tiek aizstāta, ieskaitot diakritiskas zīmes un emocijīmes.</translation>
     </message>
     <message>
         <source>Frame</source>
-        <translation type="unfinished"></translation>
+        <translation>Rāmis</translation>
     </message>
     <message>
         <source>Import SDK</source>
-        <translation type="unfinished"></translation>
+        <translation>Importēt SDK</translation>
     </message>
     <message>
         <source>Import the Apple SDK from Xcode</source>
-        <translation type="unfinished"></translation>
+        <translation>Importēt Apple SDK no Xcode</translation>
     </message>
     <message>
         <source>Insert text</source>
-        <translation type="unfinished"></translation>
+        <translation>Ievietot tekstu</translation>
     </message>
     <message>
         <source>Install libimobiledevice for device pairing.</source>
-        <translation type="unfinished"></translation>
+        <translation>Instalējiet libimobiledevice ierīču sapārošanai.</translation>
     </message>
     <message>
         <source>Install libusbmuxd for the USB connection.</source>
-        <translation type="unfinished"></translation>
+        <translation>Instalējiet libusbmuxd USB savienojumam.</translation>
     </message>
     <message>
         <source>Install the Swift toolchain that matches your Apple SDK.</source>
-        <translation type="unfinished"></translation>
+        <translation>Instalējiet Swift rīkkopu, kas atbilst jūsu Apple SDK.</translation>
     </message>
     <message>
         <source>Install xtool for Linux.</source>
-        <translation type="unfinished"></translation>
+        <translation>Instalējiet xtool Linux videi.</translation>
     </message>
     <message>
         <source>Installed WebDriverAgent bundle ID</source>
-        <translation type="unfinished"></translation>
+        <translation>Instalētā WebDriverAgent pakotnes ID</translation>
     </message>
     <message>
         <source>Interface language; System follows the desktop language</source>
-        <translation type="unfinished"></translation>
+        <translation>Saskarnes valoda; Sistēma seko darbvirsmas valodai</translation>
     </message>
     <message>
         <source>Language</source>
-        <translation type="unfinished"></translation>
+        <translation>Valoda</translation>
     </message>
     <message>
         <source>Sponsor</source>
-        <translation type="unfinished"></translation>
+        <translation>Atbalstīt</translation>
     </message>
     <message>
         <source>Legal notes</source>
-        <translation type="unfinished"></translation>
+        <translation>Juridiskas piezīmes</translation>
     </message>
     <message>
         <source>License</source>
-        <translation type="unfinished"></translation>
+        <translation>Licence</translation>
     </message>
     <message>
         <source>Linux builds your SwiftPM/xtool app. The connected iPhone runs it. Set up the Apple SDK and signing here once.</source>
-        <translation type="unfinished"></translation>
+        <translation>Linux būvē jūsu SwiftPM/xtool lietotni. Pievienotais iPhone to palaiž. Iestatiet Apple SDK un parakstīšanu šeit vienreiz.</translation>
     </message>
     <message>
         <source>Live device</source>
-        <translation type="unfinished"></translation>
+        <translation>Tiešraides ierīce</translation>
     </message>
     <message>
         <source>Load developer image</source>
-        <translation type="unfinished"></translation>
+        <translation>Ielādēt izstrādātāja attēlu</translation>
     </message>
     <message>
         <source>Mac terminal: brew install facebook/fb/idb
 SSH uses your existing keys and the known host identity.</source>
-        <translation type="unfinished"></translation>
+        <translation>Mac terminālis: brew install facebook/fb/idb
+SSH izmanto jūsu esošās atslēgas un zināmo resursdatora identitāti.</translation>
     </message>
     <message>
         <source>No iOS simulator runtime is installed on this Mac yet. Install one in Xcode → Settings → Components.</source>
-        <translation type="unfinished"></translation>
+        <translation>Šajā Mac vēl nav instalēta neviena iOS simulatora izpildes vide. Instalējiet to sadaļā Xcode → Settings → Components.</translation>
     </message>
     <message>
         <source>No project open</source>
-        <translation type="unfinished"></translation>
+        <translation>Nav atvērta projekta</translation>
     </message>
     <message>
         <source>No project yet</source>
-        <translation type="unfinished"></translation>
+        <translation>Vēl nav projekta</translation>
     </message>
     <message>
         <source>Not available</source>
-        <translation type="unfinished"></translation>
+        <translation>Nav pieejams</translation>
     </message>
     <message>
         <source>Open a project folder · Ctrl+O</source>
-        <translation type="unfinished"></translation>
+        <translation>Atvērt projekta mapi · Ctrl+O</translation>
     </message>
     <message>
         <source>Open job</source>
-        <translation type="unfinished"></translation>
+        <translation>Atvērt darbu</translation>
     </message>
     <message>
         <source>Open project</source>
-        <translation type="unfinished"></translation>
+        <translation>Atvērt projektu</translation>
     </message>
     <message>
         <source>Overview</source>
-        <translation type="unfinished"></translation>
+        <translation>Pārskats</translation>
     </message>
     <message>
         <source>Own window</source>
-        <translation type="unfinished"></translation>
+        <translation>Atsevišķs logs</translation>
     </message>
     <message>
         <source>Pair device</source>
-        <translation type="unfinished"></translation>
+        <translation>Sapārot ierīci</translation>
     </message>
     <message>
         <source>Play the app&apos;s sound on this computer</source>
-        <translation type="unfinished"></translation>
+        <translation>Atskaņot lietotnes skaņu šajā datorā</translation>
     </message>
     <message>
         <source>Tomacco is free software under the GNU General Public License. Source: GPL-2.0-or-later. Distributed binaries: GPL-3.0-or-later, because they include Apache-2.0 components. It comes with ABSOLUTELY NO WARRANTY.</source>
-        <translation type="unfinished"></translation>
+        <translation>Tomacco ir brīvā programmatūra saskaņā ar GNU General Public License. Pirmkods: GPL-2.0-or-later. Izplatītie binārie faili: GPL-3.0-or-later, jo tie ietver Apache-2.0 komponentus. Tai NAV NEKĀDAS GARANTIJAS.</translation>
     </message>
     <message>
         <source>Project and runtime context copied</source>
-        <translation type="unfinished"></translation>
+        <translation>Projekta un izpildes vides konteksts nokopēts</translation>
     </message>
     <message>
         <source>Project busy</source>
-        <translation type="unfinished"></translation>
+        <translation>Projekts aizņemts</translation>
     </message>
     <message>
         <source>Project directory on the Mac, e.g. /Users/me/Projects/app</source>
-        <translation type="unfinished"></translation>
+        <translation>Projekta direktorija Mac datorā, piem., /Users/me/Projects/app</translation>
     </message>
     <message>
         <source>Project format</source>
-        <translation type="unfinished"></translation>
+        <translation>Projekta formāts</translation>
     </message>
     <message>
         <source>Reference frame recognized from the display size; the frame geometry is approximated</source>
-        <translation type="unfinished"></translation>
+        <translation>Atsauces rāmis atpazīts pēc displeja izmēra; rāmīa ģeometrija ir aptuvena</translation>
     </message>
     <message>
         <source>Replace text field</source>
-        <translation type="unfinished"></translation>
+        <translation>Aizstāt teksta lauku</translation>
     </message>
     <message>
         <source>Reused the running session</source>
-        <translation type="unfinished"></translation>
+        <translation>Atkārtoti izmantota darbojošā sesija</translation>
     </message>
     <message>
         <source>Rotate</source>
-        <translation type="unfinished"></translation>
+        <translation>Pagriezt</translation>
     </message>
     <message>
         <source>Run app</source>
-        <translation type="unfinished"></translation>
+        <translation>Palaist lietotni</translation>
     </message>
     <message>
         <source>SSH target, e.g. user@mac.local</source>
-        <translation type="unfinished"></translation>
+        <translation>SSH mērķis, piem., user@mac.local</translation>
     </message>
     <message>
         <source>Save &amp; load simulators</source>
-        <translation type="unfinished"></translation>
+        <translation>Saglabāt un ielādēt simulatorus</translation>
     </message>
     <message>
         <source>Search</source>
-        <translation type="unfinished"></translation>
+        <translation>Meklēt</translation>
     </message>
     <message>
         <source>Search for devices again</source>
-        <translation type="unfinished"></translation>
+        <translation>Meklēt ierīces vēlreiz</translation>
     </message>
     <message>
         <source>Search navigation and all tools · Ctrl+K</source>
-        <translation type="unfinished"></translation>
+        <translation>Meklēt navigācijā un visos rīkos · Ctrl+K</translation>
     </message>
     <message>
         <source>Session ended</source>
-        <translation type="unfinished"></translation>
+        <translation>Sesija beidzās</translation>
     </message>
     <message>
         <source>Session ended · %1</source>
-        <translation type="unfinished"></translation>
+        <translation>Sesija beidzās · %1</translation>
     </message>
     <message>
         <source>Set up Mac</source>
-        <translation type="unfinished"></translation>
+        <translation>Iestatīt Mac</translation>
     </message>
     <message>
         <source>Set up another Android model</source>
-        <translation type="unfinished"></translation>
+        <translation>Iestatīt citu Android modeli</translation>
     </message>
     <message>
         <source>Set up go-ios for the iPhone developer services.</source>
-        <translation type="unfinished"></translation>
+        <translation>Iestatiet go-ios iPhone izstrādātāja pakalpojumiem.</translation>
     </message>
     <message>
         <source>Set up iPhone</source>
-        <translation type="unfinished"></translation>
+        <translation>Iestatīt iPhone</translation>
     </message>
     <message>
         <source>Setup started · progress under Builds &amp; jobs</source>
-        <translation type="unfinished"></translation>
+        <translation>Iestatīšana sākta · progress sadaļā Būvējumi un darbi</translation>
     </message>
     <message>
         <source>Show installed apps</source>
-        <translation type="unfinished"></translation>
+        <translation>Rādīt instalētās lietotnes</translation>
     </message>
     <message>
         <source>Show the device frame; Android provides the real status bar</source>
-        <translation type="unfinished"></translation>
+        <translation>Rādīt ierīces rāmi; Android nodrošina īsto statusa joslu</translation>
     </message>
     <message>
         <source>Sign &amp; install control</source>
-        <translation type="unfinished"></translation>
+        <translation>Parakstīt un instalēt vadību</translation>
     </message>
     <message>
         <source>Sign in to Apple</source>
-        <translation type="unfinished"></translation>
+        <translation>Pieteikties Apple</translation>
     </message>
     <message>
         <source>Signing can change the bundle ID. Then enter the ID of the installed WebDriverAgent runner. A modern local iOS emulator is not included at present.</source>
-        <translation type="unfinished"></translation>
+        <translation>Parakstīšana var mainīt pakotnes ID. Tad ievadiet instalētā WebDriverAgent izpildītāja ID. Moderns lokālais iOS emulators pašlaik nav iekļauts.</translation>
     </message>
     <message>
         <source>Simulator on a Mac</source>
-        <translation type="unfinished"></translation>
+        <translation>Simulators Mac datorā</translation>
     </message>
     <message>
         <source>Sound</source>
-        <translation type="unfinished"></translation>
+        <translation>Skaņa</translation>
     </message>
     <message>
         <source>Sound error</source>
-        <translation type="unfinished"></translation>
+        <translation>Skaņas kļūda</translation>
     </message>
     <message>
         <source>Sound…</source>
-        <translation type="unfinished"></translation>
+        <translation>Skaņa…</translation>
     </message>
     <message>
         <source>Source code ↗</source>
-        <translation type="unfinished"></translation>
+        <translation>Pirmkods ↗</translation>
     </message>
     <message>
         <source>Start iOS tunnel</source>
-        <translation type="unfinished"></translation>
+        <translation>Palaist iOS tuneli</translation>
     </message>
     <message>
         <source>Stop</source>
-        <translation type="unfinished"></translation>
+        <translation>Apturēt</translation>
     </message>
     <message>
         <source>Stop forwarding sound; restore output on the device</source>
-        <translation type="unfinished"></translation>
+        <translation>Apturēt skaņas pārsūtīšanu; atjaunot izvadi ierīcē</translation>
     </message>
     <message>
         <source>Switch workspace</source>
-        <translation type="unfinished"></translation>
+        <translation>Pārslēgt darbvietu</translation>
     </message>
     <message>
         <source>System</source>
-        <translation type="unfinished"></translation>
+        <translation>Sistēma</translation>
     </message>
     <message>
         <source>Text…</source>
-        <translation type="unfinished"></translation>
+        <translation>Teksts…</translation>
     </message>
     <message>
         <source>The Mac needs Xcode with an iOS simulator runtime, SSH access and idb_companion. Your own Mac or a rented one works.</source>
-        <translation type="unfinished"></translation>
+        <translation>Mac datoram nepieciešams Xcode ar iOS simulatora izpildes vidi, SSH piekļuve un idb_companion. Der jūsu pašu vai īrēts Mac.</translation>
     </message>
     <message>
         <source>The desktop and its control program come from different versions. Install both from the same build.</source>
-        <translation type="unfinished"></translation>
+        <translation>Darbvirsmas lietotne un tās vadības programma ir no dažādām versijām. Instalējiet abas no viena būvējuma.</translation>
     </message>
     <message>
         <source>The device did not become ready in time.</source>
-        <translation type="unfinished"></translation>
+        <translation>Ierīce laikā nekļuva gatava.</translation>
     </message>
     <message>
         <source>The runtime is still starting…</source>
-        <translation type="unfinished"></translation>
+        <translation>Izpildes vide vēl tiek palaista…</translation>
     </message>
     <message>
         <source>Third-party components keep their own licenses: THIRD_PARTY_NOTICES.md lists them, and docs/legal.md has further legal notes.</source>
-        <translation type="unfinished"></translation>
+        <translation>Trešo pušu komponentiem ir savas licences: tās uzskaitītas THIRD_PARTY_NOTICES.md, un docs/legal.md satur papildu juridiskas piezīmes.</translation>
     </message>
     <message>
         <source>Release notes</source>
-        <translation type="unfinished"></translation>
+        <translation>Laidiena piezīmes</translation>
     </message>
     <message>
         <source>Third-party notices</source>
-        <translation type="unfinished"></translation>
+        <translation>Trešo pušu paziņojumi</translation>
     </message>
     <message>
         <source>This Linux build path needs a SwiftPM/xtool project. Flutter and Xcode projects are not converted automatically yet.</source>
-        <translation type="unfinished"></translation>
+        <translation>Šim Linux būvēšanas ceļam nepieciešams SwiftPM/xtool projekts. Flutter un Xcode projekti vēl netiek automātiski pārveidoti.</translation>
     </message>
     <message>
         <source>Turn on Developer Mode on the iPhone and confirm the pairing. The Apple sign-in opens a local terminal; passwords are not entered in Tomacco or MCP.</source>
-        <translation type="unfinished"></translation>
+        <translation>Ieslēdziet iPhone izstrādātāja režīmu un apstipriniet sapārošanu. Apple pieteikšanās atver lokālu termināli; paroles netiek ievadītas Tomacco vai MCP.</translation>
     </message>
     <message>
         <source>UI tests</source>
-        <translation type="unfinished"></translation>
+        <translation>Saskarnes testi</translation>
     </message>
     <message>
         <source>USB connection</source>
-        <translation type="unfinished"></translation>
+        <translation>USB savienojums</translation>
     </message>
     <message>
         <source>USB picture transfer</source>
-        <translation type="unfinished"></translation>
+        <translation>Attēla pārsūtīšana caur USB</translation>
     </message>
     <message>
         <source>Version %1</source>
-        <translation type="unfinished"></translation>
+        <translation>Versija %1</translation>
     </message>
     <message>
         <source>View the sound forwarding error</source>
-        <translation type="unfinished"></translation>
+        <translation>Skatīt skaņas pārsūtīšanas kļūdu</translation>
     </message>
     <message>
         <source>WORKSPACE</source>
-        <translation type="unfinished"></translation>
+        <translation>DARBVIETA</translation>
     </message>
     <message>
         <source>Web preview</source>
-        <translation type="unfinished"></translation>
+        <translation>Tīmekļa priekšskatījums</translation>
     </message>
     <message>
         <source>Xcode archive (*.xip)</source>
-        <translation type="unfinished"></translation>
+        <translation>Xcode arhīvs (*.xip)</translation>
     </message>
     <message>
         <source>iPhone development without a Mac</source>
-        <translation type="unfinished"></translation>
+        <translation>iPhone izstrāde bez Mac</translation>
     </message>
     <message>
         <source>iPhone services</source>
-        <translation type="unfinished"></translation>
+        <translation>iPhone pakalpojumi</translation>
     </message>
     <message>
         <source>iPhone via USB</source>
-        <translation type="unfinished"></translation>
+        <translation>iPhone caur USB</translation>
     </message>
     <message>
         <source>Command</source>
-        <translation type="unfinished"></translation>
+        <translation>Komanda</translation>
     </message>
     <message>
         <source>Hide activity</source>
-        <translation type="unfinished"></translation>
+        <translation>Paslēpt darbības</translation>
     </message>
     <message>
         <source>Show activity</source>
-        <translation type="unfinished"></translation>
+        <translation>Rādīt darbības</translation>
     </message>
     <message>
         <source>Switch to light appearance</source>
-        <translation type="unfinished"></translation>
+        <translation>Pārslēgt uz gaišo izskatu</translation>
     </message>
     <message>
         <source>Switch to dark appearance</source>
-        <translation type="unfinished"></translation>
+        <translation>Pārslēgt uz tumšo izskatu</translation>
     </message>
     <message>
         <source>Settings</source>
-        <translation type="unfinished"></translation>
+        <translation>Iestatījumi</translation>
     </message>
     <message>
         <source>Keyboard shortcuts</source>
-        <translation type="unfinished"></translation>
+        <translation>Īisņu taustiņi</translation>
     </message>
     <message>
         <source>Booting</source>
-        <translation type="unfinished"></translation>
+        <translation>Sāknē</translation>
     </message>
     <message>
         <source>Live</source>
-        <translation type="unfinished"></translation>
+        <translation>Tiešraidē</translation>
     </message>
     <message>
         <source>Failed</source>
-        <translation type="unfinished"></translation>
+        <translation>Neizdevās</translation>
     </message>
     <message>
         <source>Disconnected</source>
-        <translation type="unfinished"></translation>
+        <translation>Atvienots</translation>
     </message>
     <message>
         <source>No device</source>
-        <translation type="unfinished"></translation>
+        <translation>Nav ierīces</translation>
     </message>
     <message>
         <source>Activity</source>
-        <translation type="unfinished"></translation>
+        <translation>Darbības</translation>
     </message>
     <message>
         <source>Jobs and agent calls · Ctrl+J</source>
-        <translation type="unfinished"></translation>
+        <translation>Darbi un aģenta izsaukumi · Ctrl+J</translation>
     </message>
     <message>
         <source>Appearance and language · Ctrl+,</source>
-        <translation type="unfinished"></translation>
+        <translation>Izskats un valoda · Ctrl+,</translation>
     </message>
     <message numerus="yes">
         <source>%n job(s) running</source>
-        <translation type="unfinished">
-            <numerusform></numerusform>
-            <numerusform></numerusform>
-            <numerusform></numerusform>
+        <translation>
+            <numerusform>Darbojas %n darbs</numerusform>
+            <numerusform>Darbojas %n darbi</numerusform>
+            <numerusform>Darbojas %n darbu</numerusform>
         </translation>
     </message>
     <message>
         <source>Ctrl+K search · F1 keys</source>
-        <translation type="unfinished"></translation>
+        <translation>Ctrl+K meklēšana · F1 taustiņi</translation>
     </message>
     <message>
         <source>Appearance</source>
-        <translation type="unfinished"></translation>
+        <translation>Izskats</translation>
     </message>
     <message>
         <source>Dark</source>
-        <translation type="unfinished"></translation>
+        <translation>Tumšs</translation>
     </message>
     <message>
         <source>Light</source>
-        <translation type="unfinished"></translation>
+        <translation>Gaišs</translation>
     </message>
     <message>
         <source>Search views, commands and tools</source>
-        <translation type="unfinished"></translation>
+        <translation>Meklēt skatus, komandas un rīkus</translation>
     </message>
     <message>
         <source>Show or hide activity</source>
-        <translation type="unfinished"></translation>
+        <translation>Rādīt vai paslēpt darbības</translation>
     </message>
     <message>
         <source>Save the current file</source>
-        <translation type="unfinished"></translation>
+        <translation>Saglabāt pašreizējo failu</translation>
     </message>
     <message>
         <source>Search the project&apos;s source code</source>
-        <translation type="unfinished"></translation>
+        <translation>Meklēt projekta pirmkodā</translation>
     </message>
     <message>
         <source>Full screen · web preview</source>
-        <translation type="unfinished"></translation>
+        <translation>Pilnekrāns · tīmekļa priekšskatījums</translation>
     </message>
     <message>
         <source>Project</source>
-        <translation type="unfinished"></translation>
+        <translation>Projekts</translation>
     </message>
     <message>
         <source>Device</source>
-        <translation type="unfinished"></translation>
+        <translation>Ierīce</translation>
     </message>
     <message>
         <source>Run</source>
-        <translation type="unfinished"></translation>
+        <translation>Palaist</translation>
     </message>
     <message>
         <source>Ctrl</source>
-        <translation type="unfinished"></translation>
+        <translation>Ctrl</translation>
     </message>
     <message>
         <source>Building and starting your app…</source>
-        <translation type="unfinished"></translation>
+        <translation>Būvē un palaiž jūsu lietotni…</translation>
     </message>
     <message>
         <source>Copy what your agent needs: this project and the live device</source>
-        <translation type="unfinished"></translation>
+        <translation>Kopējiet to, kas vajadzīgs jūsu aģentam: šo projektu un tiešraides ierīci</translation>
     </message>
     <message>
         <source>Ready for agents</source>
-        <translation type="unfinished"></translation>
+        <translation>Gatavs aģentiem</translation>
     </message>
     <message>
         <source>Your device is in its own window.</source>
-        <translation type="unfinished"></translation>
+        <translation>Jūsu ierīce ir atsevišķā logā.</translation>
     </message>
     <message>
         <source>Drag it by its body. Ctrl+wheel resizes it. Close it to bring it back.</source>
-        <translation type="unfinished"></translation>
+        <translation>Velciet to aiz korpusa. Ctrl+ritenis maina izmēru. Aizveriet to, lai atgrieztu.</translation>
     </message>
     <message>
         <source>Bring it back</source>
-        <translation type="unfinished"></translation>
+        <translation>Atgriezt</translation>
     </message>
     <message>
         <source>Plug in your iPhone.</source>
-        <translation type="unfinished"></translation>
+        <translation>Pievienojiet savu iPhone.</translation>
     </message>
     <message>
         <source>Connect a Mac.</source>
-        <translation type="unfinished"></translation>
+        <translation>Pievienojiet Mac.</translation>
     </message>
     <message>
         <source>Give your agent a phone.</source>
-        <translation type="unfinished"></translation>
+        <translation>Iedodiet savam aģentam tālruni.</translation>
     </message>
     <message>
         <source>Plug it in and unlock it. Build Swift apps on Linux and control them from here.</source>
-        <translation type="unfinished"></translation>
+        <translation>Pievienojiet to un atbloķējiet. Būvējiet Swift lietotnes Linux vidē un vadiet tās no šejienes.</translation>
     </message>
     <message>
         <source>The Apple simulator needs a Mac with Xcode. Yours or a rented one, over SSH.</source>
-        <translation type="unfinished"></translation>
+        <translation>Apple simulatoram nepieciešams Mac ar Xcode. Jūsu pašu vai īrēts, caur SSH.</translation>
     </message>
     <message>
         <source>It builds, runs, taps through and debugs iOS and Android apps. On Linux. No Mac needed.</source>
-        <translation type="unfinished"></translation>
+        <translation>Tas būvē, palaiž, izklikšķina un atkļūdo iOS un Android lietotnes. Linux vidē. Mac nav vajadzīgs.</translation>
     </message>
     <message>
         <source>Connect %1</source>
-        <translation type="unfinished"></translation>
+        <translation>Savienot %1</translation>
     </message>
     <message>
         <source>Add a device</source>
-        <translation type="unfinished"></translation>
+        <translation>Pievienot ierīci</translation>
     </message>
     <message>
         <source>Open a project</source>
-        <translation type="unfinished"></translation>
+        <translation>Atvērt projektu</translation>
     </message>
     <message>
         <source>Completed after %1</source>

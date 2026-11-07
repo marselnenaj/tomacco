@@ -2881,808 +2881,809 @@ xtool setup</translation>
     </message>
     <message>
         <source>Connect a device to take a screenshot.</source>
-        <translation type="unfinished"></translation>
+        <translation>Képernyőkép készítéséhez csatlakoztass egy eszközt.</translation>
     </message>
     <message>
         <source>Screenshot saved and copied · %1</source>
-        <translation type="unfinished"></translation>
+        <translation>Képernyőkép mentve és másolva · %1</translation>
     </message>
     <message>
         <source>Save and copy a device screenshot</source>
-        <translation type="unfinished"></translation>
+        <translation>Eszköz képernyőképének mentése és másolása</translation>
     </message>
     <message>
         <source>Save and copy a screenshot</source>
-        <translation type="unfinished"></translation>
+        <translation>Képernyőkép mentése és másolása</translation>
     </message>
     <message>
         <source>Choose a device first, then drop the app on it.</source>
-        <translation type="unfinished"></translation>
+        <translation>Előbb válassz egy eszközt, majd húzd rá az alkalmazást.</translation>
     </message>
     <message>
         <source>Android devices install .apk files.</source>
-        <translation type="unfinished"></translation>
+        <translation>Az Android-eszközök .apk fájlokat telepítenek.</translation>
     </message>
     <message>
         <source>An iPhone installs one signed .ipa file.</source>
-        <translation type="unfinished"></translation>
+        <translation>Az iPhone egyetlen aláírt .ipa fájlt telepít.</translation>
     </message>
     <message>
         <source>Apps for the Mac&apos;s simulator are installed with Apple&apos;s tools.</source>
-        <translation type="unfinished"></translation>
+        <translation>A Mac szimulátorához készült alkalmazások az Apple eszközeivel telepíthetők.</translation>
     </message>
     <message>
         <source>Installing %1 on %2…</source>
-        <translation type="unfinished"></translation>
+        <translation>%1 telepítése ide: %2…</translation>
     </message>
     <message>
         <source>Installing · progress under Builds &amp; jobs</source>
-        <translation type="unfinished"></translation>
+        <translation>Telepítés · folyamat a Buildek és feladatok alatt</translation>
     </message>
     <message numerus="yes">
         <source>%n tool(s) available to agents through the CLI and MCP</source>
-        <translation type="unfinished">
-            <numerusform></numerusform>
+        <translation>
+            <numerusform>%n eszköz érhető el az ügynökök számára a CLI-n és az MCP-n keresztül</numerusform>
         </translation>
     </message>
     <message>
         <source>A job is already running for this project. You can open or stop it under Builds &amp; jobs.</source>
-        <translation type="unfinished"></translation>
+        <translation>Ehhez a projekthez már fut egy feladat. A Buildek és feladatok alatt megnyithatod vagy leállíthatod.</translation>
     </message>
     <message>
         <source>AUTOMATION</source>
-        <translation type="unfinished"></translation>
+        <translation>AUTOMATIZÁLÁS</translation>
     </message>
     <message>
         <source>About Tomacco</source>
-        <translation type="unfinished"></translation>
+        <translation>A Tomacco névjegye</translation>
     </message>
     <message>
         <source>About Tomacco · version, license and source code</source>
-        <translation type="unfinished"></translation>
+        <translation>A Tomacco névjegye · verzió, licenc és forráskód</translation>
     </message>
     <message>
         <source>Agent API not ready</source>
-        <translation type="unfinished"></translation>
+        <translation>Az ügynök-API nem áll készen</translation>
     </message>
     <message>
         <source>Agents</source>
-        <translation type="unfinished"></translation>
+        <translation>Ügynökök</translation>
     </message>
     <message>
         <source>All files (*)</source>
-        <translation type="unfinished"></translation>
+        <translation>Minden fájl (*)</translation>
     </message>
     <message>
         <source>Android is starting…</source>
-        <translation type="unfinished"></translation>
+        <translation>Az Android indul…</translation>
     </message>
     <message>
         <source>App launch: %1. Details under Builds &amp; jobs.</source>
-        <translation type="unfinished"></translation>
+        <translation>Alkalmazásindítás: %1. Részletek a Buildek és feladatok alatt.</translation>
     </message>
     <message>
         <source>App launched</source>
-        <translation type="unfinished"></translation>
+        <translation>Alkalmazás elindítva</translation>
     </message>
     <message>
         <source>App running on %1 · end the session before switching targets</source>
-        <translation type="unfinished"></translation>
+        <translation>Az alkalmazás itt fut: %1 · célváltás előtt fejezd be a munkamenetet</translation>
     </message>
     <message>
         <source>App running · apply changes with Hot Reload</source>
-        <translation type="unfinished"></translation>
+        <translation>Az alkalmazás fut · a módosításokat Hot Reloaddal alkalmazhatod</translation>
     </message>
     <message>
         <source>Apple SDK</source>
-        <translation type="unfinished"></translation>
+        <translation>Apple SDK</translation>
     </message>
     <message>
         <source>Apple sign-in</source>
-        <translation type="unfinished"></translation>
+        <translation>Apple-bejelentkezés</translation>
     </message>
     <message>
         <source>Apple sign-in opened in the local terminal</source>
-        <translation type="unfinished"></translation>
+        <translation>Az Apple-bejelentkezés megnyílt a helyi terminálban</translation>
     </message>
     <message>
         <source>Applying changes to the running app…</source>
-        <translation type="unfinished"></translation>
+        <translation>Módosítások alkalmazása a futó alkalmazásra…</translation>
     </message>
     <message>
         <source>Back</source>
-        <translation type="unfinished"></translation>
+        <translation>Vissza</translation>
     </message>
     <message>
         <source>Build running…</source>
-        <translation type="unfinished"></translation>
+        <translation>Build folyamatban…</translation>
     </message>
     <message>
         <source>Build, run and test native Android and iOS apps on Linux, by hand or with your agents.</source>
-        <translation type="unfinished"></translation>
+        <translation>Natív Android- és iOS-alkalmazások buildelése, futtatása és tesztelése Linuxon, kézzel vagy az ügynökeiddel.</translation>
     </message>
     <message>
         <source>Builds &amp; jobs</source>
-        <translation type="unfinished"></translation>
+        <translation>Buildek és feladatok</translation>
     </message>
     <message>
         <source>Capture saved · %1</source>
-        <translation type="unfinished"></translation>
+        <translation>Felvétel mentve · %1</translation>
     </message>
     <message>
         <source>Case color</source>
-        <translation type="unfinished"></translation>
+        <translation>Ház színe</translation>
     </message>
     <message>
         <source>Check again</source>
-        <translation type="unfinished"></translation>
+        <translation>Újraellenőrzés</translation>
     </message>
     <message>
         <source>Choose a Mac</source>
-        <translation type="unfinished"></translation>
+        <translation>Mac kiválasztása</translation>
     </message>
     <message>
         <source>Choose a device</source>
-        <translation type="unfinished"></translation>
+        <translation>Eszköz kiválasztása</translation>
     </message>
     <message>
         <source>Choose ‘Sign in to Apple’ and finish signing in in the local terminal.</source>
-        <translation type="unfinished"></translation>
+        <translation>Válaszd a „Bejelentkezés az Apple-be” lehetőséget, és fejezd be a bejelentkezést a helyi terminálban.</translation>
     </message>
     <message>
         <source>Color</source>
-        <translation type="unfinished"></translation>
+        <translation>Szín</translation>
     </message>
     <message>
         <source>Connect</source>
-        <translation type="unfinished"></translation>
+        <translation>Csatlakozás</translation>
     </message>
     <message>
         <source>Connect Mac</source>
-        <translation type="unfinished"></translation>
+        <translation>Mac csatlakoztatása</translation>
     </message>
     <message>
         <source>Connect an iPhone or iPad via USB and confirm ‘Trust This Computer’.</source>
-        <translation type="unfinished"></translation>
+        <translation>Csatlakoztass egy iPhone-t vagy iPadet USB-n, és erősítsd meg a „Megbízom ebben a számítógépben” kérdést.</translation>
     </message>
     <message>
         <source>Connect the Apple simulator to Linux</source>
-        <translation type="unfinished"></translation>
+        <translation>Az Apple-szimulátor csatlakoztatása a Linuxhoz</translation>
     </message>
     <message>
         <source>Connect the unlocked iPhone. The usbmuxd service must be available.</source>
-        <translation type="unfinished"></translation>
+        <translation>Csatlakoztasd a feloldott iPhone-t. Az usbmuxd szolgáltatásnak elérhetőnek kell lennie.</translation>
     </message>
     <message>
         <source>Connected</source>
-        <translation type="unfinished"></translation>
+        <translation>Csatlakoztatva</translation>
     </message>
     <message>
         <source>Connecting</source>
-        <translation type="unfinished"></translation>
+        <translation>Csatlakozás</translation>
     </message>
     <message>
         <source>Connecting the picture…</source>
-        <translation type="unfinished"></translation>
+        <translation>A kép csatlakoztatása…</translation>
     </message>
     <message>
         <source>Not mirroring</source>
-        <translation type="unfinished"></translation>
+        <translation>Nincs tükrözés</translation>
     </message>
     <message>
         <source>On the iPhone, open Control Center, tap Screen Mirroring and choose %1.</source>
-        <translation type="unfinished"></translation>
+        <translation>Az iPhone-on nyisd meg a Vezérlőközpontot, koppints a Képernyőtükrözésre, és válaszd ezt: %1.</translation>
     </message>
     <message>
         <source>Connecting…</source>
-        <translation type="unfinished"></translation>
+        <translation>Csatlakozás…</translation>
     </message>
     <message>
         <source>Connection name, e.g. build-mac</source>
-        <translation type="unfinished"></translation>
+        <translation>Kapcsolat neve, pl. build-mac</translation>
     </message>
     <message>
         <source>Control program</source>
-        <translation type="unfinished"></translation>
+        <translation>Vezérlőprogram</translation>
     </message>
     <message>
         <source>Control program unavailable</source>
-        <translation type="unfinished"></translation>
+        <translation>A vezérlőprogram nem érhető el</translation>
     </message>
     <message>
         <source>Copy companion command</source>
-        <translation type="unfinished"></translation>
+        <translation>Segédprogram parancsának másolása</translation>
     </message>
     <message>
         <source>Copy context</source>
-        <translation type="unfinished"></translation>
+        <translation>Kontextus másolása</translation>
     </message>
     <message>
         <source>DEVELOPMENT</source>
-        <translation type="unfinished"></translation>
+        <translation>FEJLESZTÉS</translation>
     </message>
     <message>
         <source>Detach the device into its own window</source>
-        <translation type="unfinished"></translation>
+        <translation>Az eszköz leválasztása saját ablakba</translation>
     </message>
     <message>
         <source>Device pairing</source>
-        <translation type="unfinished"></translation>
+        <translation>Eszközpárosítás</translation>
     </message>
     <message>
         <source>Devices</source>
-        <translation type="unfinished"></translation>
+        <translation>Eszközök</translation>
     </message>
     <message>
         <source>Disconnect</source>
-        <translation type="unfinished"></translation>
+        <translation>Leválasztás</translation>
     </message>
     <message>
         <source>Dismiss notice</source>
-        <translation type="unfinished"></translation>
+        <translation>Értesítés elvetése</translation>
     </message>
     <message>
         <source>Dock</source>
-        <translation type="unfinished"></translation>
+        <translation>Dokkolás</translation>
     </message>
     <message>
         <source>Download SDK from Apple</source>
-        <translation type="unfinished"></translation>
+        <translation>SDK letöltése az Apple-től</translation>
     </message>
     <message>
         <source>Download control package</source>
-        <translation type="unfinished"></translation>
+        <translation>Vezérlőcsomag letöltése</translation>
     </message>
     <message>
         <source>Download the Xcode archive from Apple, then choose ‘Import SDK’. Processing runs on Linux.</source>
-        <translation type="unfinished"></translation>
+        <translation>Töltsd le az Xcode-archívumot az Apple-től, majd válaszd az „SDK importálása” lehetőséget. A feldolgozás Linuxon történik.</translation>
     </message>
     <message>
         <source>Ending the session…</source>
-        <translation type="unfinished"></translation>
+        <translation>A munkamenet befejezése…</translation>
     </message>
     <message>
         <source>Enter text</source>
-        <translation type="unfinished"></translation>
+        <translation>Szöveg megadása</translation>
     </message>
     <message>
         <source>Files</source>
-        <translation type="unfinished"></translation>
+        <translation>Fájlok</translation>
     </message>
     <message>
         <source>First click into the app&apos;s text field. This text is pasted through the device clipboard.</source>
-        <translation type="unfinished"></translation>
+        <translation>Előbb kattints az alkalmazás szövegmezőjébe. Ez a szöveg az eszköz vágólapján keresztül kerül beillesztésre.</translation>
     </message>
     <message>
         <source>First click the text field you want in the app. Its entire accessible value is replaced, umlauts and emoji included.</source>
-        <translation type="unfinished"></translation>
+        <translation>Előbb kattints a kívánt szövegmezőbe az alkalmazásban. Annak teljes akadálymentes értéke lecserélődik, az ékezetes betűket és az emojikat is beleértve.</translation>
     </message>
     <message>
         <source>Frame</source>
-        <translation type="unfinished"></translation>
+        <translation>Keret</translation>
     </message>
     <message>
         <source>Import SDK</source>
-        <translation type="unfinished"></translation>
+        <translation>SDK importálása</translation>
     </message>
     <message>
         <source>Import the Apple SDK from Xcode</source>
-        <translation type="unfinished"></translation>
+        <translation>Az Apple SDK importálása az Xcode-ból</translation>
     </message>
     <message>
         <source>Insert text</source>
-        <translation type="unfinished"></translation>
+        <translation>Szöveg beszúrása</translation>
     </message>
     <message>
         <source>Install libimobiledevice for device pairing.</source>
-        <translation type="unfinished"></translation>
+        <translation>Telepítsd a libimobiledevice csomagot az eszközpárosításhoz.</translation>
     </message>
     <message>
         <source>Install libusbmuxd for the USB connection.</source>
-        <translation type="unfinished"></translation>
+        <translation>Telepítsd a libusbmuxd csomagot az USB-kapcsolathoz.</translation>
     </message>
     <message>
         <source>Install the Swift toolchain that matches your Apple SDK.</source>
-        <translation type="unfinished"></translation>
+        <translation>Telepítsd az Apple SDK-dhoz illő Swift-eszközláncot.</translation>
     </message>
     <message>
         <source>Install xtool for Linux.</source>
-        <translation type="unfinished"></translation>
+        <translation>Telepítsd az xtool Linuxos változatát.</translation>
     </message>
     <message>
         <source>Installed WebDriverAgent bundle ID</source>
-        <translation type="unfinished"></translation>
+        <translation>A telepített WebDriverAgent csomagazonosítója</translation>
     </message>
     <message>
         <source>Interface language; System follows the desktop language</source>
-        <translation type="unfinished"></translation>
+        <translation>A felület nyelve; a Rendszer az asztal nyelvét követi</translation>
     </message>
     <message>
         <source>Language</source>
-        <translation type="unfinished"></translation>
+        <translation>Nyelv</translation>
     </message>
     <message>
         <source>Sponsor</source>
-        <translation type="unfinished"></translation>
+        <translation>Támogatás</translation>
     </message>
     <message>
         <source>Legal notes</source>
-        <translation type="unfinished"></translation>
+        <translation>Jogi tudnivalók</translation>
     </message>
     <message>
         <source>License</source>
-        <translation type="unfinished"></translation>
+        <translation>Licenc</translation>
     </message>
     <message>
         <source>Linux builds your SwiftPM/xtool app. The connected iPhone runs it. Set up the Apple SDK and signing here once.</source>
-        <translation type="unfinished"></translation>
+        <translation>A Linux buildeli a SwiftPM/xtool alkalmazásodat. A csatlakoztatott iPhone futtatja. Az Apple SDK-t és az aláírást itt kell egyszer beállítani.</translation>
     </message>
     <message>
         <source>Live device</source>
-        <translation type="unfinished"></translation>
+        <translation>Élő eszköz</translation>
     </message>
     <message>
         <source>Load developer image</source>
-        <translation type="unfinished"></translation>
+        <translation>Fejlesztői kép betöltése</translation>
     </message>
     <message>
         <source>Mac terminal: brew install facebook/fb/idb
 SSH uses your existing keys and the known host identity.</source>
-        <translation type="unfinished"></translation>
+        <translation>Mac terminál: brew install facebook/fb/idb
+Az SSH a meglévő kulcsaidat és az ismert gazdagép-azonosítót használja.</translation>
     </message>
     <message>
         <source>No iOS simulator runtime is installed on this Mac yet. Install one in Xcode → Settings → Components.</source>
-        <translation type="unfinished"></translation>
+        <translation>Ezen a Macen még nincs telepítve iOS-szimulátor-futtatókörnyezet. Telepíts egyet az Xcode → Settings → Components menüben.</translation>
     </message>
     <message>
         <source>No project open</source>
-        <translation type="unfinished"></translation>
+        <translation>Nincs megnyitott projekt</translation>
     </message>
     <message>
         <source>No project yet</source>
-        <translation type="unfinished"></translation>
+        <translation>Még nincs projekt</translation>
     </message>
     <message>
         <source>Not available</source>
-        <translation type="unfinished"></translation>
+        <translation>Nem érhető el</translation>
     </message>
     <message>
         <source>Open a project folder · Ctrl+O</source>
-        <translation type="unfinished"></translation>
+        <translation>Projektmappa megnyitása · Ctrl+O</translation>
     </message>
     <message>
         <source>Open job</source>
-        <translation type="unfinished"></translation>
+        <translation>Feladat megnyitása</translation>
     </message>
     <message>
         <source>Open project</source>
-        <translation type="unfinished"></translation>
+        <translation>Projekt megnyitása</translation>
     </message>
     <message>
         <source>Overview</source>
-        <translation type="unfinished"></translation>
+        <translation>Áttekintés</translation>
     </message>
     <message>
         <source>Own window</source>
-        <translation type="unfinished"></translation>
+        <translation>Saját ablak</translation>
     </message>
     <message>
         <source>Pair device</source>
-        <translation type="unfinished"></translation>
+        <translation>Eszköz párosítása</translation>
     </message>
     <message>
         <source>Play the app&apos;s sound on this computer</source>
-        <translation type="unfinished"></translation>
+        <translation>Az alkalmazás hangjának lejátszása ezen a számítógépen</translation>
     </message>
     <message>
         <source>Tomacco is free software under the GNU General Public License. Source: GPL-2.0-or-later. Distributed binaries: GPL-3.0-or-later, because they include Apache-2.0 components. It comes with ABSOLUTELY NO WARRANTY.</source>
-        <translation type="unfinished"></translation>
+        <translation>A Tomacco szabad szoftver a GNU General Public License alatt. Forráskód: GPL-2.0-or-later. Terjesztett binárisok: GPL-3.0-or-later, mert Apache-2.0 komponenseket tartalmaznak. ABSZOLÚT SEMMILYEN GARANCIÁT nem vállalunk rá.</translation>
     </message>
     <message>
         <source>Project and runtime context copied</source>
-        <translation type="unfinished"></translation>
+        <translation>A projekt- és futtatókörnyezet-kontextus másolva</translation>
     </message>
     <message>
         <source>Project busy</source>
-        <translation type="unfinished"></translation>
+        <translation>A projekt foglalt</translation>
     </message>
     <message>
         <source>Project directory on the Mac, e.g. /Users/me/Projects/app</source>
-        <translation type="unfinished"></translation>
+        <translation>Projektkönyvtár a Macen, pl. /Users/me/Projects/app</translation>
     </message>
     <message>
         <source>Project format</source>
-        <translation type="unfinished"></translation>
+        <translation>Projektformátum</translation>
     </message>
     <message>
         <source>Reference frame recognized from the display size; the frame geometry is approximated</source>
-        <translation type="unfinished"></translation>
+        <translation>Referenciakeret a kijelzőméret alapján felismerve; a keret geometriája közelítő</translation>
     </message>
     <message>
         <source>Replace text field</source>
-        <translation type="unfinished"></translation>
+        <translation>Szövegmező lecserélése</translation>
     </message>
     <message>
         <source>Reused the running session</source>
-        <translation type="unfinished"></translation>
+        <translation>A futó munkamenet újrahasznosítva</translation>
     </message>
     <message>
         <source>Rotate</source>
-        <translation type="unfinished"></translation>
+        <translation>Forgatás</translation>
     </message>
     <message>
         <source>Run app</source>
-        <translation type="unfinished"></translation>
+        <translation>Alkalmazás futtatása</translation>
     </message>
     <message>
         <source>SSH target, e.g. user@mac.local</source>
-        <translation type="unfinished"></translation>
+        <translation>SSH-cél, pl. user@mac.local</translation>
     </message>
     <message>
         <source>Save &amp; load simulators</source>
-        <translation type="unfinished"></translation>
+        <translation>Szimulátorok mentése és betöltése</translation>
     </message>
     <message>
         <source>Search</source>
-        <translation type="unfinished"></translation>
+        <translation>Keresés</translation>
     </message>
     <message>
         <source>Search for devices again</source>
-        <translation type="unfinished"></translation>
+        <translation>Eszközök újrakeresése</translation>
     </message>
     <message>
         <source>Search navigation and all tools · Ctrl+K</source>
-        <translation type="unfinished"></translation>
+        <translation>Keresés a navigációban és minden eszközben · Ctrl+K</translation>
     </message>
     <message>
         <source>Session ended</source>
-        <translation type="unfinished"></translation>
+        <translation>A munkamenet véget ért</translation>
     </message>
     <message>
         <source>Session ended · %1</source>
-        <translation type="unfinished"></translation>
+        <translation>A munkamenet véget ért · %1</translation>
     </message>
     <message>
         <source>Set up Mac</source>
-        <translation type="unfinished"></translation>
+        <translation>Mac beállítása</translation>
     </message>
     <message>
         <source>Set up another Android model</source>
-        <translation type="unfinished"></translation>
+        <translation>Másik Android-modell beállítása</translation>
     </message>
     <message>
         <source>Set up go-ios for the iPhone developer services.</source>
-        <translation type="unfinished"></translation>
+        <translation>Állítsd be a go-ios eszközt az iPhone fejlesztői szolgáltatásaihoz.</translation>
     </message>
     <message>
         <source>Set up iPhone</source>
-        <translation type="unfinished"></translation>
+        <translation>iPhone beállítása</translation>
     </message>
     <message>
         <source>Setup started · progress under Builds &amp; jobs</source>
-        <translation type="unfinished"></translation>
+        <translation>A beállítás elindult · folyamat a Buildek és feladatok alatt</translation>
     </message>
     <message>
         <source>Show installed apps</source>
-        <translation type="unfinished"></translation>
+        <translation>Telepített alkalmazások megjelenítése</translation>
     </message>
     <message>
         <source>Show the device frame; Android provides the real status bar</source>
-        <translation type="unfinished"></translation>
+        <translation>Az eszközkeret megjelenítése; az Android adja a valódi állapotsort</translation>
     </message>
     <message>
         <source>Sign &amp; install control</source>
-        <translation type="unfinished"></translation>
+        <translation>Vezérlés aláírása és telepítése</translation>
     </message>
     <message>
         <source>Sign in to Apple</source>
-        <translation type="unfinished"></translation>
+        <translation>Bejelentkezés az Apple-be</translation>
     </message>
     <message>
         <source>Signing can change the bundle ID. Then enter the ID of the installed WebDriverAgent runner. A modern local iOS emulator is not included at present.</source>
-        <translation type="unfinished"></translation>
+        <translation>Az aláírás megváltoztathatja a csomagazonosítót. Ekkor add meg a telepített WebDriverAgent futtató azonosítóját. Modern helyi iOS-emulátor jelenleg nem része a csomagnak.</translation>
     </message>
     <message>
         <source>Simulator on a Mac</source>
-        <translation type="unfinished"></translation>
+        <translation>Szimulátor egy Macen</translation>
     </message>
     <message>
         <source>Sound</source>
-        <translation type="unfinished"></translation>
+        <translation>Hang</translation>
     </message>
     <message>
         <source>Sound error</source>
-        <translation type="unfinished"></translation>
+        <translation>Hanghiba</translation>
     </message>
     <message>
         <source>Sound…</source>
-        <translation type="unfinished"></translation>
+        <translation>Hang…</translation>
     </message>
     <message>
         <source>Source code ↗</source>
-        <translation type="unfinished"></translation>
+        <translation>Forráskód ↗</translation>
     </message>
     <message>
         <source>Start iOS tunnel</source>
-        <translation type="unfinished"></translation>
+        <translation>iOS-alagút indítása</translation>
     </message>
     <message>
         <source>Stop</source>
-        <translation type="unfinished"></translation>
+        <translation>Leállítás</translation>
     </message>
     <message>
         <source>Stop forwarding sound; restore output on the device</source>
-        <translation type="unfinished"></translation>
+        <translation>Hangtovábbítás leállítása; kimenet visszaállítása az eszközön</translation>
     </message>
     <message>
         <source>Switch workspace</source>
-        <translation type="unfinished"></translation>
+        <translation>Munkaterület váltása</translation>
     </message>
     <message>
         <source>System</source>
-        <translation type="unfinished"></translation>
+        <translation>Rendszer</translation>
     </message>
     <message>
         <source>Text…</source>
-        <translation type="unfinished"></translation>
+        <translation>Szöveg…</translation>
     </message>
     <message>
         <source>The Mac needs Xcode with an iOS simulator runtime, SSH access and idb_companion. Your own Mac or a rented one works.</source>
-        <translation type="unfinished"></translation>
+        <translation>A Macnek Xcode-ra van szüksége iOS-szimulátor-futtatókörnyezettel, SSH-hozzáférésre és idb_companionre. Saját vagy bérelt Mac egyaránt megfelel.</translation>
     </message>
     <message>
         <source>The desktop and its control program come from different versions. Install both from the same build.</source>
-        <translation type="unfinished"></translation>
+        <translation>Az asztali alkalmazás és a vezérlőprogramja különböző verziókból származik. Telepítsd mindkettőt ugyanabból a buildből.</translation>
     </message>
     <message>
         <source>The device did not become ready in time.</source>
-        <translation type="unfinished"></translation>
+        <translation>Az eszköz nem lett időben kész.</translation>
     </message>
     <message>
         <source>The runtime is still starting…</source>
-        <translation type="unfinished"></translation>
+        <translation>A futtatókörnyezet még indul…</translation>
     </message>
     <message>
         <source>Third-party components keep their own licenses: THIRD_PARTY_NOTICES.md lists them, and docs/legal.md has further legal notes.</source>
-        <translation type="unfinished"></translation>
+        <translation>A harmadik féltől származó összetevők megtartják saját licencüket: a THIRD_PARTY_NOTICES.md sorolja fel őket, a docs/legal.md további jogi tudnivalókat tartalmaz.</translation>
     </message>
     <message>
         <source>Release notes</source>
-        <translation type="unfinished"></translation>
+        <translation>Kiadási megjegyzések</translation>
     </message>
     <message>
         <source>Third-party notices</source>
-        <translation type="unfinished"></translation>
+        <translation>Harmadik féltől származó közlemények</translation>
     </message>
     <message>
         <source>This Linux build path needs a SwiftPM/xtool project. Flutter and Xcode projects are not converted automatically yet.</source>
-        <translation type="unfinished"></translation>
+        <translation>Ehhez a Linuxos buildelési úthoz SwiftPM/xtool-projekt szükséges. A Flutter- és Xcode-projektek még nem alakulnak át automatikusan.</translation>
     </message>
     <message>
         <source>Turn on Developer Mode on the iPhone and confirm the pairing. The Apple sign-in opens a local terminal; passwords are not entered in Tomacco or MCP.</source>
-        <translation type="unfinished"></translation>
+        <translation>Kapcsold be a fejlesztői módot az iPhone-on, és erősítsd meg a párosítást. Az Apple-bejelentkezés helyi terminált nyit meg; a jelszavakat sem a Tomaccóban, sem az MCP-ben nem kell megadni.</translation>
     </message>
     <message>
         <source>UI tests</source>
-        <translation type="unfinished"></translation>
+        <translation>UI-tesztek</translation>
     </message>
     <message>
         <source>USB connection</source>
-        <translation type="unfinished"></translation>
+        <translation>USB-kapcsolat</translation>
     </message>
     <message>
         <source>USB picture transfer</source>
-        <translation type="unfinished"></translation>
+        <translation>Képátvitel USB-n</translation>
     </message>
     <message>
         <source>Version %1</source>
-        <translation type="unfinished"></translation>
+        <translation>%1 verzió</translation>
     </message>
     <message>
         <source>View the sound forwarding error</source>
-        <translation type="unfinished"></translation>
+        <translation>A hangtovábbítási hiba megtekintése</translation>
     </message>
     <message>
         <source>WORKSPACE</source>
-        <translation type="unfinished"></translation>
+        <translation>MUNKATERÜLET</translation>
     </message>
     <message>
         <source>Web preview</source>
-        <translation type="unfinished"></translation>
+        <translation>Webes előnézet</translation>
     </message>
     <message>
         <source>Xcode archive (*.xip)</source>
-        <translation type="unfinished"></translation>
+        <translation>Xcode-archívum (*.xip)</translation>
     </message>
     <message>
         <source>iPhone development without a Mac</source>
-        <translation type="unfinished"></translation>
+        <translation>iPhone-fejlesztés Mac nélkül</translation>
     </message>
     <message>
         <source>iPhone services</source>
-        <translation type="unfinished"></translation>
+        <translation>iPhone-szolgáltatások</translation>
     </message>
     <message>
         <source>iPhone via USB</source>
-        <translation type="unfinished"></translation>
+        <translation>iPhone USB-n</translation>
     </message>
     <message>
         <source>Command</source>
-        <translation type="unfinished"></translation>
+        <translation>Parancs</translation>
     </message>
     <message>
         <source>Hide activity</source>
-        <translation type="unfinished"></translation>
+        <translation>Tevékenység elrejtése</translation>
     </message>
     <message>
         <source>Show activity</source>
-        <translation type="unfinished"></translation>
+        <translation>Tevékenység megjelenítése</translation>
     </message>
     <message>
         <source>Switch to light appearance</source>
-        <translation type="unfinished"></translation>
+        <translation>Váltás világos megjelenésre</translation>
     </message>
     <message>
         <source>Switch to dark appearance</source>
-        <translation type="unfinished"></translation>
+        <translation>Váltás sötét megjelenésre</translation>
     </message>
     <message>
         <source>Settings</source>
-        <translation type="unfinished"></translation>
+        <translation>Beállítások</translation>
     </message>
     <message>
         <source>Keyboard shortcuts</source>
-        <translation type="unfinished"></translation>
+        <translation>Billentyűparancsok</translation>
     </message>
     <message>
         <source>Booting</source>
-        <translation type="unfinished"></translation>
+        <translation>Rendszerindítás</translation>
     </message>
     <message>
         <source>Live</source>
-        <translation type="unfinished"></translation>
+        <translation>Élő</translation>
     </message>
     <message>
         <source>Failed</source>
-        <translation type="unfinished"></translation>
+        <translation>Sikertelen</translation>
     </message>
     <message>
         <source>Disconnected</source>
-        <translation type="unfinished"></translation>
+        <translation>Leválasztva</translation>
     </message>
     <message>
         <source>No device</source>
-        <translation type="unfinished"></translation>
+        <translation>Nincs eszköz</translation>
     </message>
     <message>
         <source>Activity</source>
-        <translation type="unfinished"></translation>
+        <translation>Tevékenység</translation>
     </message>
     <message>
         <source>Jobs and agent calls · Ctrl+J</source>
-        <translation type="unfinished"></translation>
+        <translation>Feladatok és ügynökhívások · Ctrl+J</translation>
     </message>
     <message>
         <source>Appearance and language · Ctrl+,</source>
-        <translation type="unfinished"></translation>
+        <translation>Megjelenés és nyelv · Ctrl+,</translation>
     </message>
     <message numerus="yes">
         <source>%n job(s) running</source>
-        <translation type="unfinished">
-            <numerusform></numerusform>
+        <translation>
+            <numerusform>%n feladat fut</numerusform>
         </translation>
     </message>
     <message>
         <source>Ctrl+K search · F1 keys</source>
-        <translation type="unfinished"></translation>
+        <translation>Ctrl+K keresés · F1 billentyűk</translation>
     </message>
     <message>
         <source>Appearance</source>
-        <translation type="unfinished"></translation>
+        <translation>Megjelenés</translation>
     </message>
     <message>
         <source>Dark</source>
-        <translation type="unfinished"></translation>
+        <translation>Sötét</translation>
     </message>
     <message>
         <source>Light</source>
-        <translation type="unfinished"></translation>
+        <translation>Világos</translation>
     </message>
     <message>
         <source>Search views, commands and tools</source>
-        <translation type="unfinished"></translation>
+        <translation>Nézetek, parancsok és eszközök keresése</translation>
     </message>
     <message>
         <source>Show or hide activity</source>
-        <translation type="unfinished"></translation>
+        <translation>Tevékenység megjelenítése vagy elrejtése</translation>
     </message>
     <message>
         <source>Save the current file</source>
-        <translation type="unfinished"></translation>
+        <translation>Az aktuális fájl mentése</translation>
     </message>
     <message>
         <source>Search the project&apos;s source code</source>
-        <translation type="unfinished"></translation>
+        <translation>Keresés a projekt forráskódjában</translation>
     </message>
     <message>
         <source>Full screen · web preview</source>
-        <translation type="unfinished"></translation>
+        <translation>Teljes képernyő · webes előnézet</translation>
     </message>
     <message>
         <source>Project</source>
-        <translation type="unfinished"></translation>
+        <translation>Projekt</translation>
     </message>
     <message>
         <source>Device</source>
-        <translation type="unfinished"></translation>
+        <translation>Eszköz</translation>
     </message>
     <message>
         <source>Run</source>
-        <translation type="unfinished"></translation>
+        <translation>Futtatás</translation>
     </message>
     <message>
         <source>Ctrl</source>
-        <translation type="unfinished"></translation>
+        <translation>Ctrl</translation>
     </message>
     <message>
         <source>Building and starting your app…</source>
-        <translation type="unfinished"></translation>
+        <translation>Az alkalmazásod buildelése és indítása…</translation>
     </message>
     <message>
         <source>Copy what your agent needs: this project and the live device</source>
-        <translation type="unfinished"></translation>
+        <translation>Másold ki, amire az ügynöködnek szüksége van: ezt a projektet és az élő eszközt</translation>
     </message>
     <message>
         <source>Ready for agents</source>
-        <translation type="unfinished"></translation>
+        <translation>Készen áll az ügynökök számára</translation>
     </message>
     <message>
         <source>Your device is in its own window.</source>
-        <translation type="unfinished"></translation>
+        <translation>Az eszközöd a saját ablakában van.</translation>
     </message>
     <message>
         <source>Drag it by its body. Ctrl+wheel resizes it. Close it to bring it back.</source>
-        <translation type="unfinished"></translation>
+        <translation>Húzd a házánál fogva. A Ctrl+görgő átméretezi. Zárd be, hogy visszahozd.</translation>
     </message>
     <message>
         <source>Bring it back</source>
-        <translation type="unfinished"></translation>
+        <translation>Visszahozás</translation>
     </message>
     <message>
         <source>Plug in your iPhone.</source>
-        <translation type="unfinished"></translation>
+        <translation>Csatlakoztasd az iPhone-odat.</translation>
     </message>
     <message>
         <source>Connect a Mac.</source>
-        <translation type="unfinished"></translation>
+        <translation>Csatlakoztass egy Macet.</translation>
     </message>
     <message>
         <source>Give your agent a phone.</source>
-        <translation type="unfinished"></translation>
+        <translation>Adj egy telefont az ügynöködnek.</translation>
     </message>
     <message>
         <source>Plug it in and unlock it. Build Swift apps on Linux and control them from here.</source>
-        <translation type="unfinished"></translation>
+        <translation>Csatlakoztasd, és oldd fel a zárolását. Buildelj Swift-alkalmazásokat Linuxon, és vezéreld őket innen.</translation>
     </message>
     <message>
         <source>The Apple simulator needs a Mac with Xcode. Yours or a rented one, over SSH.</source>
-        <translation type="unfinished"></translation>
+        <translation>Az Apple-szimulátorhoz Xcode-dal rendelkező Mac kell. A sajátod vagy egy bérelt, SSH-n keresztül.</translation>
     </message>
     <message>
         <source>It builds, runs, taps through and debugs iOS and Android apps. On Linux. No Mac needed.</source>
-        <translation type="unfinished"></translation>
+        <translation>Buildeli, futtatja, végigkopogtatja és hibakeresi az iOS- és Android-alkalmazásokat. Linuxon. Mac nem kell.</translation>
     </message>
     <message>
         <source>Connect %1</source>
-        <translation type="unfinished"></translation>
+        <translation>%1 csatlakoztatása</translation>
     </message>
     <message>
         <source>Add a device</source>
-        <translation type="unfinished"></translation>
+        <translation>Eszköz hozzáadása</translation>
     </message>
     <message>
         <source>Open a project</source>
-        <translation type="unfinished"></translation>
+        <translation>Projekt megnyitása</translation>
     </message>
     <message>
         <source>Completed after %1</source>

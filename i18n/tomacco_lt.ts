@@ -2891,812 +2891,813 @@ xtool setup</translation>
     </message>
     <message>
         <source>Connect a device to take a screenshot.</source>
-        <translation type="unfinished"></translation>
+        <translation>Prijunkite įrenginį, kad galėtumėte padaryti ekrano kopiją.</translation>
     </message>
     <message>
         <source>Screenshot saved and copied · %1</source>
-        <translation type="unfinished"></translation>
+        <translation>Ekrano kopija išsaugota ir nukopijuota · %1</translation>
     </message>
     <message>
         <source>Save and copy a device screenshot</source>
-        <translation type="unfinished"></translation>
+        <translation>Išsaugoti ir nukopijuoti įrenginio ekrano kopiją</translation>
     </message>
     <message>
         <source>Save and copy a screenshot</source>
-        <translation type="unfinished"></translation>
+        <translation>Išsaugoti ir nukopijuoti ekrano kopiją</translation>
     </message>
     <message>
         <source>Choose a device first, then drop the app on it.</source>
-        <translation type="unfinished"></translation>
+        <translation>Pirmiausia pasirinkite įrenginį, tada numeskite ant jo programą.</translation>
     </message>
     <message>
         <source>Android devices install .apk files.</source>
-        <translation type="unfinished"></translation>
+        <translation>Android įrenginiai diegia .apk failus.</translation>
     </message>
     <message>
         <source>An iPhone installs one signed .ipa file.</source>
-        <translation type="unfinished"></translation>
+        <translation>„iPhone“ diegia vieną pasirašytą .ipa failą.</translation>
     </message>
     <message>
         <source>Apps for the Mac&apos;s simulator are installed with Apple&apos;s tools.</source>
-        <translation type="unfinished"></translation>
+        <translation>„Mac“ simuliatoriaus programos diegiamos „Apple“ įrankiais.</translation>
     </message>
     <message>
         <source>Installing %1 on %2…</source>
-        <translation type="unfinished"></translation>
+        <translation>%1 diegiama į %2…</translation>
     </message>
     <message>
         <source>Installing · progress under Builds &amp; jobs</source>
-        <translation type="unfinished"></translation>
+        <translation>Diegiama · eiga skiltyje Kompiliavimai ir užduotys</translation>
     </message>
     <message numerus="yes">
         <source>%n tool(s) available to agents through the CLI and MCP</source>
-        <translation type="unfinished">
-            <numerusform></numerusform>
-            <numerusform></numerusform>
-            <numerusform></numerusform>
+        <translation>
+            <numerusform>%n įrankis prieinamas agentams per CLI ir MCP</numerusform>
+            <numerusform>%n įrankiai prieinami agentams per CLI ir MCP</numerusform>
+            <numerusform>%n įrankių prieinama agentams per CLI ir MCP</numerusform>
         </translation>
     </message>
     <message>
         <source>A job is already running for this project. You can open or stop it under Builds &amp; jobs.</source>
-        <translation type="unfinished"></translation>
+        <translation>Šiam projektui jau vykdoma užduotis. Ją galite atidaryti arba sustabdyti skiltyje Kompiliavimai ir užduotys.</translation>
     </message>
     <message>
         <source>AUTOMATION</source>
-        <translation type="unfinished"></translation>
+        <translation>AUTOMATIZAVIMAS</translation>
     </message>
     <message>
         <source>About Tomacco</source>
-        <translation type="unfinished"></translation>
+        <translation>Apie Tomacco</translation>
     </message>
     <message>
         <source>About Tomacco · version, license and source code</source>
-        <translation type="unfinished"></translation>
+        <translation>Apie Tomacco · versija, licencija ir išeities kodas</translation>
     </message>
     <message>
         <source>Agent API not ready</source>
-        <translation type="unfinished"></translation>
+        <translation>Agentų API neparuošta</translation>
     </message>
     <message>
         <source>Agents</source>
-        <translation type="unfinished"></translation>
+        <translation>Agentai</translation>
     </message>
     <message>
         <source>All files (*)</source>
-        <translation type="unfinished"></translation>
+        <translation>Visi failai (*)</translation>
     </message>
     <message>
         <source>Android is starting…</source>
-        <translation type="unfinished"></translation>
+        <translation>Android paleidžiama…</translation>
     </message>
     <message>
         <source>App launch: %1. Details under Builds &amp; jobs.</source>
-        <translation type="unfinished"></translation>
+        <translation>Programos paleidimas: %1. Daugiau informacijos skiltyje Kompiliavimai ir užduotys.</translation>
     </message>
     <message>
         <source>App launched</source>
-        <translation type="unfinished"></translation>
+        <translation>Programa paleista</translation>
     </message>
     <message>
         <source>App running on %1 · end the session before switching targets</source>
-        <translation type="unfinished"></translation>
+        <translation>Programa veikia %1 · prieš keisdami paskirtį baikite seansą</translation>
     </message>
     <message>
         <source>App running · apply changes with Hot Reload</source>
-        <translation type="unfinished"></translation>
+        <translation>Programa veikia · pritaikykite pakeitimus su Hot Reload</translation>
     </message>
     <message>
         <source>Apple SDK</source>
-        <translation type="unfinished"></translation>
+        <translation>„Apple“ SDK</translation>
     </message>
     <message>
         <source>Apple sign-in</source>
-        <translation type="unfinished"></translation>
+        <translation>„Apple“ prisijungimas</translation>
     </message>
     <message>
         <source>Apple sign-in opened in the local terminal</source>
-        <translation type="unfinished"></translation>
+        <translation>„Apple“ prisijungimas atidarytas vietiniame terminale</translation>
     </message>
     <message>
         <source>Applying changes to the running app…</source>
-        <translation type="unfinished"></translation>
+        <translation>Pakeitimai taikomi veikiančiai programai…</translation>
     </message>
     <message>
         <source>Back</source>
-        <translation type="unfinished"></translation>
+        <translation>Atgal</translation>
     </message>
     <message>
         <source>Build running…</source>
-        <translation type="unfinished"></translation>
+        <translation>Kompiliuojama…</translation>
     </message>
     <message>
         <source>Build, run and test native Android and iOS apps on Linux, by hand or with your agents.</source>
-        <translation type="unfinished"></translation>
+        <translation>Kompiliuokite, vykdykite ir testuokite vietines Android ir iOS programas Linux sistemoje – rankiniu būdu arba su savo agentais.</translation>
     </message>
     <message>
         <source>Builds &amp; jobs</source>
-        <translation type="unfinished"></translation>
+        <translation>Kompiliavimai ir užduotys</translation>
     </message>
     <message>
         <source>Capture saved · %1</source>
-        <translation type="unfinished"></translation>
+        <translation>Įrašas išsaugotas · %1</translation>
     </message>
     <message>
         <source>Case color</source>
-        <translation type="unfinished"></translation>
+        <translation>Korpuso spalva</translation>
     </message>
     <message>
         <source>Check again</source>
-        <translation type="unfinished"></translation>
+        <translation>Tikrinti dar kartą</translation>
     </message>
     <message>
         <source>Choose a Mac</source>
-        <translation type="unfinished"></translation>
+        <translation>Pasirinkite „Mac“</translation>
     </message>
     <message>
         <source>Choose a device</source>
-        <translation type="unfinished"></translation>
+        <translation>Pasirinkite įrenginį</translation>
     </message>
     <message>
         <source>Choose ‘Sign in to Apple’ and finish signing in in the local terminal.</source>
-        <translation type="unfinished"></translation>
+        <translation>Pasirinkite „Prisijungti prie Apple“ ir baikite prisijungimą vietiniame terminale.</translation>
     </message>
     <message>
         <source>Color</source>
-        <translation type="unfinished"></translation>
+        <translation>Spalva</translation>
     </message>
     <message>
         <source>Connect</source>
-        <translation type="unfinished"></translation>
+        <translation>Prijungti</translation>
     </message>
     <message>
         <source>Connect Mac</source>
-        <translation type="unfinished"></translation>
+        <translation>Prijungti „Mac“</translation>
     </message>
     <message>
         <source>Connect an iPhone or iPad via USB and confirm ‘Trust This Computer’.</source>
-        <translation type="unfinished"></translation>
+        <translation>Prijunkite „iPhone“ arba „iPad“ per USB ir patvirtinkite „Pasitikėti šiuo kompiuteriu“.</translation>
     </message>
     <message>
         <source>Connect the Apple simulator to Linux</source>
-        <translation type="unfinished"></translation>
+        <translation>Prijungti „Apple“ simuliatorių prie Linux</translation>
     </message>
     <message>
         <source>Connect the unlocked iPhone. The usbmuxd service must be available.</source>
-        <translation type="unfinished"></translation>
+        <translation>Prijunkite atrakintą „iPhone“. Turi būti prieinama paslauga usbmuxd.</translation>
     </message>
     <message>
         <source>Connected</source>
-        <translation type="unfinished"></translation>
+        <translation>Prijungta</translation>
     </message>
     <message>
         <source>Connecting</source>
-        <translation type="unfinished"></translation>
+        <translation>Jungiamasi</translation>
     </message>
     <message>
         <source>Connecting the picture…</source>
-        <translation type="unfinished"></translation>
+        <translation>Jungiamas vaizdas…</translation>
     </message>
     <message>
         <source>Not mirroring</source>
-        <translation type="unfinished"></translation>
+        <translation>Nedubliuojama</translation>
     </message>
     <message>
         <source>On the iPhone, open Control Center, tap Screen Mirroring and choose %1.</source>
-        <translation type="unfinished"></translation>
+        <translation>„iPhone“ atidarykite Valdymo centrą, bakstelėkite Ekrano dubliavimas ir pasirinkite %1.</translation>
     </message>
     <message>
         <source>Connecting…</source>
-        <translation type="unfinished"></translation>
+        <translation>Jungiamasi…</translation>
     </message>
     <message>
         <source>Connection name, e.g. build-mac</source>
-        <translation type="unfinished"></translation>
+        <translation>Ryšio pavadinimas, pvz., build-mac</translation>
     </message>
     <message>
         <source>Control program</source>
-        <translation type="unfinished"></translation>
+        <translation>Valdymo programa</translation>
     </message>
     <message>
         <source>Control program unavailable</source>
-        <translation type="unfinished"></translation>
+        <translation>Valdymo programa nepasiekiama</translation>
     </message>
     <message>
         <source>Copy companion command</source>
-        <translation type="unfinished"></translation>
+        <translation>Kopijuoti pagalbinės programos komandą</translation>
     </message>
     <message>
         <source>Copy context</source>
-        <translation type="unfinished"></translation>
+        <translation>Kopijuoti kontekstą</translation>
     </message>
     <message>
         <source>DEVELOPMENT</source>
-        <translation type="unfinished"></translation>
+        <translation>KŪRIMAS</translation>
     </message>
     <message>
         <source>Detach the device into its own window</source>
-        <translation type="unfinished"></translation>
+        <translation>Atskirti įrenginį į atskirą langą</translation>
     </message>
     <message>
         <source>Device pairing</source>
-        <translation type="unfinished"></translation>
+        <translation>Įrenginio susiejimas</translation>
     </message>
     <message>
         <source>Devices</source>
-        <translation type="unfinished"></translation>
+        <translation>Įrenginiai</translation>
     </message>
     <message>
         <source>Disconnect</source>
-        <translation type="unfinished"></translation>
+        <translation>Atjungti</translation>
     </message>
     <message>
         <source>Dismiss notice</source>
-        <translation type="unfinished"></translation>
+        <translation>Atmesti pranešimą</translation>
     </message>
     <message>
         <source>Dock</source>
-        <translation type="unfinished"></translation>
+        <translation>Prisegti</translation>
     </message>
     <message>
         <source>Download SDK from Apple</source>
-        <translation type="unfinished"></translation>
+        <translation>Atsisiųsti SDK iš „Apple“</translation>
     </message>
     <message>
         <source>Download control package</source>
-        <translation type="unfinished"></translation>
+        <translation>Atsisiųsti valdymo paketą</translation>
     </message>
     <message>
         <source>Download the Xcode archive from Apple, then choose ‘Import SDK’. Processing runs on Linux.</source>
-        <translation type="unfinished"></translation>
+        <translation>Atsisiųskite Xcode archyvą iš „Apple“, tada pasirinkite „Importuoti SDK“. Apdorojama Linux sistemoje.</translation>
     </message>
     <message>
         <source>Ending the session…</source>
-        <translation type="unfinished"></translation>
+        <translation>Baigiamas seansas…</translation>
     </message>
     <message>
         <source>Enter text</source>
-        <translation type="unfinished"></translation>
+        <translation>Įveskite tekstą</translation>
     </message>
     <message>
         <source>Files</source>
-        <translation type="unfinished"></translation>
+        <translation>Failai</translation>
     </message>
     <message>
         <source>First click into the app&apos;s text field. This text is pasted through the device clipboard.</source>
-        <translation type="unfinished"></translation>
+        <translation>Pirmiausia spustelėkite programos teksto lauką. Šis tekstas įklijuojamas per įrenginio iškarpinę.</translation>
     </message>
     <message>
         <source>First click the text field you want in the app. Its entire accessible value is replaced, umlauts and emoji included.</source>
-        <translation type="unfinished"></translation>
+        <translation>Pirmiausia spustelėkite norimą programos teksto lauką. Visa jo prieinama reikšmė bus pakeista, įskaitant diakritinius ženklus ir jaustukus.</translation>
     </message>
     <message>
         <source>Frame</source>
-        <translation type="unfinished"></translation>
+        <translation>Rėmelis</translation>
     </message>
     <message>
         <source>Import SDK</source>
-        <translation type="unfinished"></translation>
+        <translation>Importuoti SDK</translation>
     </message>
     <message>
         <source>Import the Apple SDK from Xcode</source>
-        <translation type="unfinished"></translation>
+        <translation>Importuoti „Apple“ SDK iš Xcode</translation>
     </message>
     <message>
         <source>Insert text</source>
-        <translation type="unfinished"></translation>
+        <translation>Įterpti tekstą</translation>
     </message>
     <message>
         <source>Install libimobiledevice for device pairing.</source>
-        <translation type="unfinished"></translation>
+        <translation>Įdiekite libimobiledevice įrenginių susiejimui.</translation>
     </message>
     <message>
         <source>Install libusbmuxd for the USB connection.</source>
-        <translation type="unfinished"></translation>
+        <translation>Įdiekite libusbmuxd USB ryšiui.</translation>
     </message>
     <message>
         <source>Install the Swift toolchain that matches your Apple SDK.</source>
-        <translation type="unfinished"></translation>
+        <translation>Įdiekite Swift įrankių grandinę, atitinkančią jūsų „Apple“ SDK.</translation>
     </message>
     <message>
         <source>Install xtool for Linux.</source>
-        <translation type="unfinished"></translation>
+        <translation>Įdiekite xtool, skirtą Linux.</translation>
     </message>
     <message>
         <source>Installed WebDriverAgent bundle ID</source>
-        <translation type="unfinished"></translation>
+        <translation>Įdiegto WebDriverAgent paketo ID</translation>
     </message>
     <message>
         <source>Interface language; System follows the desktop language</source>
-        <translation type="unfinished"></translation>
+        <translation>Sąsajos kalba; Sistema seka darbalaukio kalbą</translation>
     </message>
     <message>
         <source>Language</source>
-        <translation type="unfinished"></translation>
+        <translation>Kalba</translation>
     </message>
     <message>
         <source>Sponsor</source>
-        <translation type="unfinished"></translation>
+        <translation>Paremti</translation>
     </message>
     <message>
         <source>Legal notes</source>
-        <translation type="unfinished"></translation>
+        <translation>Teisinės pastabos</translation>
     </message>
     <message>
         <source>License</source>
-        <translation type="unfinished"></translation>
+        <translation>Licencija</translation>
     </message>
     <message>
         <source>Linux builds your SwiftPM/xtool app. The connected iPhone runs it. Set up the Apple SDK and signing here once.</source>
-        <translation type="unfinished"></translation>
+        <translation>Linux kompiliuoja jūsų SwiftPM/xtool programą. Prijungtas „iPhone“ ją vykdo. Čia vieną kartą nustatykite „Apple“ SDK ir pasirašymą.</translation>
     </message>
     <message>
         <source>Live device</source>
-        <translation type="unfinished"></translation>
+        <translation>Tiesioginis įrenginys</translation>
     </message>
     <message>
         <source>Load developer image</source>
-        <translation type="unfinished"></translation>
+        <translation>Įkelti kūrėjo atvaizdą</translation>
     </message>
     <message>
         <source>Mac terminal: brew install facebook/fb/idb
 SSH uses your existing keys and the known host identity.</source>
-        <translation type="unfinished"></translation>
+        <translation>„Mac“ terminalas: brew install facebook/fb/idb
+SSH naudoja jūsų esamus raktus ir žinomą pagrindinio kompiuterio tapatybę.</translation>
     </message>
     <message>
         <source>No iOS simulator runtime is installed on this Mac yet. Install one in Xcode → Settings → Components.</source>
-        <translation type="unfinished"></translation>
+        <translation>Šiame „Mac“ dar neįdiegta jokia iOS simuliatoriaus vykdymo aplinka. Įdiekite ją per Xcode → Settings → Components.</translation>
     </message>
     <message>
         <source>No project open</source>
-        <translation type="unfinished"></translation>
+        <translation>Joks projektas neatidarytas</translation>
     </message>
     <message>
         <source>No project yet</source>
-        <translation type="unfinished"></translation>
+        <translation>Projekto dar nėra</translation>
     </message>
     <message>
         <source>Not available</source>
-        <translation type="unfinished"></translation>
+        <translation>Neprieinama</translation>
     </message>
     <message>
         <source>Open a project folder · Ctrl+O</source>
-        <translation type="unfinished"></translation>
+        <translation>Atidaryti projekto aplanką · Ctrl+O</translation>
     </message>
     <message>
         <source>Open job</source>
-        <translation type="unfinished"></translation>
+        <translation>Atidaryti užduotį</translation>
     </message>
     <message>
         <source>Open project</source>
-        <translation type="unfinished"></translation>
+        <translation>Atidaryti projektą</translation>
     </message>
     <message>
         <source>Overview</source>
-        <translation type="unfinished"></translation>
+        <translation>Apžvalga</translation>
     </message>
     <message>
         <source>Own window</source>
-        <translation type="unfinished"></translation>
+        <translation>Atskiras langas</translation>
     </message>
     <message>
         <source>Pair device</source>
-        <translation type="unfinished"></translation>
+        <translation>Susieti įrenginį</translation>
     </message>
     <message>
         <source>Play the app&apos;s sound on this computer</source>
-        <translation type="unfinished"></translation>
+        <translation>Leisti programos garsą šiame kompiuteryje</translation>
     </message>
     <message>
         <source>Tomacco is free software under the GNU General Public License. Source: GPL-2.0-or-later. Distributed binaries: GPL-3.0-or-later, because they include Apache-2.0 components. It comes with ABSOLUTELY NO WARRANTY.</source>
-        <translation type="unfinished"></translation>
+        <translation>Tomacco yra laisvoji programinė įranga pagal GNU General Public License. Išeities kodas: GPL-2.0-or-later. Platinami dvejetainiai failai: GPL-3.0-or-later, nes juose yra Apache-2.0 komponentų. Jai NETAIKOMA JOKIA GARANTIJA.</translation>
     </message>
     <message>
         <source>Project and runtime context copied</source>
-        <translation type="unfinished"></translation>
+        <translation>Projekto ir vykdymo aplinkos kontekstas nukopijuotas</translation>
     </message>
     <message>
         <source>Project busy</source>
-        <translation type="unfinished"></translation>
+        <translation>Projektas užimtas</translation>
     </message>
     <message>
         <source>Project directory on the Mac, e.g. /Users/me/Projects/app</source>
-        <translation type="unfinished"></translation>
+        <translation>Projekto katalogas „Mac“ kompiuteryje, pvz., /Users/me/Projects/app</translation>
     </message>
     <message>
         <source>Project format</source>
-        <translation type="unfinished"></translation>
+        <translation>Projekto formatas</translation>
     </message>
     <message>
         <source>Reference frame recognized from the display size; the frame geometry is approximated</source>
-        <translation type="unfinished"></translation>
+        <translation>Atskaitos rėmelis atpažintas pagal ekrano dydį; rėmelio geometrija apytikslė</translation>
     </message>
     <message>
         <source>Replace text field</source>
-        <translation type="unfinished"></translation>
+        <translation>Pakeisti teksto lauką</translation>
     </message>
     <message>
         <source>Reused the running session</source>
-        <translation type="unfinished"></translation>
+        <translation>Pakartotinai panaudotas veikiantis seansas</translation>
     </message>
     <message>
         <source>Rotate</source>
-        <translation type="unfinished"></translation>
+        <translation>Pasukti</translation>
     </message>
     <message>
         <source>Run app</source>
-        <translation type="unfinished"></translation>
+        <translation>Paleisti programą</translation>
     </message>
     <message>
         <source>SSH target, e.g. user@mac.local</source>
-        <translation type="unfinished"></translation>
+        <translation>SSH paskirtis, pvz., user@mac.local</translation>
     </message>
     <message>
         <source>Save &amp; load simulators</source>
-        <translation type="unfinished"></translation>
+        <translation>Įrašyti ir įkelti simuliatorius</translation>
     </message>
     <message>
         <source>Search</source>
-        <translation type="unfinished"></translation>
+        <translation>Ieškoti</translation>
     </message>
     <message>
         <source>Search for devices again</source>
-        <translation type="unfinished"></translation>
+        <translation>Ieškoti įrenginių dar kartą</translation>
     </message>
     <message>
         <source>Search navigation and all tools · Ctrl+K</source>
-        <translation type="unfinished"></translation>
+        <translation>Ieškoti navigacijoje ir visuose įrankiuose · Ctrl+K</translation>
     </message>
     <message>
         <source>Session ended</source>
-        <translation type="unfinished"></translation>
+        <translation>Seansas baigtas</translation>
     </message>
     <message>
         <source>Session ended · %1</source>
-        <translation type="unfinished"></translation>
+        <translation>Seansas baigtas · %1</translation>
     </message>
     <message>
         <source>Set up Mac</source>
-        <translation type="unfinished"></translation>
+        <translation>Nustatyti „Mac“</translation>
     </message>
     <message>
         <source>Set up another Android model</source>
-        <translation type="unfinished"></translation>
+        <translation>Nustatyti kitą Android modelį</translation>
     </message>
     <message>
         <source>Set up go-ios for the iPhone developer services.</source>
-        <translation type="unfinished"></translation>
+        <translation>Nustatykite go-ios „iPhone“ kūrėjo paslaugoms.</translation>
     </message>
     <message>
         <source>Set up iPhone</source>
-        <translation type="unfinished"></translation>
+        <translation>Nustatyti „iPhone“</translation>
     </message>
     <message>
         <source>Setup started · progress under Builds &amp; jobs</source>
-        <translation type="unfinished"></translation>
+        <translation>Sąranka pradėta · eiga skiltyje Kompiliavimai ir užduotys</translation>
     </message>
     <message>
         <source>Show installed apps</source>
-        <translation type="unfinished"></translation>
+        <translation>Rodyti įdiegtas programas</translation>
     </message>
     <message>
         <source>Show the device frame; Android provides the real status bar</source>
-        <translation type="unfinished"></translation>
+        <translation>Rodyti įrenginio rėmelį; Android pateikia tikrąją būsenos juostą</translation>
     </message>
     <message>
         <source>Sign &amp; install control</source>
-        <translation type="unfinished"></translation>
+        <translation>Pasirašyti ir įdiegti valdymą</translation>
     </message>
     <message>
         <source>Sign in to Apple</source>
-        <translation type="unfinished"></translation>
+        <translation>Prisijungti prie Apple</translation>
     </message>
     <message>
         <source>Signing can change the bundle ID. Then enter the ID of the installed WebDriverAgent runner. A modern local iOS emulator is not included at present.</source>
-        <translation type="unfinished"></translation>
+        <translation>Pasirašymas gali pakeisti paketo ID. Tada įveskite įdiegto WebDriverAgent vykdytojo ID. Šiuo metu modernus vietinis iOS emuliatorius neįtrauktas.</translation>
     </message>
     <message>
         <source>Simulator on a Mac</source>
-        <translation type="unfinished"></translation>
+        <translation>Simuliatorius „Mac“ kompiuteryje</translation>
     </message>
     <message>
         <source>Sound</source>
-        <translation type="unfinished"></translation>
+        <translation>Garsas</translation>
     </message>
     <message>
         <source>Sound error</source>
-        <translation type="unfinished"></translation>
+        <translation>Garso klaida</translation>
     </message>
     <message>
         <source>Sound…</source>
-        <translation type="unfinished"></translation>
+        <translation>Garsas…</translation>
     </message>
     <message>
         <source>Source code ↗</source>
-        <translation type="unfinished"></translation>
+        <translation>Išeities kodas ↗</translation>
     </message>
     <message>
         <source>Start iOS tunnel</source>
-        <translation type="unfinished"></translation>
+        <translation>Paleisti iOS tunelį</translation>
     </message>
     <message>
         <source>Stop</source>
-        <translation type="unfinished"></translation>
+        <translation>Stabdyti</translation>
     </message>
     <message>
         <source>Stop forwarding sound; restore output on the device</source>
-        <translation type="unfinished"></translation>
+        <translation>Nutraukti garso persiuntimą; atkurti išvestį įrenginyje</translation>
     </message>
     <message>
         <source>Switch workspace</source>
-        <translation type="unfinished"></translation>
+        <translation>Perjungti darbo sritį</translation>
     </message>
     <message>
         <source>System</source>
-        <translation type="unfinished"></translation>
+        <translation>Sistema</translation>
     </message>
     <message>
         <source>Text…</source>
-        <translation type="unfinished"></translation>
+        <translation>Tekstas…</translation>
     </message>
     <message>
         <source>The Mac needs Xcode with an iOS simulator runtime, SSH access and idb_companion. Your own Mac or a rented one works.</source>
-        <translation type="unfinished"></translation>
+        <translation>„Mac“ kompiuteriui reikia Xcode su iOS simuliatoriaus vykdymo aplinka, SSH prieigos ir idb_companion. Tinka jūsų nuosavas arba nuomojamas „Mac“.</translation>
     </message>
     <message>
         <source>The desktop and its control program come from different versions. Install both from the same build.</source>
-        <translation type="unfinished"></translation>
+        <translation>Darbalaukio programa ir jos valdymo programa yra skirtingų versijų. Įdiekite abi iš to paties leidimo.</translation>
     </message>
     <message>
         <source>The device did not become ready in time.</source>
-        <translation type="unfinished"></translation>
+        <translation>Įrenginys laiku nepasiruošė.</translation>
     </message>
     <message>
         <source>The runtime is still starting…</source>
-        <translation type="unfinished"></translation>
+        <translation>Vykdymo aplinka dar paleidžiama…</translation>
     </message>
     <message>
         <source>Third-party components keep their own licenses: THIRD_PARTY_NOTICES.md lists them, and docs/legal.md has further legal notes.</source>
-        <translation type="unfinished"></translation>
+        <translation>Trečiųjų šalių komponentams taikomos jų pačių licencijos: jos išvardytos THIRD_PARTY_NOTICES.md, o docs/legal.md yra daugiau teisinių pastabų.</translation>
     </message>
     <message>
         <source>Release notes</source>
-        <translation type="unfinished"></translation>
+        <translation>Leidimo pastabos</translation>
     </message>
     <message>
         <source>Third-party notices</source>
-        <translation type="unfinished"></translation>
+        <translation>Trečiųjų šalių pranešimai</translation>
     </message>
     <message>
         <source>This Linux build path needs a SwiftPM/xtool project. Flutter and Xcode projects are not converted automatically yet.</source>
-        <translation type="unfinished"></translation>
+        <translation>Šiam Linux kompiliavimo keliui reikia SwiftPM/xtool projekto. Flutter ir Xcode projektai kol kas automatiškai nekonvertuojami.</translation>
     </message>
     <message>
         <source>Turn on Developer Mode on the iPhone and confirm the pairing. The Apple sign-in opens a local terminal; passwords are not entered in Tomacco or MCP.</source>
-        <translation type="unfinished"></translation>
+        <translation>„iPhone“ įjunkite kūrėjo režimą ir patvirtinkite susiejimą. „Apple“ prisijungimas atidaro vietinį terminalą; slaptažodžiai neįvedami nei Tomacco, nei MCP.</translation>
     </message>
     <message>
         <source>UI tests</source>
-        <translation type="unfinished"></translation>
+        <translation>Sąsajos testai</translation>
     </message>
     <message>
         <source>USB connection</source>
-        <translation type="unfinished"></translation>
+        <translation>USB ryšys</translation>
     </message>
     <message>
         <source>USB picture transfer</source>
-        <translation type="unfinished"></translation>
+        <translation>Vaizdo perdavimas per USB</translation>
     </message>
     <message>
         <source>Version %1</source>
-        <translation type="unfinished"></translation>
+        <translation>Versija %1</translation>
     </message>
     <message>
         <source>View the sound forwarding error</source>
-        <translation type="unfinished"></translation>
+        <translation>Peržiūrėti garso persiuntimo klaidą</translation>
     </message>
     <message>
         <source>WORKSPACE</source>
-        <translation type="unfinished"></translation>
+        <translation>DARBO SRITIS</translation>
     </message>
     <message>
         <source>Web preview</source>
-        <translation type="unfinished"></translation>
+        <translation>Žiniatinklio peržiūra</translation>
     </message>
     <message>
         <source>Xcode archive (*.xip)</source>
-        <translation type="unfinished"></translation>
+        <translation>Xcode archyvas (*.xip)</translation>
     </message>
     <message>
         <source>iPhone development without a Mac</source>
-        <translation type="unfinished"></translation>
+        <translation>„iPhone“ kūrimas be „Mac“</translation>
     </message>
     <message>
         <source>iPhone services</source>
-        <translation type="unfinished"></translation>
+        <translation>„iPhone“ paslaugos</translation>
     </message>
     <message>
         <source>iPhone via USB</source>
-        <translation type="unfinished"></translation>
+        <translation>„iPhone“ per USB</translation>
     </message>
     <message>
         <source>Command</source>
-        <translation type="unfinished"></translation>
+        <translation>Komanda</translation>
     </message>
     <message>
         <source>Hide activity</source>
-        <translation type="unfinished"></translation>
+        <translation>Slėpti veiklą</translation>
     </message>
     <message>
         <source>Show activity</source>
-        <translation type="unfinished"></translation>
+        <translation>Rodyti veiklą</translation>
     </message>
     <message>
         <source>Switch to light appearance</source>
-        <translation type="unfinished"></translation>
+        <translation>Perjungti į šviesų vaizdą</translation>
     </message>
     <message>
         <source>Switch to dark appearance</source>
-        <translation type="unfinished"></translation>
+        <translation>Perjungti į tamsų vaizdą</translation>
     </message>
     <message>
         <source>Settings</source>
-        <translation type="unfinished"></translation>
+        <translation>Nustatymai</translation>
     </message>
     <message>
         <source>Keyboard shortcuts</source>
-        <translation type="unfinished"></translation>
+        <translation>Spartieji klavišai</translation>
     </message>
     <message>
         <source>Booting</source>
-        <translation type="unfinished"></translation>
+        <translation>Paleidžiama</translation>
     </message>
     <message>
         <source>Live</source>
-        <translation type="unfinished"></translation>
+        <translation>Tiesiogiai</translation>
     </message>
     <message>
         <source>Failed</source>
-        <translation type="unfinished"></translation>
+        <translation>Nepavyko</translation>
     </message>
     <message>
         <source>Disconnected</source>
-        <translation type="unfinished"></translation>
+        <translation>Atjungta</translation>
     </message>
     <message>
         <source>No device</source>
-        <translation type="unfinished"></translation>
+        <translation>Nėra įrenginio</translation>
     </message>
     <message>
         <source>Activity</source>
-        <translation type="unfinished"></translation>
+        <translation>Veikla</translation>
     </message>
     <message>
         <source>Jobs and agent calls · Ctrl+J</source>
-        <translation type="unfinished"></translation>
+        <translation>Užduotys ir agento iškvietimai · Ctrl+J</translation>
     </message>
     <message>
         <source>Appearance and language · Ctrl+,</source>
-        <translation type="unfinished"></translation>
+        <translation>Išvaizda ir kalba · Ctrl+,</translation>
     </message>
     <message numerus="yes">
         <source>%n job(s) running</source>
-        <translation type="unfinished">
-            <numerusform></numerusform>
-            <numerusform></numerusform>
-            <numerusform></numerusform>
+        <translation>
+            <numerusform>Vykdoma %n užduotis</numerusform>
+            <numerusform>Vykdomos %n užduotys</numerusform>
+            <numerusform>Vykdoma %n užduočių</numerusform>
         </translation>
     </message>
     <message>
         <source>Ctrl+K search · F1 keys</source>
-        <translation type="unfinished"></translation>
+        <translation>Ctrl+K paieška · F1 klavišai</translation>
     </message>
     <message>
         <source>Appearance</source>
-        <translation type="unfinished"></translation>
+        <translation>Išvaizda</translation>
     </message>
     <message>
         <source>Dark</source>
-        <translation type="unfinished"></translation>
+        <translation>Tamsi</translation>
     </message>
     <message>
         <source>Light</source>
-        <translation type="unfinished"></translation>
+        <translation>Šviesi</translation>
     </message>
     <message>
         <source>Search views, commands and tools</source>
-        <translation type="unfinished"></translation>
+        <translation>Ieškoti rodinių, komandų ir įrankių</translation>
     </message>
     <message>
         <source>Show or hide activity</source>
-        <translation type="unfinished"></translation>
+        <translation>Rodyti arba slėpti veiklą</translation>
     </message>
     <message>
         <source>Save the current file</source>
-        <translation type="unfinished"></translation>
+        <translation>Įrašyti dabartinį failą</translation>
     </message>
     <message>
         <source>Search the project&apos;s source code</source>
-        <translation type="unfinished"></translation>
+        <translation>Ieškoti projekto išeities kode</translation>
     </message>
     <message>
         <source>Full screen · web preview</source>
-        <translation type="unfinished"></translation>
+        <translation>Visas ekranas · žiniatinklio peržiūra</translation>
     </message>
     <message>
         <source>Project</source>
-        <translation type="unfinished"></translation>
+        <translation>Projektas</translation>
     </message>
     <message>
         <source>Device</source>
-        <translation type="unfinished"></translation>
+        <translation>Įrenginys</translation>
     </message>
     <message>
         <source>Run</source>
-        <translation type="unfinished"></translation>
+        <translation>Vykdyti</translation>
     </message>
     <message>
         <source>Ctrl</source>
-        <translation type="unfinished"></translation>
+        <translation>Ctrl</translation>
     </message>
     <message>
         <source>Building and starting your app…</source>
-        <translation type="unfinished"></translation>
+        <translation>Kompiliuojama ir paleidžiama jūsų programa…</translation>
     </message>
     <message>
         <source>Copy what your agent needs: this project and the live device</source>
-        <translation type="unfinished"></translation>
+        <translation>Nukopijuokite tai, ko reikia jūsų agentui: šį projektą ir tiesioginį įrenginį</translation>
     </message>
     <message>
         <source>Ready for agents</source>
-        <translation type="unfinished"></translation>
+        <translation>Paruošta agentams</translation>
     </message>
     <message>
         <source>Your device is in its own window.</source>
-        <translation type="unfinished"></translation>
+        <translation>Jūsų įrenginys yra atskirame lange.</translation>
     </message>
     <message>
         <source>Drag it by its body. Ctrl+wheel resizes it. Close it to bring it back.</source>
-        <translation type="unfinished"></translation>
+        <translation>Tempkite jį už korpuso. Ctrl+ratukas keičia dydį. Uždarykite, kad grąžintumėte.</translation>
     </message>
     <message>
         <source>Bring it back</source>
-        <translation type="unfinished"></translation>
+        <translation>Grąžinti</translation>
     </message>
     <message>
         <source>Plug in your iPhone.</source>
-        <translation type="unfinished"></translation>
+        <translation>Prijunkite savo „iPhone“.</translation>
     </message>
     <message>
         <source>Connect a Mac.</source>
-        <translation type="unfinished"></translation>
+        <translation>Prijunkite „Mac“.</translation>
     </message>
     <message>
         <source>Give your agent a phone.</source>
-        <translation type="unfinished"></translation>
+        <translation>Duokite savo agentui telefoną.</translation>
     </message>
     <message>
         <source>Plug it in and unlock it. Build Swift apps on Linux and control them from here.</source>
-        <translation type="unfinished"></translation>
+        <translation>Prijunkite jį ir atrakinkite. Kompiliuokite Swift programas Linux sistemoje ir valdykite jas iš čia.</translation>
     </message>
     <message>
         <source>The Apple simulator needs a Mac with Xcode. Yours or a rented one, over SSH.</source>
-        <translation type="unfinished"></translation>
+        <translation>„Apple“ simuliatoriui reikia „Mac“ su Xcode. Jūsų nuosavo arba nuomojamo, per SSH.</translation>
     </message>
     <message>
         <source>It builds, runs, taps through and debugs iOS and Android apps. On Linux. No Mac needed.</source>
-        <translation type="unfinished"></translation>
+        <translation>Jis kompiliuoja, vykdo, išbando bakstelėjimais ir derina iOS bei Android programas. Linux sistemoje. „Mac“ nereikia.</translation>
     </message>
     <message>
         <source>Connect %1</source>
-        <translation type="unfinished"></translation>
+        <translation>Prijungti %1</translation>
     </message>
     <message>
         <source>Add a device</source>
-        <translation type="unfinished"></translation>
+        <translation>Pridėti įrenginį</translation>
     </message>
     <message>
         <source>Open a project</source>
-        <translation type="unfinished"></translation>
+        <translation>Atidaryti projektą</translation>
     </message>
     <message>
         <source>Completed after %1</source>

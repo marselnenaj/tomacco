@@ -2886,810 +2886,811 @@ xtool setup</translation>
     </message>
     <message>
         <source>Connect a device to take a screenshot.</source>
-        <translation type="unfinished"></translation>
+        <translation>Tengdu tæki til að taka skjámynd.</translation>
     </message>
     <message>
         <source>Screenshot saved and copied · %1</source>
-        <translation type="unfinished"></translation>
+        <translation>Skjámynd vistuð og afrituð · %1</translation>
     </message>
     <message>
         <source>Save and copy a device screenshot</source>
-        <translation type="unfinished"></translation>
+        <translation>Vista og afrita skjámynd af tæki</translation>
     </message>
     <message>
         <source>Save and copy a screenshot</source>
-        <translation type="unfinished"></translation>
+        <translation>Vista og afrita skjámynd</translation>
     </message>
     <message>
         <source>Choose a device first, then drop the app on it.</source>
-        <translation type="unfinished"></translation>
+        <translation>Veldu fyrst tæki og slepptu svo appinu á það.</translation>
     </message>
     <message>
         <source>Android devices install .apk files.</source>
-        <translation type="unfinished"></translation>
+        <translation>Android-tæki setja upp .apk-skrár.</translation>
     </message>
     <message>
         <source>An iPhone installs one signed .ipa file.</source>
-        <translation type="unfinished"></translation>
+        <translation>iPhone setur upp eina undirritaða .ipa-skrá.</translation>
     </message>
     <message>
         <source>Apps for the Mac&apos;s simulator are installed with Apple&apos;s tools.</source>
-        <translation type="unfinished"></translation>
+        <translation>Öpp fyrir hermi Mac-tölvunnar eru sett upp með verkfærum Apple.</translation>
     </message>
     <message>
         <source>Installing %1 on %2…</source>
-        <translation type="unfinished"></translation>
+        <translation>Setur upp %1 á %2…</translation>
     </message>
     <message>
         <source>Installing · progress under Builds &amp; jobs</source>
-        <translation type="unfinished"></translation>
+        <translation>Setur upp · framvinda undir Smíðar og verk</translation>
     </message>
     <message numerus="yes">
         <source>%n tool(s) available to agents through the CLI and MCP</source>
-        <translation type="unfinished">
-            <numerusform></numerusform>
-            <numerusform></numerusform>
+        <translation>
+            <numerusform>%n verkfæri í boði fyrir fulltrúa í gegnum CLI og MCP</numerusform>
+            <numerusform>%n verkfæri í boði fyrir fulltrúa í gegnum CLI og MCP</numerusform>
         </translation>
     </message>
     <message>
         <source>A job is already running for this project. You can open or stop it under Builds &amp; jobs.</source>
-        <translation type="unfinished"></translation>
+        <translation>Verk er þegar í gangi fyrir þetta verkefni. Þú getur opnað eða stöðvað það undir Smíðar og verk.</translation>
     </message>
     <message>
         <source>AUTOMATION</source>
-        <translation type="unfinished"></translation>
+        <translation>SJÁLFVIRKNI</translation>
     </message>
     <message>
         <source>About Tomacco</source>
-        <translation type="unfinished"></translation>
+        <translation>Um Tomacco</translation>
     </message>
     <message>
         <source>About Tomacco · version, license and source code</source>
-        <translation type="unfinished"></translation>
+        <translation>Um Tomacco · útgáfa, leyfi og frumkóði</translation>
     </message>
     <message>
         <source>Agent API not ready</source>
-        <translation type="unfinished"></translation>
+        <translation>API fulltrúa ekki tilbúið</translation>
     </message>
     <message>
         <source>Agents</source>
-        <translation type="unfinished"></translation>
+        <translation>Fulltrúar</translation>
     </message>
     <message>
         <source>All files (*)</source>
-        <translation type="unfinished"></translation>
+        <translation>Allar skrár (*)</translation>
     </message>
     <message>
         <source>Android is starting…</source>
-        <translation type="unfinished"></translation>
+        <translation>Android ræsist…</translation>
     </message>
     <message>
         <source>App launch: %1. Details under Builds &amp; jobs.</source>
-        <translation type="unfinished"></translation>
+        <translation>Ræsing apps: %1. Nánar undir Smíðar og verk.</translation>
     </message>
     <message>
         <source>App launched</source>
-        <translation type="unfinished"></translation>
+        <translation>App ræst</translation>
     </message>
     <message>
         <source>App running on %1 · end the session before switching targets</source>
-        <translation type="unfinished"></translation>
+        <translation>App keyrir á %1 · ljúktu lotunni áður en skipt er um mark</translation>
     </message>
     <message>
         <source>App running · apply changes with Hot Reload</source>
-        <translation type="unfinished"></translation>
+        <translation>App keyrir · virkjaðu breytingar með Hot Reload</translation>
     </message>
     <message>
         <source>Apple SDK</source>
-        <translation type="unfinished"></translation>
+        <translation>SDK frá Apple</translation>
     </message>
     <message>
         <source>Apple sign-in</source>
-        <translation type="unfinished"></translation>
+        <translation>Innskráning hjá Apple</translation>
     </message>
     <message>
         <source>Apple sign-in opened in the local terminal</source>
-        <translation type="unfinished"></translation>
+        <translation>Innskráning hjá Apple opnuð í staðbundinni skipanaskel</translation>
     </message>
     <message>
         <source>Applying changes to the running app…</source>
-        <translation type="unfinished"></translation>
+        <translation>Setur breytingar í keyrandi app…</translation>
     </message>
     <message>
         <source>Back</source>
-        <translation type="unfinished"></translation>
+        <translation>Til baka</translation>
     </message>
     <message>
         <source>Build running…</source>
-        <translation type="unfinished"></translation>
+        <translation>Smíð í gangi…</translation>
     </message>
     <message>
         <source>Build, run and test native Android and iOS apps on Linux, by hand or with your agents.</source>
-        <translation type="unfinished"></translation>
+        <translation>Smíðaðu, keyrðu og prófaðu innbyggð Android- og iOS-öpp á Linux, handvirkt eða með fulltrúunum þínum.</translation>
     </message>
     <message>
         <source>Builds &amp; jobs</source>
-        <translation type="unfinished"></translation>
+        <translation>Smíðar og verk</translation>
     </message>
     <message>
         <source>Capture saved · %1</source>
-        <translation type="unfinished"></translation>
+        <translation>Upptaka vistuð · %1</translation>
     </message>
     <message>
         <source>Case color</source>
-        <translation type="unfinished"></translation>
+        <translation>Litur hulsturs</translation>
     </message>
     <message>
         <source>Check again</source>
-        <translation type="unfinished"></translation>
+        <translation>Athuga aftur</translation>
     </message>
     <message>
         <source>Choose a Mac</source>
-        <translation type="unfinished"></translation>
+        <translation>Veldu Mac</translation>
     </message>
     <message>
         <source>Choose a device</source>
-        <translation type="unfinished"></translation>
+        <translation>Veldu tæki</translation>
     </message>
     <message>
         <source>Choose ‘Sign in to Apple’ and finish signing in in the local terminal.</source>
-        <translation type="unfinished"></translation>
+        <translation>Veldu „Skrá inn hjá Apple“ og ljúktu innskráningu í staðbundinni skipanaskel.</translation>
     </message>
     <message>
         <source>Color</source>
-        <translation type="unfinished"></translation>
+        <translation>Litur</translation>
     </message>
     <message>
         <source>Connect</source>
-        <translation type="unfinished"></translation>
+        <translation>Tengjast</translation>
     </message>
     <message>
         <source>Connect Mac</source>
-        <translation type="unfinished"></translation>
+        <translation>Tengja Mac</translation>
     </message>
     <message>
         <source>Connect an iPhone or iPad via USB and confirm ‘Trust This Computer’.</source>
-        <translation type="unfinished"></translation>
+        <translation>Tengdu iPhone eða iPad með USB og staðfestu „Treysta þessari tölvu“.</translation>
     </message>
     <message>
         <source>Connect the Apple simulator to Linux</source>
-        <translation type="unfinished"></translation>
+        <translation>Tengja Apple-herminn við Linux</translation>
     </message>
     <message>
         <source>Connect the unlocked iPhone. The usbmuxd service must be available.</source>
-        <translation type="unfinished"></translation>
+        <translation>Tengdu ólæstan iPhone. usbmuxd-þjónustan verður að vera tiltæk.</translation>
     </message>
     <message>
         <source>Connected</source>
-        <translation type="unfinished"></translation>
+        <translation>Tengt</translation>
     </message>
     <message>
         <source>Connecting</source>
-        <translation type="unfinished"></translation>
+        <translation>Tengist</translation>
     </message>
     <message>
         <source>Connecting the picture…</source>
-        <translation type="unfinished"></translation>
+        <translation>Tengir mynd…</translation>
     </message>
     <message>
         <source>Not mirroring</source>
-        <translation type="unfinished"></translation>
+        <translation>Engin speglun</translation>
     </message>
     <message>
         <source>On the iPhone, open Control Center, tap Screen Mirroring and choose %1.</source>
-        <translation type="unfinished"></translation>
+        <translation>Opnaðu Stjórnstöð á iPhone, ýttu á Skjáspeglun og veldu %1.</translation>
     </message>
     <message>
         <source>Connecting…</source>
-        <translation type="unfinished"></translation>
+        <translation>Tengist…</translation>
     </message>
     <message>
         <source>Connection name, e.g. build-mac</source>
-        <translation type="unfinished"></translation>
+        <translation>Heiti tengingar, t.d. build-mac</translation>
     </message>
     <message>
         <source>Control program</source>
-        <translation type="unfinished"></translation>
+        <translation>Stýriforrit</translation>
     </message>
     <message>
         <source>Control program unavailable</source>
-        <translation type="unfinished"></translation>
+        <translation>Stýriforrit ekki tiltækt</translation>
     </message>
     <message>
         <source>Copy companion command</source>
-        <translation type="unfinished"></translation>
+        <translation>Afrita skipun fylgiforrits</translation>
     </message>
     <message>
         <source>Copy context</source>
-        <translation type="unfinished"></translation>
+        <translation>Afrita samhengi</translation>
     </message>
     <message>
         <source>DEVELOPMENT</source>
-        <translation type="unfinished"></translation>
+        <translation>ÞRÓUN</translation>
     </message>
     <message>
         <source>Detach the device into its own window</source>
-        <translation type="unfinished"></translation>
+        <translation>Losa tækið í eigin glugga</translation>
     </message>
     <message>
         <source>Device pairing</source>
-        <translation type="unfinished"></translation>
+        <translation>Pörun tækja</translation>
     </message>
     <message>
         <source>Devices</source>
-        <translation type="unfinished"></translation>
+        <translation>Tæki</translation>
     </message>
     <message>
         <source>Disconnect</source>
-        <translation type="unfinished"></translation>
+        <translation>Aftengja</translation>
     </message>
     <message>
         <source>Dismiss notice</source>
-        <translation type="unfinished"></translation>
+        <translation>Loka tilkynningu</translation>
     </message>
     <message>
         <source>Dock</source>
-        <translation type="unfinished"></translation>
+        <translation>Festa</translation>
     </message>
     <message>
         <source>Download SDK from Apple</source>
-        <translation type="unfinished"></translation>
+        <translation>Sækja SDK frá Apple</translation>
     </message>
     <message>
         <source>Download control package</source>
-        <translation type="unfinished"></translation>
+        <translation>Sækja stýripakka</translation>
     </message>
     <message>
         <source>Download the Xcode archive from Apple, then choose ‘Import SDK’. Processing runs on Linux.</source>
-        <translation type="unfinished"></translation>
+        <translation>Sæktu Xcode-safnið frá Apple og veldu svo „Flytja inn SDK“. Vinnslan fer fram á Linux.</translation>
     </message>
     <message>
         <source>Ending the session…</source>
-        <translation type="unfinished"></translation>
+        <translation>Lýkur lotunni…</translation>
     </message>
     <message>
         <source>Enter text</source>
-        <translation type="unfinished"></translation>
+        <translation>Sláðu inn texta</translation>
     </message>
     <message>
         <source>Files</source>
-        <translation type="unfinished"></translation>
+        <translation>Skrár</translation>
     </message>
     <message>
         <source>First click into the app&apos;s text field. This text is pasted through the device clipboard.</source>
-        <translation type="unfinished"></translation>
+        <translation>Smelltu fyrst í textareit appsins. Þessum texta er límt í gegnum klippispjald tækisins.</translation>
     </message>
     <message>
         <source>First click the text field you want in the app. Its entire accessible value is replaced, umlauts and emoji included.</source>
-        <translation type="unfinished"></translation>
+        <translation>Smelltu fyrst í textareitinn sem þú vilt í appinu. Öllu aðgengilegu gildi hans er skipt út, þar með töldum sérstöfunum og tjáknum.</translation>
     </message>
     <message>
         <source>Frame</source>
-        <translation type="unfinished"></translation>
+        <translation>Rammi</translation>
     </message>
     <message>
         <source>Import SDK</source>
-        <translation type="unfinished"></translation>
+        <translation>Flytja inn SDK</translation>
     </message>
     <message>
         <source>Import the Apple SDK from Xcode</source>
-        <translation type="unfinished"></translation>
+        <translation>Flytja inn SDK Apple úr Xcode</translation>
     </message>
     <message>
         <source>Insert text</source>
-        <translation type="unfinished"></translation>
+        <translation>Setja inn texta</translation>
     </message>
     <message>
         <source>Install libimobiledevice for device pairing.</source>
-        <translation type="unfinished"></translation>
+        <translation>Settu upp libimobiledevice fyrir pörun tækja.</translation>
     </message>
     <message>
         <source>Install libusbmuxd for the USB connection.</source>
-        <translation type="unfinished"></translation>
+        <translation>Settu upp libusbmuxd fyrir USB-tenginguna.</translation>
     </message>
     <message>
         <source>Install the Swift toolchain that matches your Apple SDK.</source>
-        <translation type="unfinished"></translation>
+        <translation>Settu upp Swift-verkfærakjörnið sem passar við SDK Apple hjá þér.</translation>
     </message>
     <message>
         <source>Install xtool for Linux.</source>
-        <translation type="unfinished"></translation>
+        <translation>Settu upp xtool fyrir Linux.</translation>
     </message>
     <message>
         <source>Installed WebDriverAgent bundle ID</source>
-        <translation type="unfinished"></translation>
+        <translation>Pakkaauðkenni uppsetts WebDriverAgent</translation>
     </message>
     <message>
         <source>Interface language; System follows the desktop language</source>
-        <translation type="unfinished"></translation>
+        <translation>Tungumál viðmóts; Kerfi fylgir tungumáli skjáborðsins</translation>
     </message>
     <message>
         <source>Language</source>
-        <translation type="unfinished"></translation>
+        <translation>Tungumál</translation>
     </message>
     <message>
         <source>Sponsor</source>
-        <translation type="unfinished"></translation>
+        <translation>Styrkja</translation>
     </message>
     <message>
         <source>Legal notes</source>
-        <translation type="unfinished"></translation>
+        <translation>Lagalegar athugasemdir</translation>
     </message>
     <message>
         <source>License</source>
-        <translation type="unfinished"></translation>
+        <translation>Leyfi</translation>
     </message>
     <message>
         <source>Linux builds your SwiftPM/xtool app. The connected iPhone runs it. Set up the Apple SDK and signing here once.</source>
-        <translation type="unfinished"></translation>
+        <translation>Linux smíðar SwiftPM/xtool-appið þitt. Tengdi iPhone-síminn keyrir það. Settu upp SDK Apple og undirritun hér einu sinni.</translation>
     </message>
     <message>
         <source>Live device</source>
-        <translation type="unfinished"></translation>
+        <translation>Tæki í beinni</translation>
     </message>
     <message>
         <source>Load developer image</source>
-        <translation type="unfinished"></translation>
+        <translation>Hlaða þróunarmynd</translation>
     </message>
     <message>
         <source>Mac terminal: brew install facebook/fb/idb
 SSH uses your existing keys and the known host identity.</source>
-        <translation type="unfinished"></translation>
+        <translation>Skipanaskel á Mac: brew install facebook/fb/idb
+SSH notar fyrirliggjandi lykla þína og þekkt auðkenni hýsils.</translation>
     </message>
     <message>
         <source>No iOS simulator runtime is installed on this Mac yet. Install one in Xcode → Settings → Components.</source>
-        <translation type="unfinished"></translation>
+        <translation>Ekkert keyrsluumhverfi fyrir iOS-hermi er enn uppsett á þessum Mac. Settu eitt upp í Xcode → Settings → Components.</translation>
     </message>
     <message>
         <source>No project open</source>
-        <translation type="unfinished"></translation>
+        <translation>Ekkert verkefni opið</translation>
     </message>
     <message>
         <source>No project yet</source>
-        <translation type="unfinished"></translation>
+        <translation>Ekkert verkefni enn</translation>
     </message>
     <message>
         <source>Not available</source>
-        <translation type="unfinished"></translation>
+        <translation>Ekki tiltækt</translation>
     </message>
     <message>
         <source>Open a project folder · Ctrl+O</source>
-        <translation type="unfinished"></translation>
+        <translation>Opna verkefnismöppu · Ctrl+O</translation>
     </message>
     <message>
         <source>Open job</source>
-        <translation type="unfinished"></translation>
+        <translation>Opna verk</translation>
     </message>
     <message>
         <source>Open project</source>
-        <translation type="unfinished"></translation>
+        <translation>Opna verkefni</translation>
     </message>
     <message>
         <source>Overview</source>
-        <translation type="unfinished"></translation>
+        <translation>Yfirlit</translation>
     </message>
     <message>
         <source>Own window</source>
-        <translation type="unfinished"></translation>
+        <translation>Eigin gluggi</translation>
     </message>
     <message>
         <source>Pair device</source>
-        <translation type="unfinished"></translation>
+        <translation>Para tæki</translation>
     </message>
     <message>
         <source>Play the app&apos;s sound on this computer</source>
-        <translation type="unfinished"></translation>
+        <translation>Spila hljóð appsins á þessari tölvu</translation>
     </message>
     <message>
         <source>Tomacco is free software under the GNU General Public License. Source: GPL-2.0-or-later. Distributed binaries: GPL-3.0-or-later, because they include Apache-2.0 components. It comes with ABSOLUTELY NO WARRANTY.</source>
-        <translation type="unfinished"></translation>
+        <translation>Tomacco er frjáls hugbúnaður samkvæmt GNU General Public License. Frumkóði: GPL-2.0-or-later. Dreifðar keyrsluskrár: GPL-3.0-or-later, því þær innihalda Apache-2.0-hluti. Það kemur ALGJÖRLEGA ÁN ÁBYRGÐAR.</translation>
     </message>
     <message>
         <source>Project and runtime context copied</source>
-        <translation type="unfinished"></translation>
+        <translation>Samhengi verkefnis og keyrsluumhverfis afritað</translation>
     </message>
     <message>
         <source>Project busy</source>
-        <translation type="unfinished"></translation>
+        <translation>Verkefnið er upptekið</translation>
     </message>
     <message>
         <source>Project directory on the Mac, e.g. /Users/me/Projects/app</source>
-        <translation type="unfinished"></translation>
+        <translation>Verkefnismappa á Mac, t.d. /Users/me/Projects/app</translation>
     </message>
     <message>
         <source>Project format</source>
-        <translation type="unfinished"></translation>
+        <translation>Snið verkefnis</translation>
     </message>
     <message>
         <source>Reference frame recognized from the display size; the frame geometry is approximated</source>
-        <translation type="unfinished"></translation>
+        <translation>Viðmiðunarrammi greindur út frá skjástærð; lögun rammans er nálguð</translation>
     </message>
     <message>
         <source>Replace text field</source>
-        <translation type="unfinished"></translation>
+        <translation>Skipta út textareit</translation>
     </message>
     <message>
         <source>Reused the running session</source>
-        <translation type="unfinished"></translation>
+        <translation>Keyrandi lota endurnýtt</translation>
     </message>
     <message>
         <source>Rotate</source>
-        <translation type="unfinished"></translation>
+        <translation>Snúa</translation>
     </message>
     <message>
         <source>Run app</source>
-        <translation type="unfinished"></translation>
+        <translation>Keyra app</translation>
     </message>
     <message>
         <source>SSH target, e.g. user@mac.local</source>
-        <translation type="unfinished"></translation>
+        <translation>SSH-mark, t.d. user@mac.local</translation>
     </message>
     <message>
         <source>Save &amp; load simulators</source>
-        <translation type="unfinished"></translation>
+        <translation>Vista og hlaða hermum</translation>
     </message>
     <message>
         <source>Search</source>
-        <translation type="unfinished"></translation>
+        <translation>Leita</translation>
     </message>
     <message>
         <source>Search for devices again</source>
-        <translation type="unfinished"></translation>
+        <translation>Leita aftur að tækjum</translation>
     </message>
     <message>
         <source>Search navigation and all tools · Ctrl+K</source>
-        <translation type="unfinished"></translation>
+        <translation>Leita í leiðsögn og öllum verkfærum · Ctrl+K</translation>
     </message>
     <message>
         <source>Session ended</source>
-        <translation type="unfinished"></translation>
+        <translation>Lotu lokið</translation>
     </message>
     <message>
         <source>Session ended · %1</source>
-        <translation type="unfinished"></translation>
+        <translation>Lotu lokið · %1</translation>
     </message>
     <message>
         <source>Set up Mac</source>
-        <translation type="unfinished"></translation>
+        <translation>Setja upp Mac</translation>
     </message>
     <message>
         <source>Set up another Android model</source>
-        <translation type="unfinished"></translation>
+        <translation>Setja upp aðra Android-gerð</translation>
     </message>
     <message>
         <source>Set up go-ios for the iPhone developer services.</source>
-        <translation type="unfinished"></translation>
+        <translation>Settu upp go-ios fyrir þróunarþjónustur iPhone.</translation>
     </message>
     <message>
         <source>Set up iPhone</source>
-        <translation type="unfinished"></translation>
+        <translation>Setja upp iPhone</translation>
     </message>
     <message>
         <source>Setup started · progress under Builds &amp; jobs</source>
-        <translation type="unfinished"></translation>
+        <translation>Uppsetning hafin · framvinda undir Smíðar og verk</translation>
     </message>
     <message>
         <source>Show installed apps</source>
-        <translation type="unfinished"></translation>
+        <translation>Sýna uppsett öpp</translation>
     </message>
     <message>
         <source>Show the device frame; Android provides the real status bar</source>
-        <translation type="unfinished"></translation>
+        <translation>Sýna ramma tækisins; Android leggur til raunverulegu stöðustikuna</translation>
     </message>
     <message>
         <source>Sign &amp; install control</source>
-        <translation type="unfinished"></translation>
+        <translation>Undirrita og setja upp stýringu</translation>
     </message>
     <message>
         <source>Sign in to Apple</source>
-        <translation type="unfinished"></translation>
+        <translation>Skrá inn hjá Apple</translation>
     </message>
     <message>
         <source>Signing can change the bundle ID. Then enter the ID of the installed WebDriverAgent runner. A modern local iOS emulator is not included at present.</source>
-        <translation type="unfinished"></translation>
+        <translation>Undirritun getur breytt pakkaauðkenninu. Sláðu þá inn auðkenni uppsetts WebDriverAgent-keyrara. Nútímalegur staðbundinn iOS-hermir fylgir ekki eins og er.</translation>
     </message>
     <message>
         <source>Simulator on a Mac</source>
-        <translation type="unfinished"></translation>
+        <translation>Hermir á Mac</translation>
     </message>
     <message>
         <source>Sound</source>
-        <translation type="unfinished"></translation>
+        <translation>Hljóð</translation>
     </message>
     <message>
         <source>Sound error</source>
-        <translation type="unfinished"></translation>
+        <translation>Hljóðvilla</translation>
     </message>
     <message>
         <source>Sound…</source>
-        <translation type="unfinished"></translation>
+        <translation>Hljóð…</translation>
     </message>
     <message>
         <source>Source code ↗</source>
-        <translation type="unfinished"></translation>
+        <translation>Frumkóði ↗</translation>
     </message>
     <message>
         <source>Start iOS tunnel</source>
-        <translation type="unfinished"></translation>
+        <translation>Ræsa iOS-göng</translation>
     </message>
     <message>
         <source>Stop</source>
-        <translation type="unfinished"></translation>
+        <translation>Stöðva</translation>
     </message>
     <message>
         <source>Stop forwarding sound; restore output on the device</source>
-        <translation type="unfinished"></translation>
+        <translation>Hætta að áframsenda hljóð; endurheimta útták á tækinu</translation>
     </message>
     <message>
         <source>Switch workspace</source>
-        <translation type="unfinished"></translation>
+        <translation>Skipta um vinnusvæði</translation>
     </message>
     <message>
         <source>System</source>
-        <translation type="unfinished"></translation>
+        <translation>Kerfi</translation>
     </message>
     <message>
         <source>Text…</source>
-        <translation type="unfinished"></translation>
+        <translation>Texti…</translation>
     </message>
     <message>
         <source>The Mac needs Xcode with an iOS simulator runtime, SSH access and idb_companion. Your own Mac or a rented one works.</source>
-        <translation type="unfinished"></translation>
+        <translation>Mac-tölvan þarf Xcode með keyrsluumhverfi fyrir iOS-hermi, SSH-aðgang og idb_companion. Þín eigin Mac eða leigður dugar.</translation>
     </message>
     <message>
         <source>The desktop and its control program come from different versions. Install both from the same build.</source>
-        <translation type="unfinished"></translation>
+        <translation>Skjáborðsforritið og stýriforrit þess eru úr mismunandi útgáfum. Settu bæði upp úr sömu smíð.</translation>
     </message>
     <message>
         <source>The device did not become ready in time.</source>
-        <translation type="unfinished"></translation>
+        <translation>Tækið varð ekki tilbúið í tæka tíð.</translation>
     </message>
     <message>
         <source>The runtime is still starting…</source>
-        <translation type="unfinished"></translation>
+        <translation>Keyrsluumhverfið er enn að ræsast…</translation>
     </message>
     <message>
         <source>Third-party components keep their own licenses: THIRD_PARTY_NOTICES.md lists them, and docs/legal.md has further legal notes.</source>
-        <translation type="unfinished"></translation>
+        <translation>Íhlutir frá þriðja aðila halda eigin leyfum: THIRD_PARTY_NOTICES.md telur þá upp og docs/legal.md hefur frekari lagalegar athugasemdir.</translation>
     </message>
     <message>
         <source>Release notes</source>
-        <translation type="unfinished"></translation>
+        <translation>Útgáfuþættir</translation>
     </message>
     <message>
         <source>Third-party notices</source>
-        <translation type="unfinished"></translation>
+        <translation>Tilkynningar þriðja aðila</translation>
     </message>
     <message>
         <source>This Linux build path needs a SwiftPM/xtool project. Flutter and Xcode projects are not converted automatically yet.</source>
-        <translation type="unfinished"></translation>
+        <translation>Þessi smíðaleið á Linux krefst SwiftPM/xtool-verkefnis. Flutter- og Xcode-verkefnum er ekki enn umbreytt sjálfkrafa.</translation>
     </message>
     <message>
         <source>Turn on Developer Mode on the iPhone and confirm the pairing. The Apple sign-in opens a local terminal; passwords are not entered in Tomacco or MCP.</source>
-        <translation type="unfinished"></translation>
+        <translation>Kveiktu á þróunarham á iPhone og staðfestu pörunina. Innskráning hjá Apple opnar staðbundna skipanaskel; lykilorð eru ekki slegín inn í Tomacco eða MCP.</translation>
     </message>
     <message>
         <source>UI tests</source>
-        <translation type="unfinished"></translation>
+        <translation>Viðmótsprófanir</translation>
     </message>
     <message>
         <source>USB connection</source>
-        <translation type="unfinished"></translation>
+        <translation>USB-tenging</translation>
     </message>
     <message>
         <source>USB picture transfer</source>
-        <translation type="unfinished"></translation>
+        <translation>Myndflutningur um USB</translation>
     </message>
     <message>
         <source>Version %1</source>
-        <translation type="unfinished"></translation>
+        <translation>Útgáfa %1</translation>
     </message>
     <message>
         <source>View the sound forwarding error</source>
-        <translation type="unfinished"></translation>
+        <translation>Skoða villu í áframsendingu hljóðs</translation>
     </message>
     <message>
         <source>WORKSPACE</source>
-        <translation type="unfinished"></translation>
+        <translation>VINNUSVÆÐI</translation>
     </message>
     <message>
         <source>Web preview</source>
-        <translation type="unfinished"></translation>
+        <translation>Vefforskoðun</translation>
     </message>
     <message>
         <source>Xcode archive (*.xip)</source>
-        <translation type="unfinished"></translation>
+        <translation>Xcode-safn (*.xip)</translation>
     </message>
     <message>
         <source>iPhone development without a Mac</source>
-        <translation type="unfinished"></translation>
+        <translation>iPhone-þróun án Mac</translation>
     </message>
     <message>
         <source>iPhone services</source>
-        <translation type="unfinished"></translation>
+        <translation>iPhone-þjónustur</translation>
     </message>
     <message>
         <source>iPhone via USB</source>
-        <translation type="unfinished"></translation>
+        <translation>iPhone um USB</translation>
     </message>
     <message>
         <source>Command</source>
-        <translation type="unfinished"></translation>
+        <translation>Skipun</translation>
     </message>
     <message>
         <source>Hide activity</source>
-        <translation type="unfinished"></translation>
+        <translation>Fela virkni</translation>
     </message>
     <message>
         <source>Show activity</source>
-        <translation type="unfinished"></translation>
+        <translation>Sýna virkni</translation>
     </message>
     <message>
         <source>Switch to light appearance</source>
-        <translation type="unfinished"></translation>
+        <translation>Skipta yfir í ljóst útlit</translation>
     </message>
     <message>
         <source>Switch to dark appearance</source>
-        <translation type="unfinished"></translation>
+        <translation>Skipta yfir í dökkt útlit</translation>
     </message>
     <message>
         <source>Settings</source>
-        <translation type="unfinished"></translation>
+        <translation>Stillingar</translation>
     </message>
     <message>
         <source>Keyboard shortcuts</source>
-        <translation type="unfinished"></translation>
+        <translation>Flýtilyklar</translation>
     </message>
     <message>
         <source>Booting</source>
-        <translation type="unfinished"></translation>
+        <translation>Ræsist</translation>
     </message>
     <message>
         <source>Live</source>
-        <translation type="unfinished"></translation>
+        <translation>Í beinni</translation>
     </message>
     <message>
         <source>Failed</source>
-        <translation type="unfinished"></translation>
+        <translation>Mistókst</translation>
     </message>
     <message>
         <source>Disconnected</source>
-        <translation type="unfinished"></translation>
+        <translation>Aftengt</translation>
     </message>
     <message>
         <source>No device</source>
-        <translation type="unfinished"></translation>
+        <translation>Ekkert tæki</translation>
     </message>
     <message>
         <source>Activity</source>
-        <translation type="unfinished"></translation>
+        <translation>Virkni</translation>
     </message>
     <message>
         <source>Jobs and agent calls · Ctrl+J</source>
-        <translation type="unfinished"></translation>
+        <translation>Verk og köll fulltrúa · Ctrl+J</translation>
     </message>
     <message>
         <source>Appearance and language · Ctrl+,</source>
-        <translation type="unfinished"></translation>
+        <translation>Útlit og tungumál · Ctrl+,</translation>
     </message>
     <message numerus="yes">
         <source>%n job(s) running</source>
-        <translation type="unfinished">
-            <numerusform></numerusform>
-            <numerusform></numerusform>
+        <translation>
+            <numerusform>%n verk í gangi</numerusform>
+            <numerusform>%n verk í gangi</numerusform>
         </translation>
     </message>
     <message>
         <source>Ctrl+K search · F1 keys</source>
-        <translation type="unfinished"></translation>
+        <translation>Ctrl+K leit · F1 lyklar</translation>
     </message>
     <message>
         <source>Appearance</source>
-        <translation type="unfinished"></translation>
+        <translation>Útlit</translation>
     </message>
     <message>
         <source>Dark</source>
-        <translation type="unfinished"></translation>
+        <translation>Dökkt</translation>
     </message>
     <message>
         <source>Light</source>
-        <translation type="unfinished"></translation>
+        <translation>Ljóst</translation>
     </message>
     <message>
         <source>Search views, commands and tools</source>
-        <translation type="unfinished"></translation>
+        <translation>Leita að yfirlitum, skipunum og verkfærum</translation>
     </message>
     <message>
         <source>Show or hide activity</source>
-        <translation type="unfinished"></translation>
+        <translation>Sýna eða fela virkni</translation>
     </message>
     <message>
         <source>Save the current file</source>
-        <translation type="unfinished"></translation>
+        <translation>Vista núverandi skrá</translation>
     </message>
     <message>
         <source>Search the project&apos;s source code</source>
-        <translation type="unfinished"></translation>
+        <translation>Leita í frumkóða verkefnisins</translation>
     </message>
     <message>
         <source>Full screen · web preview</source>
-        <translation type="unfinished"></translation>
+        <translation>Allur skjárinn · vefforskoðun</translation>
     </message>
     <message>
         <source>Project</source>
-        <translation type="unfinished"></translation>
+        <translation>Verkefni</translation>
     </message>
     <message>
         <source>Device</source>
-        <translation type="unfinished"></translation>
+        <translation>Tæki</translation>
     </message>
     <message>
         <source>Run</source>
-        <translation type="unfinished"></translation>
+        <translation>Keyra</translation>
     </message>
     <message>
         <source>Ctrl</source>
-        <translation type="unfinished"></translation>
+        <translation>Ctrl</translation>
     </message>
     <message>
         <source>Building and starting your app…</source>
-        <translation type="unfinished"></translation>
+        <translation>Smíðar og ræsir appið þitt…</translation>
     </message>
     <message>
         <source>Copy what your agent needs: this project and the live device</source>
-        <translation type="unfinished"></translation>
+        <translation>Afritaðu það sem fulltrúinn þinn þarf: þetta verkefni og tækið í beinni</translation>
     </message>
     <message>
         <source>Ready for agents</source>
-        <translation type="unfinished"></translation>
+        <translation>Tilbúið fyrir fulltrúa</translation>
     </message>
     <message>
         <source>Your device is in its own window.</source>
-        <translation type="unfinished"></translation>
+        <translation>Tækið þitt er í eigin glugga.</translation>
     </message>
     <message>
         <source>Drag it by its body. Ctrl+wheel resizes it. Close it to bring it back.</source>
-        <translation type="unfinished"></translation>
+        <translation>Dragðu það á búknúm. Ctrl+hjól breytir stærðinni. Lokaðu því til að fá það aftur.</translation>
     </message>
     <message>
         <source>Bring it back</source>
-        <translation type="unfinished"></translation>
+        <translation>Sækja það aftur</translation>
     </message>
     <message>
         <source>Plug in your iPhone.</source>
-        <translation type="unfinished"></translation>
+        <translation>Tengdu iPhone-símann þinn.</translation>
     </message>
     <message>
         <source>Connect a Mac.</source>
-        <translation type="unfinished"></translation>
+        <translation>Tengdu Mac.</translation>
     </message>
     <message>
         <source>Give your agent a phone.</source>
-        <translation type="unfinished"></translation>
+        <translation>Gefðu fulltrúanum þínum síma.</translation>
     </message>
     <message>
         <source>Plug it in and unlock it. Build Swift apps on Linux and control them from here.</source>
-        <translation type="unfinished"></translation>
+        <translation>Tengdu hann og aflæstu honum. Smíðaðu Swift-öpp á Linux og stýrðu þeim héðan.</translation>
     </message>
     <message>
         <source>The Apple simulator needs a Mac with Xcode. Yours or a rented one, over SSH.</source>
-        <translation type="unfinished"></translation>
+        <translation>Apple-hermirinn þarf Mac með Xcode. Þinn eða leigðan, um SSH.</translation>
     </message>
     <message>
         <source>It builds, runs, taps through and debugs iOS and Android apps. On Linux. No Mac needed.</source>
-        <translation type="unfinished"></translation>
+        <translation>Hann smíðar, keyrir, pikkar í gegn og villuleitar iOS- og Android-öpp. Á Linux. Enginn Mac nauðsynlegur.</translation>
     </message>
     <message>
         <source>Connect %1</source>
-        <translation type="unfinished"></translation>
+        <translation>Tengja %1</translation>
     </message>
     <message>
         <source>Add a device</source>
-        <translation type="unfinished"></translation>
+        <translation>Bæta við tæki</translation>
     </message>
     <message>
         <source>Open a project</source>
-        <translation type="unfinished"></translation>
+        <translation>Opna verkefni</translation>
     </message>
     <message>
         <source>Completed after %1</source>
