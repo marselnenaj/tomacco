@@ -95,7 +95,7 @@ tomaccoctl call runtime.stop '{"session":"<session>"}'
 
 **Native input**
 
-Deliver native input using normalized 0..1 coordinates. Android supports touch/tap/swipe/key/text/rotate; text pastes UTF-8. Physical iPhone uses WDA for Unicode text/fill, tap/swipe/rotate, a two-finger pinch (x, y, scale, duration) and gestures committed as one atomic request on touch-up; shake/hinge are unsupported there. Android also takes pinch, as two scrcpy pointers. Apple Simulator supports ASCII HID text and Unicode accessible fill; extra gestures depend on the companion. Pass decoded width/height after Simulator rotation. An AirPlay session (device airplay) drives the iPhone as a Bluetooth pointer and US-layout keyboard once it is paired with Tomacco and AssistiveTouch is on: touch moves the pointer relatively, hover moves it without a button, cancel without a button forgets the last position; tap, swipe, text and the keys home, volume_up, volume_down, enter, escape, backspace, delete, tab and the arrows work. runtime.state answers input_capabilities per transport; runtime.gesture sends timestamped traces.
+Deliver native input using normalized 0..1 coordinates. Android supports touch/tap/swipe/key/text/rotate; text pastes UTF-8. Physical iPhone uses WDA for Unicode text/fill, tap/swipe/rotate, a two-finger pinch (x, y, scale, duration) and gestures committed as one atomic request on touch-up; shake/hinge are unsupported there. Android also takes pinch, as two scrcpy pointers. Apple Simulator supports ASCII HID text and Unicode accessible fill; extra gestures depend on the companion. Pass decoded width/height after Simulator rotation. An AirPlay session (device airplay) drives the iPhone as a Bluetooth pointer and US-layout keyboard once it is paired with Tomacco and AssistiveTouch is on: touch moves the pointer relatively, hover moves it without a button, cancel without a button forgets the last position; tap, swipe, text and the keys home, volume_up, volume_down, enter, escape, backspace, delete, tab and the arrows work. runtime.state answers input_capabilities per transport; runtime.gesture sends timestamped traces. With reservation_token it acts under a device reservation (device.reservation.acquire); with request_id it is recorded once in the request ledger, so a repeat after a lost answer is not sent again.
 
 Annotations: writes, not idempotent, open world.
 
@@ -116,6 +116,8 @@ Annotations: writes, not idempotent, open world.
 | `angle` | number |  |  | 0 to 180 |
 | `width` | integer |  |  | 1 to 16384 |
 | `height` | integer |  |  | 1 to 16384 |
+| `reservation_token` | string |  |  | up to 200 characters; Act under this device reservation (device.reservation.acquire). A reserved device takes input only with its token; a token whose reservation expired, was released or was taken over is refused before anything is sent. |
+| `request_id` | string |  |  | non-empty, up to 128 characters; matching `^[A-Za-z0-9][A-Za-z0-9_.:-]{0,127}$`; Your identity for this action, unique per intent (order-42-submit). It is recorded with a digest of the arguments before anything is sent; repeating it with the same arguments answers the recorded outcome (retained: true) or request_outcome_unknown instead of sending again, with other arguments request_conflict. A refusal that sent nothing may be repeated under it. device.request.get shows the record. |
 
 ```sh
 tomaccoctl call runtime.input '{"session":"<session>","action":"touch"}'
@@ -176,7 +178,7 @@ tomaccoctl call runtime.observe '{"session":"<session>"}'
 
 **Timestamped gesture trace**
 
-Deliver one or more contacts as timestamped traces in 0..1 of the frame: each contact's points with t_ms from its touch-down. The answer's mode says what the transport did: atomic_trace (a USB iPhone submits the whole trace as one WebDriverAgent actions request, deterministic but not live) or live (Android, the Simulator and the fixture replay the events with host timing, one contact after another by time). Multi-contact traces need a transport whose input_capabilities (runtime.state) allow it; AirPlay answers an error. Use runtime.input touch for an interactive drag that follows a pointer.
+Deliver one or more contacts as timestamped traces in 0..1 of the frame: each contact's points with t_ms from its touch-down. The answer's mode says what the transport did: atomic_trace (a USB iPhone submits the whole trace as one WebDriverAgent actions request, deterministic but not live) or live (Android, the Simulator and the fixture replay the events with host timing, one contact after another by time). Multi-contact traces need a transport whose input_capabilities (runtime.state) allow it; AirPlay answers an error. Use runtime.input touch for an interactive drag that follows a pointer. With reservation_token it acts under a device reservation (device.reservation.acquire); with request_id it is recorded once in the request ledger, so a repeat after a lost answer is not sent again.
 
 Annotations: writes, not idempotent, open world.
 
@@ -188,6 +190,8 @@ Annotations: writes, not idempotent, open world.
 | `contacts[].points[].x` | number | yes |  | 0 to 1 |
 | `contacts[].points[].y` | number | yes |  | 0 to 1 |
 | `contacts[].points[].t_ms` | integer | yes |  | 0 to 10000; Milliseconds since this contact touched down; non-decreasing |
+| `reservation_token` | string |  |  | up to 200 characters; Act under this device reservation (device.reservation.acquire). A reserved device takes input only with its token; a token whose reservation expired, was released or was taken over is refused before anything is sent. |
+| `request_id` | string |  |  | non-empty, up to 128 characters; matching `^[A-Za-z0-9][A-Za-z0-9_.:-]{0,127}$`; Your identity for this action, unique per intent (order-42-submit). It is recorded with a digest of the arguments before anything is sent; repeating it with the same arguments answers the recorded outcome (retained: true) or request_outcome_unknown instead of sending again, with other arguments request_conflict. A refusal that sent nothing may be repeated under it. device.request.get shows the record. |
 
 ```sh
 tomaccoctl call runtime.gesture '{"session":"<session>","contacts":[{"points":[{"x":0,"y":0,"t_ms":0},{"x":0,"y":0,"t_ms":0}]}]}'
@@ -197,7 +201,7 @@ tomaccoctl call runtime.gesture '{"session":"<session>","contacts":[{"points":[{
 
 **Ordered input batch**
 
-Run up to 50 input and wait steps in order on one session, in one call, with a result per step. A text step waits until a field has the focus (polling the session's focus and keyboard) before it types, so the first characters are not lost, and answers focus_timeout with nothing typed when no field takes it; where the transport cannot report focus it says so and settles briefly instead. A tap can name a mark from the last screen.marks of this session and is verified like screen.tap. A step may carry expect, a text that must appear or go afterwards: met makes the step verified, otherwise postcondition_failed stops the batch with the step still counted as applied. The first failure stops the rest: the error's details list every step so far (steps), the indexes that reached the device (applied_steps) and those not run (skipped), so an agent never resends an applied step. The whole batch is bounded by timeout and by the client's cancellation. With frame (width, height, orientation from runtime.observe) the batch is refused with frame_stale and nothing sent when the screen's geometry changed since. observe_after appends a fresh runtime.observe. The answer's evidence is fixture on the offline fixture runtime.
+Run up to 50 input and wait steps in order on one session, in one call, with a result per step. A text step waits until a field has the focus (polling the session's focus and keyboard) before it types, so the first characters are not lost, and answers focus_timeout with nothing typed when no field takes it; where the transport cannot report focus it says so and settles briefly instead. A tap can name a mark from the last screen.marks of this session and is verified like screen.tap. A step may carry expect, a text that must appear or go afterwards: met makes the step verified, otherwise postcondition_failed stops the batch with the step still counted as applied. The first failure stops the rest: the error's details list every step so far (steps), the indexes that reached the device (applied_steps) and those not run (skipped), so an agent never resends an applied step. The whole batch is bounded by timeout and by the client's cancellation. With frame (width, height, orientation from runtime.observe) the batch is refused with frame_stale and nothing sent when the screen's geometry changed since. observe_after appends a fresh runtime.observe. The answer's evidence is fixture on the offline fixture runtime. With reservation_token it acts under a device reservation (device.reservation.acquire); with request_id it is recorded once in the request ledger, so a repeat after a lost answer is not sent again.
 
 Annotations: writes, not idempotent, open world.
 
@@ -268,6 +272,8 @@ Annotations: writes, not idempotent, open world.
 | `frame.height` | integer |  |  | 1 to 16384 |
 | `frame.orientation` | string |  |  | one of `portrait`, `landscape` |
 | `observe_after` | boolean |  | `false` | Append a fresh observation of the session to the answer |
+| `reservation_token` | string |  |  | up to 200 characters; Act under this device reservation (device.reservation.acquire). A reserved device takes input only with its token; a token whose reservation expired, was released or was taken over is refused before anything is sent. |
+| `request_id` | string |  |  | non-empty, up to 128 characters; matching `^[A-Za-z0-9][A-Za-z0-9_.:-]{0,127}$`; Your identity for this action, unique per intent (order-42-submit). It is recorded with a digest of the arguments before anything is sent; repeating it with the same arguments answers the recorded outcome (retained: true) or request_outcome_unknown instead of sending again, with other arguments request_conflict. A refusal that sent nothing may be repeated under it. device.request.get shows the record. |
 
 ```sh
 tomaccoctl call runtime.actions '{"session":"<session>","steps":[{"action":"tap"}]}'

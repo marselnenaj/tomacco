@@ -2207,6 +2207,393 @@
     }
   },
   {
+    "name": "device.reservation.acquire",
+    "title": "Reserve a device",
+    "description": "Reserve one device for a multi-step task for a bounded time, so the inputs of other clients (other agents, the desktop's live view) are refused with device_reserved until you release it or it expires. Answers reservation_token, the opaque capability that holds it, once: pass it to runtime.input, runtime.gesture, runtime.actions, screen.tap, android.input, testing.action and ios.emulator.control input on that device. owner, task and reason are labels others see, not authentication. The acquisition waits up to wait_ms for inputs already admitted (a tap in flight, a finger held down) to end, else device_input_in_flight; one already held answers device_reserved with its holder and expiry. Reading the screen stays possible for everyone. The guard is cooperative between Tomacco's routes for one user account: raw adb, SSH and fastboot are not governed.",
+    "inputSchema": {
+      "type": "object",
+      "properties": {
+        "device": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 200,
+          "description": "The device: an Android serial, an iPhone UDID, virtual-iphone, a nickname from device.label, or a runtime session ID, which stands for the device it shows. Every name of one device reserves the same device."
+        },
+        "platform": {
+          "type": "string",
+          "enum": [
+            "android",
+            "ios"
+          ],
+          "description": "The device's platform. Omitted, a session knows its own; otherwise a remote or a UDID means ios, anything else android."
+        },
+        "remote": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 200,
+          "description": "The remote Mac (remote.list) an iPhone is reached through; part of the device's identity."
+        },
+        "owner": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 100,
+          "description": "Who holds it, as others should read it (claude-code: checkout test)"
+        },
+        "task": {
+          "type": "string",
+          "maxLength": 200,
+          "description": "What it is reserved for"
+        },
+        "reason": {
+          "type": "string",
+          "maxLength": 500,
+          "description": "Why others should wait"
+        },
+        "ttl_ms": {
+          "type": "integer",
+          "minimum": 1000,
+          "maximum": 300000,
+          "default": 60000,
+          "description": "How long the reservation lasts from now, in milliseconds (1 second to 5 minutes); renew before it runs out"
+        },
+        "wait_ms": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 30000,
+          "default": 2000,
+          "description": "How long to wait for admitted inputs of others to end"
+        }
+      },
+      "required": [
+        "device",
+        "owner"
+      ],
+      "additionalProperties": false
+    },
+    "annotations": {
+      "readOnlyHint": false,
+      "destructiveHint": false,
+      "idempotentHint": false,
+      "openWorldHint": false
+    }
+  },
+  {
+    "name": "device.reservation.get",
+    "title": "Device reservation state",
+    "description": "Whether a device is reserved, by whom (owner, task, reason, the client and channel it reported), until when, whether inputs are in flight on it, and how its last reservation ended. With reservation_token, token says whether that token holds it (holds) or why not (expired, released, revoked, not_held). Never shows a token.",
+    "inputSchema": {
+      "type": "object",
+      "properties": {
+        "device": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 200,
+          "description": "The device: an Android serial, an iPhone UDID, virtual-iphone, a nickname from device.label, or a runtime session ID, which stands for the device it shows. Every name of one device reserves the same device."
+        },
+        "platform": {
+          "type": "string",
+          "enum": [
+            "android",
+            "ios"
+          ],
+          "description": "The device's platform. Omitted, a session knows its own; otherwise a remote or a UDID means ios, anything else android."
+        },
+        "remote": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 200,
+          "description": "The remote Mac (remote.list) an iPhone is reached through; part of the device's identity."
+        },
+        "reservation_token": {
+          "type": "string",
+          "maxLength": 200,
+          "description": "The reservation_token device.reservation.acquire answered. It is the capability that holds the reservation: keep it out of logs and prompts; Tomacco masks it in audit records, errors and job records."
+        }
+      },
+      "required": [
+        "device"
+      ],
+      "additionalProperties": false
+    },
+    "annotations": {
+      "readOnlyHint": true,
+      "destructiveHint": false,
+      "idempotentHint": true,
+      "openWorldHint": false
+    }
+  },
+  {
+    "name": "device.reservation.list",
+    "title": "Reserved devices",
+    "description": "Every device reserved now, with its holder's labels, expiry and inputs in flight. Never shows a token.",
+    "inputSchema": {
+      "type": "object",
+      "properties": {},
+      "required": [],
+      "additionalProperties": false
+    },
+    "annotations": {
+      "readOnlyHint": true,
+      "destructiveHint": false,
+      "idempotentHint": true,
+      "openWorldHint": false
+    }
+  },
+  {
+    "name": "device.reservation.renew",
+    "title": "Renew a device reservation",
+    "description": "Extend your reservation to ttl_ms from now. Only a reservation that still holds can be renewed: an expired, released or taken-over one answers reservation_expired, reservation_released or reservation_revoked, and a new acquisition is needed.",
+    "inputSchema": {
+      "type": "object",
+      "properties": {
+        "device": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 200,
+          "description": "The device: an Android serial, an iPhone UDID, virtual-iphone, a nickname from device.label, or a runtime session ID, which stands for the device it shows. Every name of one device reserves the same device."
+        },
+        "platform": {
+          "type": "string",
+          "enum": [
+            "android",
+            "ios"
+          ],
+          "description": "The device's platform. Omitted, a session knows its own; otherwise a remote or a UDID means ios, anything else android."
+        },
+        "remote": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 200,
+          "description": "The remote Mac (remote.list) an iPhone is reached through; part of the device's identity."
+        },
+        "reservation_token": {
+          "type": "string",
+          "maxLength": 200,
+          "description": "The reservation_token device.reservation.acquire answered. It is the capability that holds the reservation: keep it out of logs and prompts; Tomacco masks it in audit records, errors and job records."
+        },
+        "ttl_ms": {
+          "type": "integer",
+          "minimum": 1000,
+          "maximum": 300000,
+          "default": 60000,
+          "description": "How long the reservation lasts from now, in milliseconds (1 second to 5 minutes); renew before it runs out"
+        }
+      },
+      "required": [
+        "device",
+        "reservation_token"
+      ],
+      "additionalProperties": false
+    },
+    "annotations": {
+      "readOnlyHint": false,
+      "destructiveHint": false,
+      "idempotentHint": true,
+      "openWorldHint": false
+    }
+  },
+  {
+    "name": "device.reservation.release",
+    "title": "Release a device reservation",
+    "description": "End your reservation now, so others may use the device. Inputs the device already received are not undone; inputs still queued under the token are refused. Releasing one that already ended answers released false with how it ended.",
+    "inputSchema": {
+      "type": "object",
+      "properties": {
+        "device": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 200,
+          "description": "The device: an Android serial, an iPhone UDID, virtual-iphone, a nickname from device.label, or a runtime session ID, which stands for the device it shows. Every name of one device reserves the same device."
+        },
+        "platform": {
+          "type": "string",
+          "enum": [
+            "android",
+            "ios"
+          ],
+          "description": "The device's platform. Omitted, a session knows its own; otherwise a remote or a UDID means ios, anything else android."
+        },
+        "remote": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 200,
+          "description": "The remote Mac (remote.list) an iPhone is reached through; part of the device's identity."
+        },
+        "reservation_token": {
+          "type": "string",
+          "maxLength": 200,
+          "description": "The reservation_token device.reservation.acquire answered. It is the capability that holds the reservation: keep it out of logs and prompts; Tomacco masks it in audit records, errors and job records."
+        }
+      },
+      "required": [
+        "device",
+        "reservation_token"
+      ],
+      "additionalProperties": false
+    },
+    "annotations": {
+      "readOnlyHint": false,
+      "destructiveHint": false,
+      "idempotentHint": true,
+      "openWorldHint": false
+    }
+  },
+  {
+    "name": "device.reservation.takeover",
+    "title": "Take over a device reservation",
+    "description": "For the person at the device: end another holder's reservation explicitly, with a reason its holder is shown (reservation_revoked), and with acquire true reserve the device for yourself once admitted inputs end. Nothing the device already received is undone. Agents should not call this to get around a reservation; ask the person.",
+    "inputSchema": {
+      "type": "object",
+      "properties": {
+        "device": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 200,
+          "description": "The device: an Android serial, an iPhone UDID, virtual-iphone, a nickname from device.label, or a runtime session ID, which stands for the device it shows. Every name of one device reserves the same device."
+        },
+        "platform": {
+          "type": "string",
+          "enum": [
+            "android",
+            "ios"
+          ],
+          "description": "The device's platform. Omitted, a session knows its own; otherwise a remote or a UDID means ios, anything else android."
+        },
+        "remote": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 200,
+          "description": "The remote Mac (remote.list) an iPhone is reached through; part of the device's identity."
+        },
+        "reason": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 500,
+          "description": "Why the reservation is taken over; its holder sees it"
+        },
+        "acquire": {
+          "type": "boolean",
+          "default": false,
+          "description": "Reserve the device for the caller afterwards and answer its reservation_token"
+        },
+        "owner": {
+          "type": "string",
+          "maxLength": 100,
+          "description": "The new holder's label, with acquire (person when omitted)"
+        },
+        "task": {
+          "type": "string",
+          "maxLength": 200,
+          "description": "What the new reservation is for, with acquire"
+        },
+        "ttl_ms": {
+          "type": "integer",
+          "minimum": 1000,
+          "maximum": 300000,
+          "default": 60000,
+          "description": "How long the reservation lasts from now, in milliseconds (1 second to 5 minutes); renew before it runs out"
+        },
+        "wait_ms": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 30000,
+          "default": 5000,
+          "description": "With acquire, how long to wait for admitted inputs to end"
+        }
+      },
+      "required": [
+        "device",
+        "reason"
+      ],
+      "additionalProperties": false
+    },
+    "annotations": {
+      "readOnlyHint": false,
+      "destructiveHint": true,
+      "idempotentHint": false,
+      "openWorldHint": false
+    }
+  },
+  {
+    "name": "device.request.get",
+    "title": "Recorded request",
+    "description": "What the request ledger knows about a request_id: its operation, canonical device, route, transport and executing instance, its state (pending, completed, unknown) and status (applied, verified, refused, failed, unknown), and its children, the inputs a runtime worker recorded for it (ID/1, ID/step-2). A request whose executing process ended before it recorded an answer is settled as unknown here, never resent. advice says what to do next; decide from a fresh observation. Records hold no typed text and are kept 24 hours.",
+    "inputSchema": {
+      "type": "object",
+      "properties": {
+        "request_id": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 169,
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9_.:-]{0,127}(/[A-Za-z0-9][A-Za-z0-9_.-]{0,39})?$",
+          "description": "The request_id you gave, or one of its children"
+        }
+      },
+      "required": [
+        "request_id"
+      ],
+      "additionalProperties": false
+    },
+    "annotations": {
+      "readOnlyHint": true,
+      "destructiveHint": false,
+      "idempotentHint": true,
+      "openWorldHint": false
+    }
+  },
+  {
+    "name": "device.request.list",
+    "title": "Recorded requests",
+    "description": "The newest requests in the request ledger, optionally for one device or in one state, without their children.",
+    "inputSchema": {
+      "type": "object",
+      "properties": {
+        "device": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 200,
+          "description": "The device: an Android serial, an iPhone UDID, virtual-iphone, a nickname from device.label, or a runtime session ID, which stands for the device it shows. Every name of one device reserves the same device."
+        },
+        "platform": {
+          "type": "string",
+          "enum": [
+            "android",
+            "ios"
+          ],
+          "description": "The device's platform. Omitted, a session knows its own; otherwise a remote or a UDID means ios, anything else android."
+        },
+        "remote": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 200,
+          "description": "The remote Mac (remote.list) an iPhone is reached through; part of the device's identity."
+        },
+        "state": {
+          "type": "string",
+          "enum": [
+            "pending",
+            "completed",
+            "unknown"
+          ]
+        },
+        "limit": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 200,
+          "default": 50
+        }
+      },
+      "required": [],
+      "additionalProperties": false
+    },
+    "annotations": {
+      "readOnlyHint": true,
+      "destructiveHint": false,
+      "idempotentHint": true,
+      "openWorldHint": false
+    }
+  },
+  {
     "name": "device.install",
     "title": "Install app",
     "description": "Install one or split APKs, or one .aab through bundletool (built for the selected device, then installed), or one signed IPA on the selected device.",
@@ -2516,7 +2903,7 @@
   {
     "name": "screen.tap",
     "title": "Tap a mark",
-    "description": "Tap the centre of a numbered mark from the last screen.marks (or screen.tree) of this device. First it checks the screen still has what the mark was made from: on Android the same element (class, resource id, text and bounds) in the UI hierarchy; for a mark read by OCR, the pixels where it was, unchanged. If not it answers mark_stale and taps nothing, so a number never lands on another element after the screen moved on. Pass duration for a long press.",
+    "description": "Tap the centre of a numbered mark from the last screen.marks (or screen.tree) of this device. First it checks the screen still has what the mark was made from: on Android the same element (class, resource id, text and bounds) in the UI hierarchy; for a mark read by OCR, the pixels where it was, unchanged. If not it answers mark_stale and taps nothing, so a number never lands on another element after the screen moved on. Pass duration for a long press. With reservation_token it acts under a device reservation (device.reservation.acquire); with request_id it is recorded once in the request ledger, so a repeat after a lost answer is not sent again.",
     "inputSchema": {
       "type": "object",
       "properties": {
@@ -2541,6 +2928,18 @@
           "type": "boolean",
           "default": true,
           "description": "Check the screen still matches the mark before tapping; false taps where the mark was whatever is there now"
+        },
+        "reservation_token": {
+          "type": "string",
+          "maxLength": 200,
+          "description": "Act under this device reservation (device.reservation.acquire). A reserved device takes input only with its token; a token whose reservation expired, was released or was taken over is refused before anything is sent."
+        },
+        "request_id": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 128,
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9_.:-]{0,127}$",
+          "description": "Your identity for this action, unique per intent (order-42-submit). It is recorded with a digest of the arguments before anything is sent; repeating it with the same arguments answers the recorded outcome (retained: true) or request_outcome_unknown instead of sending again, with other arguments request_conflict. A refusal that sent nothing may be repeated under it. device.request.get shows the record."
         }
       },
       "required": [
@@ -3281,7 +3680,7 @@
   {
     "name": "android.input",
     "title": "Tap / swipe / input",
-    "description": "Control real Android UI through adb, using device pixel coordinates. ASCII text is typed; other text is pasted through the device clipboard with the configured scrcpy 4.1 server on Android 7 and newer.",
+    "description": "Control real Android UI through adb, using device pixel coordinates. ASCII text is typed; other text is pasted through the device clipboard with the configured scrcpy 4.1 server on Android 7 and newer. With reservation_token it acts under a device reservation (device.reservation.acquire); with request_id it is recorded once in the request ledger, so a repeat after a lost answer is not sent again.",
     "inputSchema": {
       "type": "object",
       "properties": {
@@ -3339,6 +3738,18 @@
           "type": "string",
           "description": "",
           "default": "KEYCODE_HOME"
+        },
+        "reservation_token": {
+          "type": "string",
+          "maxLength": 200,
+          "description": "Act under this device reservation (device.reservation.acquire). A reserved device takes input only with its token; a token whose reservation expired, was released or was taken over is refused before anything is sent."
+        },
+        "request_id": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 128,
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9_.:-]{0,127}$",
+          "description": "Your identity for this action, unique per intent (order-42-submit). It is recorded with a digest of the arguments before anything is sent; repeating it with the same arguments answers the recorded outcome (retained: true) or request_outcome_unknown instead of sending again, with other arguments request_conflict. A refusal that sent nothing may be repeated under it. device.request.get shows the record."
         }
       },
       "required": [
@@ -6788,7 +7199,7 @@
   {
     "name": "testing.action",
     "title": "Operate Android element",
-    "description": "Click, long-click or fill a uniquely matched native Android element. The virtual iPhone (device virtual-iphone) reports no UI hierarchy, so there a selector with only text or text_contains (and index) clicks or long-clicks the middle of the text read off the screenshot with Tesseract (source ocr, pixel_based true); fill and any other selector property answer an error, and ui_hierarchy_unavailable lists in details.testing what works.",
+    "description": "Click, long-click or fill a uniquely matched native Android element. The virtual iPhone (device virtual-iphone) reports no UI hierarchy, so there a selector with only text or text_contains (and index) clicks or long-clicks the middle of the text read off the screenshot with Tesseract (source ocr, pixel_based true); fill and any other selector property answer an error, and ui_hierarchy_unavailable lists in details.testing what works. With reservation_token it acts under a device reservation (device.reservation.acquire); with request_id it is recorded once in the request ledger, so a repeat after a lost answer is not sent again.",
     "inputSchema": {
       "type": "object",
       "properties": {
@@ -6861,6 +7272,18 @@
           "minimum": 100,
           "maximum": 10000,
           "default": 800
+        },
+        "reservation_token": {
+          "type": "string",
+          "maxLength": 200,
+          "description": "Act under this device reservation (device.reservation.acquire). A reserved device takes input only with its token; a token whose reservation expired, was released or was taken over is refused before anything is sent."
+        },
+        "request_id": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 128,
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9_.:-]{0,127}$",
+          "description": "Your identity for this action, unique per intent (order-42-submit). It is recorded with a digest of the arguments before anything is sent; repeating it with the same arguments answers the recorded outcome (retained: true) or request_outcome_unknown instead of sending again, with other arguments request_conflict. A refusal that sent nothing may be repeated under it. device.request.get shows the record."
         }
       },
       "required": [
@@ -10220,7 +10643,7 @@
   {
     "name": "runtime.input",
     "title": "Native input",
-    "description": "Deliver native input using normalized 0..1 coordinates. Android supports touch/tap/swipe/key/text/rotate; text pastes UTF-8. Physical iPhone uses WDA for Unicode text/fill, tap/swipe/rotate, a two-finger pinch (x, y, scale, duration) and gestures committed as one atomic request on touch-up; shake/hinge are unsupported there. Android also takes pinch, as two scrcpy pointers. Apple Simulator supports ASCII HID text and Unicode accessible fill; extra gestures depend on the companion. Pass decoded width/height after Simulator rotation. An AirPlay session (device airplay) drives the iPhone as a Bluetooth pointer and US-layout keyboard once it is paired with Tomacco and AssistiveTouch is on: touch moves the pointer relatively, hover moves it without a button, cancel without a button forgets the last position; tap, swipe, text and the keys home, volume_up, volume_down, enter, escape, backspace, delete, tab and the arrows work. runtime.state answers input_capabilities per transport; runtime.gesture sends timestamped traces.",
+    "description": "Deliver native input using normalized 0..1 coordinates. Android supports touch/tap/swipe/key/text/rotate; text pastes UTF-8. Physical iPhone uses WDA for Unicode text/fill, tap/swipe/rotate, a two-finger pinch (x, y, scale, duration) and gestures committed as one atomic request on touch-up; shake/hinge are unsupported there. Android also takes pinch, as two scrcpy pointers. Apple Simulator supports ASCII HID text and Unicode accessible fill; extra gestures depend on the companion. Pass decoded width/height after Simulator rotation. An AirPlay session (device airplay) drives the iPhone as a Bluetooth pointer and US-layout keyboard once it is paired with Tomacco and AssistiveTouch is on: touch moves the pointer relatively, hover moves it without a button, cancel without a button forgets the last position; tap, swipe, text and the keys home, volume_up, volume_down, enter, escape, backspace, delete, tab and the arrows work. runtime.state answers input_capabilities per transport; runtime.gesture sends timestamped traces. With reservation_token it acts under a device reservation (device.reservation.acquire); with request_id it is recorded once in the request ledger, so a repeat after a lost answer is not sent again.",
     "inputSchema": {
       "type": "object",
       "properties": {
@@ -10332,6 +10755,18 @@
           "type": "integer",
           "minimum": 1,
           "maximum": 16384
+        },
+        "reservation_token": {
+          "type": "string",
+          "maxLength": 200,
+          "description": "Act under this device reservation (device.reservation.acquire). A reserved device takes input only with its token; a token whose reservation expired, was released or was taken over is refused before anything is sent."
+        },
+        "request_id": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 128,
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9_.:-]{0,127}$",
+          "description": "Your identity for this action, unique per intent (order-42-submit). It is recorded with a digest of the arguments before anything is sent; repeating it with the same arguments answers the recorded outcome (retained: true) or request_outcome_unknown instead of sending again, with other arguments request_conflict. A refusal that sent nothing may be repeated under it. device.request.get shows the record."
         }
       },
       "required": [
@@ -10440,7 +10875,7 @@
   {
     "name": "runtime.gesture",
     "title": "Timestamped gesture trace",
-    "description": "Deliver one or more contacts as timestamped traces in 0..1 of the frame: each contact's points with t_ms from its touch-down. The answer's mode says what the transport did: atomic_trace (a USB iPhone submits the whole trace as one WebDriverAgent actions request, deterministic but not live) or live (Android, the Simulator and the fixture replay the events with host timing, one contact after another by time). Multi-contact traces need a transport whose input_capabilities (runtime.state) allow it; AirPlay answers an error. Use runtime.input touch for an interactive drag that follows a pointer.",
+    "description": "Deliver one or more contacts as timestamped traces in 0..1 of the frame: each contact's points with t_ms from its touch-down. The answer's mode says what the transport did: atomic_trace (a USB iPhone submits the whole trace as one WebDriverAgent actions request, deterministic but not live) or live (Android, the Simulator and the fixture replay the events with host timing, one contact after another by time). Multi-contact traces need a transport whose input_capabilities (runtime.state) allow it; AirPlay answers an error. Use runtime.input touch for an interactive drag that follows a pointer. With reservation_token it acts under a device reservation (device.reservation.acquire); with request_id it is recorded once in the request ledger, so a repeat after a lost answer is not sent again.",
     "inputSchema": {
       "type": "object",
       "properties": {
@@ -10495,6 +10930,18 @@
               }
             }
           }
+        },
+        "reservation_token": {
+          "type": "string",
+          "maxLength": 200,
+          "description": "Act under this device reservation (device.reservation.acquire). A reserved device takes input only with its token; a token whose reservation expired, was released or was taken over is refused before anything is sent."
+        },
+        "request_id": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 128,
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9_.:-]{0,127}$",
+          "description": "Your identity for this action, unique per intent (order-42-submit). It is recorded with a digest of the arguments before anything is sent; repeating it with the same arguments answers the recorded outcome (retained: true) or request_outcome_unknown instead of sending again, with other arguments request_conflict. A refusal that sent nothing may be repeated under it. device.request.get shows the record."
         }
       },
       "required": [
@@ -10513,7 +10960,7 @@
   {
     "name": "runtime.actions",
     "title": "Ordered input batch",
-    "description": "Run up to 50 input and wait steps in order on one session, in one call, with a result per step. A text step waits until a field has the focus (polling the session's focus and keyboard) before it types, so the first characters are not lost, and answers focus_timeout with nothing typed when no field takes it; where the transport cannot report focus it says so and settles briefly instead. A tap can name a mark from the last screen.marks of this session and is verified like screen.tap. A step may carry expect, a text that must appear or go afterwards: met makes the step verified, otherwise postcondition_failed stops the batch with the step still counted as applied. The first failure stops the rest: the error's details list every step so far (steps), the indexes that reached the device (applied_steps) and those not run (skipped), so an agent never resends an applied step. The whole batch is bounded by timeout and by the client's cancellation. With frame (width, height, orientation from runtime.observe) the batch is refused with frame_stale and nothing sent when the screen's geometry changed since. observe_after appends a fresh runtime.observe. The answer's evidence is fixture on the offline fixture runtime.",
+    "description": "Run up to 50 input and wait steps in order on one session, in one call, with a result per step. A text step waits until a field has the focus (polling the session's focus and keyboard) before it types, so the first characters are not lost, and answers focus_timeout with nothing typed when no field takes it; where the transport cannot report focus it says so and settles briefly instead. A tap can name a mark from the last screen.marks of this session and is verified like screen.tap. A step may carry expect, a text that must appear or go afterwards: met makes the step verified, otherwise postcondition_failed stops the batch with the step still counted as applied. The first failure stops the rest: the error's details list every step so far (steps), the indexes that reached the device (applied_steps) and those not run (skipped), so an agent never resends an applied step. The whole batch is bounded by timeout and by the client's cancellation. With frame (width, height, orientation from runtime.observe) the batch is refused with frame_stale and nothing sent when the screen's geometry changed since. observe_after appends a fresh runtime.observe. The answer's evidence is fixture on the offline fixture runtime. With reservation_token it acts under a device reservation (device.reservation.acquire); with request_id it is recorded once in the request ledger, so a repeat after a lost answer is not sent again.",
     "inputSchema": {
       "type": "object",
       "properties": {
@@ -10953,6 +11400,18 @@
           "type": "boolean",
           "default": false,
           "description": "Append a fresh observation of the session to the answer"
+        },
+        "reservation_token": {
+          "type": "string",
+          "maxLength": 200,
+          "description": "Act under this device reservation (device.reservation.acquire). A reserved device takes input only with its token; a token whose reservation expired, was released or was taken over is refused before anything is sent."
+        },
+        "request_id": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 128,
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9_.:-]{0,127}$",
+          "description": "Your identity for this action, unique per intent (order-42-submit). It is recorded with a digest of the arguments before anything is sent; repeating it with the same arguments answers the recorded outcome (retained: true) or request_outcome_unknown instead of sending again, with other arguments request_conflict. A refusal that sent nothing may be repeated under it. device.request.get shows the record."
         }
       },
       "required": [
@@ -11872,7 +12331,7 @@
   {
     "name": "ios.emulator.control",
     "title": "Operate running virtual iOS",
-    "description": "Inspect, capture or send input to a live ios.emulator.paravirtual job started with interactive=true. Actions are serialized per guest: one that arrives while another runs waits up to 2.5 s for its turn before ios_control_busy is returned. ios_control_starting means the control monitor is not published yet; ios_control_ended means the emulator has exited while the job is still finishing (hashing its media), so wait for the job instead of cancelling it. Coordinates are normalized from 0 to 1 across the captured display. With input_transport=virtio, click/drag use an absolute mouse. With usb-hid, they use a single touchscreen contact; home sends the HID Consumer Menu usage with emulator-owned release, and status reports actual USB delivery counters. Touch has no hover or multitouch. A persistent client (tomaccoctl mcp) can stream a live contact instead: touch_down presses at x/y and holds the guest's control lane until touch_up, touch_move moves the contact (the same point again only keeps it alive), and touch_up lifts it, at x/y when given. Other control actions wait for that lane meanwhile; file frames do not. A contact without any event for 5 s is lifted, and the client's end lifts whatever it still holds. A one-shot call refuses touch_down with ios_touch_lane_required; touch_up is accepted anywhere and always sends a release. A drag lifts at its end point at once, which a scroll view reads as a fling; with hold_ms it first rests there that long, so the content stops where the contact did. power_button sends the native timed 100 ms GPIO side-button pulse only on the tomacco-vphone machine; it can wake or lock the screen, so acknowledgement never establishes the resulting screen state. key accepts QEMU key names. Input acknowledgement is not proof of a guest UI response; inspect a subsequent screenshot. Screenshots stay in the owned job directory. frame returns an actual PNG data_url (up to 16 MiB) and deletes its temporary capture on success or failure; it is suitable for bounded live preview polling. metrics reads actual QMP CPU state/topology, cumulative block-device I/O counters and TCG cache statistics without pausing or resetting the guest. Host sampling timestamps bound the sequential observations. Unknown TCG fields stay null, unavailable monitor statistics retain their error, and the original text is preserved. Counters and guest-clock lag are not application FPS or CPU utilization. stop requests QMP exit so the durable job can finalize media hashes. With guest control enabled it reserves the framework lane and requires a confirmed idle native worker; pending or unknown work prevents stopping. An acknowledgement does not establish guest OS shutdown or completed storage verification. Follow ios.emulator.report until the job ends; an unconfirmed stop is not replayed automatically. If the emulator cannot be told to exit, the stop record is rewritten without the flush confirmation (guest_storage_flushed false, quit_acknowledged false); a request the client cancels leaves no record and does not stop the emulator. trust_cache_update stops the guest's CPUs, replaces the boot's trust-cache module in guest RAM with the file at path and lets them go on; only for a machine built with vphone-trust-cache-update, and ios.virtual.deploy is the way to use it. text types on the USB keyboard, into what has the focus; a key sent before the field has it is lost, so look at a frame first. iOS reads the keys with the layout of the guest's language: layout follows it unless named.",
+    "description": "Inspect, capture or send input to a live ios.emulator.paravirtual job started with interactive=true. Actions are serialized per guest: one that arrives while another runs waits up to 2.5 s for its turn before ios_control_busy is returned. ios_control_starting means the control monitor is not published yet; ios_control_ended means the emulator has exited while the job is still finishing (hashing its media), so wait for the job instead of cancelling it. Coordinates are normalized from 0 to 1 across the captured display. With input_transport=virtio, click/drag use an absolute mouse. With usb-hid, they use a single touchscreen contact; home sends the HID Consumer Menu usage with emulator-owned release, and status reports actual USB delivery counters. Touch has no hover or multitouch. A persistent client (tomaccoctl mcp) can stream a live contact instead: touch_down presses at x/y and holds the guest's control lane until touch_up, touch_move moves the contact (the same point again only keeps it alive), and touch_up lifts it, at x/y when given. Other control actions wait for that lane meanwhile; file frames do not. A contact without any event for 5 s is lifted, and the client's end lifts whatever it still holds. A one-shot call refuses touch_down with ios_touch_lane_required; touch_up is accepted anywhere and always sends a release. A drag lifts at its end point at once, which a scroll view reads as a fling; with hold_ms it first rests there that long, so the content stops where the contact did. power_button sends the native timed 100 ms GPIO side-button pulse only on the tomacco-vphone machine; it can wake or lock the screen, so acknowledgement never establishes the resulting screen state. key accepts QEMU key names. Input acknowledgement is not proof of a guest UI response; inspect a subsequent screenshot. Screenshots stay in the owned job directory. frame returns an actual PNG data_url (up to 16 MiB) and deletes its temporary capture on success or failure; it is suitable for bounded live preview polling. metrics reads actual QMP CPU state/topology, cumulative block-device I/O counters and TCG cache statistics without pausing or resetting the guest. Host sampling timestamps bound the sequential observations. Unknown TCG fields stay null, unavailable monitor statistics retain their error, and the original text is preserved. Counters and guest-clock lag are not application FPS or CPU utilization. stop requests QMP exit so the durable job can finalize media hashes. With guest control enabled it reserves the framework lane and requires a confirmed idle native worker; pending or unknown work prevents stopping. An acknowledgement does not establish guest OS shutdown or completed storage verification. Follow ios.emulator.report until the job ends; an unconfirmed stop is not replayed automatically. If the emulator cannot be told to exit, the stop record is rewritten without the flush confirmation (guest_storage_flushed false, quit_acknowledged false); a request the client cancels leaves no record and does not stop the emulator. trust_cache_update stops the guest's CPUs, replaces the boot's trust-cache module in guest RAM with the file at path and lets them go on; only for a machine built with vphone-trust-cache-update, and ios.virtual.deploy is the way to use it. text types on the USB keyboard, into what has the focus; a key sent before the field has it is lost, so look at a frame first. iOS reads the keys with the layout of the guest's language: layout follows it unless named. Input actions (click, drag, text, key, home, power_button, move, touch_*) take reservation_token and request_id.",
     "inputSchema": {
       "type": "object",
       "properties": {
@@ -11969,6 +12428,18 @@
             "de"
           ],
           "description": "text: the layout iOS reads the keys with; default: the guest's language, and any language but English and German must name one."
+        },
+        "reservation_token": {
+          "type": "string",
+          "maxLength": 200,
+          "description": "Act under this device reservation (device.reservation.acquire). A reserved device takes input only with its token; a token whose reservation expired, was released or was taken over is refused before anything is sent."
+        },
+        "request_id": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 128,
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9_.:-]{0,127}$",
+          "description": "Your identity for this action, unique per intent (order-42-submit). It is recorded with a digest of the arguments before anything is sent; repeating it with the same arguments answers the recorded outcome (retained: true) or request_outcome_unknown instead of sending again, with other arguments request_conflict. A refusal that sent nothing may be repeated under it. device.request.get shows the record."
         }
       },
       "required": [

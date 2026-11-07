@@ -1294,10 +1294,35 @@ fn trust_cache_update(client: &mut Qmp, file: &str) -> Result<Value> {
     Ok(json!({"updated":true}))
 }
 
+/// How the reservation admits a control action, or `None` for one that is
+/// not input.
+pub fn input_kind(action: &str) -> Option<crate::coordination::Kind> {
+    use crate::coordination::Kind;
+    match action {
+        "click" | "drag" | "text" | "key" | "home" | "power_button" => Some(Kind::Action),
+        "move" => Some(Kind::Pointer),
+        "touch_down" => Some(Kind::ContactBegin),
+        "touch_move" => Some(Kind::ContactContinue),
+        "touch_up" => Some(Kind::ContactEnd),
+        _ => None,
+    }
+}
 pub fn handle(a: &Value) -> Result {
     let id = s(a, "job_id");
     identifier(id, "job ID", Some("[0-9a-f]{32}"))?;
     let action = s(a, "action");
+    // Input reaches the guest only once admitted against the virtual
+    // iPhone's reservation (coordination.rs); frames, status, stop and the
+    // trust cache are not input.
+    let _admission = match input_kind(action) {
+        Some(kind) => Some(crate::coordination::admit(
+            &crate::coordination::virtual_iphone(),
+            kind,
+            crate::coordination::context().token.as_deref(),
+            false,
+        )?),
+        None => None,
+    };
     if action.starts_with("touch_") {
         let result = touch(id, a, action)?;
         return Ok(json!({"job_id":id,"action":action,"result":result}));

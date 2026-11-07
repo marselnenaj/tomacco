@@ -50,7 +50,7 @@ tomaccoctl call android.store_screenshots '{"bundle_id":"<bundle_id>","devices":
 
 **Tap / swipe / input**
 
-Control real Android UI through adb, using device pixel coordinates. ASCII text is typed; other text is pasted through the device clipboard with the configured scrcpy 4.1 server on Android 7 and newer.
+Control real Android UI through adb, using device pixel coordinates. ASCII text is typed; other text is pasted through the device clipboard with the configured scrcpy 4.1 server on Android 7 and newer. With reservation_token it acts under a device reservation (device.reservation.acquire); with request_id it is recorded once in the request ledger, so a repeat after a lost answer is not sent again.
 
 Annotations: writes, not idempotent, open world.
 
@@ -65,6 +65,8 @@ Annotations: writes, not idempotent, open world.
 | `duration` | integer |  | `300` | 1 to 10000 |
 | `text` | string |  | `""` |  |
 | `key` | string |  | `"KEYCODE_HOME"` |  |
+| `reservation_token` | string |  |  | up to 200 characters; Act under this device reservation (device.reservation.acquire). A reserved device takes input only with its token; a token whose reservation expired, was released or was taken over is refused before anything is sent. |
+| `request_id` | string |  |  | non-empty, up to 128 characters; matching `^[A-Za-z0-9][A-Za-z0-9_.:-]{0,127}$`; Your identity for this action, unique per intent (order-42-submit). It is recorded with a digest of the arguments before anything is sent; repeating it with the same arguments answers the recorded outcome (retained: true) or request_outcome_unknown instead of sending again, with other arguments request_conflict. A refusal that sent nothing may be repeated under it. device.request.get shows the record. |
 
 ```sh
 tomaccoctl call android.input '{"device":"<device>","action":"tap"}'

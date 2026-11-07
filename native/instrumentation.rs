@@ -73,7 +73,18 @@ pub fn invoke(a: &Value) -> Result {
         ]));
     }
     args.push(COMPONENT.into());
-    let result = tc::run(&devices::shell(device, &args)?, 30, None, true)?;
+    let shell = devices::shell(device, &args)?;
+    let result = if action == "fill" {
+        // Typing through the instrumentation is input like android.input.
+        identifier(device, "Android serial", None)?;
+        crate::coordination::guarded(
+            &crate::coordination::Target::new("android", "", device),
+            crate::coordination::Kind::Action,
+            || tc::run(&shell, 30, None, true),
+        )?
+    } else {
+        tc::run(&shell, 30, None, true)?
+    };
     let encoded = s(&result, "stdout").lines().find_map(|line| {
         line.trim()
             .strip_prefix("INSTRUMENTATION_RESULT: tomacco_result=")

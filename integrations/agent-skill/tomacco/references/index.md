@@ -2,7 +2,7 @@
 
 # Tomacco references
 
-288 operations in all, in 34 files, one per area. Read the file of the area you need, not all of them. Each operation lists its arguments (required first) and one example call; `tomaccoctl help OPERATION` prints the same with the full argument descriptions. [Error codes](errors.md).
+296 operations in all, in 34 files, one per area. Read the file of the area you need, not all of them. Each operation lists its arguments (required first) and one example call; `tomaccoctl help OPERATION` prints the same with the full argument descriptions. [Error codes](errors.md).
 
 | File | Operations | Areas and names |
 | --- | --- | --- |
@@ -15,7 +15,7 @@
 | [debug](debug.md) | 10 | Debugger sessions: breakpoints, threads, stack, variables. `debug.start`, `debug.list`, `debug.state`, … |
 | [demo](demo.md) | 8 | Local recordings into device videos: scenes, preview frames and verified exports. `demo.capabilities`, `demo.media.inspect`, `demo.scene.create`, … |
 | [desktop](desktop.md) | 2 | The desktop app's state and window. `desktop.status`, `desktop.open` |
-| [device](device.md) | 9 | Devices of either platform: list, install, capture, logs. `device.list`, `device.info`, `device.label`, … |
+| [device](device.md) | 17 | Devices of either platform: list, install, capture, logs. `device.list`, `device.info`, `device.label`, … |
 | [diagnostics](diagnostics.md) | 2 | Bug-report bundle and a reviewable report draft, secrets masked, sent nowhere. `diagnostics.bundle`, `diagnostics.report_draft` |
 | [files](files.md) | 5 | Files inside the allowed roots. `files.list`, `files.read`, `files.write`, … |
 | [gpx](gpx.md) | 3 | GPX routes: read a file and play it on an emulator's location, with pause, resume, loop and stop. `gpx.inspect`, `gpx.play`, `gpx.status` |

@@ -29,6 +29,8 @@ const SECRET_KEYS: &[&str] = &[
     "private_key",
     "token",
     "authorization",
+    // A device reservation's capability (coordination.rs).
+    "reservation_token",
 ];
 
 fn patterns() -> &'static [(Regex, &'static str)] {
@@ -66,6 +68,8 @@ fn patterns() -> &'static [(Regex, &'static str)] {
             (r"\b(?:AKIA|ASIA)[0-9A-Z]{16}\b", "[redacted]"),
             (r"\bxox[abprs]-[A-Za-z0-9-]{10,}", "[redacted]"),
             (r"\bglpat-[A-Za-z0-9_-]{20,}", "[redacted]"),
+            // Device reservation tokens (coordination.rs).
+            (r"\btmres_[0-9a-f]{16,}", "[redacted]"),
         ]
         .into_iter()
         .map(|(pattern, replacement)| (Regex::new(pattern).expect("valid pattern"), replacement))

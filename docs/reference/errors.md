@@ -2,7 +2,7 @@
 
 # Error codes
 
-Every error code `tomaccoctl` returns, 522 codes, generated from `assets/errors.json`. A failure is `{"ok":false,"error":{"code":...,"message":...,"remedy":...}}`, and over MCP the same object under `structuredContent.error`. Branch on `code`. The message says what happened this time; when the place that failed has no remedy of its own, `remedy` is the general one below. In the middle column, … stands for a value the message fills in. [All operations](README.md).
+Every error code `tomaccoctl` returns, 534 codes, generated from `assets/errors.json`. A failure is `{"ok":false,"error":{"code":...,"message":...,"remedy":...}}`, and over MCP the same object under `structuredContent.error`. Branch on `code`. The message says what happened this time; when the place that failed has no remedy of its own, `remedy` is the general one below. In the middle column, … stands for a value the message fills in. [All operations](README.md).
 
 | Code | What it means | What to do |
 | --- | --- | --- |
@@ -96,8 +96,11 @@ Every error code `tomaccoctl` returns, 522 codes, generated from `assets/errors.
 | `device_busy` | This iPhone already has an active native session. | Wait for the job or session using it to end (job.list), or stop it if the person agrees, then try again. |
 | `device_debug_busy` | An existing debugger owns this Android device; use or disconnect that session first. | Wait for the job or session using it to end (job.list), or stop it if the person agrees, then try again. |
 | `device_failed` | Failed on … | Read the message and the job's log (job.logs); fix the cause and try again. |
+| `device_input_in_flight` | Another client's input to this device was still under way (a tap in flight or a finger held down), so it was not reserved. | Try again in a moment or with a longer wait_ms; a held touch counts until it is lifted, at most 60 seconds. |
 | `device_not_found` | No connected device has this name, nickname, AVD or ID. | device.list shows the connected devices with their names and IDs. |
 | `device_required` | Several iPhones are connected; pass device. | Pass device with an ID from device.list. |
+| `device_reserved` | Another holder has reserved this device (device.reservation.acquire); nothing was sent. | Wait until it expires or is released (device.reservation.get shows the holder and expiry), or ask the person, who can take it over with device.reservation.takeover. Reading the screen stays possible. |
+| `device_target_unknown` | The name does not resolve to one device: an unknown session, an emulator nickname, or a nickname two devices share. | Name the device by its serial or UDID from device.list, or by a session ID from runtime.list. |
 | `display_unavailable` | The device did not report its density. | Read the message, change what it names and try again; docs/troubleshooting.md lists known errors. |
 | `display_unknown` | … reported no screen size and density. | Check the name or path in the message; the matching list operation (device.list, job.list, workspace.list, catalog.list) shows what exists, and doctor what is set up. |
 | `download_failed` | Downloading … failed (curl exit …): … | Check the network connection and try again; retry where the operation offers it. |
@@ -398,12 +401,21 @@ Every error code `tomaccoctl` returns, 522 codes, generated from `assets/errors.
 | `remote_not_found` | Unknown remote workspace: … | remote.list names the configured remotes; add one with remote.configure. |
 | `replay_failed` | … from line … failed: … | Fix the cause and replay the rest, or edit the log. |
 | `request_cancelled` | The MCP client cancelled the request. | Nothing to fix; a job the request started keeps running, so check job.list before starting it again. |
+| `request_conflict` | This request_id was already used for a different action (other arguments, operation or device); nothing was sent. | Use a new request_id for a new action; repeat one only to ask about the same action again. |
+| `request_in_progress` | A request with this request_id is still executing in another process; it was not sent again. | Wait, then read its outcome with device.request.get. |
+| `request_not_found` | No request with this request_id is recorded. | Records are kept 24 hours; device.request.list shows the recent ones. |
+| `request_outcome_unknown` | The request was dispatched, but its answer was lost or its process ended before recording one; whether it took effect is unknown, and it was not sent again. | Observe the screen (runtime.observe, screen.marks) and decide from what is there; use a new request_id for a new attempt. |
 | `research_bundle_required` | The virtual iOS device or its research engine refused the request or stopped answering. | Prepare a full-system bundle with ios.emulator.prepare_research. |
 | `research_environment` | The virtual iOS device or its research engine refused the request or stopped answering. | Use ios.emulator.research for this full-system research bundle; it is not a command shell. |
 | `research_hardware_missing` | Engine does not support … | Read the message; ios.virtual.status and the job's log show the device's state, and docs/virtual-ios/troubleshooting.md lists known causes. |
 | `research_log_limit` | Engine exceeded its log budget. | Read the message; ios.virtual.status and the job's log show the device's state, and docs/virtual-ios/troubleshooting.md lists known causes. |
 | `research_serial_failed` | Serial reader terminated unexpectedly. | Read the message; ios.virtual.status and the job's log show the device's state, and docs/virtual-ios/troubleshooting.md lists known causes. |
 | `research_tools_missing` | The virtual iOS device or its research engine refused the request or stopped answering. | Install the iOS research preparation tools. |
+| `reservation_expired` | The reservation this token held ran out; the input was not sent. | Inputs sent before it ended are not undone. Observe the screen, then acquire a new reservation before acting again. |
+| `reservation_limit` | Too many devices are reserved at once. | Release reservations no longer needed; device.reservation.list shows them. |
+| `reservation_not_held` | The token holds no reservation of this device: it is for another device, or not known in this data directory. | Acquire a reservation with device.reservation.acquire and use the token it answers. |
+| `reservation_released` | The reservation this token held was released; the input was not sent. | Observe the screen, then acquire a new reservation before acting again. |
+| `reservation_revoked` | The person took the device over (device.reservation.takeover); the input was not sent. | Inputs sent before are not undone. Ask the person before you continue, then acquire a new reservation. |
 | `resource_not_found` | No MCP resource has that URI. | resources/list and resources/templates/list name the resources this server has. |
 | `response_too_large` | Debugger response exceeds 2 MiB. | Check the session with debug.list and its log; the app must be a debuggable build that is running. |
 | `result_not_found` | No saved result has this result_id, or it has been removed. | Run the operation again; large results are saved under the result_id its answer names. |

@@ -8,7 +8,7 @@
   "unavailable": "cannot run anywhere reachable from the phone"
  },
  "counts": {
-  "local": 184,
+  "local": 192,
   "remote": 64,
   "conditional": 40,
   "unavailable": 0
@@ -542,6 +542,78 @@
    ],
    "evidence": "All device-facing operations go through adb/JDWP/perfetto on the device; no x86_64 binaries are involved.",
    "next_test": "testing.find, debug.start and profile.capture against a paired phone from the device.",
+   "verified_on_pixel": false
+  },
+  {
+   "operation": "device.reservation.acquire",
+   "title": "Reserve a device",
+   "phone": "local",
+   "requires": [],
+   "evidence": "Device reservations and the request ledger are owner-only SQLite records in the control program's data directory (native/coordination.rs); they touch no device, adb or network themselves.",
+   "next_test": "device.reservation.acquire, get and release and device.request.get on the device with TOMACCO_HOME in a temp dir.",
+   "verified_on_pixel": false
+  },
+  {
+   "operation": "device.reservation.get",
+   "title": "Device reservation state",
+   "phone": "local",
+   "requires": [],
+   "evidence": "Device reservations and the request ledger are owner-only SQLite records in the control program's data directory (native/coordination.rs); they touch no device, adb or network themselves.",
+   "next_test": "device.reservation.acquire, get and release and device.request.get on the device with TOMACCO_HOME in a temp dir.",
+   "verified_on_pixel": false
+  },
+  {
+   "operation": "device.reservation.list",
+   "title": "Reserved devices",
+   "phone": "local",
+   "requires": [],
+   "evidence": "Device reservations and the request ledger are owner-only SQLite records in the control program's data directory (native/coordination.rs); they touch no device, adb or network themselves.",
+   "next_test": "device.reservation.acquire, get and release and device.request.get on the device with TOMACCO_HOME in a temp dir.",
+   "verified_on_pixel": false
+  },
+  {
+   "operation": "device.reservation.renew",
+   "title": "Renew a device reservation",
+   "phone": "local",
+   "requires": [],
+   "evidence": "Device reservations and the request ledger are owner-only SQLite records in the control program's data directory (native/coordination.rs); they touch no device, adb or network themselves.",
+   "next_test": "device.reservation.acquire, get and release and device.request.get on the device with TOMACCO_HOME in a temp dir.",
+   "verified_on_pixel": false
+  },
+  {
+   "operation": "device.reservation.release",
+   "title": "Release a device reservation",
+   "phone": "local",
+   "requires": [],
+   "evidence": "Device reservations and the request ledger are owner-only SQLite records in the control program's data directory (native/coordination.rs); they touch no device, adb or network themselves.",
+   "next_test": "device.reservation.acquire, get and release and device.request.get on the device with TOMACCO_HOME in a temp dir.",
+   "verified_on_pixel": false
+  },
+  {
+   "operation": "device.reservation.takeover",
+   "title": "Take over a device reservation",
+   "phone": "local",
+   "requires": [],
+   "evidence": "Device reservations and the request ledger are owner-only SQLite records in the control program's data directory (native/coordination.rs); they touch no device, adb or network themselves.",
+   "next_test": "device.reservation.acquire, get and release and device.request.get on the device with TOMACCO_HOME in a temp dir.",
+   "verified_on_pixel": false
+  },
+  {
+   "operation": "device.request.get",
+   "title": "Recorded request",
+   "phone": "local",
+   "requires": [],
+   "evidence": "Device reservations and the request ledger are owner-only SQLite records in the control program's data directory (native/coordination.rs); they touch no device, adb or network themselves.",
+   "next_test": "device.reservation.acquire, get and release and device.request.get on the device with TOMACCO_HOME in a temp dir.",
+   "verified_on_pixel": false
+  },
+  {
+   "operation": "device.request.list",
+   "title": "Recorded requests",
+   "phone": "local",
+   "requires": [],
+   "evidence": "Device reservations and the request ledger are owner-only SQLite records in the control program's data directory (native/coordination.rs); they touch no device, adb or network themselves.",
+   "next_test": "device.reservation.acquire, get and release and device.request.get on the device with TOMACCO_HOME in a temp dir.",
    "verified_on_pixel": false
   },
   {

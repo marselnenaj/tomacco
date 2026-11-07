@@ -23,7 +23,7 @@ tomaccoctl call testing.find '{"device":"<device>","selector":{"text":"<text>"}}
 
 Operate Android element. writes.
 
-Click, long-click or fill a uniquely matched native Android element. The virtual iPhone (device virtual-iphone) reports no UI hierarchy, so there a selector with only text or text_contains (and index) clicks or long-clicks the middle of the text read off the screenshot with Tesseract (source ocr, pixel_based true); fill and any other selector property answer an error, and ui_hierarchy_unavailable lists in details.testing what works.
+Click, long-click or fill a uniquely matched native Android element. The virtual iPhone (device virtual-iphone) reports no UI hierarchy, so there a selector with only text or text_contains (and index) clicks or long-clicks the middle of the text read off the screenshot with Tesseract (source ocr, pixel_based true); fill and any other selector property answer an error, and ui_hierarchy_unavailable lists in details.testing what works. With reservation_token it acts under a device reservation (device.reservation.acquire); with request_id it is recorded once in the request ledger, so a repeat after a lost answer is not sent again.
 
 - `device` string, required (non-empty)
 - `selector` object {text, text_contains, resource_id, description, class, package, clickable, enabled, checked, selected, index}, required
@@ -31,6 +31,8 @@ Click, long-click or fill a uniquely matched native Android element. The virtual
 - `timeout` integer (0 to 60; default 10)
 - `text` string (up to 10000 characters)
 - `duration` integer (100 to 10000; default 800)
+- `reservation_token` string (up to 200 characters): Act under this device reservation (device.reservation.acquire). A reserved device takes input only with its token; a token whose reservation expired, was…
+- `request_id` string (non-empty, up to 128 characters; matching `^[A-Za-z0-9][A-Za-z0-9_.:-]{0,127}$`): Your identity for this action, unique per intent (order-42-submit). It is recorded with a digest of the arguments before anything is sent; repeating it with…
 
 ```sh
 tomaccoctl call testing.action '{"device":"<device>","selector":{"text":"<text>"},"action":"click"}'

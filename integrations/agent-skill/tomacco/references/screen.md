@@ -27,12 +27,14 @@ tomaccoctl call screen.marks '{"device":"<device>","path":"<path>"}'
 
 Tap a mark. writes.
 
-Tap the centre of a numbered mark from the last screen.marks (or screen.tree) of this device. First it checks the screen still has what the mark was made from: on Android the same element (class, resource id, text and bounds) in the UI hierarchy; for a mark read by OCR, the pixels where it was, unchanged. If not it answers mark_stale and taps nothing, so a number never lands on another element after the screen moved on. Pass duration for a long press.
+Tap the centre of a numbered mark from the last screen.marks (or screen.tree) of this device. First it checks the screen still has what the mark was made from: on Android the same element (class, resource id, text and bounds) in the UI hierarchy; for a mark read by OCR, the pixels where it was, unchanged. If not it answers mark_stale and taps nothing, so a number never lands on another element after the screen moved on. Pass duration for a long press. With reservation_token it acts under a device reservation (device.reservation.acquire); with request_id it is recorded once in the request ledger, so a repeat after a lost answer is not sent again.
 
 - `device` string, required (non-empty): Android serial from device.list, virtual-iphone for the running virtual iPhone, or a runtime session ID from runtime.start (any connected session, including a…
 - `mark` integer, required (1 to 200): The mark's number in the last screen.marks result for this device
 - `duration` integer (100 to 5000): Hold for this many milliseconds (a long press) instead of tapping
 - `verify` boolean (default true): Check the screen still matches the mark before tapping; false taps where the mark was whatever is there now
+- `reservation_token` string (up to 200 characters): Act under this device reservation (device.reservation.acquire). A reserved device takes input only with its token; a token whose reservation expired, was…
+- `request_id` string (non-empty, up to 128 characters; matching `^[A-Za-z0-9][A-Za-z0-9_.:-]{0,127}$`): Your identity for this action, unique per intent (order-42-submit). It is recorded with a digest of the arguments before anything is sent; repeating it with…
 
 ```sh
 tomaccoctl call screen.tap '{"device":"<device>","mark":1}'

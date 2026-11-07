@@ -359,6 +359,10 @@
     "cause": "Failed on …",
     "remedy": "Read the message and the job's log (job.logs); fix the cause and try again."
   },
+  "device_input_in_flight": {
+    "cause": "Another client's input to this device was still under way (a tap in flight or a finger held down), so it was not reserved.",
+    "remedy": "Try again in a moment or with a longer wait_ms; a held touch counts until it is lifted, at most 60 seconds."
+  },
   "device_not_found": {
     "cause": "No connected device has this name, nickname, AVD or ID.",
     "remedy": "device.list shows the connected devices with their names and IDs."
@@ -366,6 +370,14 @@
   "device_required": {
     "cause": "Several iPhones are connected; pass device.",
     "remedy": "Pass device with an ID from device.list."
+  },
+  "device_reserved": {
+    "cause": "Another holder has reserved this device (device.reservation.acquire); nothing was sent.",
+    "remedy": "Wait until it expires or is released (device.reservation.get shows the holder and expiry), or ask the person, who can take it over with device.reservation.takeover. Reading the screen stays possible."
+  },
+  "device_target_unknown": {
+    "cause": "The name does not resolve to one device: an unknown session, an emulator nickname, or a nickname two devices share.",
+    "remedy": "Name the device by its serial or UDID from device.list, or by a session ID from runtime.list."
   },
   "display_unavailable": {
     "cause": "The device did not report its density.",
@@ -1567,6 +1579,22 @@
     "cause": "The MCP client cancelled the request.",
     "remedy": "Nothing to fix; a job the request started keeps running, so check job.list before starting it again."
   },
+  "request_conflict": {
+    "cause": "This request_id was already used for a different action (other arguments, operation or device); nothing was sent.",
+    "remedy": "Use a new request_id for a new action; repeat one only to ask about the same action again."
+  },
+  "request_in_progress": {
+    "cause": "A request with this request_id is still executing in another process; it was not sent again.",
+    "remedy": "Wait, then read its outcome with device.request.get."
+  },
+  "request_not_found": {
+    "cause": "No request with this request_id is recorded.",
+    "remedy": "Records are kept 24 hours; device.request.list shows the recent ones."
+  },
+  "request_outcome_unknown": {
+    "cause": "The request was dispatched, but its answer was lost or its process ended before recording one; whether it took effect is unknown, and it was not sent again.",
+    "remedy": "Observe the screen (runtime.observe, screen.marks) and decide from what is there; use a new request_id for a new attempt."
+  },
   "research_bundle_required": {
     "cause": "The virtual iOS device or its research engine refused the request or stopped answering.",
     "remedy": "Prepare a full-system bundle with ios.emulator.prepare_research."
@@ -1590,6 +1618,26 @@
   "research_tools_missing": {
     "cause": "The virtual iOS device or its research engine refused the request or stopped answering.",
     "remedy": "Install the iOS research preparation tools."
+  },
+  "reservation_expired": {
+    "cause": "The reservation this token held ran out; the input was not sent.",
+    "remedy": "Inputs sent before it ended are not undone. Observe the screen, then acquire a new reservation before acting again."
+  },
+  "reservation_limit": {
+    "cause": "Too many devices are reserved at once.",
+    "remedy": "Release reservations no longer needed; device.reservation.list shows them."
+  },
+  "reservation_not_held": {
+    "cause": "The token holds no reservation of this device: it is for another device, or not known in this data directory.",
+    "remedy": "Acquire a reservation with device.reservation.acquire and use the token it answers."
+  },
+  "reservation_released": {
+    "cause": "The reservation this token held was released; the input was not sent.",
+    "remedy": "Observe the screen, then acquire a new reservation before acting again."
+  },
+  "reservation_revoked": {
+    "cause": "The person took the device over (device.reservation.takeover); the input was not sent.",
+    "remedy": "Inputs sent before are not undone. Ask the person before you continue, then acquire a new reservation."
   },
   "resource_not_found": {
     "cause": "No MCP resource has that URI.",

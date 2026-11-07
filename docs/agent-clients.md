@@ -64,7 +64,7 @@ client's own start of the server is still to be seen.
 | omp | [can1357/oh-my-pi](https://github.com/can1357/oh-my-pi), `@oh-my-pi/pi-coding-agent` 18.17.0, commit `b47e53b` (2026-11-06): `docs/mcp-config.md`, `docs/mcp-runtime-lifecycle.md`, `docs/skills.md`, `packages/coding-agent/src/mcp/config-writer.ts`, `src/discovery/helpers.ts` | `~/.omp/agent/mcp.json` (`$PI_CONFIG_DIR`, `$PI_CODING_AGENT_DIR` and `$OMP_PROFILE` move it), `mcpServers`; a new file gets its `$schema` | `{"type": "stdio", "command": PROGRAM, "args": ["mcp"]}`; `enabled: false` or `disabledServers` switches it off | `mcp__tomacco_device_list` (lowercased, `[^a-z0-9_]` becomes `_`, runs collapsed, 64 at most) | `~/.omp/agent/skills/tomacco` (links are accepted) | fixture |
 
 PROGRAM is the absolute path of the `tomaccoctl` that ran setup. Every tool name a
-client makes from Tomacco's 288 operations stays distinct and within 64 characters
+client makes from Tomacco's 296 operations stays distinct and within 64 characters
 under each rule (`agent_clients::tests::tool_names_follow_each_clients_rule_and_stay_distinct`).
 
 ### Grok CLI and the grouped list

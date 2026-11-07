@@ -784,6 +784,12 @@ pub fn handle(op: &str, a: &Value) -> Result {
             Ok(job)
         }
         "android.input" => {
+            // Admitted against the device's reservation right before adb
+            // delivers it (coordination.rs); screen.tap, testing.action and
+            // testing.run on an Android serial come through here too.
+            identifier(device, "Android serial", None)?;
+            let target = crate::coordination::Target::new("android", "", device);
+            crate::coordination::guarded(&target, crate::coordination::Kind::Action, || {
             let action = s(a, "action");
             let mut args = argv(&["input", action]);
             match action {
@@ -810,6 +816,7 @@ pub fn handle(op: &str, a: &Value) -> Result {
                 _ => return Err(Error::new("invalid_argument", action)),
             }
             run(shell(device, &args)?)
+            })
         }
         "android.hierarchy" => {
             let p = format!(

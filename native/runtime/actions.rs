@@ -14,7 +14,7 @@ use crate::screen::{self, Session, Store};
 use crate::screen_ocr::Tesseract;
 
 /// Steps that change the device, as against waits and looks.
-fn mutates(action: &str) -> bool {
+pub(crate) fn mutates(action: &str) -> bool {
     matches!(
         action,
         "tap" | "swipe" | "key" | "text" | "fill" | "pinch" | "rotate" | "gesture"
@@ -27,7 +27,7 @@ fn invalid(message: impl Into<String>) -> Error {
 
 /// Checks every step before anything is sent: a wrong step fails the
 /// whole batch with nothing applied.
-fn check(steps: &[Value]) -> Result<()> {
+pub(crate) fn check(steps: &[Value]) -> Result<()> {
     for (i, step) in steps.iter().enumerate() {
         let action = s(step, "action");
         let needs: &[&str] = match action {
@@ -328,7 +328,11 @@ pub fn run(a: &Value) -> Result {
         }
         let at = Instant::now();
         let mut record = json!({"index":index,"action":action,"mutated":mutated,"started_at":now()});
-        match run_step(id, step, deadline, &store) {
+        // The step's input is recorded in the request ledger as `ID/step-N`.
+        crate::coordination::set_label(Some(format!("step-{index}")));
+        let ran = run_step(id, step, deadline, &store);
+        crate::coordination::set_label(None);
+        match ran {
             Ok((result, extra)) => {
                 record["status"] = json!("applied");
                 record["result"] = result;
