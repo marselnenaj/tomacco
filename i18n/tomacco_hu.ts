@@ -616,6 +616,10 @@ A modell határozza meg a kijelzőt és a keretet. Az Android a kiválasztott re
         <source>the name is taken</source>
         <translation>a név már foglalt</translation>
     </message>
+    <message>
+        <source>Pinned</source>
+        <translation type="unfinished"></translation>
+    </message>
 </context>
 <context>
     <name>Backend</name>
@@ -1363,6 +1367,45 @@ A modell határozza meg a kijelzőt és a keretet. Az Android a kiválasztott re
     <message>
         <source>Choose folder</source>
         <translation>Mappa kiválasztása</translation>
+    </message>
+    <message>
+        <source>Copy path</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Files</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Loading files…</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>No matches for “%1”.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Open</source>
+        <comment>folder</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Path copied</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Save</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message numerus="yes">
+        <source>Search results for “%1” · %n match(es)</source>
+        <translation type="unfinished">
+            <numerusform></numerusform>
+        </translation>
+    </message>
+    <message>
+        <source>Show all files</source>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
@@ -4005,6 +4048,62 @@ Az SSH a meglévő kulcsaidat és az ismert gazdagép-azonosítót használja.</
         <source>Claude Code Codex Gemini Cursor VS Code Zed OpenCode Grok Hermes omp MCP</source>
         <translation>Claude Code Codex Gemini Cursor VS Code Zed OpenCode Grok Hermes omp MCP</translation>
     </message>
+    <message>
+        <source>Agent policy</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Agents and system</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Android SDK, JDK and executables, updates and parallel jobs</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Bug report bundle</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Clean up old jobs and reports</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Diagnostics</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Lists old jobs, logs and reports; removes them only after you confirm</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Mac hosts</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>SDK &amp; tool paths</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>SSH Macs for iOS builds, each set up explicitly</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Setup state and the exact setting for each client</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Storage</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>What an agent may run and where it asks first</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Writes one .tar.gz on this computer; nothing is sent</source>
+        <translation type="unfinished"></translation>
+    </message>
 </context>
 <context>
     <name>Operations</name>
@@ -6014,6 +6113,220 @@ Az SSH a meglévő kulcsaidat és az ismert gazdagép-azonosítót használja.</
         <source>Connect your coding agent</source>
         <translation>Csatlakoztasd a kódoló ügynöködet</translation>
     </message>
+    <message>
+        <source>All devices</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>All tools</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Android emulator</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Android phone</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Application ID</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Back</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Build host</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Build only</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Collapsed</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Connect the phone to install apps, read its log or take a screenshot.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Connected</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Create an app from a template</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Device</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Display</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Duplicate, rename or wipe this emulator</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Expanded</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>External profile</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Give this device a nickname</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Graphics: %1</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Import Xcode project</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Kind</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Mac hosts</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Manage</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>More</source>
+        <comment>projects</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>More build options</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Nickname</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>No longer listed. Find devices again, or go back to the list.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>No project matches “%1”.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Not authorized: allow USB debugging on the phone</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Off</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Open</source>
+        <comment>project</comment>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Open by path</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Open folder</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Performance</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Pin</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Pin this device to the top</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Projects</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Reads an .xcodeproj and writes the Tomacco configuration</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Recent</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Recent jobs</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Saved workspaces</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Search projects and workspaces</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Set graphics, memory and CPU</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Start</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Start the emulator to install apps, read its log or take a screenshot.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Starting…</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>State</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Switch project</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Target</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Type the folder of a Swift, Kotlin or Flutter project</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Unpin</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Unpin this device</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>iOS builds need a Mac host you set up yourself. Tomacco never chooses or searches for one.</source>
+        <translation type="unfinished"></translation>
+    </message>
 </context>
 <context>
     <name>main</name>
@@ -7396,6 +7709,13 @@ A GNU General Public License 2-es vagy későbbi verziója alatt licencelve.</tr
         <source>Version unclear</source>
         <comment>agent client</comment>
         <translation>A verzió nem egyértelmű</translation>
+    </message>
+</context>
+<context>
+    <name>MobileTopBar</name>
+    <message>
+        <source>Back</source>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 </TS>
