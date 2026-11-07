@@ -57,10 +57,10 @@ review list, not an error count.
 | uk | Українська (Ukrainian) | ltr | 3 (russian) | 1800/1800 | 0 | 1 | 0 | 6/6 | complete |
 | ur | اردو (Urdu) | rtl | 2 (english) | 0/1800 | 1800 | 0 | 0 | 0/6 | untranslated |
 | uz | Oʻzbekcha (Uzbek) | ltr | 2 (english) | 0/1800 | 1800 | 0 | 0 | 0/6 | untranslated |
-| vi | Tiếng Việt (Vietnamese) | ltr | 1 (universal) | 1800/1800 | 0 | 0 | 0 | 0/6 | partial |
+| vi | Tiếng Việt (Vietnamese) | ltr | 1 (universal) | 1800/1800 | 0 | 0 | 0 | 6/6 | complete |
 | zh-CN | 简体中文 (Chinese (Simplified)) | ltr | 1 (universal) | 1800/1800 | 0 | 1 | 0 | 6/6 | complete |
 | zh-TW | 繁體中文 (Chinese (Traditional)) | ltr | 1 (universal) | 1800/1800 | 0 | 1 | 0 | 6/6 | complete |
 
-Complete: 23 of 50 translated languages: ar, da, de, es, es-MX, fr, id, it, ja, ko, nl, no, pl, pt, pt-BR, ru, si, sv, ta, th, uk, zh-CN, zh-TW
+Complete: 24 of 50 translated languages: ar, da, de, es, es-MX, fr, id, it, ja, ko, nl, no, pl, pt, pt-BR, ru, si, sv, ta, th, uk, vi, zh-CN, zh-TW
 
-Not complete: bg, bn, ca, cs, el, et, fa, fi, fil, ga, he, hi, hr, hu, is, lt, lv, ms, ro, sk, sl, sr, sw, tr, ur, uz, vi
+Not complete: bg, bn, ca, cs, el, et, fa, fi, fil, ga, he, hi, hr, hu, is, lt, lv, ms, ro, sk, sl, sr, sw, tr, ur, uz
