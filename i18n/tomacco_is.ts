@@ -764,7 +764,7 @@ Gerðin ræður skjánum og rammanum. Android kemur úr valinni kerfismynd; við
     </message>
     <message>
         <source>Hibiscus</source>
-        <translation>Hibiscus</translation>
+        <translation>Hibiskus</translation>
     </message>
     <message>
         <source>Lavender</source>
@@ -6980,433 +6980,433 @@ Með leyfi samkvæmt GNU General Public License, útgáfu 2 eða nýrri.</transl
     </message>
     <message>
         <source>Import…</source>
-        <translation type="unfinished"></translation>
+        <translation>Flytja inn…</translation>
     </message>
     <message>
         <source>Export…</source>
-        <translation type="unfinished"></translation>
+        <translation>Flytja út…</translation>
     </message>
     <message>
         <source>Delete preset</source>
-        <translation type="unfinished"></translation>
+        <translation>Eyða forstillingu</translation>
     </message>
     <message numerus="yes">
         <source>%n preset file(s) could not be read and are not listed.</source>
-        <translation type="unfinished">
-            <numerusform></numerusform>
-            <numerusform></numerusform>
+        <translation>
+            <numerusform>Ekki var hægt að lesa %n forstillingarskrá og hún er ekki á listanum.</numerusform>
+            <numerusform>Ekki var hægt að lesa %n forstillingarskrár og þær eru ekki á listanum.</numerusform>
         </translation>
     </message>
     <message>
         <source>Apply to a device</source>
-        <translation type="unfinished"></translation>
+        <translation>Virkja á tæki</translation>
     </message>
     <message>
         <source>Choose the device here. Tomacco reads it first, shows what would change, and applies only that plan to that device.</source>
-        <translation type="unfinished"></translation>
+        <translation>Veldu tækið hér. Tomacco les það fyrst, sýnir hverju yrði breytt og virkjar aðeins þá áætlun á því tæki.</translation>
     </message>
     <message>
         <source>Choose the target device</source>
-        <translation type="unfinished"></translation>
+        <translation>Veldu marktækið</translation>
     </message>
     <message>
         <source>App ID for the app language · optional</source>
-        <translation type="unfinished"></translation>
+        <translation>Auðkenni apps fyrir tungumál apps · valfrjálst</translation>
     </message>
     <message>
         <source>Read device</source>
-        <translation type="unfinished"></translation>
+        <translation>Lesa tæki</translation>
     </message>
     <message>
         <source>Plan</source>
-        <translation type="unfinished"></translation>
+        <translation>Áætlun</translation>
     </message>
     <message>
         <source>Apply plan</source>
-        <translation type="unfinished"></translation>
+        <translation>Virkja áætlun</translation>
     </message>
     <message>
         <source>Restore previous settings</source>
-        <translation type="unfinished"></translation>
+        <translation>Endurheimta fyrri stillingar</translation>
     </message>
     <message>
         <source>Skip the settings this device does not support</source>
-        <translation type="unfinished"></translation>
+        <translation>Sleppa stillingum sem þetta tæki styður ekki</translation>
     </message>
     <message>
         <source>Plan for %1 (%2) · preset revision %3</source>
-        <translation type="unfinished"></translation>
+        <translation>Áætlun fyrir %1 (%2) · útgáfa forstillingar %3</translation>
     </message>
     <message>
         <source>TalkBack here switches the screen reader on the device and keeps your other accessibility services. It does not show that your app works with a screen reader; the accessibility audit only checks the screen&apos;s structure.</source>
-        <translation type="unfinished"></translation>
+        <translation>TalkBack hér kveikir á skjálesaranum á tækinu og heldur öðrum aðgengisþjónustum þínum. Það sýnir ekki að appið þitt virki með skjálesara; aðgengisendurskoðunin athugar aðeins uppbyggingu skjásins.</translation>
     </message>
     <message>
         <source>QA environment (*.json)</source>
-        <translation type="unfinished"></translation>
+        <translation>QA-umhverfi (*.json)</translation>
     </message>
     <message>
         <source>Delete this preset?</source>
-        <translation type="unfinished"></translation>
+        <translation>Eyða þessari forstillingu?</translation>
     </message>
     <message>
         <source>The preset is removed from this computer. Devices keep their settings, and restore points stay.</source>
-        <translation type="unfinished"></translation>
+        <translation>Forstillingin er fjarlægð af þessari tölvu. Tæki halda stillingum sínum og endurheimtarpunktar verða áfram.</translation>
     </message>
     <message>
         <source>Keep preset</source>
-        <translation type="unfinished"></translation>
+        <translation>Halda forstillingu</translation>
     </message>
     <message>
         <source>%1 points, %2 km, %3 min recorded</source>
-        <translation type="unfinished"></translation>
+        <translation>%1 punktar, %2 km, %3 mín skráðar</translation>
     </message>
     <message>
         <source>%1 points, %2 km, no times: one point per second</source>
-        <translation type="unfinished"></translation>
+        <translation>%1 punktar, %2 km, engir tímar: einn punktur á sekúndu</translation>
     </message>
     <message>
         <source>Change route…</source>
-        <translation type="unfinished"></translation>
+        <translation>Breyta leið…</translation>
     </message>
     <message>
         <source>Choose a GPX file…</source>
-        <translation type="unfinished"></translation>
+        <translation>Veldu GPX-skrá…</translation>
     </message>
     <message>
         <source>Finished. The last position stays on the emulator.</source>
-        <translation type="unfinished"></translation>
+        <translation>Lokið. Síðasta staðsetning verður áfram á herminum.</translation>
     </message>
     <message>
         <source>GPX route (*.gpx)</source>
-        <translation type="unfinished"></translation>
+        <translation>GPX-leið (*.gpx)</translation>
     </message>
     <message>
         <source>No route chosen</source>
-        <translation type="unfinished"></translation>
+        <translation>Engin leið valin</translation>
     </message>
     <message>
         <source>Pause</source>
-        <translation type="unfinished"></translation>
+        <translation>Gera hlé</translation>
     </message>
     <message>
         <source>Paused at %1</source>
-        <translation type="unfinished"></translation>
+        <translation>Hlé við %1</translation>
     </message>
     <message>
         <source>Play a GPX route on the chosen emulator&apos;s location. Timed points keep their timing; untimed points play one per second.</source>
-        <translation type="unfinished"></translation>
+        <translation>Spila GPX-leið á staðsetningu valins hermis. Tímasettir punktar halda tímasetningu sinni; punktar án tíma spilast einn á sekúndu.</translation>
     </message>
     <message>
         <source>Play route</source>
-        <translation type="unfinished"></translation>
+        <translation>Spila leið</translation>
     </message>
     <message>
         <source>Playback ended: %1</source>
-        <translation type="unfinished"></translation>
+        <translation>Spilun lauk: %1</translation>
     </message>
     <message>
         <source>Playing %1</source>
-        <translation type="unfinished"></translation>
+        <translation>Spilar %1</translation>
     </message>
     <message>
         <source>Playing the route on %1. The previous position is not known and will not be restored.</source>
-        <translation type="unfinished"></translation>
+        <translation>Spilar leiðina á %1. Fyrri staðsetning er ekki þekkt og verður ekki endurheimt.</translation>
     </message>
     <message>
         <source>Playing…</source>
-        <translation type="unfinished"></translation>
+        <translation>Spilar…</translation>
     </message>
     <message>
         <source>Reading the route…</source>
-        <translation type="unfinished"></translation>
+        <translation>Les leiðina…</translation>
     </message>
     <message>
         <source>Repeat the route</source>
-        <translation type="unfinished"></translation>
+        <translation>Endurtaka leiðina</translation>
     </message>
     <message>
         <source>Resume</source>
-        <translation type="unfinished"></translation>
+        <translation>Halda áfram</translation>
     </message>
     <message>
         <source>Route playback</source>
-        <translation type="unfinished"></translation>
+        <translation>Spilun leiðar</translation>
     </message>
     <message>
         <source>Route playback reaches emulators only. A phone takes no mock location from here.</source>
-        <translation type="unfinished"></translation>
+        <translation>Spilun leiðar nær aðeins til herma. Sími tekur ekki við hermdri staðsetningu héðan.</translation>
     </message>
     <message>
         <source>Speed · 1 is real time</source>
-        <translation type="unfinished"></translation>
+        <translation>Hraði · 1 er rauntími</translation>
     </message>
     <message>
         <source>Starting playback…</source>
-        <translation type="unfinished"></translation>
+        <translation>Hefur spilun…</translation>
     </message>
     <message>
         <source>Stop</source>
-        <translation type="unfinished"></translation>
+        <translation>Stöðva</translation>
     </message>
     <message>
         <source>Stopped. The last position stays on the emulator.</source>
-        <translation type="unfinished"></translation>
+        <translation>Stöðvað. Síðasta staðsetning verður áfram á herminum.</translation>
     </message>
     <message>
         <source>The emulator does not report its position, so the position before playback is unknown and is not restored. Set one in the preset&apos;s GPS field afterwards if you need it.</source>
-        <translation type="unfinished"></translation>
+        <translation>Hermirinn tilkynnir ekki staðsetningu sína, svo staðsetningin fyrir spilun er óþekkt og verður ekki endurheimt. Stilltu hana eftir á í GPS-reit forstillingarinnar ef þú þarft.</translation>
     </message>
     <message>
         <source>point %1 of %2</source>
-        <translation type="unfinished"></translation>
+        <translation>punktur %1 af %2</translation>
     </message>
 </context>
 <context>
     <name>HandoffBanner</name>
     <message>
         <source>%1 · an agent is waiting for you</source>
-        <translation type="unfinished"></translation>
+        <translation>%1 · fulltrúi bíður eftir þér</translation>
     </message>
     <message>
         <source>%1 · an agent is waiting for you (%2 more)</source>
-        <translation type="unfinished"></translation>
+        <translation>%1 · fulltrúi bíður eftir þér (%2 til viðbótar)</translation>
     </message>
     <message>
         <source>Cancel</source>
-        <translation type="unfinished"></translation>
+        <translation>Hætta við</translation>
     </message>
     <message>
         <source>Do it on the device itself. Tomacco never asks for your passcode or password.</source>
-        <translation type="unfinished"></translation>
+        <translation>Gerðu það á tækinu sjálfu. Tomacco biður aldrei um aðgangskóðann eða lykilorðið þitt.</translation>
     </message>
     <message>
         <source>Done</source>
-        <translation type="unfinished"></translation>
+        <translation>Lokið</translation>
     </message>
     <message>
         <source>Done: I did it on the device</source>
-        <translation type="unfinished"></translation>
+        <translation>Lokið: ég gerði það á tækinu</translation>
     </message>
 </context>
 <context>
     <name>HandoffModel</name>
     <message>
         <source>Face ID or Touch ID</source>
-        <translation type="unfinished"></translation>
+        <translation>Face ID eða Touch ID</translation>
     </message>
     <message>
         <source>Passcode</source>
-        <translation type="unfinished"></translation>
+        <translation>Aðgangskóði</translation>
     </message>
     <message>
         <source>Permission</source>
-        <translation type="unfinished"></translation>
+        <translation>Heimild</translation>
     </message>
     <message>
         <source>Purchase</source>
-        <translation type="unfinished"></translation>
+        <translation>Kaup</translation>
     </message>
     <message>
         <source>Sign-in</source>
-        <translation type="unfinished"></translation>
+        <translation>Innskráning</translation>
     </message>
     <message>
         <source>Your turn on the device</source>
-        <translation type="unfinished"></translation>
+        <translation>Þín röð á tækinu</translation>
     </message>
 </context>
 <context>
     <name>MobileNav</name>
     <message>
         <source>Ctrl</source>
-        <translation type="unfinished"></translation>
+        <translation>Ctrl</translation>
     </message>
     <message>
         <source>More</source>
         <comment>navigation</comment>
-        <translation type="unfinished"></translation>
+        <translation>Meira</translation>
     </message>
 </context>
 <context>
     <name>AgentClientDialog</name>
     <message>
         <source>Connect your coding agent</source>
-        <translation type="unfinished"></translation>
+        <translation>Tengdu forritunarfulltrúann þinn</translation>
     </message>
     <message>
         <source>Done</source>
-        <translation type="unfinished"></translation>
+        <translation>Lokið</translation>
     </message>
     <message>
         <source>Pick your agent. Tomacco shows whether it is connected and the exact setting it reads.</source>
-        <translation type="unfinished"></translation>
+        <translation>Veldu fulltrúann þinn. Tomacco sýnir hvort hann er tengdur og nákvæmlega hvaða stillingu hann les.</translation>
     </message>
 </context>
 <context>
     <name>AgentClientPicker</name>
     <message>
         <source>%1 is not installed here. Install it first, or copy the text for another computer.</source>
-        <translation type="unfinished"></translation>
+        <translation>%1 er ekki uppsett hér. Settu það upp fyrst eða afritaðu textann fyrir aðra tölvu.</translation>
     </message>
     <message>
         <source>%1 starts Tomacco when it needs it. Nothing to do.</source>
-        <translation type="unfinished"></translation>
+        <translation>%1 ræsir Tomacco þegar þörf er á. Ekkert þarf að gera.</translation>
     </message>
     <message>
         <source>Add it by hand</source>
         <comment>agent client</comment>
-        <translation type="unfinished"></translation>
+        <translation>Bæta við handvirkt</translation>
     </message>
     <message>
         <source>Add this to %1:</source>
-        <translation type="unfinished"></translation>
+        <translation>Bættu þessu við %1:</translation>
     </message>
     <message>
         <source>Another entry is in the way</source>
         <comment>agent client</comment>
-        <translation type="unfinished"></translation>
+        <translation>Önnur færsla er fyrir</translation>
     </message>
     <message>
         <source>Check again</source>
-        <translation type="unfinished"></translation>
+        <translation>Athuga aftur</translation>
     </message>
     <message>
         <source>Connect</source>
-        <translation type="unfinished"></translation>
+        <translation>Tengja</translation>
     </message>
     <message>
         <source>Connected</source>
         <comment>agent client</comment>
-        <translation type="unfinished"></translation>
+        <translation>Tengdur</translation>
     </message>
     <message>
         <source>Connected.</source>
-        <translation type="unfinished"></translation>
+        <translation>Tengt.</translation>
     </message>
     <message>
         <source>Connected. The previous file is saved as %1.</source>
-        <translation type="unfinished"></translation>
+        <translation>Tengt. Fyrri skráin er vistuð sem %1.</translation>
     </message>
     <message>
         <source>Connecting…</source>
-        <translation type="unfinished"></translation>
+        <translation>Tengist…</translation>
     </message>
     <message>
         <source>Copied</source>
-        <translation type="unfinished"></translation>
+        <translation>Afritað</translation>
     </message>
     <message>
         <source>Copy command</source>
-        <translation type="unfinished"></translation>
+        <translation>Afrita skipun</translation>
     </message>
     <message>
         <source>Copy text</source>
-        <translation type="unfinished"></translation>
+        <translation>Afrita texta</translation>
     </message>
     <message>
         <source>Left unchanged</source>
         <comment>agent client</comment>
-        <translation type="unfinished"></translation>
+        <translation>Óbreytt</translation>
     </message>
     <message>
         <source>Looking for coding agents…</source>
-        <translation type="unfinished"></translation>
+        <translation>Leitar að forritunarfulltrúum…</translation>
     </message>
     <message>
         <source>Needs an update</source>
         <comment>agent client</comment>
-        <translation type="unfinished"></translation>
+        <translation>Þarf uppfærslu</translation>
     </message>
     <message>
         <source>Not connected</source>
         <comment>agent client</comment>
-        <translation type="unfinished"></translation>
+        <translation>Ekki tengdur</translation>
     </message>
     <message>
         <source>Not found on this computer</source>
         <comment>agent client</comment>
-        <translation type="unfinished"></translation>
+        <translation>Fannst ekki á þessari tölvu</translation>
     </message>
     <message>
         <source>Or run this in a terminal:</source>
-        <translation type="unfinished"></translation>
+        <translation>Eða keyrðu þetta í skipanaskel:</translation>
     </message>
     <message>
         <source>Remove Tomacco</source>
-        <translation type="unfinished"></translation>
+        <translation>Fjarlægja Tomacco</translation>
     </message>
     <message>
         <source>Removed</source>
         <comment>agent client</comment>
-        <translation type="unfinished"></translation>
+        <translation>Fjarlægður</translation>
     </message>
     <message>
         <source>Removes only the entry setup added; the rest of the file stays.</source>
-        <translation type="unfinished"></translation>
+        <translation>Fjarlægir aðeins færsluna sem uppsetningin bætti við; restin af skránni helst.</translation>
     </message>
     <message>
         <source>Setup adds Tomacco to %1&apos;s settings and keeps a backup of the file.</source>
-        <translation type="unfinished"></translation>
+        <translation>Uppsetningin bætir Tomacco við stillingar %1 og heldur öryggisafriti af skránni.</translation>
     </message>
     <message>
         <source>Setup did not report on this agent.</source>
-        <translation type="unfinished"></translation>
+        <translation>Uppsetningin tilkynnti ekkert um þennan fulltrúa.</translation>
     </message>
     <message>
         <source>Setup failed</source>
         <comment>agent client</comment>
-        <translation type="unfinished"></translation>
+        <translation>Uppsetning mistókst</translation>
     </message>
     <message>
         <source>Setup failed.</source>
-        <translation type="unfinished"></translation>
+        <translation>Uppsetning mistókst.</translation>
     </message>
     <message>
         <source>Something else in %1&apos;s settings uses the name. Setup leaves it alone; add Tomacco by hand under another name.</source>
-        <translation type="unfinished"></translation>
+        <translation>Eitthvað annað í stillingum %1 notar nafnið. Uppsetningin lætur það ósnert; bættu Tomacco við handvirkt undir öðru nafni.</translation>
     </message>
     <message>
         <source>The agent list could not be requested.</source>
-        <translation type="unfinished"></translation>
+        <translation>Ekki tókst að sækja lista yfir fulltrúa.</translation>
     </message>
     <message>
         <source>This file is not one Tomacco rewrites. Add the text below yourself.</source>
-        <translation type="unfinished"></translation>
+        <translation>Þetta er ekki skrá sem Tomacco endurskrifar. Bættu textanum hér að neðan við handvirkt.</translation>
     </message>
     <message>
         <source>This version of tomaccoctl cannot list coding agents.</source>
-        <translation type="unfinished"></translation>
+        <translation>Þessi útgáfa af tomaccoctl getur ekki talið upp forritunarfulltrúa.</translation>
     </message>
     <message>
         <source>Tomacco could not tell which settings layout %1 reads. Add the text below yourself, or run setup in a terminal with the version.</source>
-        <translation type="unfinished"></translation>
+        <translation>Tomacco gat ekki greint hvaða uppbyggingu stillinga %1 les. Bættu textanum hér að neðan við handvirkt eða keyrðu uppsetninguna í skipanaskel með útgáfunni.</translation>
     </message>
     <message>
         <source>Tomacco&apos;s entry is switched off in %1. Setup leaves your choice alone; switch it on there.</source>
-        <translation type="unfinished"></translation>
+        <translation>Slökkt er á færslu Tomacco í %1. Uppsetningin virðir val þitt; kveiktu á henni þar.</translation>
     </message>
     <message>
         <source>Tomacco&apos;s entry points to another program or older settings. Update rewrites only that entry and keeps a backup.</source>
-        <translation type="unfinished"></translation>
+        <translation>Færsla Tomacco vísar á annað forrit eða eldri stillingar. Uppfærslan endurskrifar aðeins þá færslu og heldur öryggisafriti.</translation>
     </message>
     <message>
         <source>Tomacco&apos;s entry was removed; the rest of the file is unchanged.</source>
-        <translation type="unfinished"></translation>
+        <translation>Færsla Tomacco var fjarlægð; restin af skránni er óbreytt.</translation>
     </message>
     <message>
         <source>Turned off in its settings</source>
         <comment>agent client</comment>
-        <translation type="unfinished"></translation>
+        <translation>Slökkt í stillingum hans</translation>
     </message>
     <message>
         <source>Update entry</source>
-        <translation type="unfinished"></translation>
+        <translation>Uppfæra færslu</translation>
     </message>
     <message>
         <source>Version unclear</source>
         <comment>agent client</comment>
-        <translation type="unfinished"></translation>
+        <translation>Útgáfa óljós</translation>
     </message>
 </context>
 </TS>

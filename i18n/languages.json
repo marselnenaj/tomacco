@@ -330,7 +330,7 @@
       "zeroDigit": "0",
       "plural": "icelandic",
       "omarchy": true,
-      "complete": false
+      "complete": true
     },
     {
       "code": "it",
