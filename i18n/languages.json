@@ -78,7 +78,7 @@
       "zeroDigit": "0",
       "plural": "english",
       "omarchy": true,
-      "complete": false
+      "complete": true
     },
     {
       "code": "cs",
@@ -134,7 +134,7 @@
       "zeroDigit": "0",
       "plural": "english",
       "omarchy": true,
-      "complete": false
+      "complete": true
     },
     {
       "code": "es",
@@ -246,7 +246,7 @@
       "zeroDigit": "0",
       "plural": "irish",
       "omarchy": true,
-      "complete": false
+      "complete": true
     },
     {
       "code": "he",
@@ -498,7 +498,7 @@
       "zeroDigit": "0",
       "plural": "romanian",
       "omarchy": true,
-      "complete": false
+      "complete": true
     },
     {
       "code": "ru",
@@ -596,7 +596,7 @@
       "zeroDigit": "0",
       "plural": "english",
       "omarchy": true,
-      "complete": false
+      "complete": true
     },
     {
       "code": "ta",
@@ -680,7 +680,7 @@
       "zeroDigit": "0",
       "plural": "english",
       "omarchy": true,
-      "complete": false
+      "complete": true
     },
     {
       "code": "vi",

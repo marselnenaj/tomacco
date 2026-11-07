@@ -1,0 +1,139 @@
+{
+  "package_id": "mixed",
+  "target_locales": [
+    "ro",
+    "ca",
+    "el",
+    "ga",
+    "sw",
+    "uz"
+  ],
+  "model": "claude-opus-5-5",
+  "branch": "finish/languages-mixed",
+  "base": "df0a3531",
+  "base_full": "df0a353bd2bdae96a337920674f5c4e979085647",
+  "source_digest": "3390181968e6",
+  "source_count": 1800,
+  "languages": {
+    "ca": {
+      "finished": 1800,
+      "unfinished": 0,
+      "stale": 0,
+      "problems": [],
+      "plural_rule": "english",
+      "plural_forms": 2,
+      "menu_entry": "6/6",
+      "registry_complete": true,
+      "status": "complete",
+      "suspicious": [
+        "NativeWorkspace: 'Claude Code Codex Gemini Cursor VS Code Zed OpenCode Grok He'"
+      ]
+    },
+    "el": {
+      "finished": 1800,
+      "unfinished": 0,
+      "stale": 0,
+      "problems": [],
+      "plural_rule": "english",
+      "plural_forms": 2,
+      "menu_entry": "6/6",
+      "registry_complete": true,
+      "status": "complete",
+      "suspicious": [
+        "NativeWorkspace: 'Claude Code Codex Gemini Cursor VS Code Zed OpenCode Grok He'"
+      ]
+    },
+    "ga": {
+      "finished": 1800,
+      "unfinished": 0,
+      "stale": 0,
+      "problems": [],
+      "plural_rule": "irish",
+      "plural_forms": 3,
+      "menu_entry": "6/6",
+      "registry_complete": true,
+      "status": "complete",
+      "suspicious": [
+        "NativeWorkspace: 'Claude Code Codex Gemini Cursor VS Code Zed OpenCode Grok He'"
+      ]
+    },
+    "ro": {
+      "finished": 1800,
+      "unfinished": 0,
+      "stale": 0,
+      "problems": [],
+      "plural_rule": "romanian",
+      "plural_forms": 3,
+      "menu_entry": "6/6",
+      "registry_complete": true,
+      "status": "complete",
+      "suspicious": [
+        "NativeWorkspace: 'Claude Code Codex Gemini Cursor VS Code Zed OpenCode Grok He'"
+      ]
+    },
+    "sw": {
+      "finished": 1800,
+      "unfinished": 0,
+      "stale": 0,
+      "problems": [],
+      "plural_rule": "english",
+      "plural_forms": 2,
+      "menu_entry": "6/6",
+      "registry_complete": true,
+      "status": "complete",
+      "suspicious": [
+        "NativeWorkspace: 'Claude Code Codex Gemini Cursor VS Code Zed OpenCode Grok He'"
+      ]
+    },
+    "uz": {
+      "finished": 1800,
+      "unfinished": 0,
+      "stale": 0,
+      "problems": [],
+      "plural_rule": "english",
+      "plural_forms": 2,
+      "menu_entry": "6/6",
+      "registry_complete": true,
+      "status": "complete",
+      "suspicious": [
+        "NativeWorkspace: 'Claude Code Codex Gemini Cursor VS Code Zed OpenCode Grok He'"
+      ]
+    }
+  },
+  "suspicious_review": [
+    "All six: NativeWorkspace agent-client name list (\"Claude Code Codex Gemini ... MCP\") is intentionally identical to English: product/tool names only; same entry is flagged in every previously completed locale.",
+    "uz: DemoWorkspace \"MP4 video (*.mp4)\" was flagged as identical; reworded to native \"MP4 videosi (*.mp4)\" (commit 6ca7e90).",
+    "Context review: DeviceWindow \"Back\" (index 293) is the navigation back button (qml/DeviceWindow.qml:160), first translated as device rear in ro/ca/el; corrected to Inapoi/Enrere/Piso in 7f53687.",
+    "ga (Irish, Qt rule irish = 3 forms: 1 / 2 / other): forms 1 and 2 use lenition (e.g. %n mhunla), other uses the unmutated noun; Qt does not distinguish 3-6 (lenition) and 7-10 (eclipsis), so counts 3-10 read with the base form, a known limitation of the 3-form rule.",
+    "ro (Qt rule romanian = 3 forms): one / few (0, 2-19, x01-x19) / other with \"de\" (e.g. %n de linii), verified against tomacco_i18n.plural_index.",
+    "sw/uz: nouns do not change after numerals in uz (\"%n ta ...\"); sw uses class agreement (mstari/mistari, kazi inaendelea/zinaendelea).",
+    "uz uses Latin script with U+02BB (oʻ, gʻ) and U+02BC tutuq belgisi; character scan of all six catalogs found no stray letters outside each language alphabet after fixing one Catalan typo (guinyada)."
+  ],
+  "commits": [
+    "6ca7e90 i18n: uz — native wording for MP4 video file filter",
+    "8dd918c i18n: complete uz (all current source texts, menu entry, registry complete)",
+    "3f5f5c2 i18n: complete sw (all current source texts, menu entry, registry complete)",
+    "7f53687 i18n: complete ga (all current source texts, menu entry, registry complete); fix navigation Back in ro/ca/el, Catalan yaw term",
+    "6262444 i18n: complete el (all current source texts, menu entry, registry complete)",
+    "dfcf34b i18n: complete ca (all current source texts, menu entry, registry complete)",
+    "a7ec046 i18n: complete ro (all current source texts, menu entry, registry complete)"
+  ],
+  "tests": {
+    "strict_i18n": "PYTHONPATH=.:tools:tests/python TMPDIR=/tmp python3 -m unittest tests/python/test_i18n.py -> Ran 18 tests, OK (after every language commit and at HEAD)",
+    "apply_checks": "every tranche applied through tools/i18n_catalog.py apply via .scratch/tools/apply_multi.py with digest 3390181968e6: 0 rejected lines (placeholders, plural counts, mark-up, line breaks, whitespace)",
+    "qm_readback": "tools/ts2qm.py compiled each of ro, ca, el, ga, sw, uz into a temp dir; tomacco_i18n.read_qm read back 1800/1800 messages identical to the finished .ts forms; numerus rules equal PLURAL_RULES and valid_numerus_rules() True",
+    "lrelease": "NOT RUN: no lrelease / lrelease6 / lrelease-qt6 on this host (qt6-tools absent); lrelease parity remains for the integration build"
+  },
+  "completed": [
+    "ro",
+    "ca",
+    "el",
+    "ga",
+    "sw",
+    "uz"
+  ],
+  "remaining": {},
+  "scope_preserved": "only i18n/tomacco_{ro,ca,el,ga,sw,uz}.ts, i18n/languages.json complete flags, i18n/COVERAGE.md and the desktop menu entry changed vs df0a353; other locales untouched (unassigned catalogs still 0/1800)",
+  "boundary": "Translations cover the frozen 1800-text baseline (digest 3390181968e6). Any UI strings added after df0a353/4c549a1 are not included; root integration must re-sync catalogs (tools/i18n_catalog.py sync) and translate the final UI delta for these six locales. Font/RTL/layout rendering on devices is not verified by catalog tests.",
+  "next_step": "Root: merge finish/languages-mixed semantically (catalogs per file, languages.json complete flags for ro/ca/el/ga/sw/uz, desktop entry keys, regenerate COVERAGE.md), then translate the final UI delta for these locales and run lrelease parity in the Qt build."
+}

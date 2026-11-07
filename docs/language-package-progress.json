@@ -30,6 +30,23 @@
       "conflicts_resolved": [
         "docs/language-package-progress.json"
       ],
+      "catalogs_1800_complete_verified": true,
+      "merge_commit": "db35e869382944355404e530fc451a13a90f1e83"
+    },
+    {
+      "name": "mixed",
+      "head": "ac2754f9489b94e6253099303423d55b55ceb531",
+      "codes": [
+        "ro",
+        "ca",
+        "el",
+        "ga",
+        "sw",
+        "uz"
+      ],
+      "conflicts_resolved": [
+        "docs/language-package-progress.json"
+      ],
       "catalogs_1800_complete_verified": true
     }
   ]
