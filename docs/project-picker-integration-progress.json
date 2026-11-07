@@ -249,5 +249,18 @@
     "No physical device, Pixel, MacBook, iPhone, ADB, SSH or network use. Fixtures are not physical qualification."
   ],
   "final_source_ready": true,
-  "final_source_ready_scope": "All merge, code and catalog issues resolved and verified on fixtures at tested_commit; not a hardware, ARM64, packaging or release qualification."
+  "final_source_ready_scope": "All merge, code and catalog issues resolved and verified on fixtures at tested_commit; not a hardware, ARM64, packaging or release qualification.",
+  "superseded_by": {
+    "note": "This record's evidence stays as it was for its tested_commit 874175c / record 690ac40. Root's qualification of 690ac40 failed one host gate (backend: theProjectChooserListsFoldersAndResolvesTypedPaths under LC_ALL=C.UTF-8, natural order lost in the C locale); the current final source fixes it.",
+    "root_qualification_of_this_record": {
+      "receipt": "/home/maslos/Work/tomacco-project-dialog-20261107/final-verification-pipeline.json",
+      "state": "failed",
+      "source_commit": "690ac40842f9986e838fa6818c9e6816522c4253"
+    },
+    "final_source": {
+      "branch": "fix/project-picker-qualification",
+      "tested_commit": "79017e4702b943197f3718592acf0d24589319ef",
+      "record": "docs/project-picker-qualification-fix-progress.json"
+    }
+  }
 }

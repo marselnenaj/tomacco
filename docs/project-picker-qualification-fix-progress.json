@@ -1,0 +1,109 @@
+{
+  "$comment": "Fix record for the sole red host gate of root's qualification of 690ac40 (merged project picker + PhoneUse candidate): BackendTest::theProjectChooserListsFoldersAndResolvesTypedPaths under LC_ALL=C.UTF-8. Offscreen Qt fixtures with synthetic folders in isolated homes, device/transport helpers trapped. Not a hardware, ARM64, packaging or release qualification.",
+  "date": "2026-11-07",
+  "model": "claude-opus-5-5; Claude Bash sandbox enabled; every command ran in the Harness bubblewrap workspace sandbox (120 s per call)",
+  "workspace": "/home/maslos/Work/tomacco-project-picker-final-20261107",
+  "branch": "fix/project-picker-qualification",
+  "base": "690ac40842f9986e838fa6818c9e6816522c4253",
+  "tested_commit": "79017e4702b943197f3718592acf0d24589319ef",
+  "tested_commit_scope": "Code and tests only: src/backend.cpp (+6 -1) and tests/backend_test.cpp (+56). The final HEAD adds only this record and a superseded_by pointer in docs/project-picker-integration-progress.json (docs-only, no build input).",
+  "failure": {
+    "receipt": "/home/maslos/Work/tomacco-project-dialog-20261107/final-verification-pipeline.json (sha256 0fcb3d0f009f4c818014911a9cfe969e323a05a4dfdfb9d97bf8e04e0b682385; state failed, source_commit 690ac40)",
+    "log": "/home/maslos/Work/tomacco-project-dialog-20261107/final-integrated-tests.log (sha256 8cfc786e699e352030bf02732484976640ca934ebe7f5156d8823123d694ae01)",
+    "result": "13/14 CTest suites passed; backend failed: theProjectChooserListsFoldersAndResolvesTypedPaths, tests/backend_test.cpp:123, 'Compared lists differ at index 1. Actual app10, Expected App9'",
+    "environment": "final_verification_phoneuse.py copies os.environ (LANG=en_US.UTF-8, LC_ALL=C.UTF-8) into the CTest environment; focused worker runs earlier ran in a real locale",
+    "historical_files_unchanged": true
+  },
+  "root_cause": {
+    "qt_mechanism": "Qt 6.12.0 (qt6-base 6.12.0-3, ICU 78.3 backend; libQt6Core links libicui18n.so.78). QCollatorPrivate::isC() is locale.language()==QLocale::C (qcollator_p.h). For the C locale the ICU back-end creates no UCollator and compares plain UTF-16 code units with the case setting only: numeric mode is ignored. QLocale(\"C.UTF-8\") and QLocale(\"POSIX\") are QLocale::C too.",
+    "default_locale": "QCollator() takes QLocale().collation(). Without QLocale::setDefault that is the system collation from LC_ALL / LC_COLLATE / LANG: C under LC_ALL=C, C.UTF-8 or POSIX, and also C under LANG=de_DE.UTF-8 with LC_COLLATE=C. After QLocale::setDefault(x), QCollator() uses x.",
+    "probe": "qa/collprobe/probe.cpp and p2.cpp (untracked, gitignored) printed for each environment: C/C.UTF-8/POSIX order APP1|app1|app10|App9|...|Zebra|Äpfel|... and NFC vs NFD compare -135; en-US/de-DE/sv-SE/ar-AE/ja-JP numeric (App9<app10) with NFC==NFD; all 51 i18n/languages.json formatLocale values parse to a real language (0 to C).",
+    "production": "The app calls Backend::applyLanguage in main.cpp before the UI; it always sets QLocale::setDefault to the interface language's formatLocale (en-US fallback). So the running desktop and phone app sorted naturally even under LC_ALL=C.UTF-8, as root's desktop-ui and phone-routes suites (which go through setLanguage) showed. The defect was a latent fallback gap: folderListing silently lost natural order whenever the process default collation was C (any process or path that did not apply an interface language).",
+    "test": "BackendTest never applies a language, so it inherited the C collation from root's LC_ALL=C.UTF-8: an implicit test locale, which the focused worker runs (real locale) did not expose.",
+    "classification": "Both: an implicitly locale-dependent test plus a real (latent) production fallback defect; fixed in the code, with a locale-bound test that fails on the old code."
+  },
+  "fix": {
+    "code": "src/backend.cpp Backend::folderListing: QCollator collator; if its locale is QLocale::C, setLocale(QLocale(English, UnitedStates)) (the source language and applyLanguage's own fallback, CLDR root order); then numeric mode and case-insensitive as before. Every real locale keeps its own collation, unchanged. Tie-break by code units unchanged.",
+    "comparator": "ICU collation is a total preorder; equal-collating names are ordered by QString operator< (code units), distinct within one directory, so the comparator is a strict weak (in fact total) order and std::stable_sort's result does not depend on readdir order (asserted).",
+    "no_global_side_effects": "No setlocale, no QLocale::setDefault and no environment change in production code; nothing outside folderListing changed.",
+    "backend_limit": "Qt's non-ICU POSIX collator back-end does not support numeric mode in any locale; this host (qt6-base, ICU 78.3) and both portable packages (Qt binaries with ICU 73.2, packaging/portable/Dockerfile and Dockerfile.aarch64) use ICU."
+  },
+  "tests": {
+    "existing_unchanged": "theProjectChooserListsFoldersAndResolvesTypedPaths is unchanged (same assertions, still runs in the process locale, i.e. root's C.UTF-8).",
+    "new": "theProjectChooserOrdersFoldersNaturallyInEveryLocale with 8 rows: C, C.UTF-8, POSIX (English order), en-US, de-DE (Ä beside A), sv-SE (Ä after Z, Ü as Y: own order, not English for all), ar-AE (Arabic script first, Arabic-Indic digits ٢ before ١٠), ja-JP (kana/kanji before Arabic). 17 entries: APP1/app1 case tie, App9/app10, a symlink 'link to app1', U+0308 decomposed and U+00DC composed 'Über' (canonically equal: code-unit tie-break), 'Überlänge العربية', 250-character names ending 2 and 10, Äpfel, Zebra, Arabic and Japanese names. The listing is checked for two creation orders.",
+    "locale_bounding": "Each row sets QLocale::setDefault inside a block with a qScopeGuard that restores the previous default (also on a failing QCOMPARE), then asserts QLocale() and QCollator().locale() equal the values before. The row asserts QCollator() starts from the row's language, so the C rows really exercise Qt's C collation.",
+    "old_code_control": "The exact 690ac40 src/backend.cpp built with the new test: under LANG=en_US.UTF-8 LC_ALL=C.UTF-8 22 passed / 4 failed (the original failure at index 1 'app10' plus new rows C, C.UTF-8, POSIX); under LANG=en_US.UTF-8 23 passed / 3 failed (new rows C, C.UTF-8, POSIX). The real-locale rows pass on the old code too, as intended (unchanged behaviour)."
+  },
+  "environment": {
+    "isolation": "qa/run-isolated.sh (untracked, gitignored) mirrors final_verification_phoneuse.py: env -i; fresh /tmp/tf-qual-* HOME, TOMACCO_HOME, XDG_CONFIG/CACHE/DATA/STATE/RUNTIME, ANDROID_HOME/ANDROID_SDK_ROOT; transport traps for adb fastboot ssh iproxy uxplay scrcpy emulator idevice_id ideviceinfo idevicesyslog go-ios xtool gradle first in PATH (log and exit 97); TMPDIR=/tmp; TOMACCO_UPDATES=off; offscreen software Qt, Basic style, generic theme; QTWEBENGINE_CHROMIUM_FLAGS=--disable-gpu; no QTWEBENGINE_DISABLE_SANDBOX, no inherited DBUS_SESSION_BUS_ADDRESS; dbus-run-session. Only synthetic QTemporaryDir folders and loopback.",
+    "build": "cmake -S . -B build -G Ninja -DBUILD_TESTING=ON -DCMAKE_BUILD_TYPE=Debug -DCARGO_EXECUTABLE=/home/maslos/.cargo/bin/cargo; cmake --build build --target test-backend test-desktop-ui test-phone-routes (CARGO_HOME=/home/maslos/.cargo, RUSTUP_HOME=/home/maslos/.rustup, CARGO_NET_OFFLINE=true), resumed until ninja exit 0; 0 compiler warnings in test-backend. sha256 at the tested commit: test-backend d4d19f31506f40f1a87f7493da56a5d24700d60b45b571b034fa58d53226c8d6, test-desktop-ui be2305ec744a6dc16e2f0f46f907253a1fcb735cfdbfca42f86560668e9b4769, test-phone-routes 41015211c579a283edd85ce43f523d191c01c1a5166d2e5a544dd9bdc9b1f8ca.",
+    "host_locales": "glibc has only C, C.utf8, POSIX and en_US.utf8; Qt reads LANG/LC_* itself, so de_DE/sv_SE/ar_AE/ja_JP environments still select those QLocale system locales (verified by the probe).",
+    "logs_dir": "/home/maslos/Work/tomacco-project-picker-final-20261107/qa/logs (untracked, gitignored)"
+  },
+  "results_at_tested_commit": {
+    "backend_full_suite_locale_matrix": {
+      "command": "qa/backend-matrix.sh tested-79017e4-backend (build/test-backend, all functions, each row in a fresh isolated home)",
+      "rows": {
+        "LANG=en_US.UTF-8 LC_ALL=C.UTF-8 (root's exact locale)": "26 passed, 0 failed, 0 skipped",
+        "LANG=en_US.UTF-8 LC_ALL=C": "26 passed, 0 failed, 0 skipped",
+        "LANG=en_US.UTF-8 LC_ALL=POSIX": "26 passed, 0 failed, 0 skipped",
+        "LANG=C.UTF-8": "26 passed, 0 failed, 0 skipped",
+        "LANG=en_US.UTF-8": "26 passed, 0 failed, 0 skipped",
+        "LANG=de_DE.UTF-8": "26 passed, 0 failed, 0 skipped",
+        "LANG=de_DE.UTF-8 LC_COLLATE=C": "26 passed, 0 failed, 0 skipped",
+        "LANG=sv_SE.UTF-8": "26 passed, 0 failed, 0 skipped",
+        "LANG=ar_AE.UTF-8": "26 passed, 0 failed, 0 skipped",
+        "LANG=ja_JP.UTF-8": "26 passed, 0 failed, 0 skipped"
+      },
+      "logs": "qa/logs/tested-79017e4-backend-*.log",
+      "transport_trap_hits": 0
+    },
+    "ctest_backend_root_locale": "dbus-run-session -- ctest --test-dir build --output-on-failure --parallel 1 -R '^backend$' with LANG=en_US.UTF-8 LC_ALL=C.UTF-8: 100% tests passed out of 1 (qa/logs/tested-79017e4-ctest-backend-root-LC_ALL-C.UTF-8.log)",
+    "locale_restore_order": "test-backend theProjectChooserOrdersFoldersNaturallyInEveryLocale theProjectChooserListsFoldersAndResolvesTypedPaths (new first): 11 passed under LC_ALL=C.UTF-8 and under LANG=de_DE.UTF-8 (qa/logs/tested-79017e4-order-new-then-old-*.log)",
+    "repeat": "-repeat 20 of both chooser functions under LC_ALL=C.UTF-8: 220 PASS, 0 FAIL (qa/logs/tested-79017e4-repeat20-root-LC_ALL-C.UTF-8.log)",
+    "desktop_ui_chooser": {
+      "LANG=en_US.UTF-8 LC_ALL=C.UTF-8": "project_chooser_fits_and_shows_whole_names_at_every_interface_size (100-200 %, 1750x1331 / 1380x970 / 900x640), project_chooser_navigates_chooses_and_cancels (175 %, 200 %), project_chooser_reads_in_german_arabic_and_japanese (de, ar, ja): 22 passed, 0 failed",
+      "LANG=de_DE.UTF-8": "project_chooser_navigates_chooses_and_cancels, project_chooser_reads_in_german_arabic_and_japanese: 7 passed, 0 failed",
+      "logs": "qa/logs/tested-79017e4-desktop-chooser-*.log"
+    },
+    "phone_routes_chooser": {
+      "LANG=en_US.UTF-8 LC_ALL=C.UTF-8": "project_chooser_is_a_phone_sheet_with_touch_targets (360/393/412 at 100-200 %), project_chooser_phone_sheet_reads_translated_and_mirrored (ar-360-200, de-360-200, ja-412-175): 11 passed, 0 failed",
+      "LANG=ar_AE.UTF-8": "same functions: 11 passed, 0 failed",
+      "logs": "qa/logs/tested-79017e4-phone-chooser-*.log"
+    },
+    "transport_traps_gui": "Each desktop/phone run logged 4 trapped calls (xtool, adb, idevice_id: the app's toolchain probes at start); every one hit the trap script (exit 97), nothing reached a real tool, device or network. Listed at the end of each log."
+  },
+  "languages": {
+    "command": "python3 tools/i18n_catalog.py report --json",
+    "texts": 1889,
+    "digest": "5d7260fd1b72",
+    "digest_unchanged": true,
+    "complete": "50 of 50, 0 unfinished, 0 problems",
+    "catalogs": 51,
+    "english": "21 entries: 12 plurals, 9 ordinary",
+    "new_translatable_texts": 0,
+    "gate": "cd tests/python; python3 -m unittest test_i18n test_docs_consistency test_mobile_parity (PYTHONPATH=.:tools:tests/python, LANG=en_US.UTF-8 LC_ALL=C.UTF-8, isolated): Ran 30 tests, OK; re-run at the final docs HEAD (qa/logs/final-head-language-gate-root-LC_ALL-C.UTF-8.log)"
+  },
+  "preserved": {
+    "changed_files_since_base": ["src/backend.cpp", "tests/backend_test.cpp", "docs/project-picker-qualification-fix-progress.json (new)", "docs/project-picker-integration-progress.json (superseded_by pointer added, existing keys unchanged)"],
+    "unchanged_since_base": "native/, Cargo.toml, Cargo.lock, build.rs, assets/, tools/, tests/python/, i18n/, qml/ (ProjectFolderDialog with its accessibility and touch behaviour), all other src/ and tests/ files, all other records and historical logs",
+    "rust_core": "byte-identical to 690ac40 and to root's ARM64-qualified d0a8d53 inputs (no native/, Cargo or build.rs change)",
+    "four_backend_features": "untouched: only the collator setup inside Backend::folderListing changed"
+  },
+  "not_run": [
+    "The other 13 CTest suites (demo-renderer, demo-workspace, environment-panel, handoff-banner, agent-client-picker, mobile-nav, mobile-row, studio-button, desktop-ui (whole), phone-routes (whole), native-display, control-plane, rust-core): passed in root's run of 690ac40; their inputs are unchanged except that desktop-ui and phone-routes compile src/backend.cpp, whose chooser cases were run above. Root runs the full host CTest once from the final HEAD.",
+    "ARM64 build, package verification, installation: root's"
+  ],
+  "limitations": [
+    "Collation orders asserted for ar/ja/sv/de are CLDR rules (Arabic script reordering, Japanese Latin-Kana-Han order, Swedish Ä/Ü); verified with ICU 78.3 here. The portable packages bundle ICU 73.2, which has the same CLDR tailorings for these locales but was not run here (ARM64 is root's).",
+    "Qt's non-ICU POSIX collator would not provide numeric order in any locale; no Tomacco build uses it.",
+    "Offscreen software Qt in isolated sessions; no live compositor, physical device, Pixel, MacBook, iPhone, ADB, SSH or outside network use."
+  ],
+  "resume_for_root": {
+    "source": "branch fix/project-picker-qualification, final HEAD (docs-only on top of tested_commit 79017e4)",
+    "steps": "Re-run the failed final qualification unchanged (same LANG=en_US.UTF-8 LC_ALL=C.UTF-8 environment, no locale forcing): language gate, host configure/build, dbus-run-session ctest --parallel 1 (expect 14/14), then the ARM64 build and container verify.",
+    "expected_backend": "BackendTest Totals: 26 passed, 0 failed, 0 skipped (root's 690ac40 run: 17 passed, 1 failed of 18; the new function adds 8 data rows)"
+  },
+  "final_source_ready": true,
+  "final_source_ready_scope": "The sole failing host gate is fixed and verified on fixtures at tested_commit in root's exact locale and the app locales above; not a hardware, ARM64, packaging or release qualification."
+}
