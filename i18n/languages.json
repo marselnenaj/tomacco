@@ -554,7 +554,7 @@
       "zeroDigit": "0",
       "plural": "slovenian",
       "omarchy": true,
-      "complete": false
+      "complete": true
     },
     {
       "code": "sr",
