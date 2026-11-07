@@ -820,1235 +820,1235 @@ A modell határozza meg a kijelzőt és a keretet. Az Android a kiválasztott re
     </message>
     <message>
         <source>Star White</source>
-        <translation type="unfinished"></translation>
+        <translation>Csillagfehér</translation>
     </message>
     <message>
         <source>Teal</source>
-        <translation type="unfinished"></translation>
+        <translation>Kékeszöld</translation>
     </message>
     <message>
         <source>Ultramarine</source>
-        <translation type="unfinished"></translation>
+        <translation>Ultramarin</translation>
     </message>
     <message>
         <source>White</source>
-        <translation type="unfinished"></translation>
+        <translation>Fehér</translation>
     </message>
 </context>
 <context>
     <name>CommandPalette</name>
     <message>
         <source>No matching views or tools</source>
-        <translation type="unfinished"></translation>
+        <translation>Nincs egyező nézet vagy eszköz</translation>
     </message>
     <message>
         <source>View</source>
-        <translation type="unfinished"></translation>
+        <translation>Nézet</translation>
     </message>
     <message>
         <source>Search views, commands or tools…</source>
-        <translation type="unfinished"></translation>
+        <translation>Nézetek, parancsok vagy eszközök keresése…</translation>
     </message>
     <message>
         <source>Ctrl</source>
-        <translation type="unfinished"></translation>
+        <translation>Ctrl</translation>
     </message>
     <message>
         <source>Recent</source>
-        <translation type="unfinished"></translation>
+        <translation>Legutóbbi</translation>
     </message>
     <message>
         <source>↑ ↓  Select     PgUp PgDn  Page     ↵  Open     Esc  Close</source>
-        <translation type="unfinished"></translation>
+        <translation>↑ ↓  Kiválasztás     PgUp PgDn  Lap     ↵  Megnyitás     Esc  Bezárás</translation>
     </message>
 </context>
 <context>
     <name>Control</name>
     <message>
         <source>Invalid frame response</source>
-        <translation type="unfinished"></translation>
+        <translation>Érvénytelen képkockaválasz</translation>
     </message>
     <message>
         <source>Invalid response from the control plane</source>
-        <translation type="unfinished"></translation>
+        <translation>Érvénytelen válasz a vezérlősíktól</translation>
     </message>
     <message>
         <source>Invalid response from the frame control</source>
-        <translation type="unfinished"></translation>
+        <translation>Érvénytelen válasz a képkockavezérléstől</translation>
     </message>
     <message>
         <source>Invalid session name</source>
-        <translation type="unfinished"></translation>
+        <translation>Érvénytelen munkamenetnév</translation>
     </message>
     <message>
         <source>Tomacco is already open in another window; agents keep controlling that one. To control this window too, start it with --preview-session and another name.</source>
-        <translation type="unfinished"></translation>
+        <translation>A Tomacco már meg van nyitva egy másik ablakban; az ügynökök továbbra is azt vezérlik. Ha ezt az ablakot is vezérelni szeretnéd, indítsd a --preview-session kapcsolóval és egy másik névvel.</translation>
     </message>
     <message>
         <source>Tomacco&apos;s control program (tomaccoctl) could not be started. Reinstall Tomacco or run install.py again.</source>
-        <translation type="unfinished"></translation>
+        <translation>A Tomacco vezérlőprogramja (tomaccoctl) nem indult el. Telepítsd újra a Tomaccót, vagy futtasd újra az install.py-t.</translation>
     </message>
     <message>
         <source>Tomacco&apos;s control program (tomaccoctl) is not working: %1</source>
-        <translation type="unfinished"></translation>
+        <translation>A Tomacco vezérlőprogramja (tomaccoctl) nem működik: %1</translation>
     </message>
     <message>
         <source>Tomacco&apos;s control program (tomaccoctl) was not found. Reinstall Tomacco or run install.py again.</source>
-        <translation type="unfinished"></translation>
+        <translation>A Tomacco vezérlőprogramja (tomaccoctl) nem található. Telepítsd újra a Tomaccót, vagy futtasd újra az install.py-t.</translation>
     </message>
     <message>
         <source>The agent socket directory belongs to another user</source>
-        <translation type="unfinished"></translation>
+        <translation>Az ügynök-socket könyvtára egy másik felhasználóé</translation>
     </message>
     <message>
         <source>The agent socket directory could not be created</source>
-        <translation type="unfinished"></translation>
+        <translation>Az ügynök-socket könyvtára nem hozható létre</translation>
     </message>
     <message>
         <source>The control program ended unexpectedly</source>
-        <translation type="unfinished"></translation>
+        <translation>A vezérlőprogram váratlanul leállt</translation>
     </message>
     <message>
         <source>The control program failed: %1</source>
-        <translation type="unfinished"></translation>
+        <translation>A vezérlőprogram hibája: %1</translation>
     </message>
     <message>
         <source>The frame control could not be initialized</source>
-        <translation type="unfinished"></translation>
+        <translation>A képkockavezérlés nem inicializálható</translation>
     </message>
     <message>
         <source>The frame control did not respond in time</source>
-        <translation type="unfinished"></translation>
+        <translation>A képkockavezérlés nem válaszolt időben</translation>
     </message>
     <message>
         <source>The frame control ended</source>
-        <translation type="unfinished"></translation>
+        <translation>A képkockavezérlés leállt</translation>
     </message>
     <message>
         <source>The frame control is not reachable</source>
-        <translation type="unfinished"></translation>
+        <translation>A képkockavezérlés nem érhető el</translation>
     </message>
     <message>
         <source>The frame request could not be sent</source>
-        <translation type="unfinished"></translation>
+        <translation>A képkockakérés nem küldhető el</translation>
     </message>
     <message>
         <source>The frame response is too large</source>
-        <translation type="unfinished"></translation>
+        <translation>A képkockaválasz túl nagy</translation>
     </message>
     <message>
         <source>The frame response matches no request</source>
-        <translation type="unfinished"></translation>
+        <translation>A képkockaválasz egyetlen kéréshez sem tartozik</translation>
     </message>
     <message>
         <source>Too many concurrent requests</source>
-        <translation type="unfinished"></translation>
+        <translation>Túl sok egyidejű kérés</translation>
     </message>
     <message>
         <source>tomaccoctl could not be started (%1). Reinstall Tomacco or run install.py again.</source>
-        <translation type="unfinished"></translation>
+        <translation>A tomaccoctl nem indult el (%1). Telepítsd újra a Tomaccót, vagy futtasd újra az install.py-t.</translation>
     </message>
 </context>
 <context>
     <name>DebugWorkspace</name>
     <message>
         <source>All files (*)</source>
-        <translation type="unfinished"></translation>
+        <translation>Minden fájl (*)</translation>
     </message>
     <message>
         <source>Android libraries (*.so)</source>
-        <translation type="unfinished"></translation>
+        <translation>Android-könyvtárak (*.so)</translation>
     </message>
     <message>
         <source>Application ID · e.g. dev.example.app</source>
-        <translation type="unfinished"></translation>
+        <translation>Alkalmazásazonosító · pl. dev.example.app</translation>
     </message>
     <message>
         <source>Breakpoints</source>
-        <translation type="unfinished"></translation>
+        <translation>Töréspontok</translation>
     </message>
     <message>
         <source>CALL STACK</source>
-        <translation type="unfinished"></translation>
+        <translation>HÍVÁSI VEREM</translation>
     </message>
     <message>
         <source>Choose Android device</source>
-        <translation type="unfinished"></translation>
+        <translation>Android-eszköz kiválasztása</translation>
     </message>
     <message>
         <source>Choose debug program</source>
-        <translation type="unfinished"></translation>
+        <translation>Hibakeresendő program kiválasztása</translation>
     </message>
     <message>
         <source>Choose file</source>
-        <translation type="unfinished"></translation>
+        <translation>Fájl kiválasztása</translation>
     </message>
     <message>
         <source>Choose library with debug symbols</source>
-        <translation type="unfinished"></translation>
+        <translation>Hibakeresési szimbólumokat tartalmazó könyvtár kiválasztása</translation>
     </message>
     <message>
         <source>Connect</source>
-        <translation type="unfinished"></translation>
+        <translation>Csatlakozás</translation>
     </message>
     <message>
         <source>Connecting…</source>
-        <translation type="unfinished"></translation>
+        <translation>Csatlakozás…</translation>
     </message>
     <message>
         <source>Continue</source>
-        <translation type="unfinished"></translation>
+        <translation>Folytatás</translation>
     </message>
     <message>
         <source>Debugger exited</source>
-        <translation type="unfinished"></translation>
+        <translation>A hibakereső kilépett</translation>
     </message>
     <message>
         <source>Debugger request failed</source>
-        <translation type="unfinished"></translation>
+        <translation>A hibakereső kérése sikertelen</translation>
     </message>
     <message>
         <source>Disconnect</source>
-        <translation type="unfinished"></translation>
+        <translation>Leválasztás</translation>
     </message>
     <message>
         <source>Disconnected</source>
-        <translation type="unfinished"></translation>
+        <translation>Leválasztva</translation>
     </message>
     <message>
         <source>Ended</source>
-        <translation type="unfinished"></translation>
+        <translation>Befejeződött</translation>
     </message>
     <message>
         <source>Enter valid line numbers</source>
-        <translation type="unfinished"></translation>
+        <translation>Adj meg érvényes sorszámokat</translation>
     </message>
     <message>
         <source>Evaluate expression</source>
-        <translation type="unfinished"></translation>
+        <translation>Kifejezés kiértékelése</translation>
     </message>
     <message>
         <source>Evaluate the expression in the selected frame</source>
-        <translation type="unfinished"></translation>
+        <translation>A kifejezés kiértékelése a kiválasztott keretben</translation>
     </message>
     <message>
         <source>Executable with debug symbols</source>
-        <translation type="unfinished"></translation>
+        <translation>Futtatható fájl hibakeresési szimbólumokkal</translation>
     </message>
     <message>
         <source>Hide events</source>
-        <translation type="unfinished"></translation>
+        <translation>Események elrejtése</translation>
     </message>
     <message>
         <source>Launch app</source>
-        <translation type="unfinished"></translation>
+        <translation>Alkalmazás indítása</translation>
     </message>
     <message>
         <source>Launches the app if it is not running yet.</source>
-        <translation type="unfinished"></translation>
+        <translation>Elindítja az alkalmazást, ha még nem fut.</translation>
     </message>
     <message>
         <source>Library with debug symbols (.so)</source>
-        <translation type="unfinished"></translation>
+        <translation>Könyvtár hibakeresési szimbólumokkal (.so)</translation>
     </message>
     <message>
         <source>Line %1</source>
-        <translation type="unfinished"></translation>
+        <translation>%1. sor</translation>
     </message>
     <message>
         <source>Lines: 12, 24</source>
-        <translation type="unfinished"></translation>
+        <translation>Sorok: 12, 24</translation>
     </message>
     <message>
         <source>Locals</source>
-        <translation type="unfinished"></translation>
+        <translation>Helyi változók</translation>
     </message>
     <message>
         <source>No debugger events yet.</source>
-        <translation type="unfinished"></translation>
+        <translation>Még nincsenek hibakereső-események.</translation>
     </message>
     <message>
         <source>No paused thread yet</source>
-        <translation type="unfinished"></translation>
+        <translation>Még nincs szüneteltetett szál</translation>
     </message>
     <message>
         <source>No session</source>
-        <translation type="unfinished"></translation>
+        <translation>Nincs munkamenet</translation>
     </message>
     <message>
         <source>Open existing session</source>
-        <translation type="unfinished"></translation>
+        <translation>Meglévő munkamenet megnyitása</translation>
     </message>
     <message>
         <source>Open source</source>
-        <translation type="unfinished"></translation>
+        <translation>Forrás megnyitása</translation>
     </message>
     <message>
         <source>Paused</source>
-        <translation type="unfinished"></translation>
+        <translation>Szüneteltetve</translation>
     </message>
     <message>
         <source>Refresh</source>
-        <translation type="unfinished"></translation>
+        <translation>Frissítés</translation>
     </message>
     <message>
         <source>Restarts the app and waits for the Java debugger.</source>
-        <translation type="unfinished"></translation>
+        <translation>Újraindítja az alkalmazást, és vár a Java-hibakeresőre.</translation>
     </message>
     <message>
         <source>Run the next source line</source>
-        <translation type="unfinished"></translation>
+        <translation>A következő forrássor futtatása</translation>
     </message>
     <message>
         <source>Running</source>
-        <translation type="unfinished"></translation>
+        <translation>Fut</translation>
     </message>
     <message>
         <source>Session active</source>
-        <translation type="unfinished"></translation>
+        <translation>Aktív munkamenet</translation>
     </message>
     <message>
         <source>Show events</source>
-        <translation type="unfinished"></translation>
+        <translation>Események megjelenítése</translation>
     </message>
     <message>
         <source>Source file or Java class</source>
-        <translation type="unfinished"></translation>
+        <translation>Forrásfájl vagy Java-osztály</translation>
     </message>
     <message>
         <source>Step in</source>
-        <translation type="unfinished"></translation>
+        <translation>Belépés</translation>
     </message>
     <message>
         <source>Step out</source>
-        <translation type="unfinished"></translation>
+        <translation>Kilépés</translation>
     </message>
     <message>
         <source>Step over</source>
-        <translation type="unfinished"></translation>
+        <translation>Átlépés</translation>
     </message>
     <message>
         <source>VARIABLES</source>
-        <translation type="unfinished"></translation>
+        <translation>VÁLTOZÓK</translation>
     </message>
     <message>
         <source>ended</source>
-        <translation type="unfinished"></translation>
+        <translation>befejeződött</translation>
     </message>
     <message>
         <source>Attach to your app</source>
-        <translation type="unfinished"></translation>
+        <translation>Csatlakozás az alkalmazásodhoz</translation>
     </message>
     <message>
         <source>Needs a debug build and the NDK. The library must match your app and its processor.</source>
-        <translation type="unfinished"></translation>
+        <translation>Debug buildet és NDK-t igényel. A könyvtárnak egyeznie kell az alkalmazásoddal és annak processzorával.</translation>
     </message>
     <message>
         <source>Needs a debug build on a connected phone or emulator.</source>
-        <translation type="unfinished"></translation>
+        <translation>Debug buildet igényel csatlakoztatott telefonon vagy emulátoron.</translation>
     </message>
     <message>
         <source>A program on this computer, inspected with LLDB.</source>
-        <translation type="unfinished"></translation>
+        <translation>Egy program ezen a számítógépen, LLDB-vel vizsgálva.</translation>
     </message>
     <message>
         <source>Take over your agent&apos;s session</source>
-        <translation type="unfinished"></translation>
+        <translation>Az ügynök munkamenetének átvétele</translation>
     </message>
     <message>
         <source>Pause your app or set a breakpoint to see the stack and variables.</source>
-        <translation type="unfinished"></translation>
+        <translation>Szüneteltesd az alkalmazást, vagy állíts be töréspontot a verem és a változók megtekintéséhez.</translation>
     </message>
     <message>
         <source>Attach here, or take over a session your agent started.</source>
-        <translation type="unfinished"></translation>
+        <translation>Csatlakozz itt, vagy vedd át az ügynököd által indított munkamenetet.</translation>
     </message>
 </context>
 <context>
     <name>Device</name>
     <message>
         <source>Device permissions are disabled in this layout preview.</source>
-        <translation type="unfinished"></translation>
+        <translation>Az eszközengedélyek le vannak tiltva ebben az elrendezés-előnézetben.</translation>
     </message>
     <message>
         <source>No connection</source>
-        <translation type="unfinished"></translation>
+        <translation>Nincs kapcsolat</translation>
     </message>
     <message>
         <source>Page not reachable. Is your dev server running?</source>
-        <translation type="unfinished"></translation>
+        <translation>Az oldal nem érhető el. Fut a fejlesztői szervered?</translation>
     </message>
     <message>
         <source>Please open downloads in your browser. Device images can be saved with “Screenshot”.</source>
-        <translation type="unfinished"></translation>
+        <translation>A letöltéseket a böngészőben nyisd meg. Az eszközképek a „Képernyőkép” gombbal menthetők.</translation>
     </message>
     <message>
         <source>Reload</source>
-        <translation type="unfinished"></translation>
+        <translation>Újratöltés</translation>
     </message>
     <message>
         <source>SAFE AREA · PREVIEW</source>
-        <translation type="unfinished"></translation>
+        <translation>BIZTONSÁGOS TERÜLET · ELŐNÉZET</translation>
     </message>
     <message>
         <source>The web view was terminated. Please reload.</source>
-        <translation type="unfinished"></translation>
+        <translation>A webnézet leállt. Töltsd újra.</translation>
     </message>
     <message>
         <source>This preview opens web addresses. Use “Open folder” for local builds.</source>
-        <translation type="unfinished"></translation>
+        <translation>Ez az előnézet webcímeket nyit meg. Helyi buildekhez használd a „Mappa megnyitása” lehetőséget.</translation>
     </message>
 </context>
 <context>
     <name>DeviceWindow</name>
     <message>
         <source>Save and copy a screenshot · Ctrl+Shift+S</source>
-        <translation type="unfinished"></translation>
+        <translation>Képernyőkép mentése és másolása · Ctrl+Shift+S</translation>
     </message>
     <message>
         <source>Back</source>
-        <translation type="unfinished"></translation>
+        <translation>Vissza</translation>
     </message>
     <message>
         <source>Bring back into the workspace</source>
-        <translation type="unfinished"></translation>
+        <translation>Visszahelyezés a munkaterületre</translation>
     </message>
     <message>
         <source>Close device window · the device keeps running</source>
-        <translation type="unfinished"></translation>
+        <translation>Eszközablak bezárása · az eszköz tovább fut</translation>
     </message>
     <message>
         <source>Larger · Ctrl+mouse wheel</source>
-        <translation type="unfinished"></translation>
+        <translation>Nagyobb · Ctrl+egérgörgő</translation>
     </message>
     <message>
         <source>Open in the workspace</source>
-        <translation type="unfinished"></translation>
+        <translation>Megnyitás a munkaterületen</translation>
     </message>
     <message>
         <source>Tomacco – Device</source>
-        <translation type="unfinished"></translation>
+        <translation>Tomacco – Eszköz</translation>
     </message>
     <message>
         <source>Rotate</source>
-        <translation type="unfinished"></translation>
+        <translation>Forgatás</translation>
     </message>
     <message>
         <source>Show the back</source>
-        <translation type="unfinished"></translation>
+        <translation>Hátoldal megjelenítése</translation>
     </message>
     <message>
         <source>Show the front</source>
-        <translation type="unfinished"></translation>
+        <translation>Előlap megjelenítése</translation>
     </message>
     <message>
         <source>Side button</source>
-        <translation type="unfinished"></translation>
+        <translation>Oldalsó gomb</translation>
     </message>
     <message>
         <source>Side button · wake or lock the display</source>
-        <translation type="unfinished"></translation>
+        <translation>Oldalsó gomb · kijelző ébresztése vagy zárolása</translation>
     </message>
     <message>
         <source>Smaller · Ctrl+mouse wheel</source>
-        <translation type="unfinished"></translation>
+        <translation>Kisebb · Ctrl+egérgörgő</translation>
     </message>
     <message>
         <source>Stop keeping this window above the others</source>
-        <translation type="unfinished"></translation>
+        <translation>Ne legyen ez az ablak a többi felett</translation>
     </message>
     <message>
         <source>Keep this window above the others</source>
-        <translation type="unfinished"></translation>
+        <translation>Ez az ablak maradjon a többi felett</translation>
     </message>
 </context>
 <context>
     <name>FileWorkspace</name>
     <message>
         <source>Choose a file in the project tree</source>
-        <translation type="unfinished"></translation>
+        <translation>Válassz egy fájlt a projektfában</translation>
     </message>
     <message>
         <source>Close file</source>
-        <translation type="unfinished"></translation>
+        <translation>Fájl bezárása</translation>
     </message>
     <message>
         <source>Discard unsaved changes?</source>
-        <translation type="unfinished"></translation>
+        <translation>Elveted a nem mentett módosításokat?</translation>
     </message>
     <message>
         <source>Folder</source>
-        <translation type="unfinished"></translation>
+        <translation>Mappa</translation>
     </message>
     <message>
         <source>Hidden</source>
-        <translation type="unfinished"></translation>
+        <translation>Rejtett</translation>
     </message>
     <message>
         <source>Line %1 · UTF-8 · changes are checked on save</source>
-        <translation type="unfinished"></translation>
+        <translation>%1. sor · UTF-8 · a módosítások mentéskor ellenőrződnek</translation>
     </message>
     <message>
         <source>More matches available; narrow the search term.</source>
-        <translation type="unfinished"></translation>
+        <translation>További találatok vannak; pontosítsd a keresőkifejezést.</translation>
     </message>
     <message>
         <source>New file</source>
-        <translation type="unfinished"></translation>
+        <translation>Új fájl</translation>
     </message>
     <message>
         <source>New folder</source>
-        <translation type="unfinished"></translation>
+        <translation>Új mappa</translation>
     </message>
     <message>
         <source>Open a project first</source>
-        <translation type="unfinished"></translation>
+        <translation>Előbb nyiss meg egy projektet</translation>
     </message>
     <message>
         <source>Path relative to the project, e.g. lib/example.dart</source>
-        <translation type="unfinished"></translation>
+        <translation>A projekthez viszonyított útvonal, pl. lib/example.dart</translation>
     </message>
     <message>
         <source>Reload</source>
-        <translation type="unfinished"></translation>
+        <translation>Újratöltés</translation>
     </message>
     <message>
         <source>Reload files</source>
-        <translation type="unfinished"></translation>
+        <translation>Fájlok újratöltése</translation>
     </message>
     <message>
         <source>Save the file first or discard it with Reload.</source>
-        <translation type="unfinished"></translation>
+        <translation>Előbb mentsd a fájlt, vagy vesd el a módosításokat az Újratöltéssel.</translation>
     </message>
     <message>
         <source>Save · Ctrl+S</source>
-        <translation type="unfinished"></translation>
+        <translation>Mentés · Ctrl+S</translation>
     </message>
     <message>
         <source>Saved · %1</source>
-        <translation type="unfinished"></translation>
+        <translation>Mentve · %1</translation>
     </message>
     <message>
         <source>Search source code…</source>
-        <translation type="unfinished"></translation>
+        <translation>Keresés a forráskódban…</translation>
     </message>
     <message>
         <source>The file is read again from disk.</source>
-        <translation type="unfinished"></translation>
+        <translation>A fájl újra beolvasásra kerül a lemezről.</translation>
     </message>
     <message>
         <source>The link leads outside this project.</source>
-        <translation type="unfinished"></translation>
+        <translation>A hivatkozás a projekten kívülre mutat.</translation>
     </message>
     <message>
         <source>This folder contains more than 2,000 entries. Use search for targeted results.</source>
-        <translation type="unfinished"></translation>
+        <translation>Ez a mappa több mint 2000 bejegyzést tartalmaz. Célzott találatokhoz használd a keresést.</translation>
     </message>
     <message>
         <source>Source of %1</source>
-        <translation type="unfinished"></translation>
+        <translation>%1 forrása</translation>
     </message>
     <message>
         <source>Source editor</source>
-        <translation type="unfinished"></translation>
+        <translation>Forráskód-szerkesztő</translation>
     </message>
     <message>
         <source>Search results</source>
-        <translation type="unfinished"></translation>
+        <translation>Keresési találatok</translation>
     </message>
     <message>
         <source>Project files</source>
-        <translation type="unfinished"></translation>
+        <translation>Projektfájlok</translation>
     </message>
     <message>
         <source>Choose folder</source>
-        <translation type="unfinished"></translation>
+        <translation>Mappa kiválasztása</translation>
     </message>
 </context>
 <context>
     <name>IosGuestView</name>
     <message>
         <source>Screenshot saved and copied: %1</source>
-        <translation type="unfinished"></translation>
+        <translation>Képernyőkép mentve és másolva: %1</translation>
     </message>
     <message>
         <source>%1 · outcome unclear, not retried automatically</source>
-        <translation type="unfinished"></translation>
+        <translation>%1 · az eredmény bizonytalan, nincs automatikus újrapróbálkozás</translation>
     </message>
     <message numerus="yes">
         <source>%n new frame(s)/s</source>
-        <translation type="unfinished">
-            <numerusform></numerusform>
+        <translation>
+            <numerusform>%n új képkocka/s</numerusform>
         </translation>
     </message>
     <message>
         <source>App switcher</source>
-        <translation type="unfinished"></translation>
+        <translation>Alkalmazásváltó</translation>
     </message>
     <message>
         <source>Back</source>
-        <translation type="unfinished"></translation>
+        <translation>Vissza</translation>
     </message>
     <message>
         <source>Capture saved: %1</source>
-        <translation type="unfinished"></translation>
+        <translation>Felvétel mentve: %1</translation>
     </message>
     <message>
         <source>Control Center</source>
-        <translation type="unfinished"></translation>
+        <translation>Vezérlőközpont</translation>
     </message>
     <message>
         <source>Control still busy · input not delivered</source>
-        <translation type="unfinished"></translation>
+        <translation>A vezérlés még foglalt · a bevitel nem lett továbbítva</translation>
     </message>
     <message>
         <source>Detach the virtual iOS device into its own window</source>
-        <translation type="unfinished"></translation>
+        <translation>A virtuális iOS-eszköz leválasztása saját ablakba</translation>
     </message>
     <message>
         <source>Display output unreachable</source>
-        <translation type="unfinished"></translation>
+        <translation>A kijelzőkimenet nem érhető el</translation>
     </message>
     <message>
         <source>Dock</source>
-        <translation type="unfinished"></translation>
+        <translation>Dokk</translation>
     </message>
     <message>
         <source>Edge swipes start on the frame or at the screen&apos;s edge</source>
-        <translation type="unfinished"></translation>
+        <translation>A szélről indított húzások a kereten vagy a képernyő szélén kezdődnek</translation>
     </message>
     <message>
         <source>Home button</source>
-        <translation type="unfinished"></translation>
+        <translation>Kezdőgomb</translation>
     </message>
     <message>
         <source>Home button and swipe up from the bottom edge</source>
-        <translation type="unfinished"></translation>
+        <translation>Kezdőgomb és felfelé húzás az alsó szélről</translation>
     </message>
     <message>
         <source>Input failed</source>
-        <translation type="unfinished"></translation>
+        <translation>A bevitel sikertelen</translation>
     </message>
     <message>
         <source>Input queue full · this input was not sent</source>
-        <translation type="unfinished"></translation>
+        <translation>A beviteli sor megtelt · ez a bevitel nem lett elküldve</translation>
     </message>
     <message>
         <source>Last frame</source>
-        <translation type="unfinished"></translation>
+        <translation>Utolsó képkocka</translation>
     </message>
     <message>
         <source>Live frame · %1</source>
-        <translation type="unfinished"></translation>
+        <translation>Élő képkocka · %1</translation>
     </message>
     <message>
         <source>No running interactive iOS session</source>
-        <translation type="unfinished"></translation>
+        <translation>Nem fut interaktív iOS-munkamenet</translation>
     </message>
     <message>
         <source>Notification Center</source>
-        <translation type="unfinished"></translation>
+        <translation>Értesítési központ</translation>
     </message>
     <message>
         <source>Own window</source>
-        <translation type="unfinished"></translation>
+        <translation>Saját ablak</translation>
     </message>
     <message>
         <source>Real output of the virtual display</source>
-        <translation type="unfinished"></translation>
+        <translation>A virtuális kijelző valódi kimenete</translation>
     </message>
     <message>
         <source>Side button</source>
-        <translation type="unfinished"></translation>
+        <translation>Oldalsó gomb</translation>
     </message>
     <message>
         <source>Still frame</source>
-        <translation type="unfinished"></translation>
+        <translation>Állókép</translation>
     </message>
     <message>
         <source>Swipe down from the top-left edge</source>
-        <translation type="unfinished"></translation>
+        <translation>Húzd le a bal felső szélről</translation>
     </message>
     <message>
         <source>Swipe down from the top-right edge</source>
-        <translation type="unfinished"></translation>
+        <translation>Húzd le a jobb felső szélről</translation>
     </message>
     <message>
         <source>Swipe right from the left edge</source>
-        <translation type="unfinished"></translation>
+        <translation>Húzd jobbra a bal szélről</translation>
     </message>
     <message>
         <source>Swipe up from the bottom edge and pause</source>
-        <translation type="unfinished"></translation>
+        <translation>Húzd fel az alsó szélről, és állj meg</translation>
     </message>
     <message>
         <source>The iOS device is running in its own window</source>
-        <translation type="unfinished"></translation>
+        <translation>Az iOS-eszköz a saját ablakában fut</translation>
     </message>
     <message>
         <source>Virtual iOS device</source>
-        <translation type="unfinished"></translation>
+        <translation>Virtuális iOS-eszköz</translation>
     </message>
     <message>
         <source>Waiting for the display output of iOS…</source>
-        <translation type="unfinished"></translation>
+        <translation>Várakozás az iOS kijelzőkimenetére…</translation>
     </message>
     <message>
         <source>Wake or lock the display</source>
-        <translation type="unfinished"></translation>
+        <translation>Kijelző ébresztése vagy zárolása</translation>
     </message>
     <message>
         <source>Stop recording · %1 s</source>
-        <translation type="unfinished"></translation>
+        <translation>Felvétel leállítása · %1 s</translation>
     </message>
     <message>
         <source>Record</source>
-        <translation type="unfinished"></translation>
+        <translation>Felvétel</translation>
     </message>
     <message>
         <source>Stop and save the recording</source>
-        <translation type="unfinished"></translation>
+        <translation>Felvétel leállítása és mentése</translation>
     </message>
     <message>
         <source>Record the screen to a video, at most 10 minutes</source>
-        <translation type="unfinished"></translation>
+        <translation>A képernyő rögzítése videóba, legfeljebb 10 percig</translation>
     </message>
     <message numerus="yes">
         <source>Typing %n character(s) from the clipboard</source>
-        <translation type="unfinished">
-            <numerusform></numerusform>
+        <translation>
+            <numerusform>%n karakter beírása a vágólapról</numerusform>
         </translation>
     </message>
     <message>
         <source>The clipboard holds no text</source>
-        <translation type="unfinished"></translation>
+        <translation>A vágólapon nincs szöveg</translation>
     </message>
     <message>
         <source>The clipboard holds %1 characters; at most %2 are typed into the phone</source>
-        <translation type="unfinished"></translation>
+        <translation>A vágólapon %1 karakter van; legfeljebb %2 kerül beírásra a telefonba</translation>
     </message>
     <message>
         <source>Paste</source>
-        <translation type="unfinished"></translation>
+        <translation>Beillesztés</translation>
     </message>
     <message>
         <source>Type the clipboard&apos;s text into the field that has the focus</source>
-        <translation type="unfinished"></translation>
+        <translation>A vágólap szövegének beírása a fókuszban lévő mezőbe</translation>
     </message>
     <message>
         <source>Keyboard to phone</source>
-        <translation type="unfinished"></translation>
+        <translation>Billentyűzet a telefonnak</translation>
     </message>
     <message>
         <source>Keyboard to desktop</source>
-        <translation type="unfinished"></translation>
+        <translation>Billentyűzet az asztalnak</translation>
     </message>
     <message>
         <source>Typing goes to the phone · Ctrl+Shift+K gives the keyboard back to the desktop</source>
-        <translation type="unfinished"></translation>
+        <translation>A gépelés a telefonba megy · a Ctrl+Shift+K visszaadja a billentyűzetet az asztalnak</translation>
     </message>
     <message>
         <source>Click the screen or press Ctrl+Shift+K to type on the phone</source>
-        <translation type="unfinished"></translation>
+        <translation>Kattints a képernyőre, vagy nyomd meg a Ctrl+Shift+K billentyűket a telefonon való gépeléshez</translation>
     </message>
     <message>
         <source>Speed</source>
-        <translation type="unfinished"></translation>
+        <translation>Sebesség</translation>
     </message>
     <message>
         <source>Show frames per second and the time from an input to the picture</source>
-        <translation type="unfinished"></translation>
+        <translation>Képkocka/másodperc és a beviteltől a képig eltelt idő megjelenítése</translation>
     </message>
     <message>
         <source>Screenshot with frame</source>
-        <translation type="unfinished"></translation>
+        <translation>Képernyőkép kerettel</translation>
     </message>
     <message>
         <source>Save and copy a screenshot with a plain device frame and rounded corners</source>
-        <translation type="unfinished"></translation>
+        <translation>Képernyőkép mentése és másolása egyszerű eszközkerettel és lekerekített sarkokkal</translation>
     </message>
     <message>
         <source>%1 new · %2 fetched frames/s</source>
-        <translation type="unfinished"></translation>
+        <translation>%1 új · %2 lekért képkocka/s</translation>
     </message>
     <message>
         <source>Input to picture: %1 ms</source>
-        <translation type="unfinished"></translation>
+        <translation>Beviteltől a képig: %1 ms</translation>
     </message>
     <message>
         <source>Input to picture: not measured yet</source>
-        <translation type="unfinished"></translation>
+        <translation>Beviteltől a képig: még nincs mérve</translation>
     </message>
     <message>
         <source>The screenshot failed</source>
-        <translation type="unfinished"></translation>
+        <translation>A képernyőkép sikertelen</translation>
     </message>
     <message>
         <source>Keyboard to phone · Ctrl+Shift+K switches it to the desktop and back</source>
-        <translation type="unfinished"></translation>
+        <translation>Billentyűzet a telefonnak · a Ctrl+Shift+K átvált az asztalra és vissza</translation>
     </message>
 </context>
 <context>
     <name>IosResearch</name>
     <message>
         <source>Another app change is still running.</source>
-        <translation type="unfinished"></translation>
+        <translation>Még fut egy másik alkalmazásmódosítás.</translation>
     </message>
     <message>
         <source>Checking %1…</source>
-        <translation type="unfinished"></translation>
+        <translation>%1 ellenőrzése…</translation>
     </message>
     <message>
         <source>%1 added · installing on the running device</source>
-        <translation type="unfinished"></translation>
+        <translation>%1 hozzáadva · telepítés a futó eszközre</translation>
     </message>
     <message>
         <source>%1 added · the next start installs it</source>
-        <translation type="unfinished"></translation>
+        <translation>%1 hozzáadva · a következő indítás telepíti</translation>
     </message>
     <message>
         <source>The virtual iOS device takes one .app bundle built for arm64 iOS.</source>
-        <translation type="unfinished"></translation>
+        <translation>A virtuális iOS-eszköz egyetlen, arm64 iOS-re buildelt .app csomagot fogad.</translation>
     </message>
     <message>
         <source>Set up the virtual iOS device&apos;s profile before adding apps.</source>
-        <translation type="unfinished"></translation>
+        <translation>Alkalmazások hozzáadása előtt állítsd be a virtuális iOS-eszköz profilját.</translation>
     </message>
     <message>
         <source>%1 reads · %2 writes · %3 rejected</source>
-        <translation type="unfinished"></translation>
+        <translation>%1 olvasás · %2 írás · %3 elutasítva</translation>
     </message>
     <message>
         <source>%1 · Apple variant</source>
-        <translation type="unfinished"></translation>
+        <translation>%1 · Apple-változat</translation>
     </message>
     <message>
         <source>%1 · derived</source>
-        <translation type="unfinished"></translation>
+        <translation>%1 · származtatott</translation>
     </message>
     <message>
         <source>%1: %2 · state %3</source>
-        <translation type="unfinished"></translation>
+        <translation>%1: %2 · állapot: %3</translation>
     </message>
     <message numerus="yes">
         <source>%1: %n message(s)</source>
-        <translation type="unfinished">
-            <numerusform></numerusform>
+        <translation>
+            <numerusform>%1: %n üzenet</numerusform>
         </translation>
     </message>
     <message numerus="yes">
         <source>%n byte(s) from %1 · checksum verified</source>
-        <translation type="unfinished">
-            <numerusform></numerusform>
+        <translation>
+            <numerusform>%n bájt innen: %1 · ellenőrzőösszeg ellenőrizve</numerusform>
         </translation>
     </message>
     <message>
         <source>Simulated controller with timers · experimental</source>
-        <translation type="unfinished"></translation>
+        <translation>Szimulált vezérlő időzítőkkel · kísérleti</translation>
     </message>
     <message>
         <source>Add app…</source>
-        <translation type="unfinished"></translation>
+        <translation>Alkalmazás hozzáadása…</translation>
     </message>
     <message>
         <source>Core ID</source>
-        <translation type="unfinished"></translation>
+        <translation>Magazonosító</translation>
     </message>
     <message>
         <source>App to open at start</source>
-        <translation type="unfinished"></translation>
+        <translation>Indításkor megnyitandó alkalmazás</translation>
     </message>
     <message>
         <source>Applies from the next start.</source>
-        <translation type="unfinished"></translation>
+        <translation>A következő indítástól érvényes.</translation>
     </message>
     <message>
         <source>Your own arm64 .app bundles. Each start installs them together with the device&apos;s helper tools. Changes apply from the next start.</source>
-        <translation type="unfinished"></translation>
+        <translation>A saját arm64 .app csomagjaid. Minden indítás telepíti őket az eszköz segédeszközeivel együtt. A módosítások a következő indítástól érvényesek.</translation>
     </message>
     <message>
         <source>Boot image</source>
-        <translation type="unfinished"></translation>
+        <translation>Rendszerindító kép</translation>
     </message>
     <message>
         <source>Breakpoint reached</source>
-        <translation type="unfinished"></translation>
+        <translation>Töréspont elérve</translation>
     </message>
     <message>
         <source>Processor core ID (MPIDR affinity)</source>
-        <translation type="unfinished"></translation>
+        <translation>Processzormag-azonosító (MPIDR-affinitás)</translation>
     </message>
     <message>
         <source>Processor settings</source>
-        <translation type="unfinished"></translation>
+        <translation>Processzorbeállítások</translation>
     </message>
     <message>
         <source>Processor register not supported yet: %1 · %2 by code at %3</source>
-        <translation type="unfinished"></translation>
+        <translation>A processzorregiszter még nem támogatott: %1 · %2 a(z) %3 címen lévő kódtól</translation>
     </message>
     <message>
         <source>Processor: MIDR %1 · core ID %2 · %3</source>
-        <translation type="unfinished"></translation>
+        <translation>Processzor: MIDR %1 · magazonosító %2 · %3</translation>
     </message>
     <message>
         <source>Cancel</source>
-        <translation type="unfinished"></translation>
+        <translation>Mégse</translation>
     </message>
     <message>
         <source>Cancel the start and stop the device without saving</source>
-        <translation type="unfinished"></translation>
+        <translation>Az indítás megszakítása és az eszköz leállítása mentés nélkül</translation>
     </message>
     <message>
         <source>Check the bundle and add it to the profile · the next start installs it</source>
-        <translation type="unfinished"></translation>
+        <translation>A csomag ellenőrzése és hozzáadása a profilhoz · a következő indítás telepíti</translation>
     </message>
     <message>
         <source>Checking image…</source>
-        <translation type="unfinished"></translation>
+        <translation>Kép ellenőrzése…</translation>
     </message>
     <message>
         <source>Checking…</source>
-        <translation type="unfinished"></translation>
+        <translation>Ellenőrzés…</translation>
     </message>
     <message>
         <source>Choose</source>
-        <translation type="unfinished"></translation>
+        <translation>Kiválasztás</translation>
     </message>
     <message>
         <source>Choose app bundle (.app directory)</source>
-        <translation type="unfinished"></translation>
+        <translation>Alkalmazáscsomag kiválasztása (.app könyvtár)</translation>
     </message>
     <message>
         <source>Choose iOS emulator</source>
-        <translation type="unfinished"></translation>
+        <translation>iOS-emulátor kiválasztása</translation>
     </message>
     <message>
         <source>Choose prepared firmware package</source>
-        <translation type="unfinished"></translation>
+        <translation>Előkészített firmware-csomag kiválasztása</translation>
     </message>
     <message>
         <source>Choose prepared iOS package</source>
-        <translation type="unfinished"></translation>
+        <translation>Előkészített iOS-csomag kiválasztása</translation>
     </message>
     <message>
         <source>Classic (Home button)</source>
-        <translation type="unfinished"></translation>
+        <translation>Klasszikus (kezdőgomb)</translation>
     </message>
     <message>
         <source>Closing the session…</source>
-        <translation type="unfinished"></translation>
+        <translation>A munkamenet bezárása…</translation>
     </message>
     <message>
         <source>Snapshots of the running system: %1 · %2</source>
-        <translation type="unfinished"></translation>
+        <translation>Pillanatképek a futó rendszerről: %1 · %2</translation>
     </message>
     <message>
         <source>Reading the controller state failed: %1</source>
-        <translation type="unfinished"></translation>
+        <translation>A vezérlő állapotának beolvasása sikertelen: %1</translation>
     </message>
     <message>
         <source>For controller development: Apple&apos;s original firmware runs alone on a simulated ARM processor. The simulated controller still rests on unconfirmed hardware guesses; the firmware&apos;s services and its connection to iOS are not verified.</source>
-        <translation type="unfinished"></translation>
+        <translation>Vezérlőfejlesztéshez: az Apple eredeti firmware-je egyedül fut egy szimulált ARM-processzoron. A szimulált vezérlő még megerősítetlen hardveres feltételezéseken alapul; a firmware szolgáltatásai és az iOS-szel való kapcsolata nincs ellenőrizve.</translation>
     </message>
     <message>
         <source>Controller state</source>
-        <translation type="unfinished"></translation>
+        <translation>Vezérlő állapota</translation>
     </message>
     <message>
         <source>Work in progress: an agent starts the virtual iOS device, then it appears here. Starting takes many minutes. Apart from the built-in test app, apps with a user interface have not been shown to work yet.</source>
-        <translation type="unfinished"></translation>
+        <translation>Fejlesztés alatt: egy ügynök elindítja a virtuális iOS-eszközt, majd az itt megjelenik. Az indítás sok percig tart. A beépített tesztalkalmazáson kívül felhasználói felülettel rendelkező alkalmazások működését még nem sikerült igazolni.</translation>
     </message>
     <message>
         <source>Diagnostics complete</source>
-        <translation type="unfinished"></translation>
+        <translation>A diagnosztika befejeződött</translation>
     </message>
     <message>
         <source>Diagnostics ended with a finding</source>
-        <translation type="unfinished"></translation>
+        <translation>A diagnosztika lelettel zárult</translation>
     </message>
     <message>
         <source>Folder with pmp-research.json</source>
-        <translation type="unfinished"></translation>
+        <translation>A pmp-research.json fájlt tartalmazó mappa</translation>
     </message>
     <message>
         <source>Folder with tomacco-ios.json</source>
-        <translation type="unfinished"></translation>
+        <translation>A tomacco-ios.json fájlt tartalmazó mappa</translation>
     </message>
     <message>
         <source>Experimental: iOS shows its first system screens. Setup, graphics and native apps do not fully work yet.</source>
-        <translation type="unfinished"></translation>
+        <translation>Kísérleti: az iOS megjeleníti az első rendszerképernyőit. A beállítás, a grafika és a natív alkalmazások még nem működnek teljesen.</translation>
     </message>
     <message>
         <source>First invalid memory access: code at %1 · address %2 · %3</source>
-        <translation type="unfinished"></translation>
+        <translation>Első érvénytelen memóriahozzáférés: kód a(z) %1 címen · cím: %2 · %3</translation>
     </message>
     <message>
         <source>Memory contents in hexadecimal</source>
-        <translation type="unfinished"></translation>
+        <translation>Memóriatartalom hexadecimálisan</translation>
     </message>
     <message>
         <source>Hide processor settings</source>
-        <translation type="unfinished"></translation>
+        <translation>Processzorbeállítások elrejtése</translation>
     </message>
     <message>
         <source>Hide processor registers</source>
-        <translation type="unfinished"></translation>
+        <translation>Processzorregiszterek elrejtése</translation>
     </message>
     <message>
         <source>Hide boot image</source>
-        <translation type="unfinished"></translation>
+        <translation>Rendszerindító kép elrejtése</translation>
     </message>
     <message>
         <source>Address of a firmware instruction, e.g. 0x10280d4 · optional</source>
-        <translation type="unfinished"></translation>
+        <translation>Egy firmware-utasítás címe, pl. 0x10280d4 · nem kötelező</translation>
     </message>
     <message>
         <source>Job &amp; logs</source>
-        <translation type="unfinished"></translation>
+        <translation>Feladat és naplók</translation>
     </message>
     <message>
         <source>The processor identity the firmware sees when it starts. Other values make it take other start-up paths; they add no hardware features.</source>
-        <translation type="unfinished"></translation>
+        <translation>A processzor-identitás, amelyet a firmware indításkor lát. Más értékek más indítási útvonalakra terelik; hardverfunkciókat nem adnak hozzá.</translation>
     </message>
     <message>
         <source>From the last snapshot · raw 64-bit values</source>
-        <translation type="unfinished"></translation>
+        <translation>A legutóbbi pillanatképből · nyers 64 bites értékek</translation>
     </message>
     <message>
         <source>Loading…</source>
-        <translation type="unfinished"></translation>
+        <translation>Betöltés…</translation>
     </message>
     <message>
         <source>Maximum run time</source>
-        <translation type="unfinished"></translation>
+        <translation>Maximális futásidő</translation>
     </message>
     <message>
         <source>Maximum run time in seconds</source>
-        <translation type="unfinished"></translation>
+        <translation>Maximális futásidő másodpercben</translation>
     </message>
     <message>
         <source>Saved memory</source>
-        <translation type="unfinished"></translation>
+        <translation>Mentett memória</translation>
     </message>
     <message>
         <source>Model</source>
-        <translation type="unfinished"></translation>
+        <translation>Modell</translation>
     </message>
     <message>
         <source>No controller · baseline for comparison</source>
-        <translation type="unfinished"></translation>
+        <translation>Nincs vezérlő · összehasonlítási alap</translation>
     </message>
     <message>
         <source>No apps of your own yet · the start opens the built-in test app.</source>
-        <translation type="unfinished"></translation>
+        <translation>Még nincsenek saját alkalmazások · az indítás a beépített tesztalkalmazást nyitja meg.</translation>
     </message>
     <message>
         <source>Number of bytes</source>
-        <translation type="unfinished"></translation>
+        <translation>Bájtok száma</translation>
     </message>
     <message>
         <source>Open at start</source>
-        <translation type="unfinished"></translation>
+        <translation>Megnyitás indításkor</translation>
     </message>
     <message>
         <source>Open test system</source>
-        <translation type="unfinished"></translation>
+        <translation>Tesztrendszer megnyitása</translation>
     </message>
     <message>
         <source>Your apps</source>
-        <translation type="unfinished"></translation>
+        <translation>Saját alkalmazásaid</translation>
     </message>
     <message>
         <source>Built-in test app (diagnostics)</source>
-        <translation type="unfinished"></translation>
+        <translation>Beépített tesztalkalmazás (diagnosztika)</translation>
     </message>
     <message>
         <source>Own window</source>
-        <translation type="unfinished"></translation>
+        <translation>Saját ablak</translation>
     </message>
     <message>
         <source>Firmware breakpoint</source>
-        <translation type="unfinished"></translation>
+        <translation>Firmware-töréspont</translation>
     </message>
     <message>
         <source>Simulated firmware controller</source>
-        <translation type="unfinished"></translation>
+        <translation>Szimulált firmware-vezérlő</translation>
     </message>
     <message>
         <source>Power-management firmware (PMP)</source>
-        <translation type="unfinished"></translation>
+        <translation>Energiagazdálkodási firmware (PMP)</translation>
     </message>
     <message>
         <source>Firmware running</source>
-        <translation type="unfinished"></translation>
+        <translation>A firmware fut</translation>
     </message>
     <message>
         <source>Path to an .app directory (arm64)</source>
-        <translation type="unfinished"></translation>
+        <translation>Egy .app könyvtár elérési útja (arm64)</translation>
     </message>
     <message>
         <source>Addresses 0x1000000 to 0x11fffff of the firmware&apos;s memory. Reading checks the saved copy; the firmware is not run again for it.</source>
-        <translation type="unfinished"></translation>
+        <translation>A firmware memóriájának 0x1000000–0x11fffff címei. Az olvasás a mentett másolatot ellenőrzi; a firmware ehhez nem fut újra.</translation>
     </message>
     <message>
         <source>Memory address</source>
-        <translation type="unfinished"></translation>
+        <translation>Memóriacím</translation>
     </message>
     <message>
         <source>Prepare package</source>
-        <translation type="unfinished"></translation>
+        <translation>Csomag előkészítése</translation>
     </message>
     <message>
         <source>Prepare, boot, unlock and open the test app</source>
-        <translation type="unfinished"></translation>
+        <translation>Előkészítés, indítás, feloldás és a tesztalkalmazás megnyitása</translation>
     </message>
     <message>
         <source>Prepared firmware package</source>
-        <translation type="unfinished"></translation>
+        <translation>Előkészített firmware-csomag</translation>
     </message>
     <message>
         <source>Prepared iOS package</source>
-        <translation type="unfinished"></translation>
+        <translation>Előkészített iOS-csomag</translation>
     </message>
     <message>
         <source>Preparing working copy</source>
-        <translation type="unfinished"></translation>
+        <translation>Munkamásolat előkészítése</translation>
     </message>
     <message>
         <source>Memory copy failed: %1</source>
-        <translation type="unfinished"></translation>
+        <translation>A memóriamásolás sikertelen: %1</translation>
     </message>
     <message>
         <source>Memory copy: 2 MiB from address %1 · saved in the report folder</source>
-        <translation type="unfinished"></translation>
+        <translation>Memóriamásolat: 2 MiB a(z) %1 címtől · a jelentésmappába mentve</translation>
     </message>
     <message>
         <source>Read</source>
-        <translation type="unfinished"></translation>
+        <translation>Olvasás</translation>
     </message>
     <message>
         <source>Ready for a test run</source>
-        <translation type="unfinished"></translation>
+        <translation>Készen áll egy tesztfuttatásra</translation>
     </message>
     <message>
         <source>Actual image from the start-up screen · not yet the device&apos;s main display</source>
-        <translation type="unfinished"></translation>
+        <translation>Valódi kép az indítóképernyőről · még nem az eszköz fő kijelzője</translation>
     </message>
     <message>
         <source>Real iOS directly on Linux. The virtual iOS device shows the lock and Home screens and starts its own test app; general app development is not enabled yet.</source>
-        <translation type="unfinished"></translation>
+        <translation>Valódi iOS közvetlenül Linuxon. A virtuális iOS-eszköz megjeleníti a zárolási és a kezdőképernyőt, és elindítja a saját tesztalkalmazását; az általános alkalmazásfejlesztés még nincs engedélyezve.</translation>
     </message>
     <message>
         <source>Refresh</source>
-        <translation type="unfinished"></translation>
+        <translation>Frissítés</translation>
     </message>
     <message>
         <source>Remove</source>
-        <translation type="unfinished"></translation>
+        <translation>Eltávolítás</translation>
     </message>
     <message>
         <source>Remove from the profile · an app already installed stays on the device</source>
-        <translation type="unfinished"></translation>
+        <translation>Eltávolítás a profilból · a már telepített alkalmazás az eszközön marad</translation>
     </message>
     <message>
         <source>Report folder</source>
-        <translation type="unfinished"></translation>
+        <translation>Jelentésmappa</translation>
     </message>
     <message>
         <source>Run %1 · %2</source>
-        <translation type="unfinished"></translation>
+        <translation>%1. futtatás · %2</translation>
     </message>
     <message>
         <source>Run iOS, or the iPhone&apos;s power-management firmware on its own, directly on Linux. Each run writes its own report; runs started from the command line or by an agent appear here too.</source>
-        <translation type="unfinished"></translation>
+        <translation>Futtasd az iOS-t, vagy önállóan az iPhone energiagazdálkodási firmware-jét közvetlenül Linuxon. Minden futtatás saját jelentést ír; a parancssorból vagy ügynök által indított futtatások is itt jelennek meg.</translation>
     </message>
     <message>
         <source>Run ended</source>
-        <translation type="unfinished"></translation>
+        <translation>A futtatás befejeződött</translation>
     </message>
     <message>
         <source>Save a copy of the firmware&apos;s memory with the report (2 MiB)</source>
-        <translation type="unfinished"></translation>
+        <translation>A firmware memóriájáról készült másolat mentése a jelentéssel (2 MiB)</translation>
     </message>
     <message>
         <source>Save storage and shut down cleanly</source>
-        <translation type="unfinished"></translation>
+        <translation>Tárhely mentése és szabályos leállítás</translation>
     </message>
     <message>
         <source>System services not found in the snapshots: %1</source>
-        <translation type="unfinished"></translation>
+        <translation>A pillanatképekben nem találhatók rendszerszolgáltatások: %1</translation>
     </message>
     <message>
         <source>Show</source>
-        <translation type="unfinished"></translation>
+        <translation>Megjelenítés</translation>
     </message>
     <message>
         <source>Show processor registers</source>
-        <translation type="unfinished"></translation>
+        <translation>Processzorregiszterek megjelenítése</translation>
     </message>
     <message>
         <source>Start</source>
-        <translation type="unfinished"></translation>
+        <translation>Indítás</translation>
     </message>
     <message>
         <source>Start failed</source>
-        <translation type="unfinished"></translation>
+        <translation>Az indítás sikertelen</translation>
     </message>
     <message>
         <source>Start test run</source>
-        <translation type="unfinished"></translation>
+        <translation>Tesztfuttatás indítása</translation>
     </message>
     <message>
         <source>Status currently unknown</source>
-        <translation type="unfinished"></translation>
+        <translation>Az állapot jelenleg ismeretlen</translation>
     </message>
     <message>
         <source>Stop</source>
-        <translation type="unfinished"></translation>
+        <translation>Leállítás</translation>
     </message>
     <message>
         <source>Stop at a code address</source>
-        <translation type="unfinished"></translation>
+        <translation>Megállás egy kódcímen</translation>
     </message>
     <message>
         <source>Stop without saving</source>
-        <translation type="unfinished"></translation>
+        <translation>Leállítás mentés nélkül</translation>
     </message>
     <message>
         <source>Stop without saving · ends the run at once, whatever the device has not saved yet is lost</source>
-        <translation type="unfinished"></translation>
+        <translation>Leállítás mentés nélkül · azonnal befejezi a futtatást, minden, amit az eszköz még nem mentett, elvész</translation>
     </message>
     <message>
         <source>Stopped before the instruction at %1 · this does not show that the firmware started completely</source>
-        <translation type="unfinished"></translation>
+        <translation>Megállt a(z) %1 címen lévő utasítás előtt · ez nem bizonyítja, hogy a firmware teljesen elindult</translation>
     </message>
     <message>
         <source>Stopping…</source>
-        <translation type="unfinished"></translation>
+        <translation>Leállítás…</translation>
     </message>
     <message>
         <source>What to run</source>
-        <translation type="unfinished"></translation>
+        <translation>Mit futtasson</translation>
     </message>
     <message>
         <source>Reading this state changes nothing: no message is taken from a queue and no interrupt is answered.</source>
-        <translation type="unfinished"></translation>
+        <translation>Ennek az állapotnak a beolvasása semmit sem változtat: egy üzenet sem kerül ki a sorból, és egy megszakításra sem történik válasz.</translation>
     </message>
     <message>
         <source>The existing run is reused.</source>
-        <translation type="unfinished"></translation>
+        <translation>A meglévő futtatás újrahasznosítva.</translation>
     </message>
     <message>
         <source>The device could not save before stopping (%1). “Stop without saving” ends the run at once; the next start uses the last saved state.</source>
-        <translation type="unfinished"></translation>
+        <translation>Az eszköz nem tudott menteni a leállás előtt (%1). A „Leállítás mentés nélkül” azonnal befejezi a futtatást; a következő indítás az utoljára mentett állapotot használja.</translation>
     </message>
     <message>
         <source>The device is still starting, there is nothing to save. Ending the run…</source>
-        <translation type="unfinished"></translation>
+        <translation>Az eszköz még indul, nincs mit menteni. A futtatás befejezése…</translation>
     </message>
     <message>
         <source>The run stops at that address and reports the processor state. The firmware itself is not modified.</source>
-        <translation type="unfinished"></translation>
+        <translation>A futtatás ezen a címen megáll, és jelenti a processzor állapotát. Magát a firmware-t nem módosítja.</translation>
     </message>
     <message>
         <source>Time limit reached</source>

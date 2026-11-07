@@ -820,1239 +820,1239 @@ Gerðin ræður skjánum og rammanum. Android kemur úr valinni kerfismynd; við
     </message>
     <message>
         <source>Star White</source>
-        <translation type="unfinished"></translation>
+        <translation>Stjörnuhvítur</translation>
     </message>
     <message>
         <source>Teal</source>
-        <translation type="unfinished"></translation>
+        <translation>Blágrænn</translation>
     </message>
     <message>
         <source>Ultramarine</source>
-        <translation type="unfinished"></translation>
+        <translation>Úlframarín</translation>
     </message>
     <message>
         <source>White</source>
-        <translation type="unfinished"></translation>
+        <translation>Hvítur</translation>
     </message>
 </context>
 <context>
     <name>CommandPalette</name>
     <message>
         <source>No matching views or tools</source>
-        <translation type="unfinished"></translation>
+        <translation>Engin samsvarandi yfirlit eða verkfæri</translation>
     </message>
     <message>
         <source>View</source>
-        <translation type="unfinished"></translation>
+        <translation>Yfirlit</translation>
     </message>
     <message>
         <source>Search views, commands or tools…</source>
-        <translation type="unfinished"></translation>
+        <translation>Leita að yfirlitum, skipunum eða verkfærum…</translation>
     </message>
     <message>
         <source>Ctrl</source>
-        <translation type="unfinished"></translation>
+        <translation>Ctrl</translation>
     </message>
     <message>
         <source>Recent</source>
-        <translation type="unfinished"></translation>
+        <translation>Nýlegt</translation>
     </message>
     <message>
         <source>↑ ↓  Select     PgUp PgDn  Page     ↵  Open     Esc  Close</source>
-        <translation type="unfinished"></translation>
+        <translation>↑ ↓  Velja     PgUp PgDn  Síða     ↵  Opna     Esc  Loka</translation>
     </message>
 </context>
 <context>
     <name>Control</name>
     <message>
         <source>Invalid frame response</source>
-        <translation type="unfinished"></translation>
+        <translation>Ógilt ramma-svar</translation>
     </message>
     <message>
         <source>Invalid response from the control plane</source>
-        <translation type="unfinished"></translation>
+        <translation>Ógilt svar frá stjórnlaginu</translation>
     </message>
     <message>
         <source>Invalid response from the frame control</source>
-        <translation type="unfinished"></translation>
+        <translation>Ógilt svar frá rammastýringunni</translation>
     </message>
     <message>
         <source>Invalid session name</source>
-        <translation type="unfinished"></translation>
+        <translation>Ógilt lotuheiti</translation>
     </message>
     <message>
         <source>Tomacco is already open in another window; agents keep controlling that one. To control this window too, start it with --preview-session and another name.</source>
-        <translation type="unfinished"></translation>
+        <translation>Tomacco er þegar opið í öðrum glugga; fulltrúar stýra áfram þeim glugga. Til að stýra þessum glugga líka skaltu ræsa hann með --preview-session og öðru heiti.</translation>
     </message>
     <message>
         <source>Tomacco&apos;s control program (tomaccoctl) could not be started. Reinstall Tomacco or run install.py again.</source>
-        <translation type="unfinished"></translation>
+        <translation>Ekki tókst að ræsa stýriforrit Tomacco (tomaccoctl). Settu Tomacco upp aftur eða keyrðu install.py aftur.</translation>
     </message>
     <message>
         <source>Tomacco&apos;s control program (tomaccoctl) is not working: %1</source>
-        <translation type="unfinished"></translation>
+        <translation>Stýriforrit Tomacco (tomaccoctl) virkar ekki: %1</translation>
     </message>
     <message>
         <source>Tomacco&apos;s control program (tomaccoctl) was not found. Reinstall Tomacco or run install.py again.</source>
-        <translation type="unfinished"></translation>
+        <translation>Stýriforrit Tomacco (tomaccoctl) fannst ekki. Settu Tomacco upp aftur eða keyrðu install.py aftur.</translation>
     </message>
     <message>
         <source>The agent socket directory belongs to another user</source>
-        <translation type="unfinished"></translation>
+        <translation>Sokkamöppu fulltrúa á annar notandi</translation>
     </message>
     <message>
         <source>The agent socket directory could not be created</source>
-        <translation type="unfinished"></translation>
+        <translation>Ekki tókst að búa til sokkamöppu fulltrúa</translation>
     </message>
     <message>
         <source>The control program ended unexpectedly</source>
-        <translation type="unfinished"></translation>
+        <translation>Stýriforritið hætti óvænt</translation>
     </message>
     <message>
         <source>The control program failed: %1</source>
-        <translation type="unfinished"></translation>
+        <translation>Stýriforritið mistókst: %1</translation>
     </message>
     <message>
         <source>The frame control could not be initialized</source>
-        <translation type="unfinished"></translation>
+        <translation>Ekki tókst að frumstilla rammastýringuna</translation>
     </message>
     <message>
         <source>The frame control did not respond in time</source>
-        <translation type="unfinished"></translation>
+        <translation>Rammastýringin svaraði ekki í tæka tíð</translation>
     </message>
     <message>
         <source>The frame control ended</source>
-        <translation type="unfinished"></translation>
+        <translation>Rammastýringin hætti</translation>
     </message>
     <message>
         <source>The frame control is not reachable</source>
-        <translation type="unfinished"></translation>
+        <translation>Ekki næst í rammastýringuna</translation>
     </message>
     <message>
         <source>The frame request could not be sent</source>
-        <translation type="unfinished"></translation>
+        <translation>Ekki tókst að senda rammabeiðnina</translation>
     </message>
     <message>
         <source>The frame response is too large</source>
-        <translation type="unfinished"></translation>
+        <translation>Ramma-svarið er of stórt</translation>
     </message>
     <message>
         <source>The frame response matches no request</source>
-        <translation type="unfinished"></translation>
+        <translation>Ramma-svarið passar ekki við neina beiðni</translation>
     </message>
     <message>
         <source>Too many concurrent requests</source>
-        <translation type="unfinished"></translation>
+        <translation>Of margar samtíma beiðnir</translation>
     </message>
     <message>
         <source>tomaccoctl could not be started (%1). Reinstall Tomacco or run install.py again.</source>
-        <translation type="unfinished"></translation>
+        <translation>Ekki tókst að ræsa tomaccoctl (%1). Settu Tomacco upp aftur eða keyrðu install.py aftur.</translation>
     </message>
 </context>
 <context>
     <name>DebugWorkspace</name>
     <message>
         <source>All files (*)</source>
-        <translation type="unfinished"></translation>
+        <translation>Allar skrár (*)</translation>
     </message>
     <message>
         <source>Android libraries (*.so)</source>
-        <translation type="unfinished"></translation>
+        <translation>Android-söfn (*.so)</translation>
     </message>
     <message>
         <source>Application ID · e.g. dev.example.app</source>
-        <translation type="unfinished"></translation>
+        <translation>Auðkenni apps · t.d. dev.example.app</translation>
     </message>
     <message>
         <source>Breakpoints</source>
-        <translation type="unfinished"></translation>
+        <translation>Rofpunktar</translation>
     </message>
     <message>
         <source>CALL STACK</source>
-        <translation type="unfinished"></translation>
+        <translation>KALLAHLAÐI</translation>
     </message>
     <message>
         <source>Choose Android device</source>
-        <translation type="unfinished"></translation>
+        <translation>Veldu Android-tæki</translation>
     </message>
     <message>
         <source>Choose debug program</source>
-        <translation type="unfinished"></translation>
+        <translation>Veldu forrit til að villuleita</translation>
     </message>
     <message>
         <source>Choose file</source>
-        <translation type="unfinished"></translation>
+        <translation>Veldu skrá</translation>
     </message>
     <message>
         <source>Choose library with debug symbols</source>
-        <translation type="unfinished"></translation>
+        <translation>Veldu safn með villuleitartáknum</translation>
     </message>
     <message>
         <source>Connect</source>
-        <translation type="unfinished"></translation>
+        <translation>Tengjast</translation>
     </message>
     <message>
         <source>Connecting…</source>
-        <translation type="unfinished"></translation>
+        <translation>Tengist…</translation>
     </message>
     <message>
         <source>Continue</source>
-        <translation type="unfinished"></translation>
+        <translation>Halda áfram</translation>
     </message>
     <message>
         <source>Debugger exited</source>
-        <translation type="unfinished"></translation>
+        <translation>Villuleitarforritið hætti</translation>
     </message>
     <message>
         <source>Debugger request failed</source>
-        <translation type="unfinished"></translation>
+        <translation>Beiðni villuleitarforrits mistókst</translation>
     </message>
     <message>
         <source>Disconnect</source>
-        <translation type="unfinished"></translation>
+        <translation>Aftengja</translation>
     </message>
     <message>
         <source>Disconnected</source>
-        <translation type="unfinished"></translation>
+        <translation>Aftengt</translation>
     </message>
     <message>
         <source>Ended</source>
-        <translation type="unfinished"></translation>
+        <translation>Lokið</translation>
     </message>
     <message>
         <source>Enter valid line numbers</source>
-        <translation type="unfinished"></translation>
+        <translation>Sláðu inn gild línunúmer</translation>
     </message>
     <message>
         <source>Evaluate expression</source>
-        <translation type="unfinished"></translation>
+        <translation>Meta segð</translation>
     </message>
     <message>
         <source>Evaluate the expression in the selected frame</source>
-        <translation type="unfinished"></translation>
+        <translation>Meta segðina í valda rammanum</translation>
     </message>
     <message>
         <source>Executable with debug symbols</source>
-        <translation type="unfinished"></translation>
+        <translation>Keyrsluskrá með villuleitartáknum</translation>
     </message>
     <message>
         <source>Hide events</source>
-        <translation type="unfinished"></translation>
+        <translation>Fela atburði</translation>
     </message>
     <message>
         <source>Launch app</source>
-        <translation type="unfinished"></translation>
+        <translation>Ræsa app</translation>
     </message>
     <message>
         <source>Launches the app if it is not running yet.</source>
-        <translation type="unfinished"></translation>
+        <translation>Ræsir appið ef það er ekki þegar í gangi.</translation>
     </message>
     <message>
         <source>Library with debug symbols (.so)</source>
-        <translation type="unfinished"></translation>
+        <translation>Safn með villuleitartáknum (.so)</translation>
     </message>
     <message>
         <source>Line %1</source>
-        <translation type="unfinished"></translation>
+        <translation>Lína %1</translation>
     </message>
     <message>
         <source>Lines: 12, 24</source>
-        <translation type="unfinished"></translation>
+        <translation>Línur: 12, 24</translation>
     </message>
     <message>
         <source>Locals</source>
-        <translation type="unfinished"></translation>
+        <translation>Staðværar breytur</translation>
     </message>
     <message>
         <source>No debugger events yet.</source>
-        <translation type="unfinished"></translation>
+        <translation>Engir atburðir villuleitarforrits enn.</translation>
     </message>
     <message>
         <source>No paused thread yet</source>
-        <translation type="unfinished"></translation>
+        <translation>Enginn þráður í bið enn</translation>
     </message>
     <message>
         <source>No session</source>
-        <translation type="unfinished"></translation>
+        <translation>Engin lota</translation>
     </message>
     <message>
         <source>Open existing session</source>
-        <translation type="unfinished"></translation>
+        <translation>Opna fyrirliggjandi lotu</translation>
     </message>
     <message>
         <source>Open source</source>
-        <translation type="unfinished"></translation>
+        <translation>Opna frumkóða</translation>
     </message>
     <message>
         <source>Paused</source>
-        <translation type="unfinished"></translation>
+        <translation>Í bið</translation>
     </message>
     <message>
         <source>Refresh</source>
-        <translation type="unfinished"></translation>
+        <translation>Endurnýja</translation>
     </message>
     <message>
         <source>Restarts the app and waits for the Java debugger.</source>
-        <translation type="unfinished"></translation>
+        <translation>Endurræsir appið og bíður eftir Java-villuleitarforritinu.</translation>
     </message>
     <message>
         <source>Run the next source line</source>
-        <translation type="unfinished"></translation>
+        <translation>Keyra næstu línu frumkóðans</translation>
     </message>
     <message>
         <source>Running</source>
-        <translation type="unfinished"></translation>
+        <translation>Í gangi</translation>
     </message>
     <message>
         <source>Session active</source>
-        <translation type="unfinished"></translation>
+        <translation>Lota virk</translation>
     </message>
     <message>
         <source>Show events</source>
-        <translation type="unfinished"></translation>
+        <translation>Sýna atburði</translation>
     </message>
     <message>
         <source>Source file or Java class</source>
-        <translation type="unfinished"></translation>
+        <translation>Frumkóðaskrá eða Java-klasi</translation>
     </message>
     <message>
         <source>Step in</source>
-        <translation type="unfinished"></translation>
+        <translation>Stiga inn</translation>
     </message>
     <message>
         <source>Step out</source>
-        <translation type="unfinished"></translation>
+        <translation>Stiga út</translation>
     </message>
     <message>
         <source>Step over</source>
-        <translation type="unfinished"></translation>
+        <translation>Stiga yfir</translation>
     </message>
     <message>
         <source>VARIABLES</source>
-        <translation type="unfinished"></translation>
+        <translation>BREYTUR</translation>
     </message>
     <message>
         <source>ended</source>
-        <translation type="unfinished"></translation>
+        <translation>lokið</translation>
     </message>
     <message>
         <source>Attach to your app</source>
-        <translation type="unfinished"></translation>
+        <translation>Tengjast appinu þínu</translation>
     </message>
     <message>
         <source>Needs a debug build and the NDK. The library must match your app and its processor.</source>
-        <translation type="unfinished"></translation>
+        <translation>Krefst villuleitarsmíðar og NDK. Safnið verður að passa við appið þitt og örgjörva þess.</translation>
     </message>
     <message>
         <source>Needs a debug build on a connected phone or emulator.</source>
-        <translation type="unfinished"></translation>
+        <translation>Krefst villuleitarsmíðar á tengdum síma eða hermi.</translation>
     </message>
     <message>
         <source>A program on this computer, inspected with LLDB.</source>
-        <translation type="unfinished"></translation>
+        <translation>Forrit á þessari tölvu, skoðað með LLDB.</translation>
     </message>
     <message>
         <source>Take over your agent&apos;s session</source>
-        <translation type="unfinished"></translation>
+        <translation>Taka yfir lotu fulltrúans þíns</translation>
     </message>
     <message>
         <source>Pause your app or set a breakpoint to see the stack and variables.</source>
-        <translation type="unfinished"></translation>
+        <translation>Gerðu hlé á appinu eða settu rofpunkt til að sjá hlaðann og breyturnar.</translation>
     </message>
     <message>
         <source>Attach here, or take over a session your agent started.</source>
-        <translation type="unfinished"></translation>
+        <translation>Tengstu hér eða taktu yfir lotu sem fulltrúinn þinn hóf.</translation>
     </message>
 </context>
 <context>
     <name>Device</name>
     <message>
         <source>Device permissions are disabled in this layout preview.</source>
-        <translation type="unfinished"></translation>
+        <translation>Heimildir tækis eru óvirkar í þessari forskoðun útlits.</translation>
     </message>
     <message>
         <source>No connection</source>
-        <translation type="unfinished"></translation>
+        <translation>Engin tenging</translation>
     </message>
     <message>
         <source>Page not reachable. Is your dev server running?</source>
-        <translation type="unfinished"></translation>
+        <translation>Ekki næst í síðuna. Er þróunarþjónninn þinn í gangi?</translation>
     </message>
     <message>
         <source>Please open downloads in your browser. Device images can be saved with “Screenshot”.</source>
-        <translation type="unfinished"></translation>
+        <translation>Opnaðu niðurhöl í vafranum þínum. Hægt er að vista myndir tækisins með „Skjámynd“.</translation>
     </message>
     <message>
         <source>Reload</source>
-        <translation type="unfinished"></translation>
+        <translation>Endurhlaða</translation>
     </message>
     <message>
         <source>SAFE AREA · PREVIEW</source>
-        <translation type="unfinished"></translation>
+        <translation>ÖRUGGT SVÆÐI · FORSKOÐUN</translation>
     </message>
     <message>
         <source>The web view was terminated. Please reload.</source>
-        <translation type="unfinished"></translation>
+        <translation>Vefyfirlitinu var lokað. Endurhlaðið síðuna.</translation>
     </message>
     <message>
         <source>This preview opens web addresses. Use “Open folder” for local builds.</source>
-        <translation type="unfinished"></translation>
+        <translation>Þessi forskoðun opnar vefslóðir. Notaðu „Opna möppu“ fyrir staðbundnar smíðar.</translation>
     </message>
 </context>
 <context>
     <name>DeviceWindow</name>
     <message>
         <source>Save and copy a screenshot · Ctrl+Shift+S</source>
-        <translation type="unfinished"></translation>
+        <translation>Vista og afrita skjámynd · Ctrl+Shift+S</translation>
     </message>
     <message>
         <source>Back</source>
-        <translation type="unfinished"></translation>
+        <translation>Til baka</translation>
     </message>
     <message>
         <source>Bring back into the workspace</source>
-        <translation type="unfinished"></translation>
+        <translation>Færa aftur inn á vinnusvæðið</translation>
     </message>
     <message>
         <source>Close device window · the device keeps running</source>
-        <translation type="unfinished"></translation>
+        <translation>Loka tækisglugga · tækið heldur áfram að keyra</translation>
     </message>
     <message>
         <source>Larger · Ctrl+mouse wheel</source>
-        <translation type="unfinished"></translation>
+        <translation>Stærra · Ctrl+músarhjól</translation>
     </message>
     <message>
         <source>Open in the workspace</source>
-        <translation type="unfinished"></translation>
+        <translation>Opna á vinnusvæðinu</translation>
     </message>
     <message>
         <source>Tomacco – Device</source>
-        <translation type="unfinished"></translation>
+        <translation>Tomacco – Tæki</translation>
     </message>
     <message>
         <source>Rotate</source>
-        <translation type="unfinished"></translation>
+        <translation>Snúa</translation>
     </message>
     <message>
         <source>Show the back</source>
-        <translation type="unfinished"></translation>
+        <translation>Sýna bakhlið</translation>
     </message>
     <message>
         <source>Show the front</source>
-        <translation type="unfinished"></translation>
+        <translation>Sýna framhlið</translation>
     </message>
     <message>
         <source>Side button</source>
-        <translation type="unfinished"></translation>
+        <translation>Hliðarhnappur</translation>
     </message>
     <message>
         <source>Side button · wake or lock the display</source>
-        <translation type="unfinished"></translation>
+        <translation>Hliðarhnappur · vekja eða læsa skjánum</translation>
     </message>
     <message>
         <source>Smaller · Ctrl+mouse wheel</source>
-        <translation type="unfinished"></translation>
+        <translation>Minna · Ctrl+músarhjól</translation>
     </message>
     <message>
         <source>Stop keeping this window above the others</source>
-        <translation type="unfinished"></translation>
+        <translation>Hætta að halda þessum glugga ofan á hinum</translation>
     </message>
     <message>
         <source>Keep this window above the others</source>
-        <translation type="unfinished"></translation>
+        <translation>Halda þessum glugga ofan á hinum</translation>
     </message>
 </context>
 <context>
     <name>FileWorkspace</name>
     <message>
         <source>Choose a file in the project tree</source>
-        <translation type="unfinished"></translation>
+        <translation>Veldu skrá í verkefnatrénu</translation>
     </message>
     <message>
         <source>Close file</source>
-        <translation type="unfinished"></translation>
+        <translation>Loka skrá</translation>
     </message>
     <message>
         <source>Discard unsaved changes?</source>
-        <translation type="unfinished"></translation>
+        <translation>Henda óvistuðum breytingum?</translation>
     </message>
     <message>
         <source>Folder</source>
-        <translation type="unfinished"></translation>
+        <translation>Mappa</translation>
     </message>
     <message>
         <source>Hidden</source>
-        <translation type="unfinished"></translation>
+        <translation>Falið</translation>
     </message>
     <message>
         <source>Line %1 · UTF-8 · changes are checked on save</source>
-        <translation type="unfinished"></translation>
+        <translation>Lína %1 · UTF-8 · breytingar eru athugaðar við vistun</translation>
     </message>
     <message>
         <source>More matches available; narrow the search term.</source>
-        <translation type="unfinished"></translation>
+        <translation>Fleiri niðurstöður eru til; úrengdu leitarorðið.</translation>
     </message>
     <message>
         <source>New file</source>
-        <translation type="unfinished"></translation>
+        <translation>Ný skrá</translation>
     </message>
     <message>
         <source>New folder</source>
-        <translation type="unfinished"></translation>
+        <translation>Ný mappa</translation>
     </message>
     <message>
         <source>Open a project first</source>
-        <translation type="unfinished"></translation>
+        <translation>Opnaðu fyrst verkefni</translation>
     </message>
     <message>
         <source>Path relative to the project, e.g. lib/example.dart</source>
-        <translation type="unfinished"></translation>
+        <translation>Slóð miðað við verkefnið, t.d. lib/example.dart</translation>
     </message>
     <message>
         <source>Reload</source>
-        <translation type="unfinished"></translation>
+        <translation>Endurhlaða</translation>
     </message>
     <message>
         <source>Reload files</source>
-        <translation type="unfinished"></translation>
+        <translation>Endurhlaða skrár</translation>
     </message>
     <message>
         <source>Save the file first or discard it with Reload.</source>
-        <translation type="unfinished"></translation>
+        <translation>Vistaðu skrána fyrst eða hentu breytingunum með Endurhlaða.</translation>
     </message>
     <message>
         <source>Save · Ctrl+S</source>
-        <translation type="unfinished"></translation>
+        <translation>Vista · Ctrl+S</translation>
     </message>
     <message>
         <source>Saved · %1</source>
-        <translation type="unfinished"></translation>
+        <translation>Vistað · %1</translation>
     </message>
     <message>
         <source>Search source code…</source>
-        <translation type="unfinished"></translation>
+        <translation>Leita í frumkóða…</translation>
     </message>
     <message>
         <source>The file is read again from disk.</source>
-        <translation type="unfinished"></translation>
+        <translation>Skráin er lesin aftur af diskinum.</translation>
     </message>
     <message>
         <source>The link leads outside this project.</source>
-        <translation type="unfinished"></translation>
+        <translation>Tengillinn vísar út fyrir þetta verkefni.</translation>
     </message>
     <message>
         <source>This folder contains more than 2,000 entries. Use search for targeted results.</source>
-        <translation type="unfinished"></translation>
+        <translation>Þessi mappa inniheldur meira en 2.000 færslur. Notaðu leit til að fá markvissar niðurstöður.</translation>
     </message>
     <message>
         <source>Source of %1</source>
-        <translation type="unfinished"></translation>
+        <translation>Frumkóði %1</translation>
     </message>
     <message>
         <source>Source editor</source>
-        <translation type="unfinished"></translation>
+        <translation>Frumkóðaritill</translation>
     </message>
     <message>
         <source>Search results</source>
-        <translation type="unfinished"></translation>
+        <translation>Leitarniðurstöður</translation>
     </message>
     <message>
         <source>Project files</source>
-        <translation type="unfinished"></translation>
+        <translation>Verkefnisskrár</translation>
     </message>
     <message>
         <source>Choose folder</source>
-        <translation type="unfinished"></translation>
+        <translation>Veldu möppu</translation>
     </message>
 </context>
 <context>
     <name>IosGuestView</name>
     <message>
         <source>Screenshot saved and copied: %1</source>
-        <translation type="unfinished"></translation>
+        <translation>Skjámynd vistuð og afrituð: %1</translation>
     </message>
     <message>
         <source>%1 · outcome unclear, not retried automatically</source>
-        <translation type="unfinished"></translation>
+        <translation>%1 · óljós niðurstaða, ekki reynt aftur sjálfkrafa</translation>
     </message>
     <message numerus="yes">
         <source>%n new frame(s)/s</source>
-        <translation type="unfinished">
-            <numerusform></numerusform>
-            <numerusform></numerusform>
+        <translation>
+            <numerusform>%n nýr rammi/s</numerusform>
+            <numerusform>%n nýir rammar/s</numerusform>
         </translation>
     </message>
     <message>
         <source>App switcher</source>
-        <translation type="unfinished"></translation>
+        <translation>Appaskiptir</translation>
     </message>
     <message>
         <source>Back</source>
-        <translation type="unfinished"></translation>
+        <translation>Til baka</translation>
     </message>
     <message>
         <source>Capture saved: %1</source>
-        <translation type="unfinished"></translation>
+        <translation>Upptaka vistuð: %1</translation>
     </message>
     <message>
         <source>Control Center</source>
-        <translation type="unfinished"></translation>
+        <translation>Stjórnstöð</translation>
     </message>
     <message>
         <source>Control still busy · input not delivered</source>
-        <translation type="unfinished"></translation>
+        <translation>Stýring enn upptekin · inntak ekki afhent</translation>
     </message>
     <message>
         <source>Detach the virtual iOS device into its own window</source>
-        <translation type="unfinished"></translation>
+        <translation>Losa sýndar-iOS-tækið í eigin glugga</translation>
     </message>
     <message>
         <source>Display output unreachable</source>
-        <translation type="unfinished"></translation>
+        <translation>Ekki næst í skjáúttákinn</translation>
     </message>
     <message>
         <source>Dock</source>
-        <translation type="unfinished"></translation>
+        <translation>Dokka</translation>
     </message>
     <message>
         <source>Edge swipes start on the frame or at the screen&apos;s edge</source>
-        <translation type="unfinished"></translation>
+        <translation>Strokur frá jöðrum byrja á rammanum eða við skjábrúnina</translation>
     </message>
     <message>
         <source>Home button</source>
-        <translation type="unfinished"></translation>
+        <translation>Heimahnappur</translation>
     </message>
     <message>
         <source>Home button and swipe up from the bottom edge</source>
-        <translation type="unfinished"></translation>
+        <translation>Heimahnappur og stroka upp frá neðri brún</translation>
     </message>
     <message>
         <source>Input failed</source>
-        <translation type="unfinished"></translation>
+        <translation>Inntak mistókst</translation>
     </message>
     <message>
         <source>Input queue full · this input was not sent</source>
-        <translation type="unfinished"></translation>
+        <translation>Inntaksröð full · þetta inntak var ekki sent</translation>
     </message>
     <message>
         <source>Last frame</source>
-        <translation type="unfinished"></translation>
+        <translation>Síðasti rammi</translation>
     </message>
     <message>
         <source>Live frame · %1</source>
-        <translation type="unfinished"></translation>
+        <translation>Beinn rammi · %1</translation>
     </message>
     <message>
         <source>No running interactive iOS session</source>
-        <translation type="unfinished"></translation>
+        <translation>Engin gagnvirk iOS-lota í gangi</translation>
     </message>
     <message>
         <source>Notification Center</source>
-        <translation type="unfinished"></translation>
+        <translation>Tilkynningamiðstöð</translation>
     </message>
     <message>
         <source>Own window</source>
-        <translation type="unfinished"></translation>
+        <translation>Eigin gluggi</translation>
     </message>
     <message>
         <source>Real output of the virtual display</source>
-        <translation type="unfinished"></translation>
+        <translation>Raunverulegt útták sýndarskjásins</translation>
     </message>
     <message>
         <source>Side button</source>
-        <translation type="unfinished"></translation>
+        <translation>Hliðarhnappur</translation>
     </message>
     <message>
         <source>Still frame</source>
-        <translation type="unfinished"></translation>
+        <translation>Kyrrmynd</translation>
     </message>
     <message>
         <source>Swipe down from the top-left edge</source>
-        <translation type="unfinished"></translation>
+        <translation>Strjúktu niður frá efri vinstri brún</translation>
     </message>
     <message>
         <source>Swipe down from the top-right edge</source>
-        <translation type="unfinished"></translation>
+        <translation>Strjúktu niður frá efri hægri brún</translation>
     </message>
     <message>
         <source>Swipe right from the left edge</source>
-        <translation type="unfinished"></translation>
+        <translation>Strjúktu til hægri frá vinstri brún</translation>
     </message>
     <message>
         <source>Swipe up from the bottom edge and pause</source>
-        <translation type="unfinished"></translation>
+        <translation>Strjúktu upp frá neðri brún og staldraðu við</translation>
     </message>
     <message>
         <source>The iOS device is running in its own window</source>
-        <translation type="unfinished"></translation>
+        <translation>iOS-tækið keyrir í eigin glugga</translation>
     </message>
     <message>
         <source>Virtual iOS device</source>
-        <translation type="unfinished"></translation>
+        <translation>Sýndar-iOS-tæki</translation>
     </message>
     <message>
         <source>Waiting for the display output of iOS…</source>
-        <translation type="unfinished"></translation>
+        <translation>Bíður eftir skjáúttáki iOS…</translation>
     </message>
     <message>
         <source>Wake or lock the display</source>
-        <translation type="unfinished"></translation>
+        <translation>Vekja eða læsa skjánum</translation>
     </message>
     <message>
         <source>Stop recording · %1 s</source>
-        <translation type="unfinished"></translation>
+        <translation>Stöðva upptöku · %1 s</translation>
     </message>
     <message>
         <source>Record</source>
-        <translation type="unfinished"></translation>
+        <translation>Taka upp</translation>
     </message>
     <message>
         <source>Stop and save the recording</source>
-        <translation type="unfinished"></translation>
+        <translation>Stöðva og vista upptökuna</translation>
     </message>
     <message>
         <source>Record the screen to a video, at most 10 minutes</source>
-        <translation type="unfinished"></translation>
+        <translation>Taka skjáinn upp á myndband, í mesta lagi 10 mínútur</translation>
     </message>
     <message numerus="yes">
         <source>Typing %n character(s) from the clipboard</source>
-        <translation type="unfinished">
-            <numerusform></numerusform>
-            <numerusform></numerusform>
+        <translation>
+            <numerusform>Slær inn %n staf af klippispjaldinu</numerusform>
+            <numerusform>Slær inn %n stafi af klippispjaldinu</numerusform>
         </translation>
     </message>
     <message>
         <source>The clipboard holds no text</source>
-        <translation type="unfinished"></translation>
+        <translation>Klippispjaldið inniheldur engan texta</translation>
     </message>
     <message>
         <source>The clipboard holds %1 characters; at most %2 are typed into the phone</source>
-        <translation type="unfinished"></translation>
+        <translation>Klippispjaldið inniheldur %1 stafi; í mesta lagi %2 eru slegnir inn í símann</translation>
     </message>
     <message>
         <source>Paste</source>
-        <translation type="unfinished"></translation>
+        <translation>Líma</translation>
     </message>
     <message>
         <source>Type the clipboard&apos;s text into the field that has the focus</source>
-        <translation type="unfinished"></translation>
+        <translation>Slá texta klippispjaldsins inn í reitinn sem hefur fókus</translation>
     </message>
     <message>
         <source>Keyboard to phone</source>
-        <translation type="unfinished"></translation>
+        <translation>Lyklaborð til símans</translation>
     </message>
     <message>
         <source>Keyboard to desktop</source>
-        <translation type="unfinished"></translation>
+        <translation>Lyklaborð til skjáborðsins</translation>
     </message>
     <message>
         <source>Typing goes to the phone · Ctrl+Shift+K gives the keyboard back to the desktop</source>
-        <translation type="unfinished"></translation>
+        <translation>Innsláttur fer í símann · Ctrl+Shift+K skilar lyklaborðinu til skjáborðsins</translation>
     </message>
     <message>
         <source>Click the screen or press Ctrl+Shift+K to type on the phone</source>
-        <translation type="unfinished"></translation>
+        <translation>Smelltu á skjáinn eða ýttu á Ctrl+Shift+K til að slá inn á símanum</translation>
     </message>
     <message>
         <source>Speed</source>
-        <translation type="unfinished"></translation>
+        <translation>Hraði</translation>
     </message>
     <message>
         <source>Show frames per second and the time from an input to the picture</source>
-        <translation type="unfinished"></translation>
+        <translation>Sýna ramma á sekúndu og tímann frá inntaki til myndar</translation>
     </message>
     <message>
         <source>Screenshot with frame</source>
-        <translation type="unfinished"></translation>
+        <translation>Skjámynd með ramma</translation>
     </message>
     <message>
         <source>Save and copy a screenshot with a plain device frame and rounded corners</source>
-        <translation type="unfinished"></translation>
+        <translation>Vista og afrita skjámynd með einföldum tækisramma og ávölum hornum</translation>
     </message>
     <message>
         <source>%1 new · %2 fetched frames/s</source>
-        <translation type="unfinished"></translation>
+        <translation>%1 nýir · %2 sóttir rammar/s</translation>
     </message>
     <message>
         <source>Input to picture: %1 ms</source>
-        <translation type="unfinished"></translation>
+        <translation>Frá inntaki til myndar: %1 ms</translation>
     </message>
     <message>
         <source>Input to picture: not measured yet</source>
-        <translation type="unfinished"></translation>
+        <translation>Frá inntaki til myndar: ekki mælt enn</translation>
     </message>
     <message>
         <source>The screenshot failed</source>
-        <translation type="unfinished"></translation>
+        <translation>Skjámyndin mistókst</translation>
     </message>
     <message>
         <source>Keyboard to phone · Ctrl+Shift+K switches it to the desktop and back</source>
-        <translation type="unfinished"></translation>
+        <translation>Lyklaborð til símans · Ctrl+Shift+K skiptir því yfir á skjáborðið og til baka</translation>
     </message>
 </context>
 <context>
     <name>IosResearch</name>
     <message>
         <source>Another app change is still running.</source>
-        <translation type="unfinished"></translation>
+        <translation>Önnur appbreyting er enn í gangi.</translation>
     </message>
     <message>
         <source>Checking %1…</source>
-        <translation type="unfinished"></translation>
+        <translation>Athugar %1…</translation>
     </message>
     <message>
         <source>%1 added · installing on the running device</source>
-        <translation type="unfinished"></translation>
+        <translation>%1 bætt við · setur upp á tækinu í gangi</translation>
     </message>
     <message>
         <source>%1 added · the next start installs it</source>
-        <translation type="unfinished"></translation>
+        <translation>%1 bætt við · næsta ræsing setur það upp</translation>
     </message>
     <message>
         <source>The virtual iOS device takes one .app bundle built for arm64 iOS.</source>
-        <translation type="unfinished"></translation>
+        <translation>Sýndar-iOS-tækið tekur við einum .app-pakka sem er smíðaður fyrir arm64 iOS.</translation>
     </message>
     <message>
         <source>Set up the virtual iOS device&apos;s profile before adding apps.</source>
-        <translation type="unfinished"></translation>
+        <translation>Settu upp snið sýndar-iOS-tækisins áður en þú bætir við öppum.</translation>
     </message>
     <message>
         <source>%1 reads · %2 writes · %3 rejected</source>
-        <translation type="unfinished"></translation>
+        <translation>%1 lestrar · %2 skriftir · %3 hafnað</translation>
     </message>
     <message>
         <source>%1 · Apple variant</source>
-        <translation type="unfinished"></translation>
+        <translation>%1 · Apple-afbrigði</translation>
     </message>
     <message>
         <source>%1 · derived</source>
-        <translation type="unfinished"></translation>
+        <translation>%1 · afleitt</translation>
     </message>
     <message>
         <source>%1: %2 · state %3</source>
-        <translation type="unfinished"></translation>
+        <translation>%1: %2 · staða %3</translation>
     </message>
     <message numerus="yes">
         <source>%1: %n message(s)</source>
-        <translation type="unfinished">
-            <numerusform></numerusform>
-            <numerusform></numerusform>
+        <translation>
+            <numerusform>%1: %n skilaboð</numerusform>
+            <numerusform>%1: %n skilaboð</numerusform>
         </translation>
     </message>
     <message numerus="yes">
         <source>%n byte(s) from %1 · checksum verified</source>
-        <translation type="unfinished">
-            <numerusform></numerusform>
-            <numerusform></numerusform>
+        <translation>
+            <numerusform>%n bæti frá %1 · gátsumma staðfest</numerusform>
+            <numerusform>%n bæti frá %1 · gátsumma staðfest</numerusform>
         </translation>
     </message>
     <message>
         <source>Simulated controller with timers · experimental</source>
-        <translation type="unfinished"></translation>
+        <translation>Hermaður stýrir með tímamælum · tilraun</translation>
     </message>
     <message>
         <source>Add app…</source>
-        <translation type="unfinished"></translation>
+        <translation>Bæta við appi…</translation>
     </message>
     <message>
         <source>Core ID</source>
-        <translation type="unfinished"></translation>
+        <translation>Auðkenni kjarna</translation>
     </message>
     <message>
         <source>App to open at start</source>
-        <translation type="unfinished"></translation>
+        <translation>App sem opnast við ræsingu</translation>
     </message>
     <message>
         <source>Applies from the next start.</source>
-        <translation type="unfinished"></translation>
+        <translation>Tekur gildi við næstu ræsingu.</translation>
     </message>
     <message>
         <source>Your own arm64 .app bundles. Each start installs them together with the device&apos;s helper tools. Changes apply from the next start.</source>
-        <translation type="unfinished"></translation>
+        <translation>Þín eigin arm64 .app-pakkar. Hver ræsing setur þá upp ásamt hjálparverkfærum tækisins. Breytingar taka gildi við næstu ræsingu.</translation>
     </message>
     <message>
         <source>Boot image</source>
-        <translation type="unfinished"></translation>
+        <translation>Ræsimynd</translation>
     </message>
     <message>
         <source>Breakpoint reached</source>
-        <translation type="unfinished"></translation>
+        <translation>Rofpunkti náð</translation>
     </message>
     <message>
         <source>Processor core ID (MPIDR affinity)</source>
-        <translation type="unfinished"></translation>
+        <translation>Auðkenni örgjörvakjarna (MPIDR-skyldleiki)</translation>
     </message>
     <message>
         <source>Processor settings</source>
-        <translation type="unfinished"></translation>
+        <translation>Örgjörvastillingar</translation>
     </message>
     <message>
         <source>Processor register not supported yet: %1 · %2 by code at %3</source>
-        <translation type="unfinished"></translation>
+        <translation>Örgjörvagisti ekki studdur enn: %1 · %2 af kóða á %3</translation>
     </message>
     <message>
         <source>Processor: MIDR %1 · core ID %2 · %3</source>
-        <translation type="unfinished"></translation>
+        <translation>Örgjörvi: MIDR %1 · auðkenni kjarna %2 · %3</translation>
     </message>
     <message>
         <source>Cancel</source>
-        <translation type="unfinished"></translation>
+        <translation>Hætta við</translation>
     </message>
     <message>
         <source>Cancel the start and stop the device without saving</source>
-        <translation type="unfinished"></translation>
+        <translation>Hætta við ræsingu og stöðva tækið án þess að vista</translation>
     </message>
     <message>
         <source>Check the bundle and add it to the profile · the next start installs it</source>
-        <translation type="unfinished"></translation>
+        <translation>Athuga pakkann og bæta honum við sniðið · næsta ræsing setur hann upp</translation>
     </message>
     <message>
         <source>Checking image…</source>
-        <translation type="unfinished"></translation>
+        <translation>Athugar mynd…</translation>
     </message>
     <message>
         <source>Checking…</source>
-        <translation type="unfinished"></translation>
+        <translation>Athugar…</translation>
     </message>
     <message>
         <source>Choose</source>
-        <translation type="unfinished"></translation>
+        <translation>Velja</translation>
     </message>
     <message>
         <source>Choose app bundle (.app directory)</source>
-        <translation type="unfinished"></translation>
+        <translation>Veldu app-pakka (.app-möppu)</translation>
     </message>
     <message>
         <source>Choose iOS emulator</source>
-        <translation type="unfinished"></translation>
+        <translation>Veldu iOS-hermi</translation>
     </message>
     <message>
         <source>Choose prepared firmware package</source>
-        <translation type="unfinished"></translation>
+        <translation>Veldu undirbúinn fastbúnaðarpakka</translation>
     </message>
     <message>
         <source>Choose prepared iOS package</source>
-        <translation type="unfinished"></translation>
+        <translation>Veldu undirbúinn iOS-pakka</translation>
     </message>
     <message>
         <source>Classic (Home button)</source>
-        <translation type="unfinished"></translation>
+        <translation>Sígilt (heimahnappur)</translation>
     </message>
     <message>
         <source>Closing the session…</source>
-        <translation type="unfinished"></translation>
+        <translation>Lokar lotunni…</translation>
     </message>
     <message>
         <source>Snapshots of the running system: %1 · %2</source>
-        <translation type="unfinished"></translation>
+        <translation>Skyndimyndir af kerfinu í gangi: %1 · %2</translation>
     </message>
     <message>
         <source>Reading the controller state failed: %1</source>
-        <translation type="unfinished"></translation>
+        <translation>Ekki tókst að lesa stöðu stýringar: %1</translation>
     </message>
     <message>
         <source>For controller development: Apple&apos;s original firmware runs alone on a simulated ARM processor. The simulated controller still rests on unconfirmed hardware guesses; the firmware&apos;s services and its connection to iOS are not verified.</source>
-        <translation type="unfinished"></translation>
+        <translation>Fyrir þróun stýringa: upprunalegur fastbúnaður Apple keyrir einn á hermðum ARM-örgjörva. Hermaða stýringin byggir enn á óstaðfestum ágiskunum um vélbúnað; þjónustur fastbúnaðarins og tenging hans við iOS eru ekki sannreyndar.</translation>
     </message>
     <message>
         <source>Controller state</source>
-        <translation type="unfinished"></translation>
+        <translation>Staða stýringar</translation>
     </message>
     <message>
         <source>Work in progress: an agent starts the virtual iOS device, then it appears here. Starting takes many minutes. Apart from the built-in test app, apps with a user interface have not been shown to work yet.</source>
-        <translation type="unfinished"></translation>
+        <translation>Í vinnslu: fulltrúi ræsir sýndar-iOS-tækið og þá birtist það hér. Ræsing tekur margar mínútur. Fyrir utan innbyggt prófunarapp hefur enn ekki verið sýnt að öpp með notendaviðmóti virki.</translation>
     </message>
     <message>
         <source>Diagnostics complete</source>
-        <translation type="unfinished"></translation>
+        <translation>Greiningu lokið</translation>
     </message>
     <message>
         <source>Diagnostics ended with a finding</source>
-        <translation type="unfinished"></translation>
+        <translation>Greiningu lauk með niðurstöðu</translation>
     </message>
     <message>
         <source>Folder with pmp-research.json</source>
-        <translation type="unfinished"></translation>
+        <translation>Mappa með pmp-research.json</translation>
     </message>
     <message>
         <source>Folder with tomacco-ios.json</source>
-        <translation type="unfinished"></translation>
+        <translation>Mappa með tomacco-ios.json</translation>
     </message>
     <message>
         <source>Experimental: iOS shows its first system screens. Setup, graphics and native apps do not fully work yet.</source>
-        <translation type="unfinished"></translation>
+        <translation>Tilraun: iOS sýnir fyrstu kerfisskjáina sína. Uppsetning, myndvinnsla og innbyggð öpp virka ekki að fullu enn.</translation>
     </message>
     <message>
         <source>First invalid memory access: code at %1 · address %2 · %3</source>
-        <translation type="unfinished"></translation>
+        <translation>Fyrsti ógildi minnisaðgangur: kóði á %1 · vistfang %2 · %3</translation>
     </message>
     <message>
         <source>Memory contents in hexadecimal</source>
-        <translation type="unfinished"></translation>
+        <translation>Minnisinnihald í sextándakerfi</translation>
     </message>
     <message>
         <source>Hide processor settings</source>
-        <translation type="unfinished"></translation>
+        <translation>Fela örgjörvastillingar</translation>
     </message>
     <message>
         <source>Hide processor registers</source>
-        <translation type="unfinished"></translation>
+        <translation>Fela örgjörvagista</translation>
     </message>
     <message>
         <source>Hide boot image</source>
-        <translation type="unfinished"></translation>
+        <translation>Fela ræsimynd</translation>
     </message>
     <message>
         <source>Address of a firmware instruction, e.g. 0x10280d4 · optional</source>
-        <translation type="unfinished"></translation>
+        <translation>Vistfang fastbúnaðarskipunar, t.d. 0x10280d4 · valfrjálst</translation>
     </message>
     <message>
         <source>Job &amp; logs</source>
-        <translation type="unfinished"></translation>
+        <translation>Verk og annálar</translation>
     </message>
     <message>
         <source>The processor identity the firmware sees when it starts. Other values make it take other start-up paths; they add no hardware features.</source>
-        <translation type="unfinished"></translation>
+        <translation>Auðkenni örgjörvans sem fastbúnaðurinn sér við ræsingu. Aðrar tölur láta hann fara aðrar ræsisleiðir; þær bæta ekki við vélbúnaðareiginleikum.</translation>
     </message>
     <message>
         <source>From the last snapshot · raw 64-bit values</source>
-        <translation type="unfinished"></translation>
+        <translation>Úr síðustu skyndimynd · hrá 64-bita gildi</translation>
     </message>
     <message>
         <source>Loading…</source>
-        <translation type="unfinished"></translation>
+        <translation>Hleður…</translation>
     </message>
     <message>
         <source>Maximum run time</source>
-        <translation type="unfinished"></translation>
+        <translation>Hámarks keyrslutími</translation>
     </message>
     <message>
         <source>Maximum run time in seconds</source>
-        <translation type="unfinished"></translation>
+        <translation>Hámarks keyrslutími í sekúndum</translation>
     </message>
     <message>
         <source>Saved memory</source>
-        <translation type="unfinished"></translation>
+        <translation>Vistað minni</translation>
     </message>
     <message>
         <source>Model</source>
-        <translation type="unfinished"></translation>
+        <translation>Gerð</translation>
     </message>
     <message>
         <source>No controller · baseline for comparison</source>
-        <translation type="unfinished"></translation>
+        <translation>Engin stýring · grunnlína til samanburðar</translation>
     </message>
     <message>
         <source>No apps of your own yet · the start opens the built-in test app.</source>
-        <translation type="unfinished"></translation>
+        <translation>Engin eigin öpp enn · ræsingin opnar innbyggt prófunarapp.</translation>
     </message>
     <message>
         <source>Number of bytes</source>
-        <translation type="unfinished"></translation>
+        <translation>Fjöldi bæta</translation>
     </message>
     <message>
         <source>Open at start</source>
-        <translation type="unfinished"></translation>
+        <translation>Opna við ræsingu</translation>
     </message>
     <message>
         <source>Open test system</source>
-        <translation type="unfinished"></translation>
+        <translation>Opna prófunarkerfi</translation>
     </message>
     <message>
         <source>Your apps</source>
-        <translation type="unfinished"></translation>
+        <translation>Öppin þín</translation>
     </message>
     <message>
         <source>Built-in test app (diagnostics)</source>
-        <translation type="unfinished"></translation>
+        <translation>Innbyggt prófunarapp (greining)</translation>
     </message>
     <message>
         <source>Own window</source>
-        <translation type="unfinished"></translation>
+        <translation>Eigin gluggi</translation>
     </message>
     <message>
         <source>Firmware breakpoint</source>
-        <translation type="unfinished"></translation>
+        <translation>Rofpunktur fastbúnaðar</translation>
     </message>
     <message>
         <source>Simulated firmware controller</source>
-        <translation type="unfinished"></translation>
+        <translation>Hermað stýring fastbúnaðar</translation>
     </message>
     <message>
         <source>Power-management firmware (PMP)</source>
-        <translation type="unfinished"></translation>
+        <translation>Fastbúnaður orkustjórnunar (PMP)</translation>
     </message>
     <message>
         <source>Firmware running</source>
-        <translation type="unfinished"></translation>
+        <translation>Fastbúnaður í gangi</translation>
     </message>
     <message>
         <source>Path to an .app directory (arm64)</source>
-        <translation type="unfinished"></translation>
+        <translation>Slóð að .app-möppu (arm64)</translation>
     </message>
     <message>
         <source>Addresses 0x1000000 to 0x11fffff of the firmware&apos;s memory. Reading checks the saved copy; the firmware is not run again for it.</source>
-        <translation type="unfinished"></translation>
+        <translation>Vistföng 0x1000000 til 0x11fffff í minni fastbúnaðarins. Lestur athugar vistuðu afritið; fastbúnaðurinn er ekki keyrður aftur til þess.</translation>
     </message>
     <message>
         <source>Memory address</source>
-        <translation type="unfinished"></translation>
+        <translation>Minnisvistfang</translation>
     </message>
     <message>
         <source>Prepare package</source>
-        <translation type="unfinished"></translation>
+        <translation>Undirbúa pakka</translation>
     </message>
     <message>
         <source>Prepare, boot, unlock and open the test app</source>
-        <translation type="unfinished"></translation>
+        <translation>Undirbúa, ræsa, aflæsa og opna prófunarappið</translation>
     </message>
     <message>
         <source>Prepared firmware package</source>
-        <translation type="unfinished"></translation>
+        <translation>Undirbúinn fastbúnaðarpakki</translation>
     </message>
     <message>
         <source>Prepared iOS package</source>
-        <translation type="unfinished"></translation>
+        <translation>Undirbúinn iOS-pakki</translation>
     </message>
     <message>
         <source>Preparing working copy</source>
-        <translation type="unfinished"></translation>
+        <translation>Undirbýr vinnuafrit</translation>
     </message>
     <message>
         <source>Memory copy failed: %1</source>
-        <translation type="unfinished"></translation>
+        <translation>Minnisafritun mistókst: %1</translation>
     </message>
     <message>
         <source>Memory copy: 2 MiB from address %1 · saved in the report folder</source>
-        <translation type="unfinished"></translation>
+        <translation>Minnisafrit: 2 MiB frá vistfangi %1 · vistað í skýrslumöppunni</translation>
     </message>
     <message>
         <source>Read</source>
-        <translation type="unfinished"></translation>
+        <translation>Lesa</translation>
     </message>
     <message>
         <source>Ready for a test run</source>
-        <translation type="unfinished"></translation>
+        <translation>Tilbúið fyrir prófunarkeyrslu</translation>
     </message>
     <message>
         <source>Actual image from the start-up screen · not yet the device&apos;s main display</source>
-        <translation type="unfinished"></translation>
+        <translation>Raunveruleg mynd af ræsiskjánum · ekki enn aðalskjár tækisins</translation>
     </message>
     <message>
         <source>Real iOS directly on Linux. The virtual iOS device shows the lock and Home screens and starts its own test app; general app development is not enabled yet.</source>
-        <translation type="unfinished"></translation>
+        <translation>Raunverulegt iOS beint á Linux. Sýndar-iOS-tækið sýnir lás- og heimaskjá og ræsir eigið prófunarapp; almenn appþróun er ekki enn virk.</translation>
     </message>
     <message>
         <source>Refresh</source>
-        <translation type="unfinished"></translation>
+        <translation>Endurnýja</translation>
     </message>
     <message>
         <source>Remove</source>
-        <translation type="unfinished"></translation>
+        <translation>Fjarlægja</translation>
     </message>
     <message>
         <source>Remove from the profile · an app already installed stays on the device</source>
-        <translation type="unfinished"></translation>
+        <translation>Fjarlægja úr sniðinu · app sem þegar er uppsett verður áfram á tækinu</translation>
     </message>
     <message>
         <source>Report folder</source>
-        <translation type="unfinished"></translation>
+        <translation>Skýrslumappa</translation>
     </message>
     <message>
         <source>Run %1 · %2</source>
-        <translation type="unfinished"></translation>
+        <translation>Keyrsla %1 · %2</translation>
     </message>
     <message>
         <source>Run iOS, or the iPhone&apos;s power-management firmware on its own, directly on Linux. Each run writes its own report; runs started from the command line or by an agent appear here too.</source>
-        <translation type="unfinished"></translation>
+        <translation>Keyrðu iOS, eða orkustjórnunarfastbúnað iPhone einan, beint á Linux. Hver keyrsla skrifar eigin skýrslu; keyrslur sem eru ræstar af skipanalínu eða af fulltrúa birtast líka hér.</translation>
     </message>
     <message>
         <source>Run ended</source>
-        <translation type="unfinished"></translation>
+        <translation>Keyrslu lokið</translation>
     </message>
     <message>
         <source>Save a copy of the firmware&apos;s memory with the report (2 MiB)</source>
-        <translation type="unfinished"></translation>
+        <translation>Vista afrit af minni fastbúnaðarins með skýrslunni (2 MiB)</translation>
     </message>
     <message>
         <source>Save storage and shut down cleanly</source>
-        <translation type="unfinished"></translation>
+        <translation>Vista geymslu og slökkva snyrtilega</translation>
     </message>
     <message>
         <source>System services not found in the snapshots: %1</source>
-        <translation type="unfinished"></translation>
+        <translation>Kerfisþjónustur fundust ekki í skyndimyndunum: %1</translation>
     </message>
     <message>
         <source>Show</source>
-        <translation type="unfinished"></translation>
+        <translation>Sýna</translation>
     </message>
     <message>
         <source>Show processor registers</source>
-        <translation type="unfinished"></translation>
+        <translation>Sýna örgjörvagista</translation>
     </message>
     <message>
         <source>Start</source>
-        <translation type="unfinished"></translation>
+        <translation>Ræsa</translation>
     </message>
     <message>
         <source>Start failed</source>
-        <translation type="unfinished"></translation>
+        <translation>Ræsing mistókst</translation>
     </message>
     <message>
         <source>Start test run</source>
-        <translation type="unfinished"></translation>
+        <translation>Hefja prófunarkeyrslu</translation>
     </message>
     <message>
         <source>Status currently unknown</source>
-        <translation type="unfinished"></translation>
+        <translation>Staða óþekkt sem stendur</translation>
     </message>
     <message>
         <source>Stop</source>
-        <translation type="unfinished"></translation>
+        <translation>Stöðva</translation>
     </message>
     <message>
         <source>Stop at a code address</source>
-        <translation type="unfinished"></translation>
+        <translation>Stöðva við kóðavistfang</translation>
     </message>
     <message>
         <source>Stop without saving</source>
-        <translation type="unfinished"></translation>
+        <translation>Stöðva án þess að vista</translation>
     </message>
     <message>
         <source>Stop without saving · ends the run at once, whatever the device has not saved yet is lost</source>
-        <translation type="unfinished"></translation>
+        <translation>Stöðva án þess að vista · lýkur keyrslunni strax, allt sem tækið hefur ekki vistað enn glatast</translation>
     </message>
     <message>
         <source>Stopped before the instruction at %1 · this does not show that the firmware started completely</source>
-        <translation type="unfinished"></translation>
+        <translation>Stöðvaðist fyrir skipunina á %1 · þetta sýnir ekki að fastbúnaðurinn hafi ræst að fullu</translation>
     </message>
     <message>
         <source>Stopping…</source>
-        <translation type="unfinished"></translation>
+        <translation>Stöðvar…</translation>
     </message>
     <message>
         <source>What to run</source>
-        <translation type="unfinished"></translation>
+        <translation>Hvað á að keyra</translation>
     </message>
     <message>
         <source>Reading this state changes nothing: no message is taken from a queue and no interrupt is answered.</source>
-        <translation type="unfinished"></translation>
+        <translation>Að lesa þessa stöðu breytir engu: engin skilaboð eru tekin úr biðröð og engu rofi er svarað.</translation>
     </message>
     <message>
         <source>The existing run is reused.</source>
-        <translation type="unfinished"></translation>
+        <translation>Fyrirliggjandi keyrsla er endurnýtt.</translation>
     </message>
     <message>
         <source>The device could not save before stopping (%1). “Stop without saving” ends the run at once; the next start uses the last saved state.</source>
-        <translation type="unfinished"></translation>
+        <translation>Tækið gat ekki vistað áður en það stöðvaðist (%1). „Stöðva án þess að vista“ lýkur keyrslunni strax; næsta ræsing notar síðustu vistuðu stöðu.</translation>
     </message>
     <message>
         <source>The device is still starting, there is nothing to save. Ending the run…</source>
-        <translation type="unfinished"></translation>
+        <translation>Tækið er enn að ræsast, ekkert er að vista. Lýkur keyrslunni…</translation>
     </message>
     <message>
         <source>The run stops at that address and reports the processor state. The firmware itself is not modified.</source>
-        <translation type="unfinished"></translation>
+        <translation>Keyrslan stöðvast á þessu vistfangi og tilkynnir stöðu örgjörvans. Fastbúnaðinum sjálfum er ekki breytt.</translation>
     </message>
     <message>
         <source>Time limit reached</source>

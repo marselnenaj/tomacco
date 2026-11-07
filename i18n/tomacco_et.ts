@@ -820,1239 +820,1239 @@ Mudel määrab ekraani ja raami. Android pärineb valitud süsteemitõmmisest; t
     </message>
     <message>
         <source>Star White</source>
-        <translation type="unfinished"></translation>
+        <translation>Tähevalge</translation>
     </message>
     <message>
         <source>Teal</source>
-        <translation type="unfinished"></translation>
+        <translation>Sinakasroheline</translation>
     </message>
     <message>
         <source>Ultramarine</source>
-        <translation type="unfinished"></translation>
+        <translation>Ultramariin</translation>
     </message>
     <message>
         <source>White</source>
-        <translation type="unfinished"></translation>
+        <translation>Valge</translation>
     </message>
 </context>
 <context>
     <name>CommandPalette</name>
     <message>
         <source>No matching views or tools</source>
-        <translation type="unfinished"></translation>
+        <translation>Sobivaid vaateid ega tööriistu pole</translation>
     </message>
     <message>
         <source>View</source>
-        <translation type="unfinished"></translation>
+        <translation>Vaade</translation>
     </message>
     <message>
         <source>Search views, commands or tools…</source>
-        <translation type="unfinished"></translation>
+        <translation>Otsi vaateid, käske või tööriistu…</translation>
     </message>
     <message>
         <source>Ctrl</source>
-        <translation type="unfinished"></translation>
+        <translation>Ctrl</translation>
     </message>
     <message>
         <source>Recent</source>
-        <translation type="unfinished"></translation>
+        <translation>Hiljutised</translation>
     </message>
     <message>
         <source>↑ ↓  Select     PgUp PgDn  Page     ↵  Open     Esc  Close</source>
-        <translation type="unfinished"></translation>
+        <translation>↑ ↓  Vali     PgUp PgDn  Leht     ↵  Ava     Esc  Sulge</translation>
     </message>
 </context>
 <context>
     <name>Control</name>
     <message>
         <source>Invalid frame response</source>
-        <translation type="unfinished"></translation>
+        <translation>Vigane kaadri vastus</translation>
     </message>
     <message>
         <source>Invalid response from the control plane</source>
-        <translation type="unfinished"></translation>
+        <translation>Vigane vastus juhtimistasandilt</translation>
     </message>
     <message>
         <source>Invalid response from the frame control</source>
-        <translation type="unfinished"></translation>
+        <translation>Vigane vastus kaadrijuhtimiselt</translation>
     </message>
     <message>
         <source>Invalid session name</source>
-        <translation type="unfinished"></translation>
+        <translation>Vigane seansi nimi</translation>
     </message>
     <message>
         <source>Tomacco is already open in another window; agents keep controlling that one. To control this window too, start it with --preview-session and another name.</source>
-        <translation type="unfinished"></translation>
+        <translation>Tomacco on juba teises aknas avatud; agendid juhivad endiselt seda. Selle akna juhtimiseks käivita see võtmega --preview-session ja teise nimega.</translation>
     </message>
     <message>
         <source>Tomacco&apos;s control program (tomaccoctl) could not be started. Reinstall Tomacco or run install.py again.</source>
-        <translation type="unfinished"></translation>
+        <translation>Tomacco juhtprogrammi (tomaccoctl) ei õnnestunud käivitada. Paigalda Tomacco uuesti või käivita install.py uuesti.</translation>
     </message>
     <message>
         <source>Tomacco&apos;s control program (tomaccoctl) is not working: %1</source>
-        <translation type="unfinished"></translation>
+        <translation>Tomacco juhtprogramm (tomaccoctl) ei tööta: %1</translation>
     </message>
     <message>
         <source>Tomacco&apos;s control program (tomaccoctl) was not found. Reinstall Tomacco or run install.py again.</source>
-        <translation type="unfinished"></translation>
+        <translation>Tomacco juhtprogrammi (tomaccoctl) ei leitud. Paigalda Tomacco uuesti või käivita install.py uuesti.</translation>
     </message>
     <message>
         <source>The agent socket directory belongs to another user</source>
-        <translation type="unfinished"></translation>
+        <translation>Agendi sokli kataloog kuulub teisele kasutajale</translation>
     </message>
     <message>
         <source>The agent socket directory could not be created</source>
-        <translation type="unfinished"></translation>
+        <translation>Agendi sokli kataloogi ei õnnestunud luua</translation>
     </message>
     <message>
         <source>The control program ended unexpectedly</source>
-        <translation type="unfinished"></translation>
+        <translation>Juhtprogramm lõpetas ootamatult</translation>
     </message>
     <message>
         <source>The control program failed: %1</source>
-        <translation type="unfinished"></translation>
+        <translation>Juhtprogramm ebaõnnestus: %1</translation>
     </message>
     <message>
         <source>The frame control could not be initialized</source>
-        <translation type="unfinished"></translation>
+        <translation>Kaadrijuhtimist ei õnnestunud lähtestada</translation>
     </message>
     <message>
         <source>The frame control did not respond in time</source>
-        <translation type="unfinished"></translation>
+        <translation>Kaadrijuhtimine ei vastanud õigel ajal</translation>
     </message>
     <message>
         <source>The frame control ended</source>
-        <translation type="unfinished"></translation>
+        <translation>Kaadrijuhtimine lõppes</translation>
     </message>
     <message>
         <source>The frame control is not reachable</source>
-        <translation type="unfinished"></translation>
+        <translation>Kaadrijuhtimine pole kättesaadav</translation>
     </message>
     <message>
         <source>The frame request could not be sent</source>
-        <translation type="unfinished"></translation>
+        <translation>Kaadripäringut ei õnnestunud saata</translation>
     </message>
     <message>
         <source>The frame response is too large</source>
-        <translation type="unfinished"></translation>
+        <translation>Kaadri vastus on liiga suur</translation>
     </message>
     <message>
         <source>The frame response matches no request</source>
-        <translation type="unfinished"></translation>
+        <translation>Kaadri vastus ei vasta ühelegi päringule</translation>
     </message>
     <message>
         <source>Too many concurrent requests</source>
-        <translation type="unfinished"></translation>
+        <translation>Liiga palju samaaegseid päringuid</translation>
     </message>
     <message>
         <source>tomaccoctl could not be started (%1). Reinstall Tomacco or run install.py again.</source>
-        <translation type="unfinished"></translation>
+        <translation>tomaccoctl-i ei õnnestunud käivitada (%1). Paigalda Tomacco uuesti või käivita install.py uuesti.</translation>
     </message>
 </context>
 <context>
     <name>DebugWorkspace</name>
     <message>
         <source>All files (*)</source>
-        <translation type="unfinished"></translation>
+        <translation>Kõik failid (*)</translation>
     </message>
     <message>
         <source>Android libraries (*.so)</source>
-        <translation type="unfinished"></translation>
+        <translation>Androidi teegid (*.so)</translation>
     </message>
     <message>
         <source>Application ID · e.g. dev.example.app</source>
-        <translation type="unfinished"></translation>
+        <translation>Rakenduse ID · nt dev.example.app</translation>
     </message>
     <message>
         <source>Breakpoints</source>
-        <translation type="unfinished"></translation>
+        <translation>Katkestuspunktid</translation>
     </message>
     <message>
         <source>CALL STACK</source>
-        <translation type="unfinished"></translation>
+        <translation>KUTSEPINU</translation>
     </message>
     <message>
         <source>Choose Android device</source>
-        <translation type="unfinished"></translation>
+        <translation>Vali Android-seade</translation>
     </message>
     <message>
         <source>Choose debug program</source>
-        <translation type="unfinished"></translation>
+        <translation>Vali silutav programm</translation>
     </message>
     <message>
         <source>Choose file</source>
-        <translation type="unfinished"></translation>
+        <translation>Vali fail</translation>
     </message>
     <message>
         <source>Choose library with debug symbols</source>
-        <translation type="unfinished"></translation>
+        <translation>Vali silumissümbolitega teek</translation>
     </message>
     <message>
         <source>Connect</source>
-        <translation type="unfinished"></translation>
+        <translation>Ühenda</translation>
     </message>
     <message>
         <source>Connecting…</source>
-        <translation type="unfinished"></translation>
+        <translation>Ühendamine…</translation>
     </message>
     <message>
         <source>Continue</source>
-        <translation type="unfinished"></translation>
+        <translation>Jätka</translation>
     </message>
     <message>
         <source>Debugger exited</source>
-        <translation type="unfinished"></translation>
+        <translation>Siluja lõpetas</translation>
     </message>
     <message>
         <source>Debugger request failed</source>
-        <translation type="unfinished"></translation>
+        <translation>Siluja päring ebaõnnestus</translation>
     </message>
     <message>
         <source>Disconnect</source>
-        <translation type="unfinished"></translation>
+        <translation>Katkesta ühendus</translation>
     </message>
     <message>
         <source>Disconnected</source>
-        <translation type="unfinished"></translation>
+        <translation>Ühendus katkestatud</translation>
     </message>
     <message>
         <source>Ended</source>
-        <translation type="unfinished"></translation>
+        <translation>Lõppenud</translation>
     </message>
     <message>
         <source>Enter valid line numbers</source>
-        <translation type="unfinished"></translation>
+        <translation>Sisesta kehtivad reanumbrid</translation>
     </message>
     <message>
         <source>Evaluate expression</source>
-        <translation type="unfinished"></translation>
+        <translation>Väärtusta avaldis</translation>
     </message>
     <message>
         <source>Evaluate the expression in the selected frame</source>
-        <translation type="unfinished"></translation>
+        <translation>Väärtusta avaldis valitud kaadris</translation>
     </message>
     <message>
         <source>Executable with debug symbols</source>
-        <translation type="unfinished"></translation>
+        <translation>Silumissümbolitega käivitatav fail</translation>
     </message>
     <message>
         <source>Hide events</source>
-        <translation type="unfinished"></translation>
+        <translation>Peida sündmused</translation>
     </message>
     <message>
         <source>Launch app</source>
-        <translation type="unfinished"></translation>
+        <translation>Käivita rakendus</translation>
     </message>
     <message>
         <source>Launches the app if it is not running yet.</source>
-        <translation type="unfinished"></translation>
+        <translation>Käivitab rakenduse, kui see veel ei tööta.</translation>
     </message>
     <message>
         <source>Library with debug symbols (.so)</source>
-        <translation type="unfinished"></translation>
+        <translation>Silumissümbolitega teek (.so)</translation>
     </message>
     <message>
         <source>Line %1</source>
-        <translation type="unfinished"></translation>
+        <translation>Rida %1</translation>
     </message>
     <message>
         <source>Lines: 12, 24</source>
-        <translation type="unfinished"></translation>
+        <translation>Read: 12, 24</translation>
     </message>
     <message>
         <source>Locals</source>
-        <translation type="unfinished"></translation>
+        <translation>Kohalikud muutujad</translation>
     </message>
     <message>
         <source>No debugger events yet.</source>
-        <translation type="unfinished"></translation>
+        <translation>Siluja sündmusi veel pole.</translation>
     </message>
     <message>
         <source>No paused thread yet</source>
-        <translation type="unfinished"></translation>
+        <translation>Peatatud lõime veel pole</translation>
     </message>
     <message>
         <source>No session</source>
-        <translation type="unfinished"></translation>
+        <translation>Seanssi pole</translation>
     </message>
     <message>
         <source>Open existing session</source>
-        <translation type="unfinished"></translation>
+        <translation>Ava olemasolev seanss</translation>
     </message>
     <message>
         <source>Open source</source>
-        <translation type="unfinished"></translation>
+        <translation>Ava lähtekood</translation>
     </message>
     <message>
         <source>Paused</source>
-        <translation type="unfinished"></translation>
+        <translation>Peatatud</translation>
     </message>
     <message>
         <source>Refresh</source>
-        <translation type="unfinished"></translation>
+        <translation>Värskenda</translation>
     </message>
     <message>
         <source>Restarts the app and waits for the Java debugger.</source>
-        <translation type="unfinished"></translation>
+        <translation>Käivitab rakenduse uuesti ja ootab Java silujat.</translation>
     </message>
     <message>
         <source>Run the next source line</source>
-        <translation type="unfinished"></translation>
+        <translation>Käivita järgmine lähtekoodi rida</translation>
     </message>
     <message>
         <source>Running</source>
-        <translation type="unfinished"></translation>
+        <translation>Käib</translation>
     </message>
     <message>
         <source>Session active</source>
-        <translation type="unfinished"></translation>
+        <translation>Seanss aktiivne</translation>
     </message>
     <message>
         <source>Show events</source>
-        <translation type="unfinished"></translation>
+        <translation>Näita sündmusi</translation>
     </message>
     <message>
         <source>Source file or Java class</source>
-        <translation type="unfinished"></translation>
+        <translation>Lähtefail või Java klass</translation>
     </message>
     <message>
         <source>Step in</source>
-        <translation type="unfinished"></translation>
+        <translation>Astu sisse</translation>
     </message>
     <message>
         <source>Step out</source>
-        <translation type="unfinished"></translation>
+        <translation>Astu välja</translation>
     </message>
     <message>
         <source>Step over</source>
-        <translation type="unfinished"></translation>
+        <translation>Astu üle</translation>
     </message>
     <message>
         <source>VARIABLES</source>
-        <translation type="unfinished"></translation>
+        <translation>MUUTUJAD</translation>
     </message>
     <message>
         <source>ended</source>
-        <translation type="unfinished"></translation>
+        <translation>lõppenud</translation>
     </message>
     <message>
         <source>Attach to your app</source>
-        <translation type="unfinished"></translation>
+        <translation>Haagi oma rakenduse külge</translation>
     </message>
     <message>
         <source>Needs a debug build and the NDK. The library must match your app and its processor.</source>
-        <translation type="unfinished"></translation>
+        <translation>Vajab silumisehitust ja NDK-d. Teek peab vastama sinu rakendusele ja selle protsessorile.</translation>
     </message>
     <message>
         <source>Needs a debug build on a connected phone or emulator.</source>
-        <translation type="unfinished"></translation>
+        <translation>Vajab silumisehitust ühendatud telefonis või emulaatoris.</translation>
     </message>
     <message>
         <source>A program on this computer, inspected with LLDB.</source>
-        <translation type="unfinished"></translation>
+        <translation>Selle arvuti programm, mida uuritakse LLDB-ga.</translation>
     </message>
     <message>
         <source>Take over your agent&apos;s session</source>
-        <translation type="unfinished"></translation>
+        <translation>Võta üle oma agendi seanss</translation>
     </message>
     <message>
         <source>Pause your app or set a breakpoint to see the stack and variables.</source>
-        <translation type="unfinished"></translation>
+        <translation>Peata oma rakendus või määra katkestuspunkt, et näha pinu ja muutujaid.</translation>
     </message>
     <message>
         <source>Attach here, or take over a session your agent started.</source>
-        <translation type="unfinished"></translation>
+        <translation>Haagi siin või võta üle seanss, mille sinu agent alustas.</translation>
     </message>
 </context>
 <context>
     <name>Device</name>
     <message>
         <source>Device permissions are disabled in this layout preview.</source>
-        <translation type="unfinished"></translation>
+        <translation>Seadme õigused on selles paigutuse eelvaates keelatud.</translation>
     </message>
     <message>
         <source>No connection</source>
-        <translation type="unfinished"></translation>
+        <translation>Ühendus puudub</translation>
     </message>
     <message>
         <source>Page not reachable. Is your dev server running?</source>
-        <translation type="unfinished"></translation>
+        <translation>Leht pole kättesaadav. Kas sinu arendusserver töötab?</translation>
     </message>
     <message>
         <source>Please open downloads in your browser. Device images can be saved with “Screenshot”.</source>
-        <translation type="unfinished"></translation>
+        <translation>Ava allalaadimised oma brauseris. Seadme pilte saab salvestada nupuga „Ekraanipilt“.</translation>
     </message>
     <message>
         <source>Reload</source>
-        <translation type="unfinished"></translation>
+        <translation>Laadi uuesti</translation>
     </message>
     <message>
         <source>SAFE AREA · PREVIEW</source>
-        <translation type="unfinished"></translation>
+        <translation>OHUTU ALA · EELVAADE</translation>
     </message>
     <message>
         <source>The web view was terminated. Please reload.</source>
-        <translation type="unfinished"></translation>
+        <translation>Veebivaade lõpetati. Palun laadi uuesti.</translation>
     </message>
     <message>
         <source>This preview opens web addresses. Use “Open folder” for local builds.</source>
-        <translation type="unfinished"></translation>
+        <translation>See eelvaade avab veebiaadresse. Kohalike ehituste jaoks kasuta nuppu „Ava kaust“.</translation>
     </message>
 </context>
 <context>
     <name>DeviceWindow</name>
     <message>
         <source>Save and copy a screenshot · Ctrl+Shift+S</source>
-        <translation type="unfinished"></translation>
+        <translation>Salvesta ja kopeeri ekraanipilt · Ctrl+Shift+S</translation>
     </message>
     <message>
         <source>Back</source>
-        <translation type="unfinished"></translation>
+        <translation>Tagasi</translation>
     </message>
     <message>
         <source>Bring back into the workspace</source>
-        <translation type="unfinished"></translation>
+        <translation>Too tagasi tööalasse</translation>
     </message>
     <message>
         <source>Close device window · the device keeps running</source>
-        <translation type="unfinished"></translation>
+        <translation>Sulge seadme aken · seade jääb tööle</translation>
     </message>
     <message>
         <source>Larger · Ctrl+mouse wheel</source>
-        <translation type="unfinished"></translation>
+        <translation>Suurem · Ctrl+hiireratas</translation>
     </message>
     <message>
         <source>Open in the workspace</source>
-        <translation type="unfinished"></translation>
+        <translation>Ava tööalas</translation>
     </message>
     <message>
         <source>Tomacco – Device</source>
-        <translation type="unfinished"></translation>
+        <translation>Tomacco – seade</translation>
     </message>
     <message>
         <source>Rotate</source>
-        <translation type="unfinished"></translation>
+        <translation>Pööra</translation>
     </message>
     <message>
         <source>Show the back</source>
-        <translation type="unfinished"></translation>
+        <translation>Näita tagakülge</translation>
     </message>
     <message>
         <source>Show the front</source>
-        <translation type="unfinished"></translation>
+        <translation>Näita esikülge</translation>
     </message>
     <message>
         <source>Side button</source>
-        <translation type="unfinished"></translation>
+        <translation>Külgnupp</translation>
     </message>
     <message>
         <source>Side button · wake or lock the display</source>
-        <translation type="unfinished"></translation>
+        <translation>Külgnupp · äratab või lukustab ekraani</translation>
     </message>
     <message>
         <source>Smaller · Ctrl+mouse wheel</source>
-        <translation type="unfinished"></translation>
+        <translation>Väiksem · Ctrl+hiireratas</translation>
     </message>
     <message>
         <source>Stop keeping this window above the others</source>
-        <translation type="unfinished"></translation>
+        <translation>Ära hoia seda akent enam teiste peal</translation>
     </message>
     <message>
         <source>Keep this window above the others</source>
-        <translation type="unfinished"></translation>
+        <translation>Hoia see aken teiste peal</translation>
     </message>
 </context>
 <context>
     <name>FileWorkspace</name>
     <message>
         <source>Choose a file in the project tree</source>
-        <translation type="unfinished"></translation>
+        <translation>Vali fail projektipuust</translation>
     </message>
     <message>
         <source>Close file</source>
-        <translation type="unfinished"></translation>
+        <translation>Sulge fail</translation>
     </message>
     <message>
         <source>Discard unsaved changes?</source>
-        <translation type="unfinished"></translation>
+        <translation>Kas loobuda salvestamata muudatustest?</translation>
     </message>
     <message>
         <source>Folder</source>
-        <translation type="unfinished"></translation>
+        <translation>Kaust</translation>
     </message>
     <message>
         <source>Hidden</source>
-        <translation type="unfinished"></translation>
+        <translation>Peidetud</translation>
     </message>
     <message>
         <source>Line %1 · UTF-8 · changes are checked on save</source>
-        <translation type="unfinished"></translation>
+        <translation>Rida %1 · UTF-8 · muudatusi kontrollitakse salvestamisel</translation>
     </message>
     <message>
         <source>More matches available; narrow the search term.</source>
-        <translation type="unfinished"></translation>
+        <translation>Vasteid on rohkem; täpsusta otsingutähendit.</translation>
     </message>
     <message>
         <source>New file</source>
-        <translation type="unfinished"></translation>
+        <translation>Uus fail</translation>
     </message>
     <message>
         <source>New folder</source>
-        <translation type="unfinished"></translation>
+        <translation>Uus kaust</translation>
     </message>
     <message>
         <source>Open a project first</source>
-        <translation type="unfinished"></translation>
+        <translation>Ava kõigepealt projekt</translation>
     </message>
     <message>
         <source>Path relative to the project, e.g. lib/example.dart</source>
-        <translation type="unfinished"></translation>
+        <translation>Tee projekti suhtes, nt lib/example.dart</translation>
     </message>
     <message>
         <source>Reload</source>
-        <translation type="unfinished"></translation>
+        <translation>Laadi uuesti</translation>
     </message>
     <message>
         <source>Reload files</source>
-        <translation type="unfinished"></translation>
+        <translation>Laadi failid uuesti</translation>
     </message>
     <message>
         <source>Save the file first or discard it with Reload.</source>
-        <translation type="unfinished"></translation>
+        <translation>Salvesta fail kõigepealt või loobu sellest nupuga Laadi uuesti.</translation>
     </message>
     <message>
         <source>Save · Ctrl+S</source>
-        <translation type="unfinished"></translation>
+        <translation>Salvesta · Ctrl+S</translation>
     </message>
     <message>
         <source>Saved · %1</source>
-        <translation type="unfinished"></translation>
+        <translation>Salvestatud · %1</translation>
     </message>
     <message>
         <source>Search source code…</source>
-        <translation type="unfinished"></translation>
+        <translation>Otsi lähtekoodist…</translation>
     </message>
     <message>
         <source>The file is read again from disk.</source>
-        <translation type="unfinished"></translation>
+        <translation>Fail loetakse kettalt uuesti.</translation>
     </message>
     <message>
         <source>The link leads outside this project.</source>
-        <translation type="unfinished"></translation>
+        <translation>Link viib sellest projektist väljapoole.</translation>
     </message>
     <message>
         <source>This folder contains more than 2,000 entries. Use search for targeted results.</source>
-        <translation type="unfinished"></translation>
+        <translation>Selles kaustas on üle 2000 kirje. Kasuta sihitud tulemuste jaoks otsingut.</translation>
     </message>
     <message>
         <source>Source of %1</source>
-        <translation type="unfinished"></translation>
+        <translation>%1 lähtekood</translation>
     </message>
     <message>
         <source>Source editor</source>
-        <translation type="unfinished"></translation>
+        <translation>Lähtekoodi redaktor</translation>
     </message>
     <message>
         <source>Search results</source>
-        <translation type="unfinished"></translation>
+        <translation>Otsingutulemused</translation>
     </message>
     <message>
         <source>Project files</source>
-        <translation type="unfinished"></translation>
+        <translation>Projekti failid</translation>
     </message>
     <message>
         <source>Choose folder</source>
-        <translation type="unfinished"></translation>
+        <translation>Vali kaust</translation>
     </message>
 </context>
 <context>
     <name>IosGuestView</name>
     <message>
         <source>Screenshot saved and copied: %1</source>
-        <translation type="unfinished"></translation>
+        <translation>Ekraanipilt salvestatud ja kopeeritud: %1</translation>
     </message>
     <message>
         <source>%1 · outcome unclear, not retried automatically</source>
-        <translation type="unfinished"></translation>
+        <translation>%1 · tulemus ebaselge, automaatselt ei korrata</translation>
     </message>
     <message numerus="yes">
         <source>%n new frame(s)/s</source>
-        <translation type="unfinished">
-            <numerusform></numerusform>
-            <numerusform></numerusform>
+        <translation>
+            <numerusform>%n uus kaader/s</numerusform>
+            <numerusform>%n uut kaadrit/s</numerusform>
         </translation>
     </message>
     <message>
         <source>App switcher</source>
-        <translation type="unfinished"></translation>
+        <translation>Rakenduste vahetaja</translation>
     </message>
     <message>
         <source>Back</source>
-        <translation type="unfinished"></translation>
+        <translation>Tagasi</translation>
     </message>
     <message>
         <source>Capture saved: %1</source>
-        <translation type="unfinished"></translation>
+        <translation>Salvestis salvestatud: %1</translation>
     </message>
     <message>
         <source>Control Center</source>
-        <translation type="unfinished"></translation>
+        <translation>Juhtimiskeskus</translation>
     </message>
     <message>
         <source>Control still busy · input not delivered</source>
-        <translation type="unfinished"></translation>
+        <translation>Juhtimine on endiselt hõivatud · sisendit ei edastatud</translation>
     </message>
     <message>
         <source>Detach the virtual iOS device into its own window</source>
-        <translation type="unfinished"></translation>
+        <translation>Eralda virtuaalne iOS-seade oma aknasse</translation>
     </message>
     <message>
         <source>Display output unreachable</source>
-        <translation type="unfinished"></translation>
+        <translation>Ekraani väljund pole kättesaadav</translation>
     </message>
     <message>
         <source>Dock</source>
-        <translation type="unfinished"></translation>
+        <translation>Dokk</translation>
     </message>
     <message>
         <source>Edge swipes start on the frame or at the screen&apos;s edge</source>
-        <translation type="unfinished"></translation>
+        <translation>Servapühkimised algavad raamilt või ekraani servast</translation>
     </message>
     <message>
         <source>Home button</source>
-        <translation type="unfinished"></translation>
+        <translation>Kodunupp</translation>
     </message>
     <message>
         <source>Home button and swipe up from the bottom edge</source>
-        <translation type="unfinished"></translation>
+        <translation>Kodunupp ja pühkimine alumisest servast üles</translation>
     </message>
     <message>
         <source>Input failed</source>
-        <translation type="unfinished"></translation>
+        <translation>Sisend ebaõnnestus</translation>
     </message>
     <message>
         <source>Input queue full · this input was not sent</source>
-        <translation type="unfinished"></translation>
+        <translation>Sisendijärjekord täis · seda sisendit ei saadetud</translation>
     </message>
     <message>
         <source>Last frame</source>
-        <translation type="unfinished"></translation>
+        <translation>Viimane kaader</translation>
     </message>
     <message>
         <source>Live frame · %1</source>
-        <translation type="unfinished"></translation>
+        <translation>Otsekaader · %1</translation>
     </message>
     <message>
         <source>No running interactive iOS session</source>
-        <translation type="unfinished"></translation>
+        <translation>Interaktiivset iOS-i seanssi ei käi</translation>
     </message>
     <message>
         <source>Notification Center</source>
-        <translation type="unfinished"></translation>
+        <translation>Teavituskeskus</translation>
     </message>
     <message>
         <source>Own window</source>
-        <translation type="unfinished"></translation>
+        <translation>Eraldi aken</translation>
     </message>
     <message>
         <source>Real output of the virtual display</source>
-        <translation type="unfinished"></translation>
+        <translation>Virtuaalse ekraani tegelik väljund</translation>
     </message>
     <message>
         <source>Side button</source>
-        <translation type="unfinished"></translation>
+        <translation>Külgnupp</translation>
     </message>
     <message>
         <source>Still frame</source>
-        <translation type="unfinished"></translation>
+        <translation>Liikumatu kaader</translation>
     </message>
     <message>
         <source>Swipe down from the top-left edge</source>
-        <translation type="unfinished"></translation>
+        <translation>Pühi ülemisest vasakust servast alla</translation>
     </message>
     <message>
         <source>Swipe down from the top-right edge</source>
-        <translation type="unfinished"></translation>
+        <translation>Pühi ülemisest paremast servast alla</translation>
     </message>
     <message>
         <source>Swipe right from the left edge</source>
-        <translation type="unfinished"></translation>
+        <translation>Pühi vasakust servast paremale</translation>
     </message>
     <message>
         <source>Swipe up from the bottom edge and pause</source>
-        <translation type="unfinished"></translation>
+        <translation>Pühi alumisest servast üles ja peatu</translation>
     </message>
     <message>
         <source>The iOS device is running in its own window</source>
-        <translation type="unfinished"></translation>
+        <translation>iOS-seade töötab oma aknas</translation>
     </message>
     <message>
         <source>Virtual iOS device</source>
-        <translation type="unfinished"></translation>
+        <translation>Virtuaalne iOS-seade</translation>
     </message>
     <message>
         <source>Waiting for the display output of iOS…</source>
-        <translation type="unfinished"></translation>
+        <translation>iOS-i ekraani väljundi ootamine…</translation>
     </message>
     <message>
         <source>Wake or lock the display</source>
-        <translation type="unfinished"></translation>
+        <translation>Ärata või lukusta ekraan</translation>
     </message>
     <message>
         <source>Stop recording · %1 s</source>
-        <translation type="unfinished"></translation>
+        <translation>Peata salvestamine · %1 s</translation>
     </message>
     <message>
         <source>Record</source>
-        <translation type="unfinished"></translation>
+        <translation>Salvesta video</translation>
     </message>
     <message>
         <source>Stop and save the recording</source>
-        <translation type="unfinished"></translation>
+        <translation>Peata ja salvesta salvestis</translation>
     </message>
     <message>
         <source>Record the screen to a video, at most 10 minutes</source>
-        <translation type="unfinished"></translation>
+        <translation>Salvesta ekraan videona, kuni 10 minutit</translation>
     </message>
     <message numerus="yes">
         <source>Typing %n character(s) from the clipboard</source>
-        <translation type="unfinished">
-            <numerusform></numerusform>
-            <numerusform></numerusform>
+        <translation>
+            <numerusform>Sisestatakse %n märk lõikelaualt</numerusform>
+            <numerusform>Sisestatakse %n märki lõikelaualt</numerusform>
         </translation>
     </message>
     <message>
         <source>The clipboard holds no text</source>
-        <translation type="unfinished"></translation>
+        <translation>Lõikelaual pole teksti</translation>
     </message>
     <message>
         <source>The clipboard holds %1 characters; at most %2 are typed into the phone</source>
-        <translation type="unfinished"></translation>
+        <translation>Lõikelaual on %1 märki; telefoni sisestatakse kuni %2</translation>
     </message>
     <message>
         <source>Paste</source>
-        <translation type="unfinished"></translation>
+        <translation>Kleebi</translation>
     </message>
     <message>
         <source>Type the clipboard&apos;s text into the field that has the focus</source>
-        <translation type="unfinished"></translation>
+        <translation>Sisesta lõikelaua tekst fookuses olevale väljale</translation>
     </message>
     <message>
         <source>Keyboard to phone</source>
-        <translation type="unfinished"></translation>
+        <translation>Klaviatuur telefonile</translation>
     </message>
     <message>
         <source>Keyboard to desktop</source>
-        <translation type="unfinished"></translation>
+        <translation>Klaviatuur töölauale</translation>
     </message>
     <message>
         <source>Typing goes to the phone · Ctrl+Shift+K gives the keyboard back to the desktop</source>
-        <translation type="unfinished"></translation>
+        <translation>Trükkimine läheb telefoni · Ctrl+Shift+K annab klaviatuuri töölauale tagasi</translation>
     </message>
     <message>
         <source>Click the screen or press Ctrl+Shift+K to type on the phone</source>
-        <translation type="unfinished"></translation>
+        <translation>Klõpsa ekraani või vajuta Ctrl+Shift+K, et telefonis trükkida</translation>
     </message>
     <message>
         <source>Speed</source>
-        <translation type="unfinished"></translation>
+        <translation>Kiirus</translation>
     </message>
     <message>
         <source>Show frames per second and the time from an input to the picture</source>
-        <translation type="unfinished"></translation>
+        <translation>Näita kaadrisagedust ja aega sisendist pildini</translation>
     </message>
     <message>
         <source>Screenshot with frame</source>
-        <translation type="unfinished"></translation>
+        <translation>Ekraanipilt raamiga</translation>
     </message>
     <message>
         <source>Save and copy a screenshot with a plain device frame and rounded corners</source>
-        <translation type="unfinished"></translation>
+        <translation>Salvesta ja kopeeri ekraanipilt lihtsa seadmeraami ja ümarate nurkadega</translation>
     </message>
     <message>
         <source>%1 new · %2 fetched frames/s</source>
-        <translation type="unfinished"></translation>
+        <translation>%1 uut · %2 hangitud kaadrit/s</translation>
     </message>
     <message>
         <source>Input to picture: %1 ms</source>
-        <translation type="unfinished"></translation>
+        <translation>Sisendist pildini: %1 ms</translation>
     </message>
     <message>
         <source>Input to picture: not measured yet</source>
-        <translation type="unfinished"></translation>
+        <translation>Sisendist pildini: veel mõõtmata</translation>
     </message>
     <message>
         <source>The screenshot failed</source>
-        <translation type="unfinished"></translation>
+        <translation>Ekraanipilt ebaõnnestus</translation>
     </message>
     <message>
         <source>Keyboard to phone · Ctrl+Shift+K switches it to the desktop and back</source>
-        <translation type="unfinished"></translation>
+        <translation>Klaviatuur telefonile · Ctrl+Shift+K vahetab selle töölauale ja tagasi</translation>
     </message>
 </context>
 <context>
     <name>IosResearch</name>
     <message>
         <source>Another app change is still running.</source>
-        <translation type="unfinished"></translation>
+        <translation>Üks teine rakenduse muudatus on veel pooleli.</translation>
     </message>
     <message>
         <source>Checking %1…</source>
-        <translation type="unfinished"></translation>
+        <translation>%1 kontrollimine…</translation>
     </message>
     <message>
         <source>%1 added · installing on the running device</source>
-        <translation type="unfinished"></translation>
+        <translation>%1 lisatud · paigaldatakse töötavasse seadmesse</translation>
     </message>
     <message>
         <source>%1 added · the next start installs it</source>
-        <translation type="unfinished"></translation>
+        <translation>%1 lisatud · järgmine käivitus paigaldab selle</translation>
     </message>
     <message>
         <source>The virtual iOS device takes one .app bundle built for arm64 iOS.</source>
-        <translation type="unfinished"></translation>
+        <translation>Virtuaalne iOS-seade võtab ühe arm64 iOS-i jaoks ehitatud .app-paketi.</translation>
     </message>
     <message>
         <source>Set up the virtual iOS device&apos;s profile before adding apps.</source>
-        <translation type="unfinished"></translation>
+        <translation>Seadista virtuaalse iOS-seadme profiil enne rakenduste lisamist.</translation>
     </message>
     <message>
         <source>%1 reads · %2 writes · %3 rejected</source>
-        <translation type="unfinished"></translation>
+        <translation>%1 lugemist · %2 kirjutamist · %3 tagasi lükatud</translation>
     </message>
     <message>
         <source>%1 · Apple variant</source>
-        <translation type="unfinished"></translation>
+        <translation>%1 · Apple&apos;i variant</translation>
     </message>
     <message>
         <source>%1 · derived</source>
-        <translation type="unfinished"></translation>
+        <translation>%1 · tuletatud</translation>
     </message>
     <message>
         <source>%1: %2 · state %3</source>
-        <translation type="unfinished"></translation>
+        <translation>%1: %2 · olek %3</translation>
     </message>
     <message numerus="yes">
         <source>%1: %n message(s)</source>
-        <translation type="unfinished">
-            <numerusform></numerusform>
-            <numerusform></numerusform>
+        <translation>
+            <numerusform>%1: %n sõnum</numerusform>
+            <numerusform>%1: %n sõnumit</numerusform>
         </translation>
     </message>
     <message numerus="yes">
         <source>%n byte(s) from %1 · checksum verified</source>
-        <translation type="unfinished">
-            <numerusform></numerusform>
-            <numerusform></numerusform>
+        <translation>
+            <numerusform>%n bait allikast %1 · kontrollsumma kinnitatud</numerusform>
+            <numerusform>%n baiti allikast %1 · kontrollsumma kinnitatud</numerusform>
         </translation>
     </message>
     <message>
         <source>Simulated controller with timers · experimental</source>
-        <translation type="unfinished"></translation>
+        <translation>Simuleeritud kontroller taimeritega · eksperimentaalne</translation>
     </message>
     <message>
         <source>Add app…</source>
-        <translation type="unfinished"></translation>
+        <translation>Lisa rakendus…</translation>
     </message>
     <message>
         <source>Core ID</source>
-        <translation type="unfinished"></translation>
+        <translation>Tuuma ID</translation>
     </message>
     <message>
         <source>App to open at start</source>
-        <translation type="unfinished"></translation>
+        <translation>Käivitamisel avatav rakendus</translation>
     </message>
     <message>
         <source>Applies from the next start.</source>
-        <translation type="unfinished"></translation>
+        <translation>Kehtib alates järgmisest käivitusest.</translation>
     </message>
     <message>
         <source>Your own arm64 .app bundles. Each start installs them together with the device&apos;s helper tools. Changes apply from the next start.</source>
-        <translation type="unfinished"></translation>
+        <translation>Sinu oma arm64 .app-paketid. Iga käivitus paigaldab need koos seadme abitööriistadega. Muudatused kehtivad alates järgmisest käivitusest.</translation>
     </message>
     <message>
         <source>Boot image</source>
-        <translation type="unfinished"></translation>
+        <translation>Alglaadimise tõmmis</translation>
     </message>
     <message>
         <source>Breakpoint reached</source>
-        <translation type="unfinished"></translation>
+        <translation>Katkestuspunkt saavutatud</translation>
     </message>
     <message>
         <source>Processor core ID (MPIDR affinity)</source>
-        <translation type="unfinished"></translation>
+        <translation>Protsessori tuuma ID (MPIDR-afiinsus)</translation>
     </message>
     <message>
         <source>Processor settings</source>
-        <translation type="unfinished"></translation>
+        <translation>Protsessori seaded</translation>
     </message>
     <message>
         <source>Processor register not supported yet: %1 · %2 by code at %3</source>
-        <translation type="unfinished"></translation>
+        <translation>Protsessori registrit veel ei toetata: %1 · %2 koodi poolt aadressil %3</translation>
     </message>
     <message>
         <source>Processor: MIDR %1 · core ID %2 · %3</source>
-        <translation type="unfinished"></translation>
+        <translation>Protsessor: MIDR %1 · tuuma ID %2 · %3</translation>
     </message>
     <message>
         <source>Cancel</source>
-        <translation type="unfinished"></translation>
+        <translation>Tühista</translation>
     </message>
     <message>
         <source>Cancel the start and stop the device without saving</source>
-        <translation type="unfinished"></translation>
+        <translation>Tühista käivitus ja peata seade salvestamata</translation>
     </message>
     <message>
         <source>Check the bundle and add it to the profile · the next start installs it</source>
-        <translation type="unfinished"></translation>
+        <translation>Kontrolli paketti ja lisa see profiili · järgmine käivitus paigaldab selle</translation>
     </message>
     <message>
         <source>Checking image…</source>
-        <translation type="unfinished"></translation>
+        <translation>Tõmmise kontrollimine…</translation>
     </message>
     <message>
         <source>Checking…</source>
-        <translation type="unfinished"></translation>
+        <translation>Kontrollimine…</translation>
     </message>
     <message>
         <source>Choose</source>
-        <translation type="unfinished"></translation>
+        <translation>Vali</translation>
     </message>
     <message>
         <source>Choose app bundle (.app directory)</source>
-        <translation type="unfinished"></translation>
+        <translation>Vali rakenduse pakett (.app-kataloog)</translation>
     </message>
     <message>
         <source>Choose iOS emulator</source>
-        <translation type="unfinished"></translation>
+        <translation>Vali iOS-emulaator</translation>
     </message>
     <message>
         <source>Choose prepared firmware package</source>
-        <translation type="unfinished"></translation>
+        <translation>Vali ettevalmistatud püsivarapakett</translation>
     </message>
     <message>
         <source>Choose prepared iOS package</source>
-        <translation type="unfinished"></translation>
+        <translation>Vali ettevalmistatud iOS-pakett</translation>
     </message>
     <message>
         <source>Classic (Home button)</source>
-        <translation type="unfinished"></translation>
+        <translation>Klassikaline (kodunupp)</translation>
     </message>
     <message>
         <source>Closing the session…</source>
-        <translation type="unfinished"></translation>
+        <translation>Seansi sulgemine…</translation>
     </message>
     <message>
         <source>Snapshots of the running system: %1 · %2</source>
-        <translation type="unfinished"></translation>
+        <translation>Töötava süsteemi hetktõmmised: %1 · %2</translation>
     </message>
     <message>
         <source>Reading the controller state failed: %1</source>
-        <translation type="unfinished"></translation>
+        <translation>Kontrolleri oleku lugemine ebaõnnestus: %1</translation>
     </message>
     <message>
         <source>For controller development: Apple&apos;s original firmware runs alone on a simulated ARM processor. The simulated controller still rests on unconfirmed hardware guesses; the firmware&apos;s services and its connection to iOS are not verified.</source>
-        <translation type="unfinished"></translation>
+        <translation>Kontrolleri arenduseks: Apple&apos;i originaalpüsivara töötab üksi simuleeritud ARM-protsessoril. Simuleeritud kontroller põhineb endiselt kinnitamata riistvaraoletustel; püsivara teenuseid ja selle ühendust iOS-iga pole kontrollitud.</translation>
     </message>
     <message>
         <source>Controller state</source>
-        <translation type="unfinished"></translation>
+        <translation>Kontrolleri olek</translation>
     </message>
     <message>
         <source>Work in progress: an agent starts the virtual iOS device, then it appears here. Starting takes many minutes. Apart from the built-in test app, apps with a user interface have not been shown to work yet.</source>
-        <translation type="unfinished"></translation>
+        <translation>Pooleli: agent käivitab virtuaalse iOS-seadme ja seejärel ilmub see siia. Käivitamine võtab palju minuteid. Peale sisseehitatud testrakenduse pole kasutajaliidesega rakenduste töötamist veel näidatud.</translation>
     </message>
     <message>
         <source>Diagnostics complete</source>
-        <translation type="unfinished"></translation>
+        <translation>Diagnostika valmis</translation>
     </message>
     <message>
         <source>Diagnostics ended with a finding</source>
-        <translation type="unfinished"></translation>
+        <translation>Diagnostika lõppes leiuga</translation>
     </message>
     <message>
         <source>Folder with pmp-research.json</source>
-        <translation type="unfinished"></translation>
+        <translation>Kaust, milles on pmp-research.json</translation>
     </message>
     <message>
         <source>Folder with tomacco-ios.json</source>
-        <translation type="unfinished"></translation>
+        <translation>Kaust, milles on tomacco-ios.json</translation>
     </message>
     <message>
         <source>Experimental: iOS shows its first system screens. Setup, graphics and native apps do not fully work yet.</source>
-        <translation type="unfinished"></translation>
+        <translation>Eksperimentaalne: iOS näitab oma esimesi süsteemikuvasid. Seadistamine, graafika ja omarakendused ei tööta veel täielikult.</translation>
     </message>
     <message>
         <source>First invalid memory access: code at %1 · address %2 · %3</source>
-        <translation type="unfinished"></translation>
+        <translation>Esimene vigane mälupöördus: kood aadressil %1 · aadress %2 · %3</translation>
     </message>
     <message>
         <source>Memory contents in hexadecimal</source>
-        <translation type="unfinished"></translation>
+        <translation>Mälu sisu kuueteistkümnendsüsteemis</translation>
     </message>
     <message>
         <source>Hide processor settings</source>
-        <translation type="unfinished"></translation>
+        <translation>Peida protsessori seaded</translation>
     </message>
     <message>
         <source>Hide processor registers</source>
-        <translation type="unfinished"></translation>
+        <translation>Peida protsessori registrid</translation>
     </message>
     <message>
         <source>Hide boot image</source>
-        <translation type="unfinished"></translation>
+        <translation>Peida alglaadimise tõmmis</translation>
     </message>
     <message>
         <source>Address of a firmware instruction, e.g. 0x10280d4 · optional</source>
-        <translation type="unfinished"></translation>
+        <translation>Püsivara käsu aadress, nt 0x10280d4 · valikuline</translation>
     </message>
     <message>
         <source>Job &amp; logs</source>
-        <translation type="unfinished"></translation>
+        <translation>Töö ja logid</translation>
     </message>
     <message>
         <source>The processor identity the firmware sees when it starts. Other values make it take other start-up paths; they add no hardware features.</source>
-        <translation type="unfinished"></translation>
+        <translation>Protsessori identiteet, mida püsivara käivitudes näeb. Muud väärtused panevad selle teisi käivitusteid pidi minema; need ei lisa riistvarafunktsioone.</translation>
     </message>
     <message>
         <source>From the last snapshot · raw 64-bit values</source>
-        <translation type="unfinished"></translation>
+        <translation>Viimasest hetktõmmisest · toored 64-bitised väärtused</translation>
     </message>
     <message>
         <source>Loading…</source>
-        <translation type="unfinished"></translation>
+        <translation>Laadimine…</translation>
     </message>
     <message>
         <source>Maximum run time</source>
-        <translation type="unfinished"></translation>
+        <translation>Maksimaalne käitusaeg</translation>
     </message>
     <message>
         <source>Maximum run time in seconds</source>
-        <translation type="unfinished"></translation>
+        <translation>Maksimaalne käitusaeg sekundites</translation>
     </message>
     <message>
         <source>Saved memory</source>
-        <translation type="unfinished"></translation>
+        <translation>Salvestatud mälu</translation>
     </message>
     <message>
         <source>Model</source>
-        <translation type="unfinished"></translation>
+        <translation>Mudel</translation>
     </message>
     <message>
         <source>No controller · baseline for comparison</source>
-        <translation type="unfinished"></translation>
+        <translation>Kontrollerita · võrdluse alus</translation>
     </message>
     <message>
         <source>No apps of your own yet · the start opens the built-in test app.</source>
-        <translation type="unfinished"></translation>
+        <translation>Oma rakendusi veel pole · käivitus avab sisseehitatud testrakenduse.</translation>
     </message>
     <message>
         <source>Number of bytes</source>
-        <translation type="unfinished"></translation>
+        <translation>Baitide arv</translation>
     </message>
     <message>
         <source>Open at start</source>
-        <translation type="unfinished"></translation>
+        <translation>Ava käivitamisel</translation>
     </message>
     <message>
         <source>Open test system</source>
-        <translation type="unfinished"></translation>
+        <translation>Ava testsüsteem</translation>
     </message>
     <message>
         <source>Your apps</source>
-        <translation type="unfinished"></translation>
+        <translation>Sinu rakendused</translation>
     </message>
     <message>
         <source>Built-in test app (diagnostics)</source>
-        <translation type="unfinished"></translation>
+        <translation>Sisseehitatud testrakendus (diagnostika)</translation>
     </message>
     <message>
         <source>Own window</source>
-        <translation type="unfinished"></translation>
+        <translation>Eraldi aken</translation>
     </message>
     <message>
         <source>Firmware breakpoint</source>
-        <translation type="unfinished"></translation>
+        <translation>Püsivara katkestuspunkt</translation>
     </message>
     <message>
         <source>Simulated firmware controller</source>
-        <translation type="unfinished"></translation>
+        <translation>Simuleeritud püsivara kontroller</translation>
     </message>
     <message>
         <source>Power-management firmware (PMP)</source>
-        <translation type="unfinished"></translation>
+        <translation>Toitehalduse püsivara (PMP)</translation>
     </message>
     <message>
         <source>Firmware running</source>
-        <translation type="unfinished"></translation>
+        <translation>Püsivara töötab</translation>
     </message>
     <message>
         <source>Path to an .app directory (arm64)</source>
-        <translation type="unfinished"></translation>
+        <translation>Tee .app-kataloogini (arm64)</translation>
     </message>
     <message>
         <source>Addresses 0x1000000 to 0x11fffff of the firmware&apos;s memory. Reading checks the saved copy; the firmware is not run again for it.</source>
-        <translation type="unfinished"></translation>
+        <translation>Püsivara mälu aadressid 0x1000000 kuni 0x11fffff. Lugemine kontrollib salvestatud koopiat; püsivara selleks uuesti ei käivitata.</translation>
     </message>
     <message>
         <source>Memory address</source>
-        <translation type="unfinished"></translation>
+        <translation>Mäluaadress</translation>
     </message>
     <message>
         <source>Prepare package</source>
-        <translation type="unfinished"></translation>
+        <translation>Valmista pakett ette</translation>
     </message>
     <message>
         <source>Prepare, boot, unlock and open the test app</source>
-        <translation type="unfinished"></translation>
+        <translation>Valmista ette, käivita, ava lukk ja ava testrakendus</translation>
     </message>
     <message>
         <source>Prepared firmware package</source>
-        <translation type="unfinished"></translation>
+        <translation>Ettevalmistatud püsivarapakett</translation>
     </message>
     <message>
         <source>Prepared iOS package</source>
-        <translation type="unfinished"></translation>
+        <translation>Ettevalmistatud iOS-pakett</translation>
     </message>
     <message>
         <source>Preparing working copy</source>
-        <translation type="unfinished"></translation>
+        <translation>Töökoopia ettevalmistamine</translation>
     </message>
     <message>
         <source>Memory copy failed: %1</source>
-        <translation type="unfinished"></translation>
+        <translation>Mälu kopeerimine ebaõnnestus: %1</translation>
     </message>
     <message>
         <source>Memory copy: 2 MiB from address %1 · saved in the report folder</source>
-        <translation type="unfinished"></translation>
+        <translation>Mälukoopia: 2 MiB aadressilt %1 · salvestatud aruandekausta</translation>
     </message>
     <message>
         <source>Read</source>
-        <translation type="unfinished"></translation>
+        <translation>Loe</translation>
     </message>
     <message>
         <source>Ready for a test run</source>
-        <translation type="unfinished"></translation>
+        <translation>Valmis testkäituseks</translation>
     </message>
     <message>
         <source>Actual image from the start-up screen · not yet the device&apos;s main display</source>
-        <translation type="unfinished"></translation>
+        <translation>Tegelik pilt käivituskuvalt · veel mitte seadme põhiekraan</translation>
     </message>
     <message>
         <source>Real iOS directly on Linux. The virtual iOS device shows the lock and Home screens and starts its own test app; general app development is not enabled yet.</source>
-        <translation type="unfinished"></translation>
+        <translation>Päris iOS otse Linuxis. Virtuaalne iOS-seade näitab lukustus- ja avakuva ning käivitab oma testrakenduse; üldine rakenduste arendus pole veel lubatud.</translation>
     </message>
     <message>
         <source>Refresh</source>
-        <translation type="unfinished"></translation>
+        <translation>Värskenda</translation>
     </message>
     <message>
         <source>Remove</source>
-        <translation type="unfinished"></translation>
+        <translation>Eemalda</translation>
     </message>
     <message>
         <source>Remove from the profile · an app already installed stays on the device</source>
-        <translation type="unfinished"></translation>
+        <translation>Eemalda profiilist · juba paigaldatud rakendus jääb seadmesse</translation>
     </message>
     <message>
         <source>Report folder</source>
-        <translation type="unfinished"></translation>
+        <translation>Aruandekaust</translation>
     </message>
     <message>
         <source>Run %1 · %2</source>
-        <translation type="unfinished"></translation>
+        <translation>Käitus %1 · %2</translation>
     </message>
     <message>
         <source>Run iOS, or the iPhone&apos;s power-management firmware on its own, directly on Linux. Each run writes its own report; runs started from the command line or by an agent appear here too.</source>
-        <translation type="unfinished"></translation>
+        <translation>Käita iOS-i või iPhone&apos;i toitehalduse püsivara eraldi otse Linuxis. Iga käitus kirjutab oma aruande; siia ilmuvad ka käsurealt või agendi poolt alustatud käitused.</translation>
     </message>
     <message>
         <source>Run ended</source>
-        <translation type="unfinished"></translation>
+        <translation>Käitus lõppes</translation>
     </message>
     <message>
         <source>Save a copy of the firmware&apos;s memory with the report (2 MiB)</source>
-        <translation type="unfinished"></translation>
+        <translation>Salvesta aruandega koopia püsivara mälust (2 MiB)</translation>
     </message>
     <message>
         <source>Save storage and shut down cleanly</source>
-        <translation type="unfinished"></translation>
+        <translation>Salvesta talletus ja sulge korrektselt</translation>
     </message>
     <message>
         <source>System services not found in the snapshots: %1</source>
-        <translation type="unfinished"></translation>
+        <translation>Hetktõmmistest ei leitud süsteemiteenuseid: %1</translation>
     </message>
     <message>
         <source>Show</source>
-        <translation type="unfinished"></translation>
+        <translation>Näita</translation>
     </message>
     <message>
         <source>Show processor registers</source>
-        <translation type="unfinished"></translation>
+        <translation>Näita protsessori registreid</translation>
     </message>
     <message>
         <source>Start</source>
-        <translation type="unfinished"></translation>
+        <translation>Käivita</translation>
     </message>
     <message>
         <source>Start failed</source>
-        <translation type="unfinished"></translation>
+        <translation>Käivitamine ebaõnnestus</translation>
     </message>
     <message>
         <source>Start test run</source>
-        <translation type="unfinished"></translation>
+        <translation>Alusta testkäitust</translation>
     </message>
     <message>
         <source>Status currently unknown</source>
-        <translation type="unfinished"></translation>
+        <translation>Olek praegu teadmata</translation>
     </message>
     <message>
         <source>Stop</source>
-        <translation type="unfinished"></translation>
+        <translation>Peata</translation>
     </message>
     <message>
         <source>Stop at a code address</source>
-        <translation type="unfinished"></translation>
+        <translation>Peata koodiaadressil</translation>
     </message>
     <message>
         <source>Stop without saving</source>
-        <translation type="unfinished"></translation>
+        <translation>Peata salvestamata</translation>
     </message>
     <message>
         <source>Stop without saving · ends the run at once, whatever the device has not saved yet is lost</source>
-        <translation type="unfinished"></translation>
+        <translation>Peata salvestamata · lõpetab käituse kohe, kõik, mida seade pole veel salvestanud, läheb kaotsi</translation>
     </message>
     <message>
         <source>Stopped before the instruction at %1 · this does not show that the firmware started completely</source>
-        <translation type="unfinished"></translation>
+        <translation>Peatus enne käsku aadressil %1 · see ei näita, et püsivara täielikult käivitus</translation>
     </message>
     <message>
         <source>Stopping…</source>
-        <translation type="unfinished"></translation>
+        <translation>Peatamine…</translation>
     </message>
     <message>
         <source>What to run</source>
-        <translation type="unfinished"></translation>
+        <translation>Mida käitada</translation>
     </message>
     <message>
         <source>Reading this state changes nothing: no message is taken from a queue and no interrupt is answered.</source>
-        <translation type="unfinished"></translation>
+        <translation>Selle oleku lugemine ei muuda midagi: järjekorrast ei võeta ühtki sõnumit ega vastata ühelegi katkestusele.</translation>
     </message>
     <message>
         <source>The existing run is reused.</source>
-        <translation type="unfinished"></translation>
+        <translation>Olemasolevat käitust kasutatakse uuesti.</translation>
     </message>
     <message>
         <source>The device could not save before stopping (%1). “Stop without saving” ends the run at once; the next start uses the last saved state.</source>
-        <translation type="unfinished"></translation>
+        <translation>Seade ei saanud enne peatamist salvestada (%1). „Peata salvestamata“ lõpetab käituse kohe; järgmine käivitus kasutab viimati salvestatud olekut.</translation>
     </message>
     <message>
         <source>The device is still starting, there is nothing to save. Ending the run…</source>
-        <translation type="unfinished"></translation>
+        <translation>Seade alles käivitub, midagi pole salvestada. Käituse lõpetamine…</translation>
     </message>
     <message>
         <source>The run stops at that address and reports the processor state. The firmware itself is not modified.</source>
-        <translation type="unfinished"></translation>
+        <translation>Käitus peatub sellel aadressil ja teatab protsessori oleku. Püsivara ennast ei muudeta.</translation>
     </message>
     <message>
         <source>Time limit reached</source>

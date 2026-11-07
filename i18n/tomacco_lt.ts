@@ -820,1243 +820,1243 @@ Modelis nulemia ekraną ir rėmelį. Android gaunamas iš pasirinkto sistemos at
     </message>
     <message>
         <source>Star White</source>
-        <translation type="unfinished"></translation>
+        <translation>Žvaigždžių baltumo</translation>
     </message>
     <message>
         <source>Teal</source>
-        <translation type="unfinished"></translation>
+        <translation>Žalsvai mėlynas</translation>
     </message>
     <message>
         <source>Ultramarine</source>
-        <translation type="unfinished"></translation>
+        <translation>Ultramarinas</translation>
     </message>
     <message>
         <source>White</source>
-        <translation type="unfinished"></translation>
+        <translation>Baltas</translation>
     </message>
 </context>
 <context>
     <name>CommandPalette</name>
     <message>
         <source>No matching views or tools</source>
-        <translation type="unfinished"></translation>
+        <translation>Atitinkančių rodinių ar įrankių nėra</translation>
     </message>
     <message>
         <source>View</source>
-        <translation type="unfinished"></translation>
+        <translation>Rodinys</translation>
     </message>
     <message>
         <source>Search views, commands or tools…</source>
-        <translation type="unfinished"></translation>
+        <translation>Ieškoti rodinių, komandų ar įrankių…</translation>
     </message>
     <message>
         <source>Ctrl</source>
-        <translation type="unfinished"></translation>
+        <translation>Ctrl</translation>
     </message>
     <message>
         <source>Recent</source>
-        <translation type="unfinished"></translation>
+        <translation>Naujausi</translation>
     </message>
     <message>
         <source>↑ ↓  Select     PgUp PgDn  Page     ↵  Open     Esc  Close</source>
-        <translation type="unfinished"></translation>
+        <translation>↑ ↓  Pasirinkti     PgUp PgDn  Puslapis     ↵  Atidaryti     Esc  Uždaryti</translation>
     </message>
 </context>
 <context>
     <name>Control</name>
     <message>
         <source>Invalid frame response</source>
-        <translation type="unfinished"></translation>
+        <translation>Netinkamas kadro atsakymas</translation>
     </message>
     <message>
         <source>Invalid response from the control plane</source>
-        <translation type="unfinished"></translation>
+        <translation>Netinkamas valdymo plokštumos atsakymas</translation>
     </message>
     <message>
         <source>Invalid response from the frame control</source>
-        <translation type="unfinished"></translation>
+        <translation>Netinkamas kadrų valdymo atsakymas</translation>
     </message>
     <message>
         <source>Invalid session name</source>
-        <translation type="unfinished"></translation>
+        <translation>Netinkamas seanso pavadinimas</translation>
     </message>
     <message>
         <source>Tomacco is already open in another window; agents keep controlling that one. To control this window too, start it with --preview-session and another name.</source>
-        <translation type="unfinished"></translation>
+        <translation>Tomacco jau atidaryta kitame lange; agentai toliau valdo jį. Kad valdytumėte ir šį langą, paleiskite jį su --preview-session ir kitu pavadinimu.</translation>
     </message>
     <message>
         <source>Tomacco&apos;s control program (tomaccoctl) could not be started. Reinstall Tomacco or run install.py again.</source>
-        <translation type="unfinished"></translation>
+        <translation>Nepavyko paleisti Tomacco valdymo programos (tomaccoctl). Iš naujo įdiekite Tomacco arba dar kartą paleiskite install.py.</translation>
     </message>
     <message>
         <source>Tomacco&apos;s control program (tomaccoctl) is not working: %1</source>
-        <translation type="unfinished"></translation>
+        <translation>Tomacco valdymo programa (tomaccoctl) neveikia: %1</translation>
     </message>
     <message>
         <source>Tomacco&apos;s control program (tomaccoctl) was not found. Reinstall Tomacco or run install.py again.</source>
-        <translation type="unfinished"></translation>
+        <translation>Tomacco valdymo programa (tomaccoctl) nerasta. Iš naujo įdiekite Tomacco arba dar kartą paleiskite install.py.</translation>
     </message>
     <message>
         <source>The agent socket directory belongs to another user</source>
-        <translation type="unfinished"></translation>
+        <translation>Agento lizdo katalogas priklauso kitam naudotojui</translation>
     </message>
     <message>
         <source>The agent socket directory could not be created</source>
-        <translation type="unfinished"></translation>
+        <translation>Nepavyko sukurti agento lizdo katalogo</translation>
     </message>
     <message>
         <source>The control program ended unexpectedly</source>
-        <translation type="unfinished"></translation>
+        <translation>Valdymo programa netikėtai baigė darbą</translation>
     </message>
     <message>
         <source>The control program failed: %1</source>
-        <translation type="unfinished"></translation>
+        <translation>Valdymo programos klaida: %1</translation>
     </message>
     <message>
         <source>The frame control could not be initialized</source>
-        <translation type="unfinished"></translation>
+        <translation>Nepavyko inicijuoti kadrų valdymo</translation>
     </message>
     <message>
         <source>The frame control did not respond in time</source>
-        <translation type="unfinished"></translation>
+        <translation>Kadrų valdymas laiku neatsakė</translation>
     </message>
     <message>
         <source>The frame control ended</source>
-        <translation type="unfinished"></translation>
+        <translation>Kadrų valdymas baigė darbą</translation>
     </message>
     <message>
         <source>The frame control is not reachable</source>
-        <translation type="unfinished"></translation>
+        <translation>Kadrų valdymas nepasiekiamas</translation>
     </message>
     <message>
         <source>The frame request could not be sent</source>
-        <translation type="unfinished"></translation>
+        <translation>Nepavyko išsiųsti kadro užklausos</translation>
     </message>
     <message>
         <source>The frame response is too large</source>
-        <translation type="unfinished"></translation>
+        <translation>Kadro atsakymas per didelis</translation>
     </message>
     <message>
         <source>The frame response matches no request</source>
-        <translation type="unfinished"></translation>
+        <translation>Kadro atsakymas neatitinka jokios užklausos</translation>
     </message>
     <message>
         <source>Too many concurrent requests</source>
-        <translation type="unfinished"></translation>
+        <translation>Per daug vienu metu vykdomų užklausų</translation>
     </message>
     <message>
         <source>tomaccoctl could not be started (%1). Reinstall Tomacco or run install.py again.</source>
-        <translation type="unfinished"></translation>
+        <translation>Nepavyko paleisti tomaccoctl (%1). Iš naujo įdiekite Tomacco arba dar kartą paleiskite install.py.</translation>
     </message>
 </context>
 <context>
     <name>DebugWorkspace</name>
     <message>
         <source>All files (*)</source>
-        <translation type="unfinished"></translation>
+        <translation>Visi failai (*)</translation>
     </message>
     <message>
         <source>Android libraries (*.so)</source>
-        <translation type="unfinished"></translation>
+        <translation>Android bibliotekos (*.so)</translation>
     </message>
     <message>
         <source>Application ID · e.g. dev.example.app</source>
-        <translation type="unfinished"></translation>
+        <translation>Programos ID · pvz., dev.example.app</translation>
     </message>
     <message>
         <source>Breakpoints</source>
-        <translation type="unfinished"></translation>
+        <translation>Lūžio taškai</translation>
     </message>
     <message>
         <source>CALL STACK</source>
-        <translation type="unfinished"></translation>
+        <translation>IŠKVIETIMŲ STEKAS</translation>
     </message>
     <message>
         <source>Choose Android device</source>
-        <translation type="unfinished"></translation>
+        <translation>Pasirinkite Android įrenginį</translation>
     </message>
     <message>
         <source>Choose debug program</source>
-        <translation type="unfinished"></translation>
+        <translation>Pasirinkite derinamą programą</translation>
     </message>
     <message>
         <source>Choose file</source>
-        <translation type="unfinished"></translation>
+        <translation>Pasirinkite failą</translation>
     </message>
     <message>
         <source>Choose library with debug symbols</source>
-        <translation type="unfinished"></translation>
+        <translation>Pasirinkite biblioteką su derinimo simboliais</translation>
     </message>
     <message>
         <source>Connect</source>
-        <translation type="unfinished"></translation>
+        <translation>Prisijungti</translation>
     </message>
     <message>
         <source>Connecting…</source>
-        <translation type="unfinished"></translation>
+        <translation>Jungiamasi…</translation>
     </message>
     <message>
         <source>Continue</source>
-        <translation type="unfinished"></translation>
+        <translation>Tęsti</translation>
     </message>
     <message>
         <source>Debugger exited</source>
-        <translation type="unfinished"></translation>
+        <translation>Derintuvas baigė darbą</translation>
     </message>
     <message>
         <source>Debugger request failed</source>
-        <translation type="unfinished"></translation>
+        <translation>Derintuvo užklausa nepavyko</translation>
     </message>
     <message>
         <source>Disconnect</source>
-        <translation type="unfinished"></translation>
+        <translation>Atsijungti</translation>
     </message>
     <message>
         <source>Disconnected</source>
-        <translation type="unfinished"></translation>
+        <translation>Atsijungta</translation>
     </message>
     <message>
         <source>Ended</source>
-        <translation type="unfinished"></translation>
+        <translation>Baigta</translation>
     </message>
     <message>
         <source>Enter valid line numbers</source>
-        <translation type="unfinished"></translation>
+        <translation>Įveskite tinkamus eilučių numerius</translation>
     </message>
     <message>
         <source>Evaluate expression</source>
-        <translation type="unfinished"></translation>
+        <translation>Įvertinti išraišką</translation>
     </message>
     <message>
         <source>Evaluate the expression in the selected frame</source>
-        <translation type="unfinished"></translation>
+        <translation>Įvertinti išraišką pasirinktame kadre</translation>
     </message>
     <message>
         <source>Executable with debug symbols</source>
-        <translation type="unfinished"></translation>
+        <translation>Vykdomasis failas su derinimo simboliais</translation>
     </message>
     <message>
         <source>Hide events</source>
-        <translation type="unfinished"></translation>
+        <translation>Slėpti įvykius</translation>
     </message>
     <message>
         <source>Launch app</source>
-        <translation type="unfinished"></translation>
+        <translation>Paleisti programą</translation>
     </message>
     <message>
         <source>Launches the app if it is not running yet.</source>
-        <translation type="unfinished"></translation>
+        <translation>Paleidžia programą, jei ji dar neveikia.</translation>
     </message>
     <message>
         <source>Library with debug symbols (.so)</source>
-        <translation type="unfinished"></translation>
+        <translation>Biblioteka su derinimo simboliais (.so)</translation>
     </message>
     <message>
         <source>Line %1</source>
-        <translation type="unfinished"></translation>
+        <translation>%1 eilutė</translation>
     </message>
     <message>
         <source>Lines: 12, 24</source>
-        <translation type="unfinished"></translation>
+        <translation>Eilutės: 12, 24</translation>
     </message>
     <message>
         <source>Locals</source>
-        <translation type="unfinished"></translation>
+        <translation>Vietiniai kintamieji</translation>
     </message>
     <message>
         <source>No debugger events yet.</source>
-        <translation type="unfinished"></translation>
+        <translation>Derintuvo įvykių dar nėra.</translation>
     </message>
     <message>
         <source>No paused thread yet</source>
-        <translation type="unfinished"></translation>
+        <translation>Pristabdytos gijos dar nėra</translation>
     </message>
     <message>
         <source>No session</source>
-        <translation type="unfinished"></translation>
+        <translation>Nėra seanso</translation>
     </message>
     <message>
         <source>Open existing session</source>
-        <translation type="unfinished"></translation>
+        <translation>Atidaryti esamą seansą</translation>
     </message>
     <message>
         <source>Open source</source>
-        <translation type="unfinished"></translation>
+        <translation>Atidaryti šaltinį</translation>
     </message>
     <message>
         <source>Paused</source>
-        <translation type="unfinished"></translation>
+        <translation>Pristabdyta</translation>
     </message>
     <message>
         <source>Refresh</source>
-        <translation type="unfinished"></translation>
+        <translation>Atnaujinti</translation>
     </message>
     <message>
         <source>Restarts the app and waits for the Java debugger.</source>
-        <translation type="unfinished"></translation>
+        <translation>Iš naujo paleidžia programą ir laukia Java derintuvo.</translation>
     </message>
     <message>
         <source>Run the next source line</source>
-        <translation type="unfinished"></translation>
+        <translation>Vykdyti kitą šaltinio eilutę</translation>
     </message>
     <message>
         <source>Running</source>
-        <translation type="unfinished"></translation>
+        <translation>Vykdoma</translation>
     </message>
     <message>
         <source>Session active</source>
-        <translation type="unfinished"></translation>
+        <translation>Seansas aktyvus</translation>
     </message>
     <message>
         <source>Show events</source>
-        <translation type="unfinished"></translation>
+        <translation>Rodyti įvykius</translation>
     </message>
     <message>
         <source>Source file or Java class</source>
-        <translation type="unfinished"></translation>
+        <translation>Šaltinio failas arba Java klasė</translation>
     </message>
     <message>
         <source>Step in</source>
-        <translation type="unfinished"></translation>
+        <translation>Žingsnis į vidų</translation>
     </message>
     <message>
         <source>Step out</source>
-        <translation type="unfinished"></translation>
+        <translation>Žingsnis iš funkcijos</translation>
     </message>
     <message>
         <source>Step over</source>
-        <translation type="unfinished"></translation>
+        <translation>Žingsnis per</translation>
     </message>
     <message>
         <source>VARIABLES</source>
-        <translation type="unfinished"></translation>
+        <translation>KINTAMIEJI</translation>
     </message>
     <message>
         <source>ended</source>
-        <translation type="unfinished"></translation>
+        <translation>baigta</translation>
     </message>
     <message>
         <source>Attach to your app</source>
-        <translation type="unfinished"></translation>
+        <translation>Prisijungti prie savo programos</translation>
     </message>
     <message>
         <source>Needs a debug build and the NDK. The library must match your app and its processor.</source>
-        <translation type="unfinished"></translation>
+        <translation>Reikia derinimo versijos ir NDK. Biblioteka turi atitikti jūsų programą ir jos procesorių.</translation>
     </message>
     <message>
         <source>Needs a debug build on a connected phone or emulator.</source>
-        <translation type="unfinished"></translation>
+        <translation>Reikia derinimo versijos prijungtame telefone ar emuliatoriuje.</translation>
     </message>
     <message>
         <source>A program on this computer, inspected with LLDB.</source>
-        <translation type="unfinished"></translation>
+        <translation>Šio kompiuterio programa, tiriama su LLDB.</translation>
     </message>
     <message>
         <source>Take over your agent&apos;s session</source>
-        <translation type="unfinished"></translation>
+        <translation>Perimti savo agento seansą</translation>
     </message>
     <message>
         <source>Pause your app or set a breakpoint to see the stack and variables.</source>
-        <translation type="unfinished"></translation>
+        <translation>Pristabdykite programą arba nustatykite lūžio tašką, kad pamatytumėte steką ir kintamuosius.</translation>
     </message>
     <message>
         <source>Attach here, or take over a session your agent started.</source>
-        <translation type="unfinished"></translation>
+        <translation>Prisijunkite čia arba perimkite jūsų agento pradėtą seansą.</translation>
     </message>
 </context>
 <context>
     <name>Device</name>
     <message>
         <source>Device permissions are disabled in this layout preview.</source>
-        <translation type="unfinished"></translation>
+        <translation>Šioje išdėstymo peržiūroje įrenginio leidimai išjungti.</translation>
     </message>
     <message>
         <source>No connection</source>
-        <translation type="unfinished"></translation>
+        <translation>Nėra ryšio</translation>
     </message>
     <message>
         <source>Page not reachable. Is your dev server running?</source>
-        <translation type="unfinished"></translation>
+        <translation>Puslapis nepasiekiamas. Ar veikia jūsų kūrimo serveris?</translation>
     </message>
     <message>
         <source>Please open downloads in your browser. Device images can be saved with “Screenshot”.</source>
-        <translation type="unfinished"></translation>
+        <translation>Atsisiuntimus atidarykite naršyklėje. Įrenginio vaizdus galima išsaugoti mygtuku „Ekrano kopija“.</translation>
     </message>
     <message>
         <source>Reload</source>
-        <translation type="unfinished"></translation>
+        <translation>Įkelti iš naujo</translation>
     </message>
     <message>
         <source>SAFE AREA · PREVIEW</source>
-        <translation type="unfinished"></translation>
+        <translation>SAUGI SRITIS · PERŽIŪRA</translation>
     </message>
     <message>
         <source>The web view was terminated. Please reload.</source>
-        <translation type="unfinished"></translation>
+        <translation>Žiniatinklio rodinys buvo nutrauktas. Įkelkite iš naujo.</translation>
     </message>
     <message>
         <source>This preview opens web addresses. Use “Open folder” for local builds.</source>
-        <translation type="unfinished"></translation>
+        <translation>Ši peržiūra atidaro žiniatinklio adresus. Vietinėms versijoms naudokite „Atidaryti aplanką“.</translation>
     </message>
 </context>
 <context>
     <name>DeviceWindow</name>
     <message>
         <source>Save and copy a screenshot · Ctrl+Shift+S</source>
-        <translation type="unfinished"></translation>
+        <translation>Išsaugoti ir nukopijuoti ekrano kopiją · Ctrl+Shift+S</translation>
     </message>
     <message>
         <source>Back</source>
-        <translation type="unfinished"></translation>
+        <translation>Atgal</translation>
     </message>
     <message>
         <source>Bring back into the workspace</source>
-        <translation type="unfinished"></translation>
+        <translation>Grąžinti į darbo sritį</translation>
     </message>
     <message>
         <source>Close device window · the device keeps running</source>
-        <translation type="unfinished"></translation>
+        <translation>Uždaryti įrenginio langą · įrenginys toliau veikia</translation>
     </message>
     <message>
         <source>Larger · Ctrl+mouse wheel</source>
-        <translation type="unfinished"></translation>
+        <translation>Didesnis · Ctrl+pelės ratukas</translation>
     </message>
     <message>
         <source>Open in the workspace</source>
-        <translation type="unfinished"></translation>
+        <translation>Atidaryti darbo srityje</translation>
     </message>
     <message>
         <source>Tomacco – Device</source>
-        <translation type="unfinished"></translation>
+        <translation>Tomacco – Įrenginys</translation>
     </message>
     <message>
         <source>Rotate</source>
-        <translation type="unfinished"></translation>
+        <translation>Pasukti</translation>
     </message>
     <message>
         <source>Show the back</source>
-        <translation type="unfinished"></translation>
+        <translation>Rodyti galinę pusę</translation>
     </message>
     <message>
         <source>Show the front</source>
-        <translation type="unfinished"></translation>
+        <translation>Rodyti priekinę pusę</translation>
     </message>
     <message>
         <source>Side button</source>
-        <translation type="unfinished"></translation>
+        <translation>Šoninis mygtukas</translation>
     </message>
     <message>
         <source>Side button · wake or lock the display</source>
-        <translation type="unfinished"></translation>
+        <translation>Šoninis mygtukas · pažadinti arba užrakinti ekraną</translation>
     </message>
     <message>
         <source>Smaller · Ctrl+mouse wheel</source>
-        <translation type="unfinished"></translation>
+        <translation>Mažesnis · Ctrl+pelės ratukas</translation>
     </message>
     <message>
         <source>Stop keeping this window above the others</source>
-        <translation type="unfinished"></translation>
+        <translation>Nebelaikyti šio lango virš kitų</translation>
     </message>
     <message>
         <source>Keep this window above the others</source>
-        <translation type="unfinished"></translation>
+        <translation>Laikyti šį langą virš kitų</translation>
     </message>
 </context>
 <context>
     <name>FileWorkspace</name>
     <message>
         <source>Choose a file in the project tree</source>
-        <translation type="unfinished"></translation>
+        <translation>Pasirinkite failą projekto medyje</translation>
     </message>
     <message>
         <source>Close file</source>
-        <translation type="unfinished"></translation>
+        <translation>Uždaryti failą</translation>
     </message>
     <message>
         <source>Discard unsaved changes?</source>
-        <translation type="unfinished"></translation>
+        <translation>Atmesti neišsaugotus pakeitimus?</translation>
     </message>
     <message>
         <source>Folder</source>
-        <translation type="unfinished"></translation>
+        <translation>Aplankas</translation>
     </message>
     <message>
         <source>Hidden</source>
-        <translation type="unfinished"></translation>
+        <translation>Paslėpta</translation>
     </message>
     <message>
         <source>Line %1 · UTF-8 · changes are checked on save</source>
-        <translation type="unfinished"></translation>
+        <translation>%1 eilutė · UTF-8 · pakeitimai tikrinami įrašant</translation>
     </message>
     <message>
         <source>More matches available; narrow the search term.</source>
-        <translation type="unfinished"></translation>
+        <translation>Yra daugiau atitikmenų; patikslinkite paieškos žodį.</translation>
     </message>
     <message>
         <source>New file</source>
-        <translation type="unfinished"></translation>
+        <translation>Naujas failas</translation>
     </message>
     <message>
         <source>New folder</source>
-        <translation type="unfinished"></translation>
+        <translation>Naujas aplankas</translation>
     </message>
     <message>
         <source>Open a project first</source>
-        <translation type="unfinished"></translation>
+        <translation>Pirmiausia atidarykite projektą</translation>
     </message>
     <message>
         <source>Path relative to the project, e.g. lib/example.dart</source>
-        <translation type="unfinished"></translation>
+        <translation>Kelias projekto atžvilgiu, pvz., lib/example.dart</translation>
     </message>
     <message>
         <source>Reload</source>
-        <translation type="unfinished"></translation>
+        <translation>Įkelti iš naujo</translation>
     </message>
     <message>
         <source>Reload files</source>
-        <translation type="unfinished"></translation>
+        <translation>Įkelti failus iš naujo</translation>
     </message>
     <message>
         <source>Save the file first or discard it with Reload.</source>
-        <translation type="unfinished"></translation>
+        <translation>Pirmiausia įrašykite failą arba atmeskite pakeitimus mygtuku Įkelti iš naujo.</translation>
     </message>
     <message>
         <source>Save · Ctrl+S</source>
-        <translation type="unfinished"></translation>
+        <translation>Įrašyti · Ctrl+S</translation>
     </message>
     <message>
         <source>Saved · %1</source>
-        <translation type="unfinished"></translation>
+        <translation>Įrašyta · %1</translation>
     </message>
     <message>
         <source>Search source code…</source>
-        <translation type="unfinished"></translation>
+        <translation>Ieškoti išeities kode…</translation>
     </message>
     <message>
         <source>The file is read again from disk.</source>
-        <translation type="unfinished"></translation>
+        <translation>Failas dar kartą nuskaitomas iš disko.</translation>
     </message>
     <message>
         <source>The link leads outside this project.</source>
-        <translation type="unfinished"></translation>
+        <translation>Nuoroda veda už šio projekto ribų.</translation>
     </message>
     <message>
         <source>This folder contains more than 2,000 entries. Use search for targeted results.</source>
-        <translation type="unfinished"></translation>
+        <translation>Šiame aplanke yra daugiau nei 2 000 įrašų. Tikslesniems rezultatams naudokite paiešką.</translation>
     </message>
     <message>
         <source>Source of %1</source>
-        <translation type="unfinished"></translation>
+        <translation>%1 išeities kodas</translation>
     </message>
     <message>
         <source>Source editor</source>
-        <translation type="unfinished"></translation>
+        <translation>Išeities kodo redaktorius</translation>
     </message>
     <message>
         <source>Search results</source>
-        <translation type="unfinished"></translation>
+        <translation>Paieškos rezultatai</translation>
     </message>
     <message>
         <source>Project files</source>
-        <translation type="unfinished"></translation>
+        <translation>Projekto failai</translation>
     </message>
     <message>
         <source>Choose folder</source>
-        <translation type="unfinished"></translation>
+        <translation>Pasirinkite aplanką</translation>
     </message>
 </context>
 <context>
     <name>IosGuestView</name>
     <message>
         <source>Screenshot saved and copied: %1</source>
-        <translation type="unfinished"></translation>
+        <translation>Ekrano kopija išsaugota ir nukopijuota: %1</translation>
     </message>
     <message>
         <source>%1 · outcome unclear, not retried automatically</source>
-        <translation type="unfinished"></translation>
+        <translation>%1 · rezultatas neaiškus, automatiškai nekartojama</translation>
     </message>
     <message numerus="yes">
         <source>%n new frame(s)/s</source>
-        <translation type="unfinished">
-            <numerusform></numerusform>
-            <numerusform></numerusform>
-            <numerusform></numerusform>
+        <translation>
+            <numerusform>%n naujas kadras/s</numerusform>
+            <numerusform>%n nauji kadrai/s</numerusform>
+            <numerusform>%n naujų kadrų/s</numerusform>
         </translation>
     </message>
     <message>
         <source>App switcher</source>
-        <translation type="unfinished"></translation>
+        <translation>Programų perjungiklis</translation>
     </message>
     <message>
         <source>Back</source>
-        <translation type="unfinished"></translation>
+        <translation>Atgal</translation>
     </message>
     <message>
         <source>Capture saved: %1</source>
-        <translation type="unfinished"></translation>
+        <translation>Įrašas išsaugotas: %1</translation>
     </message>
     <message>
         <source>Control Center</source>
-        <translation type="unfinished"></translation>
+        <translation>Valdymo centras</translation>
     </message>
     <message>
         <source>Control still busy · input not delivered</source>
-        <translation type="unfinished"></translation>
+        <translation>Valdymas vis dar užimtas · įvestis nepristatyta</translation>
     </message>
     <message>
         <source>Detach the virtual iOS device into its own window</source>
-        <translation type="unfinished"></translation>
+        <translation>Atskirti virtualų iOS įrenginį į atskirą langą</translation>
     </message>
     <message>
         <source>Display output unreachable</source>
-        <translation type="unfinished"></translation>
+        <translation>Ekrano išvestis nepasiekiama</translation>
     </message>
     <message>
         <source>Dock</source>
-        <translation type="unfinished"></translation>
+        <translation>Dokas</translation>
     </message>
     <message>
         <source>Edge swipes start on the frame or at the screen&apos;s edge</source>
-        <translation type="unfinished"></translation>
+        <translation>Perbraukimai nuo krašto prasideda ant rėmelio arba prie ekrano krašto</translation>
     </message>
     <message>
         <source>Home button</source>
-        <translation type="unfinished"></translation>
+        <translation>Pagrindinis mygtukas</translation>
     </message>
     <message>
         <source>Home button and swipe up from the bottom edge</source>
-        <translation type="unfinished"></translation>
+        <translation>Pagrindinis mygtukas ir perbraukimas aukštyn nuo apatinio krašto</translation>
     </message>
     <message>
         <source>Input failed</source>
-        <translation type="unfinished"></translation>
+        <translation>Įvestis nepavyko</translation>
     </message>
     <message>
         <source>Input queue full · this input was not sent</source>
-        <translation type="unfinished"></translation>
+        <translation>Įvesties eilė pilna · ši įvestis neperduota</translation>
     </message>
     <message>
         <source>Last frame</source>
-        <translation type="unfinished"></translation>
+        <translation>Paskutinis kadras</translation>
     </message>
     <message>
         <source>Live frame · %1</source>
-        <translation type="unfinished"></translation>
+        <translation>Tiesioginis kadras · %1</translation>
     </message>
     <message>
         <source>No running interactive iOS session</source>
-        <translation type="unfinished"></translation>
+        <translation>Nėra veikiančio interaktyvaus iOS seanso</translation>
     </message>
     <message>
         <source>Notification Center</source>
-        <translation type="unfinished"></translation>
+        <translation>Pranešimų centras</translation>
     </message>
     <message>
         <source>Own window</source>
-        <translation type="unfinished"></translation>
+        <translation>Atskiras langas</translation>
     </message>
     <message>
         <source>Real output of the virtual display</source>
-        <translation type="unfinished"></translation>
+        <translation>Tikroji virtualaus ekrano išvestis</translation>
     </message>
     <message>
         <source>Side button</source>
-        <translation type="unfinished"></translation>
+        <translation>Šoninis mygtukas</translation>
     </message>
     <message>
         <source>Still frame</source>
-        <translation type="unfinished"></translation>
+        <translation>Nejudantis kadras</translation>
     </message>
     <message>
         <source>Swipe down from the top-left edge</source>
-        <translation type="unfinished"></translation>
+        <translation>Perbraukite žemyn nuo viršutinio kairiojo krašto</translation>
     </message>
     <message>
         <source>Swipe down from the top-right edge</source>
-        <translation type="unfinished"></translation>
+        <translation>Perbraukite žemyn nuo viršutinio dešiniojo krašto</translation>
     </message>
     <message>
         <source>Swipe right from the left edge</source>
-        <translation type="unfinished"></translation>
+        <translation>Perbraukite į dešinę nuo kairiojo krašto</translation>
     </message>
     <message>
         <source>Swipe up from the bottom edge and pause</source>
-        <translation type="unfinished"></translation>
+        <translation>Perbraukite aukštyn nuo apatinio krašto ir stabtelėkite</translation>
     </message>
     <message>
         <source>The iOS device is running in its own window</source>
-        <translation type="unfinished"></translation>
+        <translation>iOS įrenginys veikia atskirame lange</translation>
     </message>
     <message>
         <source>Virtual iOS device</source>
-        <translation type="unfinished"></translation>
+        <translation>Virtualus iOS įrenginys</translation>
     </message>
     <message>
         <source>Waiting for the display output of iOS…</source>
-        <translation type="unfinished"></translation>
+        <translation>Laukiama iOS ekrano išvesties…</translation>
     </message>
     <message>
         <source>Wake or lock the display</source>
-        <translation type="unfinished"></translation>
+        <translation>Pažadinti arba užrakinti ekraną</translation>
     </message>
     <message>
         <source>Stop recording · %1 s</source>
-        <translation type="unfinished"></translation>
+        <translation>Stabdyti įrašymą · %1 s</translation>
     </message>
     <message>
         <source>Record</source>
-        <translation type="unfinished"></translation>
+        <translation>Įrašyti</translation>
     </message>
     <message>
         <source>Stop and save the recording</source>
-        <translation type="unfinished"></translation>
+        <translation>Sustabdyti ir išsaugoti įrašą</translation>
     </message>
     <message>
         <source>Record the screen to a video, at most 10 minutes</source>
-        <translation type="unfinished"></translation>
+        <translation>Įrašyti ekraną į vaizdo įrašą, daugiausia 10 minučių</translation>
     </message>
     <message numerus="yes">
         <source>Typing %n character(s) from the clipboard</source>
-        <translation type="unfinished">
-            <numerusform></numerusform>
-            <numerusform></numerusform>
-            <numerusform></numerusform>
+        <translation>
+            <numerusform>Įvedamas %n simbolis iš iškarpinės</numerusform>
+            <numerusform>Įvedami %n simboliai iš iškarpinės</numerusform>
+            <numerusform>Įvedama %n simbolių iš iškarpinės</numerusform>
         </translation>
     </message>
     <message>
         <source>The clipboard holds no text</source>
-        <translation type="unfinished"></translation>
+        <translation>Iškarpinėje nėra teksto</translation>
     </message>
     <message>
         <source>The clipboard holds %1 characters; at most %2 are typed into the phone</source>
-        <translation type="unfinished"></translation>
+        <translation>Iškarpinėje yra %1 simbolių; į telefoną įvedama daugiausia %2</translation>
     </message>
     <message>
         <source>Paste</source>
-        <translation type="unfinished"></translation>
+        <translation>Įklijuoti</translation>
     </message>
     <message>
         <source>Type the clipboard&apos;s text into the field that has the focus</source>
-        <translation type="unfinished"></translation>
+        <translation>Įvesti iškarpinės tekstą į lauką, kuriame yra žymeklis</translation>
     </message>
     <message>
         <source>Keyboard to phone</source>
-        <translation type="unfinished"></translation>
+        <translation>Klaviatūra telefonui</translation>
     </message>
     <message>
         <source>Keyboard to desktop</source>
-        <translation type="unfinished"></translation>
+        <translation>Klaviatūra darbalaukiui</translation>
     </message>
     <message>
         <source>Typing goes to the phone · Ctrl+Shift+K gives the keyboard back to the desktop</source>
-        <translation type="unfinished"></translation>
+        <translation>Rašoma į telefoną · Ctrl+Shift+K grąžina klaviatūrą darbalaukiui</translation>
     </message>
     <message>
         <source>Click the screen or press Ctrl+Shift+K to type on the phone</source>
-        <translation type="unfinished"></translation>
+        <translation>Spustelėkite ekraną arba paspauskite Ctrl+Shift+K, kad rašytumėte telefone</translation>
     </message>
     <message>
         <source>Speed</source>
-        <translation type="unfinished"></translation>
+        <translation>Greitis</translation>
     </message>
     <message>
         <source>Show frames per second and the time from an input to the picture</source>
-        <translation type="unfinished"></translation>
+        <translation>Rodyti kadrus per sekundę ir laiką nuo įvesties iki vaizdo</translation>
     </message>
     <message>
         <source>Screenshot with frame</source>
-        <translation type="unfinished"></translation>
+        <translation>Ekrano kopija su rėmeliu</translation>
     </message>
     <message>
         <source>Save and copy a screenshot with a plain device frame and rounded corners</source>
-        <translation type="unfinished"></translation>
+        <translation>Išsaugoti ir nukopijuoti ekrano kopiją su paprastu įrenginio rėmeliu ir suapvalintais kampais</translation>
     </message>
     <message>
         <source>%1 new · %2 fetched frames/s</source>
-        <translation type="unfinished"></translation>
+        <translation>%1 naujų · %2 gautų kadrų/s</translation>
     </message>
     <message>
         <source>Input to picture: %1 ms</source>
-        <translation type="unfinished"></translation>
+        <translation>Nuo įvesties iki vaizdo: %1 ms</translation>
     </message>
     <message>
         <source>Input to picture: not measured yet</source>
-        <translation type="unfinished"></translation>
+        <translation>Nuo įvesties iki vaizdo: dar neišmatuota</translation>
     </message>
     <message>
         <source>The screenshot failed</source>
-        <translation type="unfinished"></translation>
+        <translation>Ekrano kopija nepavyko</translation>
     </message>
     <message>
         <source>Keyboard to phone · Ctrl+Shift+K switches it to the desktop and back</source>
-        <translation type="unfinished"></translation>
+        <translation>Klaviatūra telefonui · Ctrl+Shift+K perjungia ją į darbalaukį ir atgal</translation>
     </message>
 </context>
 <context>
     <name>IosResearch</name>
     <message>
         <source>Another app change is still running.</source>
-        <translation type="unfinished"></translation>
+        <translation>Dar vykdomas kitas programos pakeitimas.</translation>
     </message>
     <message>
         <source>Checking %1…</source>
-        <translation type="unfinished"></translation>
+        <translation>Tikrinama %1…</translation>
     </message>
     <message>
         <source>%1 added · installing on the running device</source>
-        <translation type="unfinished"></translation>
+        <translation>%1 pridėta · diegiama į veikiantį įrenginį</translation>
     </message>
     <message>
         <source>%1 added · the next start installs it</source>
-        <translation type="unfinished"></translation>
+        <translation>%1 pridėta · bus įdiegta kito paleidimo metu</translation>
     </message>
     <message>
         <source>The virtual iOS device takes one .app bundle built for arm64 iOS.</source>
-        <translation type="unfinished"></translation>
+        <translation>Virtualus iOS įrenginys priima vieną .app paketą, sukompiliuotą arm64 iOS.</translation>
     </message>
     <message>
         <source>Set up the virtual iOS device&apos;s profile before adding apps.</source>
-        <translation type="unfinished"></translation>
+        <translation>Prieš pridedami programas, nustatykite virtualaus iOS įrenginio profilį.</translation>
     </message>
     <message>
         <source>%1 reads · %2 writes · %3 rejected</source>
-        <translation type="unfinished"></translation>
+        <translation>Skaitymų: %1 · rašymų: %2 · atmesta: %3</translation>
     </message>
     <message>
         <source>%1 · Apple variant</source>
-        <translation type="unfinished"></translation>
+        <translation>%1 · „Apple“ variantas</translation>
     </message>
     <message>
         <source>%1 · derived</source>
-        <translation type="unfinished"></translation>
+        <translation>%1 · išvestinis</translation>
     </message>
     <message>
         <source>%1: %2 · state %3</source>
-        <translation type="unfinished"></translation>
+        <translation>%1: %2 · būsena %3</translation>
     </message>
     <message numerus="yes">
         <source>%1: %n message(s)</source>
-        <translation type="unfinished">
-            <numerusform></numerusform>
-            <numerusform></numerusform>
-            <numerusform></numerusform>
+        <translation>
+            <numerusform>%1: %n pranešimas</numerusform>
+            <numerusform>%1: %n pranešimai</numerusform>
+            <numerusform>%1: %n pranešimų</numerusform>
         </translation>
     </message>
     <message numerus="yes">
         <source>%n byte(s) from %1 · checksum verified</source>
-        <translation type="unfinished">
-            <numerusform></numerusform>
-            <numerusform></numerusform>
-            <numerusform></numerusform>
+        <translation>
+            <numerusform>%n baitas iš %1 · kontrolinė suma patikrinta</numerusform>
+            <numerusform>%n baitai iš %1 · kontrolinė suma patikrinta</numerusform>
+            <numerusform>%n baitų iš %1 · kontrolinė suma patikrinta</numerusform>
         </translation>
     </message>
     <message>
         <source>Simulated controller with timers · experimental</source>
-        <translation type="unfinished"></translation>
+        <translation>Imituotas valdiklis su laikmačiais · eksperimentinis</translation>
     </message>
     <message>
         <source>Add app…</source>
-        <translation type="unfinished"></translation>
+        <translation>Pridėti programą…</translation>
     </message>
     <message>
         <source>Core ID</source>
-        <translation type="unfinished"></translation>
+        <translation>Branduolio ID</translation>
     </message>
     <message>
         <source>App to open at start</source>
-        <translation type="unfinished"></translation>
+        <translation>Paleidžiant atidaroma programa</translation>
     </message>
     <message>
         <source>Applies from the next start.</source>
-        <translation type="unfinished"></translation>
+        <translation>Taikoma nuo kito paleidimo.</translation>
     </message>
     <message>
         <source>Your own arm64 .app bundles. Each start installs them together with the device&apos;s helper tools. Changes apply from the next start.</source>
-        <translation type="unfinished"></translation>
+        <translation>Jūsų pačių arm64 .app paketai. Kiekvienas paleidimas juos įdiegia kartu su įrenginio pagalbiniais įrankiais. Pakeitimai taikomi nuo kito paleidimo.</translation>
     </message>
     <message>
         <source>Boot image</source>
-        <translation type="unfinished"></translation>
+        <translation>Paleidimo atvaizdas</translation>
     </message>
     <message>
         <source>Breakpoint reached</source>
-        <translation type="unfinished"></translation>
+        <translation>Pasiektas lūžio taškas</translation>
     </message>
     <message>
         <source>Processor core ID (MPIDR affinity)</source>
-        <translation type="unfinished"></translation>
+        <translation>Procesoriaus branduolio ID (MPIDR giminingumas)</translation>
     </message>
     <message>
         <source>Processor settings</source>
-        <translation type="unfinished"></translation>
+        <translation>Procesoriaus nustatymai</translation>
     </message>
     <message>
         <source>Processor register not supported yet: %1 · %2 by code at %3</source>
-        <translation type="unfinished"></translation>
+        <translation>Procesoriaus registras dar nepalaikomas: %1 · %2 kodu adresu %3</translation>
     </message>
     <message>
         <source>Processor: MIDR %1 · core ID %2 · %3</source>
-        <translation type="unfinished"></translation>
+        <translation>Procesorius: MIDR %1 · branduolio ID %2 · %3</translation>
     </message>
     <message>
         <source>Cancel</source>
-        <translation type="unfinished"></translation>
+        <translation>Atšaukti</translation>
     </message>
     <message>
         <source>Cancel the start and stop the device without saving</source>
-        <translation type="unfinished"></translation>
+        <translation>Atšaukti paleidimą ir sustabdyti įrenginį neišsaugant</translation>
     </message>
     <message>
         <source>Check the bundle and add it to the profile · the next start installs it</source>
-        <translation type="unfinished"></translation>
+        <translation>Patikrinti paketą ir pridėti jį prie profilio · kitas paleidimas jį įdiegs</translation>
     </message>
     <message>
         <source>Checking image…</source>
-        <translation type="unfinished"></translation>
+        <translation>Tikrinamas atvaizdas…</translation>
     </message>
     <message>
         <source>Checking…</source>
-        <translation type="unfinished"></translation>
+        <translation>Tikrinama…</translation>
     </message>
     <message>
         <source>Choose</source>
-        <translation type="unfinished"></translation>
+        <translation>Pasirinkti</translation>
     </message>
     <message>
         <source>Choose app bundle (.app directory)</source>
-        <translation type="unfinished"></translation>
+        <translation>Pasirinkite programos paketą (.app katalogą)</translation>
     </message>
     <message>
         <source>Choose iOS emulator</source>
-        <translation type="unfinished"></translation>
+        <translation>Pasirinkite iOS emuliatorių</translation>
     </message>
     <message>
         <source>Choose prepared firmware package</source>
-        <translation type="unfinished"></translation>
+        <translation>Pasirinkite paruoštą aparatinės programinės įrangos paketą</translation>
     </message>
     <message>
         <source>Choose prepared iOS package</source>
-        <translation type="unfinished"></translation>
+        <translation>Pasirinkite paruoštą iOS paketą</translation>
     </message>
     <message>
         <source>Classic (Home button)</source>
-        <translation type="unfinished"></translation>
+        <translation>Klasikinis (pagrindinis mygtukas)</translation>
     </message>
     <message>
         <source>Closing the session…</source>
-        <translation type="unfinished"></translation>
+        <translation>Uždaromas seansas…</translation>
     </message>
     <message>
         <source>Snapshots of the running system: %1 · %2</source>
-        <translation type="unfinished"></translation>
+        <translation>Veikiančios sistemos momentinės kopijos: %1 · %2</translation>
     </message>
     <message>
         <source>Reading the controller state failed: %1</source>
-        <translation type="unfinished"></translation>
+        <translation>Nepavyko nuskaityti valdiklio būsenos: %1</translation>
     </message>
     <message>
         <source>For controller development: Apple&apos;s original firmware runs alone on a simulated ARM processor. The simulated controller still rests on unconfirmed hardware guesses; the firmware&apos;s services and its connection to iOS are not verified.</source>
-        <translation type="unfinished"></translation>
+        <translation>Valdiklių kūrimui: originali „Apple“ aparatinė programinė įranga vienai veikia imituotame ARM procesoriuje. Imituotas valdiklis vis dar remiasi nepatvirtintomis prielaidomis apie aparatinę įrangą; aparatinės programinės įrangos paslaugos ir jos ryšys su iOS nepatikrinti.</translation>
     </message>
     <message>
         <source>Controller state</source>
-        <translation type="unfinished"></translation>
+        <translation>Valdiklio būsena</translation>
     </message>
     <message>
         <source>Work in progress: an agent starts the virtual iOS device, then it appears here. Starting takes many minutes. Apart from the built-in test app, apps with a user interface have not been shown to work yet.</source>
-        <translation type="unfinished"></translation>
+        <translation>Kuriama: agentas paleidžia virtualų iOS įrenginį, tada jis atsiranda čia. Paleidimas trunka daug minučių. Išskyrus įtaisytąją bandomąją programą, programų su naudotojo sąsaja veikimas dar neparodytas.</translation>
     </message>
     <message>
         <source>Diagnostics complete</source>
-        <translation type="unfinished"></translation>
+        <translation>Diagnostika baigta</translation>
     </message>
     <message>
         <source>Diagnostics ended with a finding</source>
-        <translation type="unfinished"></translation>
+        <translation>Diagnostika baigėsi radiniu</translation>
     </message>
     <message>
         <source>Folder with pmp-research.json</source>
-        <translation type="unfinished"></translation>
+        <translation>Aplankas su pmp-research.json</translation>
     </message>
     <message>
         <source>Folder with tomacco-ios.json</source>
-        <translation type="unfinished"></translation>
+        <translation>Aplankas su tomacco-ios.json</translation>
     </message>
     <message>
         <source>Experimental: iOS shows its first system screens. Setup, graphics and native apps do not fully work yet.</source>
-        <translation type="unfinished"></translation>
+        <translation>Eksperimentinis: iOS rodo pirmuosius sistemos ekranus. Sąranka, grafika ir vietinės programos dar visiškai neveikia.</translation>
     </message>
     <message>
         <source>First invalid memory access: code at %1 · address %2 · %3</source>
-        <translation type="unfinished"></translation>
+        <translation>Pirmoji netinkama prieiga prie atminties: kodas adresu %1 · adresas %2 · %3</translation>
     </message>
     <message>
         <source>Memory contents in hexadecimal</source>
-        <translation type="unfinished"></translation>
+        <translation>Atminties turinys šešioliktaine sistema</translation>
     </message>
     <message>
         <source>Hide processor settings</source>
-        <translation type="unfinished"></translation>
+        <translation>Slėpti procesoriaus nustatymus</translation>
     </message>
     <message>
         <source>Hide processor registers</source>
-        <translation type="unfinished"></translation>
+        <translation>Slėpti procesoriaus registrus</translation>
     </message>
     <message>
         <source>Hide boot image</source>
-        <translation type="unfinished"></translation>
+        <translation>Slėpti paleidimo atvaizdą</translation>
     </message>
     <message>
         <source>Address of a firmware instruction, e.g. 0x10280d4 · optional</source>
-        <translation type="unfinished"></translation>
+        <translation>Aparatinės programinės įrangos instrukcijos adresas, pvz., 0x10280d4 · neprivaloma</translation>
     </message>
     <message>
         <source>Job &amp; logs</source>
-        <translation type="unfinished"></translation>
+        <translation>Užduotis ir žurnalai</translation>
     </message>
     <message>
         <source>The processor identity the firmware sees when it starts. Other values make it take other start-up paths; they add no hardware features.</source>
-        <translation type="unfinished"></translation>
+        <translation>Procesoriaus tapatybė, kurią mato aparatinė programinė įranga paleidžiama. Kitos reikšmės priverčia ją eiti kitais paleidimo keliais; jos neprideda aparatinės įrangos funkcijų.</translation>
     </message>
     <message>
         <source>From the last snapshot · raw 64-bit values</source>
-        <translation type="unfinished"></translation>
+        <translation>Iš paskutinės momentinės kopijos · neapdorotos 64 bitų reikšmės</translation>
     </message>
     <message>
         <source>Loading…</source>
-        <translation type="unfinished"></translation>
+        <translation>Įkeliama…</translation>
     </message>
     <message>
         <source>Maximum run time</source>
-        <translation type="unfinished"></translation>
+        <translation>Didžiausia vykdymo trukmė</translation>
     </message>
     <message>
         <source>Maximum run time in seconds</source>
-        <translation type="unfinished"></translation>
+        <translation>Didžiausia vykdymo trukmė sekundžėmis</translation>
     </message>
     <message>
         <source>Saved memory</source>
-        <translation type="unfinished"></translation>
+        <translation>Išsaugota atmintis</translation>
     </message>
     <message>
         <source>Model</source>
-        <translation type="unfinished"></translation>
+        <translation>Modelis</translation>
     </message>
     <message>
         <source>No controller · baseline for comparison</source>
-        <translation type="unfinished"></translation>
+        <translation>Be valdiklio · palyginimo atskaitos taškas</translation>
     </message>
     <message>
         <source>No apps of your own yet · the start opens the built-in test app.</source>
-        <translation type="unfinished"></translation>
+        <translation>Savo programų dar nėra · paleidus atidaroma įtaisytoji bandomoji programa.</translation>
     </message>
     <message>
         <source>Number of bytes</source>
-        <translation type="unfinished"></translation>
+        <translation>Baitų skaičius</translation>
     </message>
     <message>
         <source>Open at start</source>
-        <translation type="unfinished"></translation>
+        <translation>Atidaryti paleidžiant</translation>
     </message>
     <message>
         <source>Open test system</source>
-        <translation type="unfinished"></translation>
+        <translation>Atidaryti bandomąją sistemą</translation>
     </message>
     <message>
         <source>Your apps</source>
-        <translation type="unfinished"></translation>
+        <translation>Jūsų programos</translation>
     </message>
     <message>
         <source>Built-in test app (diagnostics)</source>
-        <translation type="unfinished"></translation>
+        <translation>Įtaisytoji bandomoji programa (diagnostika)</translation>
     </message>
     <message>
         <source>Own window</source>
-        <translation type="unfinished"></translation>
+        <translation>Atskiras langas</translation>
     </message>
     <message>
         <source>Firmware breakpoint</source>
-        <translation type="unfinished"></translation>
+        <translation>Aparatinės programinės įrangos lūžio taškas</translation>
     </message>
     <message>
         <source>Simulated firmware controller</source>
-        <translation type="unfinished"></translation>
+        <translation>Imituotas aparatinės programinės įrangos valdiklis</translation>
     </message>
     <message>
         <source>Power-management firmware (PMP)</source>
-        <translation type="unfinished"></translation>
+        <translation>Energijos valdymo aparatinė programinė įranga (PMP)</translation>
     </message>
     <message>
         <source>Firmware running</source>
-        <translation type="unfinished"></translation>
+        <translation>Aparatinė programinė įranga veikia</translation>
     </message>
     <message>
         <source>Path to an .app directory (arm64)</source>
-        <translation type="unfinished"></translation>
+        <translation>Kelias į .app katalogą (arm64)</translation>
     </message>
     <message>
         <source>Addresses 0x1000000 to 0x11fffff of the firmware&apos;s memory. Reading checks the saved copy; the firmware is not run again for it.</source>
-        <translation type="unfinished"></translation>
+        <translation>Aparatinės programinės įrangos atminties adresai nuo 0x1000000 iki 0x11fffff. Skaitant tikrinama išsaugota kopija; aparatinė programinė įranga tam iš naujo nevykdoma.</translation>
     </message>
     <message>
         <source>Memory address</source>
-        <translation type="unfinished"></translation>
+        <translation>Atminties adresas</translation>
     </message>
     <message>
         <source>Prepare package</source>
-        <translation type="unfinished"></translation>
+        <translation>Paruošti paketą</translation>
     </message>
     <message>
         <source>Prepare, boot, unlock and open the test app</source>
-        <translation type="unfinished"></translation>
+        <translation>Paruošti, paleisti, atrakinti ir atidaryti bandomąją programą</translation>
     </message>
     <message>
         <source>Prepared firmware package</source>
-        <translation type="unfinished"></translation>
+        <translation>Paruoštas aparatinės programinės įrangos paketas</translation>
     </message>
     <message>
         <source>Prepared iOS package</source>
-        <translation type="unfinished"></translation>
+        <translation>Paruoštas iOS paketas</translation>
     </message>
     <message>
         <source>Preparing working copy</source>
-        <translation type="unfinished"></translation>
+        <translation>Ruošiama darbinė kopija</translation>
     </message>
     <message>
         <source>Memory copy failed: %1</source>
-        <translation type="unfinished"></translation>
+        <translation>Atminties kopijavimas nepavyko: %1</translation>
     </message>
     <message>
         <source>Memory copy: 2 MiB from address %1 · saved in the report folder</source>
-        <translation type="unfinished"></translation>
+        <translation>Atminties kopija: 2 MiB nuo adreso %1 · išsaugota ataskaitų aplanke</translation>
     </message>
     <message>
         <source>Read</source>
-        <translation type="unfinished"></translation>
+        <translation>Skaityti</translation>
     </message>
     <message>
         <source>Ready for a test run</source>
-        <translation type="unfinished"></translation>
+        <translation>Paruošta bandomajam vykdymui</translation>
     </message>
     <message>
         <source>Actual image from the start-up screen · not yet the device&apos;s main display</source>
-        <translation type="unfinished"></translation>
+        <translation>Tikras vaizdas iš paleidimo ekrano · dar ne pagrindinis įrenginio ekranas</translation>
     </message>
     <message>
         <source>Real iOS directly on Linux. The virtual iOS device shows the lock and Home screens and starts its own test app; general app development is not enabled yet.</source>
-        <translation type="unfinished"></translation>
+        <translation>Tikra iOS tiesiai Linux sistemoje. Virtualus iOS įrenginys rodo užrakinimo ir pagrindinį ekranus bei paleidžia savo bandomąją programą; bendras programų kūrimas dar neįjungtas.</translation>
     </message>
     <message>
         <source>Refresh</source>
-        <translation type="unfinished"></translation>
+        <translation>Atnaujinti</translation>
     </message>
     <message>
         <source>Remove</source>
-        <translation type="unfinished"></translation>
+        <translation>Pašalinti</translation>
     </message>
     <message>
         <source>Remove from the profile · an app already installed stays on the device</source>
-        <translation type="unfinished"></translation>
+        <translation>Pašalinti iš profilio · jau įdiegta programa lieka įrenginyje</translation>
     </message>
     <message>
         <source>Report folder</source>
-        <translation type="unfinished"></translation>
+        <translation>Ataskaitų aplankas</translation>
     </message>
     <message>
         <source>Run %1 · %2</source>
-        <translation type="unfinished"></translation>
+        <translation>Vykdymas %1 · %2</translation>
     </message>
     <message>
         <source>Run iOS, or the iPhone&apos;s power-management firmware on its own, directly on Linux. Each run writes its own report; runs started from the command line or by an agent appear here too.</source>
-        <translation type="unfinished"></translation>
+        <translation>Vykdykite iOS arba vien „iPhone“ energijos valdymo aparatinę programinę įrangą tiesiai Linux sistemoje. Kiekvienas vykdymas rašo savo ataskaitą; čia rodomi ir iš komandinės eilutės ar agento paleisti vykdymai.</translation>
     </message>
     <message>
         <source>Run ended</source>
-        <translation type="unfinished"></translation>
+        <translation>Vykdymas baigtas</translation>
     </message>
     <message>
         <source>Save a copy of the firmware&apos;s memory with the report (2 MiB)</source>
-        <translation type="unfinished"></translation>
+        <translation>Išsaugoti aparatinės programinės įrangos atminties kopiją kartu su ataskaita (2 MiB)</translation>
     </message>
     <message>
         <source>Save storage and shut down cleanly</source>
-        <translation type="unfinished"></translation>
+        <translation>Išsaugoti saugyklą ir tvarkingai išjungti</translation>
     </message>
     <message>
         <source>System services not found in the snapshots: %1</source>
-        <translation type="unfinished"></translation>
+        <translation>Momentinėse kopijose nerasta sistemos paslaugų: %1</translation>
     </message>
     <message>
         <source>Show</source>
-        <translation type="unfinished"></translation>
+        <translation>Rodyti</translation>
     </message>
     <message>
         <source>Show processor registers</source>
-        <translation type="unfinished"></translation>
+        <translation>Rodyti procesoriaus registrus</translation>
     </message>
     <message>
         <source>Start</source>
-        <translation type="unfinished"></translation>
+        <translation>Paleisti</translation>
     </message>
     <message>
         <source>Start failed</source>
-        <translation type="unfinished"></translation>
+        <translation>Paleisti nepavyko</translation>
     </message>
     <message>
         <source>Start test run</source>
-        <translation type="unfinished"></translation>
+        <translation>Pradėti bandomąjį vykdymą</translation>
     </message>
     <message>
         <source>Status currently unknown</source>
-        <translation type="unfinished"></translation>
+        <translation>Būsena šiuo metu nežinoma</translation>
     </message>
     <message>
         <source>Stop</source>
-        <translation type="unfinished"></translation>
+        <translation>Stabdyti</translation>
     </message>
     <message>
         <source>Stop at a code address</source>
-        <translation type="unfinished"></translation>
+        <translation>Sustoti kodo adresu</translation>
     </message>
     <message>
         <source>Stop without saving</source>
-        <translation type="unfinished"></translation>
+        <translation>Stabdyti neišsaugant</translation>
     </message>
     <message>
         <source>Stop without saving · ends the run at once, whatever the device has not saved yet is lost</source>
-        <translation type="unfinished"></translation>
+        <translation>Stabdyti neišsaugant · vykdymas baigiamas iš karto, visa, ko įrenginys dar neišsaugojo, prarandama</translation>
     </message>
     <message>
         <source>Stopped before the instruction at %1 · this does not show that the firmware started completely</source>
-        <translation type="unfinished"></translation>
+        <translation>Sustota prieš instrukciją adresu %1 · tai neparodo, kad aparatinė programinė įranga visiškai pasileido</translation>
     </message>
     <message>
         <source>Stopping…</source>
-        <translation type="unfinished"></translation>
+        <translation>Stabdoma…</translation>
     </message>
     <message>
         <source>What to run</source>
-        <translation type="unfinished"></translation>
+        <translation>Ką vykdyti</translation>
     </message>
     <message>
         <source>Reading this state changes nothing: no message is taken from a queue and no interrupt is answered.</source>
-        <translation type="unfinished"></translation>
+        <translation>Šios būsenos skaitymas nieko nekeičia: iš eilės nepaėmamas joks pranešimas ir neatsakoma į jokį pertraukimą.</translation>
     </message>
     <message>
         <source>The existing run is reused.</source>
-        <translation type="unfinished"></translation>
+        <translation>Pakartotinai naudojamas esamas vykdymas.</translation>
     </message>
     <message>
         <source>The device could not save before stopping (%1). “Stop without saving” ends the run at once; the next start uses the last saved state.</source>
-        <translation type="unfinished"></translation>
+        <translation>Įrenginys nepajėgė išsaugoti prieš sustodamas (%1). „Stabdyti neišsaugant“ iš karto baigia vykdymą; kitas paleidimas naudos paskutinę išsaugotą būseną.</translation>
     </message>
     <message>
         <source>The device is still starting, there is nothing to save. Ending the run…</source>
-        <translation type="unfinished"></translation>
+        <translation>Įrenginys dar paleidžiamas, nėra ką išsaugoti. Baigiamas vykdymas…</translation>
     </message>
     <message>
         <source>The run stops at that address and reports the processor state. The firmware itself is not modified.</source>
-        <translation type="unfinished"></translation>
+        <translation>Vykdymas sustoja tuo adresu ir praneša procesoriaus būseną. Pati aparatinė programinė įranga nekeičiama.</translation>
     </message>
     <message>
         <source>Time limit reached</source>

@@ -820,1239 +820,1239 @@ Malli määrää näytön ja kehyksen. Android tulee valitusta järjestelmäkuva
     </message>
     <message>
         <source>Star White</source>
-        <translation type="unfinished"></translation>
+        <translation>Tähdenvalkoinen</translation>
     </message>
     <message>
         <source>Teal</source>
-        <translation type="unfinished"></translation>
+        <translation>Sinivihreä</translation>
     </message>
     <message>
         <source>Ultramarine</source>
-        <translation type="unfinished"></translation>
+        <translation>Ultramariini</translation>
     </message>
     <message>
         <source>White</source>
-        <translation type="unfinished"></translation>
+        <translation>Valkoinen</translation>
     </message>
 </context>
 <context>
     <name>CommandPalette</name>
     <message>
         <source>No matching views or tools</source>
-        <translation type="unfinished"></translation>
+        <translation>Ei vastaavia näkymiä tai työkaluja</translation>
     </message>
     <message>
         <source>View</source>
-        <translation type="unfinished"></translation>
+        <translation>Näkymä</translation>
     </message>
     <message>
         <source>Search views, commands or tools…</source>
-        <translation type="unfinished"></translation>
+        <translation>Hae näkymiä, komentoja tai työkaluja…</translation>
     </message>
     <message>
         <source>Ctrl</source>
-        <translation type="unfinished"></translation>
+        <translation>Ctrl</translation>
     </message>
     <message>
         <source>Recent</source>
-        <translation type="unfinished"></translation>
+        <translation>Viimeisimmät</translation>
     </message>
     <message>
         <source>↑ ↓  Select     PgUp PgDn  Page     ↵  Open     Esc  Close</source>
-        <translation type="unfinished"></translation>
+        <translation>↑ ↓  Valitse     PgUp PgDn  Sivu     ↵  Avaa     Esc  Sulje</translation>
     </message>
 </context>
 <context>
     <name>Control</name>
     <message>
         <source>Invalid frame response</source>
-        <translation type="unfinished"></translation>
+        <translation>Virheellinen kehysvastaus</translation>
     </message>
     <message>
         <source>Invalid response from the control plane</source>
-        <translation type="unfinished"></translation>
+        <translation>Virheellinen vastaus ohjaustasolta</translation>
     </message>
     <message>
         <source>Invalid response from the frame control</source>
-        <translation type="unfinished"></translation>
+        <translation>Virheellinen vastaus kehysohjaukselta</translation>
     </message>
     <message>
         <source>Invalid session name</source>
-        <translation type="unfinished"></translation>
+        <translation>Virheellinen istunnon nimi</translation>
     </message>
     <message>
         <source>Tomacco is already open in another window; agents keep controlling that one. To control this window too, start it with --preview-session and another name.</source>
-        <translation type="unfinished"></translation>
+        <translation>Tomacco on jo auki toisessa ikkunassa; agentit ohjaavat edelleen sitä. Jos haluat ohjata myös tätä ikkunaa, käynnistä se valitsimella --preview-session ja toisella nimellä.</translation>
     </message>
     <message>
         <source>Tomacco&apos;s control program (tomaccoctl) could not be started. Reinstall Tomacco or run install.py again.</source>
-        <translation type="unfinished"></translation>
+        <translation>Tomaccon ohjausohjelmaa (tomaccoctl) ei voitu käynnistää. Asenna Tomacco uudelleen tai suorita install.py uudelleen.</translation>
     </message>
     <message>
         <source>Tomacco&apos;s control program (tomaccoctl) is not working: %1</source>
-        <translation type="unfinished"></translation>
+        <translation>Tomaccon ohjausohjelma (tomaccoctl) ei toimi: %1</translation>
     </message>
     <message>
         <source>Tomacco&apos;s control program (tomaccoctl) was not found. Reinstall Tomacco or run install.py again.</source>
-        <translation type="unfinished"></translation>
+        <translation>Tomaccon ohjausohjelmaa (tomaccoctl) ei löytynyt. Asenna Tomacco uudelleen tai suorita install.py uudelleen.</translation>
     </message>
     <message>
         <source>The agent socket directory belongs to another user</source>
-        <translation type="unfinished"></translation>
+        <translation>Agenttipistokkeen hakemisto kuuluu toiselle käyttäjälle</translation>
     </message>
     <message>
         <source>The agent socket directory could not be created</source>
-        <translation type="unfinished"></translation>
+        <translation>Agenttipistokkeen hakemistoa ei voitu luoda</translation>
     </message>
     <message>
         <source>The control program ended unexpectedly</source>
-        <translation type="unfinished"></translation>
+        <translation>Ohjausohjelma päättyi odottamatta</translation>
     </message>
     <message>
         <source>The control program failed: %1</source>
-        <translation type="unfinished"></translation>
+        <translation>Ohjausohjelma epäonnistui: %1</translation>
     </message>
     <message>
         <source>The frame control could not be initialized</source>
-        <translation type="unfinished"></translation>
+        <translation>Kehysohjausta ei voitu alustaa</translation>
     </message>
     <message>
         <source>The frame control did not respond in time</source>
-        <translation type="unfinished"></translation>
+        <translation>Kehysohjaus ei vastannut ajoissa</translation>
     </message>
     <message>
         <source>The frame control ended</source>
-        <translation type="unfinished"></translation>
+        <translation>Kehysohjaus päättyi</translation>
     </message>
     <message>
         <source>The frame control is not reachable</source>
-        <translation type="unfinished"></translation>
+        <translation>Kehysohjaukseen ei saada yhteyttä</translation>
     </message>
     <message>
         <source>The frame request could not be sent</source>
-        <translation type="unfinished"></translation>
+        <translation>Kehyspyyntöä ei voitu lähettää</translation>
     </message>
     <message>
         <source>The frame response is too large</source>
-        <translation type="unfinished"></translation>
+        <translation>Kehysvastaus on liian suuri</translation>
     </message>
     <message>
         <source>The frame response matches no request</source>
-        <translation type="unfinished"></translation>
+        <translation>Kehysvastaus ei vastaa mitään pyyntöä</translation>
     </message>
     <message>
         <source>Too many concurrent requests</source>
-        <translation type="unfinished"></translation>
+        <translation>Liian monta samanaikaista pyyntöä</translation>
     </message>
     <message>
         <source>tomaccoctl could not be started (%1). Reinstall Tomacco or run install.py again.</source>
-        <translation type="unfinished"></translation>
+        <translation>tomaccoctl-ohjelmaa ei voitu käynnistää (%1). Asenna Tomacco uudelleen tai suorita install.py uudelleen.</translation>
     </message>
 </context>
 <context>
     <name>DebugWorkspace</name>
     <message>
         <source>All files (*)</source>
-        <translation type="unfinished"></translation>
+        <translation>Kaikki tiedostot (*)</translation>
     </message>
     <message>
         <source>Android libraries (*.so)</source>
-        <translation type="unfinished"></translation>
+        <translation>Android-kirjastot (*.so)</translation>
     </message>
     <message>
         <source>Application ID · e.g. dev.example.app</source>
-        <translation type="unfinished"></translation>
+        <translation>Sovelluksen tunnus · esim. dev.example.app</translation>
     </message>
     <message>
         <source>Breakpoints</source>
-        <translation type="unfinished"></translation>
+        <translation>Keskeytyskohdat</translation>
     </message>
     <message>
         <source>CALL STACK</source>
-        <translation type="unfinished"></translation>
+        <translation>KUTSUPINO</translation>
     </message>
     <message>
         <source>Choose Android device</source>
-        <translation type="unfinished"></translation>
+        <translation>Valitse Android-laite</translation>
     </message>
     <message>
         <source>Choose debug program</source>
-        <translation type="unfinished"></translation>
+        <translation>Valitse debugattava ohjelma</translation>
     </message>
     <message>
         <source>Choose file</source>
-        <translation type="unfinished"></translation>
+        <translation>Valitse tiedosto</translation>
     </message>
     <message>
         <source>Choose library with debug symbols</source>
-        <translation type="unfinished"></translation>
+        <translation>Valitse kirjasto, jossa on virheenkorjaussymbolit</translation>
     </message>
     <message>
         <source>Connect</source>
-        <translation type="unfinished"></translation>
+        <translation>Yhdistä</translation>
     </message>
     <message>
         <source>Connecting…</source>
-        <translation type="unfinished"></translation>
+        <translation>Yhdistetään…</translation>
     </message>
     <message>
         <source>Continue</source>
-        <translation type="unfinished"></translation>
+        <translation>Jatka</translation>
     </message>
     <message>
         <source>Debugger exited</source>
-        <translation type="unfinished"></translation>
+        <translation>Debuggeri lopetti</translation>
     </message>
     <message>
         <source>Debugger request failed</source>
-        <translation type="unfinished"></translation>
+        <translation>Debuggerin pyyntö epäonnistui</translation>
     </message>
     <message>
         <source>Disconnect</source>
-        <translation type="unfinished"></translation>
+        <translation>Katkaise yhteys</translation>
     </message>
     <message>
         <source>Disconnected</source>
-        <translation type="unfinished"></translation>
+        <translation>Yhteys katkaistu</translation>
     </message>
     <message>
         <source>Ended</source>
-        <translation type="unfinished"></translation>
+        <translation>Päättynyt</translation>
     </message>
     <message>
         <source>Enter valid line numbers</source>
-        <translation type="unfinished"></translation>
+        <translation>Syötä kelvolliset rivinumerot</translation>
     </message>
     <message>
         <source>Evaluate expression</source>
-        <translation type="unfinished"></translation>
+        <translation>Laske lauseke</translation>
     </message>
     <message>
         <source>Evaluate the expression in the selected frame</source>
-        <translation type="unfinished"></translation>
+        <translation>Laske lauseke valitussa kehyksessä</translation>
     </message>
     <message>
         <source>Executable with debug symbols</source>
-        <translation type="unfinished"></translation>
+        <translation>Suoritettava tiedosto, jossa on virheenkorjaussymbolit</translation>
     </message>
     <message>
         <source>Hide events</source>
-        <translation type="unfinished"></translation>
+        <translation>Piilota tapahtumat</translation>
     </message>
     <message>
         <source>Launch app</source>
-        <translation type="unfinished"></translation>
+        <translation>Käynnistä sovellus</translation>
     </message>
     <message>
         <source>Launches the app if it is not running yet.</source>
-        <translation type="unfinished"></translation>
+        <translation>Käynnistää sovelluksen, jos se ei ole vielä käynnissä.</translation>
     </message>
     <message>
         <source>Library with debug symbols (.so)</source>
-        <translation type="unfinished"></translation>
+        <translation>Kirjasto, jossa on virheenkorjaussymbolit (.so)</translation>
     </message>
     <message>
         <source>Line %1</source>
-        <translation type="unfinished"></translation>
+        <translation>Rivi %1</translation>
     </message>
     <message>
         <source>Lines: 12, 24</source>
-        <translation type="unfinished"></translation>
+        <translation>Rivit: 12, 24</translation>
     </message>
     <message>
         <source>Locals</source>
-        <translation type="unfinished"></translation>
+        <translation>Paikalliset muuttujat</translation>
     </message>
     <message>
         <source>No debugger events yet.</source>
-        <translation type="unfinished"></translation>
+        <translation>Ei vielä debuggerin tapahtumia.</translation>
     </message>
     <message>
         <source>No paused thread yet</source>
-        <translation type="unfinished"></translation>
+        <translation>Ei vielä pysäytettyä säiettä</translation>
     </message>
     <message>
         <source>No session</source>
-        <translation type="unfinished"></translation>
+        <translation>Ei istuntoa</translation>
     </message>
     <message>
         <source>Open existing session</source>
-        <translation type="unfinished"></translation>
+        <translation>Avaa olemassa oleva istunto</translation>
     </message>
     <message>
         <source>Open source</source>
-        <translation type="unfinished"></translation>
+        <translation>Avaa lähdekoodi</translation>
     </message>
     <message>
         <source>Paused</source>
-        <translation type="unfinished"></translation>
+        <translation>Pysäytetty</translation>
     </message>
     <message>
         <source>Refresh</source>
-        <translation type="unfinished"></translation>
+        <translation>Päivitä</translation>
     </message>
     <message>
         <source>Restarts the app and waits for the Java debugger.</source>
-        <translation type="unfinished"></translation>
+        <translation>Käynnistää sovelluksen uudelleen ja odottaa Java-debuggeria.</translation>
     </message>
     <message>
         <source>Run the next source line</source>
-        <translation type="unfinished"></translation>
+        <translation>Suorita seuraava lähdekoodirivi</translation>
     </message>
     <message>
         <source>Running</source>
-        <translation type="unfinished"></translation>
+        <translation>Käynnissä</translation>
     </message>
     <message>
         <source>Session active</source>
-        <translation type="unfinished"></translation>
+        <translation>Istunto aktiivinen</translation>
     </message>
     <message>
         <source>Show events</source>
-        <translation type="unfinished"></translation>
+        <translation>Näytä tapahtumat</translation>
     </message>
     <message>
         <source>Source file or Java class</source>
-        <translation type="unfinished"></translation>
+        <translation>Lähdetiedosto tai Java-luokka</translation>
     </message>
     <message>
         <source>Step in</source>
-        <translation type="unfinished"></translation>
+        <translation>Astu sisään</translation>
     </message>
     <message>
         <source>Step out</source>
-        <translation type="unfinished"></translation>
+        <translation>Astu ulos</translation>
     </message>
     <message>
         <source>Step over</source>
-        <translation type="unfinished"></translation>
+        <translation>Astu yli</translation>
     </message>
     <message>
         <source>VARIABLES</source>
-        <translation type="unfinished"></translation>
+        <translation>MUUTTUJAT</translation>
     </message>
     <message>
         <source>ended</source>
-        <translation type="unfinished"></translation>
+        <translation>päättynyt</translation>
     </message>
     <message>
         <source>Attach to your app</source>
-        <translation type="unfinished"></translation>
+        <translation>Liity sovellukseesi</translation>
     </message>
     <message>
         <source>Needs a debug build and the NDK. The library must match your app and its processor.</source>
-        <translation type="unfinished"></translation>
+        <translation>Vaatii debug-käännöksen ja NDK:n. Kirjaston on vastattava sovellustasi ja sen suoritinta.</translation>
     </message>
     <message>
         <source>Needs a debug build on a connected phone or emulator.</source>
-        <translation type="unfinished"></translation>
+        <translation>Vaatii debug-käännöksen yhdistetyssä puhelimessa tai emulaattorissa.</translation>
     </message>
     <message>
         <source>A program on this computer, inspected with LLDB.</source>
-        <translation type="unfinished"></translation>
+        <translation>Tämän tietokoneen ohjelma, jota tutkitaan LLDB:llä.</translation>
     </message>
     <message>
         <source>Take over your agent&apos;s session</source>
-        <translation type="unfinished"></translation>
+        <translation>Ota agenttisi istunto haltuun</translation>
     </message>
     <message>
         <source>Pause your app or set a breakpoint to see the stack and variables.</source>
-        <translation type="unfinished"></translation>
+        <translation>Pysäytä sovelluksesi tai aseta keskeytyskohta nähdäksesi pinon ja muuttujat.</translation>
     </message>
     <message>
         <source>Attach here, or take over a session your agent started.</source>
-        <translation type="unfinished"></translation>
+        <translation>Liity tässä tai ota haltuun agenttisi aloittama istunto.</translation>
     </message>
 </context>
 <context>
     <name>Device</name>
     <message>
         <source>Device permissions are disabled in this layout preview.</source>
-        <translation type="unfinished"></translation>
+        <translation>Laiteoikeudet on poistettu käytöstä tässä asettelun esikatselussa.</translation>
     </message>
     <message>
         <source>No connection</source>
-        <translation type="unfinished"></translation>
+        <translation>Ei yhteyttä</translation>
     </message>
     <message>
         <source>Page not reachable. Is your dev server running?</source>
-        <translation type="unfinished"></translation>
+        <translation>Sivua ei tavoiteta. Onko kehityspalvelimesi käynnissä?</translation>
     </message>
     <message>
         <source>Please open downloads in your browser. Device images can be saved with “Screenshot”.</source>
-        <translation type="unfinished"></translation>
+        <translation>Avaa lataukset selaimessasi. Laitteen kuvat voi tallentaa ”Kuvakaappaus”-toiminnolla.</translation>
     </message>
     <message>
         <source>Reload</source>
-        <translation type="unfinished"></translation>
+        <translation>Lataa uudelleen</translation>
     </message>
     <message>
         <source>SAFE AREA · PREVIEW</source>
-        <translation type="unfinished"></translation>
+        <translation>TURVA-ALUE · ESIKATSELU</translation>
     </message>
     <message>
         <source>The web view was terminated. Please reload.</source>
-        <translation type="unfinished"></translation>
+        <translation>Verkkonäkymä lopetettiin. Lataa uudelleen.</translation>
     </message>
     <message>
         <source>This preview opens web addresses. Use “Open folder” for local builds.</source>
-        <translation type="unfinished"></translation>
+        <translation>Tämä esikatselu avaa verkko-osoitteita. Käytä paikallisille käännöksille ”Avaa kansio” -toimintoa.</translation>
     </message>
 </context>
 <context>
     <name>DeviceWindow</name>
     <message>
         <source>Save and copy a screenshot · Ctrl+Shift+S</source>
-        <translation type="unfinished"></translation>
+        <translation>Tallenna ja kopioi kuvakaappaus · Ctrl+Shift+S</translation>
     </message>
     <message>
         <source>Back</source>
-        <translation type="unfinished"></translation>
+        <translation>Takaisin</translation>
     </message>
     <message>
         <source>Bring back into the workspace</source>
-        <translation type="unfinished"></translation>
+        <translation>Tuo takaisin työtilaan</translation>
     </message>
     <message>
         <source>Close device window · the device keeps running</source>
-        <translation type="unfinished"></translation>
+        <translation>Sulje laiteikkuna · laite jää käyntiin</translation>
     </message>
     <message>
         <source>Larger · Ctrl+mouse wheel</source>
-        <translation type="unfinished"></translation>
+        <translation>Suurempi · Ctrl+hiiren rulla</translation>
     </message>
     <message>
         <source>Open in the workspace</source>
-        <translation type="unfinished"></translation>
+        <translation>Avaa työtilassa</translation>
     </message>
     <message>
         <source>Tomacco – Device</source>
-        <translation type="unfinished"></translation>
+        <translation>Tomacco – Laite</translation>
     </message>
     <message>
         <source>Rotate</source>
-        <translation type="unfinished"></translation>
+        <translation>Kierrä</translation>
     </message>
     <message>
         <source>Show the back</source>
-        <translation type="unfinished"></translation>
+        <translation>Näytä takapuoli</translation>
     </message>
     <message>
         <source>Show the front</source>
-        <translation type="unfinished"></translation>
+        <translation>Näytä etupuoli</translation>
     </message>
     <message>
         <source>Side button</source>
-        <translation type="unfinished"></translation>
+        <translation>Sivupainike</translation>
     </message>
     <message>
         <source>Side button · wake or lock the display</source>
-        <translation type="unfinished"></translation>
+        <translation>Sivupainike · herätä tai lukitse näyttö</translation>
     </message>
     <message>
         <source>Smaller · Ctrl+mouse wheel</source>
-        <translation type="unfinished"></translation>
+        <translation>Pienempi · Ctrl+hiiren rulla</translation>
     </message>
     <message>
         <source>Stop keeping this window above the others</source>
-        <translation type="unfinished"></translation>
+        <translation>Lopeta tämän ikkunan pitäminen muiden päällä</translation>
     </message>
     <message>
         <source>Keep this window above the others</source>
-        <translation type="unfinished"></translation>
+        <translation>Pidä tämä ikkuna muiden päällä</translation>
     </message>
 </context>
 <context>
     <name>FileWorkspace</name>
     <message>
         <source>Choose a file in the project tree</source>
-        <translation type="unfinished"></translation>
+        <translation>Valitse tiedosto projektipuusta</translation>
     </message>
     <message>
         <source>Close file</source>
-        <translation type="unfinished"></translation>
+        <translation>Sulje tiedosto</translation>
     </message>
     <message>
         <source>Discard unsaved changes?</source>
-        <translation type="unfinished"></translation>
+        <translation>Hylätäänkö tallentamattomat muutokset?</translation>
     </message>
     <message>
         <source>Folder</source>
-        <translation type="unfinished"></translation>
+        <translation>Kansio</translation>
     </message>
     <message>
         <source>Hidden</source>
-        <translation type="unfinished"></translation>
+        <translation>Piilotettu</translation>
     </message>
     <message>
         <source>Line %1 · UTF-8 · changes are checked on save</source>
-        <translation type="unfinished"></translation>
+        <translation>Rivi %1 · UTF-8 · muutokset tarkistetaan tallennettaessa</translation>
     </message>
     <message>
         <source>More matches available; narrow the search term.</source>
-        <translation type="unfinished"></translation>
+        <translation>Osumia on enemmän; tarkenna hakusanaa.</translation>
     </message>
     <message>
         <source>New file</source>
-        <translation type="unfinished"></translation>
+        <translation>Uusi tiedosto</translation>
     </message>
     <message>
         <source>New folder</source>
-        <translation type="unfinished"></translation>
+        <translation>Uusi kansio</translation>
     </message>
     <message>
         <source>Open a project first</source>
-        <translation type="unfinished"></translation>
+        <translation>Avaa ensin projekti</translation>
     </message>
     <message>
         <source>Path relative to the project, e.g. lib/example.dart</source>
-        <translation type="unfinished"></translation>
+        <translation>Polku suhteessa projektiin, esim. lib/example.dart</translation>
     </message>
     <message>
         <source>Reload</source>
-        <translation type="unfinished"></translation>
+        <translation>Lataa uudelleen</translation>
     </message>
     <message>
         <source>Reload files</source>
-        <translation type="unfinished"></translation>
+        <translation>Lataa tiedostot uudelleen</translation>
     </message>
     <message>
         <source>Save the file first or discard it with Reload.</source>
-        <translation type="unfinished"></translation>
+        <translation>Tallenna tiedosto ensin tai hylkää se valitsemalla Lataa uudelleen.</translation>
     </message>
     <message>
         <source>Save · Ctrl+S</source>
-        <translation type="unfinished"></translation>
+        <translation>Tallenna · Ctrl+S</translation>
     </message>
     <message>
         <source>Saved · %1</source>
-        <translation type="unfinished"></translation>
+        <translation>Tallennettu · %1</translation>
     </message>
     <message>
         <source>Search source code…</source>
-        <translation type="unfinished"></translation>
+        <translation>Hae lähdekoodista…</translation>
     </message>
     <message>
         <source>The file is read again from disk.</source>
-        <translation type="unfinished"></translation>
+        <translation>Tiedosto luetaan uudelleen levyltä.</translation>
     </message>
     <message>
         <source>The link leads outside this project.</source>
-        <translation type="unfinished"></translation>
+        <translation>Linkki johtaa tämän projektin ulkopuolelle.</translation>
     </message>
     <message>
         <source>This folder contains more than 2,000 entries. Use search for targeted results.</source>
-        <translation type="unfinished"></translation>
+        <translation>Tässä kansiossa on yli 2 000 kohdetta. Käytä hakua kohdennettuihin tuloksiin.</translation>
     </message>
     <message>
         <source>Source of %1</source>
-        <translation type="unfinished"></translation>
+        <translation>Kohteen %1 lähdekoodi</translation>
     </message>
     <message>
         <source>Source editor</source>
-        <translation type="unfinished"></translation>
+        <translation>Lähdekoodieditori</translation>
     </message>
     <message>
         <source>Search results</source>
-        <translation type="unfinished"></translation>
+        <translation>Hakutulokset</translation>
     </message>
     <message>
         <source>Project files</source>
-        <translation type="unfinished"></translation>
+        <translation>Projektin tiedostot</translation>
     </message>
     <message>
         <source>Choose folder</source>
-        <translation type="unfinished"></translation>
+        <translation>Valitse kansio</translation>
     </message>
 </context>
 <context>
     <name>IosGuestView</name>
     <message>
         <source>Screenshot saved and copied: %1</source>
-        <translation type="unfinished"></translation>
+        <translation>Kuvakaappaus tallennettu ja kopioitu: %1</translation>
     </message>
     <message>
         <source>%1 · outcome unclear, not retried automatically</source>
-        <translation type="unfinished"></translation>
+        <translation>%1 · lopputulos epäselvä, ei yritetä automaattisesti uudelleen</translation>
     </message>
     <message numerus="yes">
         <source>%n new frame(s)/s</source>
-        <translation type="unfinished">
-            <numerusform></numerusform>
-            <numerusform></numerusform>
+        <translation>
+            <numerusform>%n uusi kuva/s</numerusform>
+            <numerusform>%n uutta kuvaa/s</numerusform>
         </translation>
     </message>
     <message>
         <source>App switcher</source>
-        <translation type="unfinished"></translation>
+        <translation>Sovellusvaihtaja</translation>
     </message>
     <message>
         <source>Back</source>
-        <translation type="unfinished"></translation>
+        <translation>Takaisin</translation>
     </message>
     <message>
         <source>Capture saved: %1</source>
-        <translation type="unfinished"></translation>
+        <translation>Tallenne tallennettu: %1</translation>
     </message>
     <message>
         <source>Control Center</source>
-        <translation type="unfinished"></translation>
+        <translation>Ohjauskeskus</translation>
     </message>
     <message>
         <source>Control still busy · input not delivered</source>
-        <translation type="unfinished"></translation>
+        <translation>Ohjaus on yhä varattu · syötettä ei toimitettu</translation>
     </message>
     <message>
         <source>Detach the virtual iOS device into its own window</source>
-        <translation type="unfinished"></translation>
+        <translation>Irrota virtuaalinen iOS-laite omaan ikkunaansa</translation>
     </message>
     <message>
         <source>Display output unreachable</source>
-        <translation type="unfinished"></translation>
+        <translation>Näytön ulostuloa ei tavoiteta</translation>
     </message>
     <message>
         <source>Dock</source>
-        <translation type="unfinished"></translation>
+        <translation>Telakka</translation>
     </message>
     <message>
         <source>Edge swipes start on the frame or at the screen&apos;s edge</source>
-        <translation type="unfinished"></translation>
+        <translation>Reunapyyhkäisyt alkavat kehyksestä tai näytön reunasta</translation>
     </message>
     <message>
         <source>Home button</source>
-        <translation type="unfinished"></translation>
+        <translation>Kotipainike</translation>
     </message>
     <message>
         <source>Home button and swipe up from the bottom edge</source>
-        <translation type="unfinished"></translation>
+        <translation>Kotipainike ja pyyhkäisy ylös alareunasta</translation>
     </message>
     <message>
         <source>Input failed</source>
-        <translation type="unfinished"></translation>
+        <translation>Syöte epäonnistui</translation>
     </message>
     <message>
         <source>Input queue full · this input was not sent</source>
-        <translation type="unfinished"></translation>
+        <translation>Syötejono täynnä · tätä syötettä ei lähetetty</translation>
     </message>
     <message>
         <source>Last frame</source>
-        <translation type="unfinished"></translation>
+        <translation>Viimeisin kuva</translation>
     </message>
     <message>
         <source>Live frame · %1</source>
-        <translation type="unfinished"></translation>
+        <translation>Live-kuva · %1</translation>
     </message>
     <message>
         <source>No running interactive iOS session</source>
-        <translation type="unfinished"></translation>
+        <translation>Ei käynnissä olevaa interaktiivista iOS-istuntoa</translation>
     </message>
     <message>
         <source>Notification Center</source>
-        <translation type="unfinished"></translation>
+        <translation>Ilmoituskeskus</translation>
     </message>
     <message>
         <source>Own window</source>
-        <translation type="unfinished"></translation>
+        <translation>Oma ikkuna</translation>
     </message>
     <message>
         <source>Real output of the virtual display</source>
-        <translation type="unfinished"></translation>
+        <translation>Virtuaalisen näytön todellinen ulostulo</translation>
     </message>
     <message>
         <source>Side button</source>
-        <translation type="unfinished"></translation>
+        <translation>Sivupainike</translation>
     </message>
     <message>
         <source>Still frame</source>
-        <translation type="unfinished"></translation>
+        <translation>Pysäytyskuva</translation>
     </message>
     <message>
         <source>Swipe down from the top-left edge</source>
-        <translation type="unfinished"></translation>
+        <translation>Pyyhkäise alas vasemmasta yläkulmasta</translation>
     </message>
     <message>
         <source>Swipe down from the top-right edge</source>
-        <translation type="unfinished"></translation>
+        <translation>Pyyhkäise alas oikeasta yläkulmasta</translation>
     </message>
     <message>
         <source>Swipe right from the left edge</source>
-        <translation type="unfinished"></translation>
+        <translation>Pyyhkäise oikealle vasemmasta reunasta</translation>
     </message>
     <message>
         <source>Swipe up from the bottom edge and pause</source>
-        <translation type="unfinished"></translation>
+        <translation>Pyyhkäise ylös alareunasta ja pysähdy</translation>
     </message>
     <message>
         <source>The iOS device is running in its own window</source>
-        <translation type="unfinished"></translation>
+        <translation>iOS-laite on käynnissä omassa ikkunassaan</translation>
     </message>
     <message>
         <source>Virtual iOS device</source>
-        <translation type="unfinished"></translation>
+        <translation>Virtuaalinen iOS-laite</translation>
     </message>
     <message>
         <source>Waiting for the display output of iOS…</source>
-        <translation type="unfinished"></translation>
+        <translation>Odotetaan iOS:n näytön ulostuloa…</translation>
     </message>
     <message>
         <source>Wake or lock the display</source>
-        <translation type="unfinished"></translation>
+        <translation>Herätä tai lukitse näyttö</translation>
     </message>
     <message>
         <source>Stop recording · %1 s</source>
-        <translation type="unfinished"></translation>
+        <translation>Lopeta tallennus · %1 s</translation>
     </message>
     <message>
         <source>Record</source>
-        <translation type="unfinished"></translation>
+        <translation>Tallenna</translation>
     </message>
     <message>
         <source>Stop and save the recording</source>
-        <translation type="unfinished"></translation>
+        <translation>Lopeta ja tallenna tallenne</translation>
     </message>
     <message>
         <source>Record the screen to a video, at most 10 minutes</source>
-        <translation type="unfinished"></translation>
+        <translation>Tallenna näyttö videoksi, enintään 10 minuuttia</translation>
     </message>
     <message numerus="yes">
         <source>Typing %n character(s) from the clipboard</source>
-        <translation type="unfinished">
-            <numerusform></numerusform>
-            <numerusform></numerusform>
+        <translation>
+            <numerusform>Kirjoitetaan %n merkki leikepöydältä</numerusform>
+            <numerusform>Kirjoitetaan %n merkkiä leikepöydältä</numerusform>
         </translation>
     </message>
     <message>
         <source>The clipboard holds no text</source>
-        <translation type="unfinished"></translation>
+        <translation>Leikepöydällä ei ole tekstiä</translation>
     </message>
     <message>
         <source>The clipboard holds %1 characters; at most %2 are typed into the phone</source>
-        <translation type="unfinished"></translation>
+        <translation>Leikepöydällä on %1 merkkiä; puhelimeen kirjoitetaan enintään %2</translation>
     </message>
     <message>
         <source>Paste</source>
-        <translation type="unfinished"></translation>
+        <translation>Liitä</translation>
     </message>
     <message>
         <source>Type the clipboard&apos;s text into the field that has the focus</source>
-        <translation type="unfinished"></translation>
+        <translation>Kirjoita leikepöydän teksti kenttään, jossa kohdistus on</translation>
     </message>
     <message>
         <source>Keyboard to phone</source>
-        <translation type="unfinished"></translation>
+        <translation>Näppäimistö puhelimelle</translation>
     </message>
     <message>
         <source>Keyboard to desktop</source>
-        <translation type="unfinished"></translation>
+        <translation>Näppäimistö työpöydälle</translation>
     </message>
     <message>
         <source>Typing goes to the phone · Ctrl+Shift+K gives the keyboard back to the desktop</source>
-        <translation type="unfinished"></translation>
+        <translation>Kirjoitus menee puhelimeen · Ctrl+Shift+K palauttaa näppäimistön työpöydälle</translation>
     </message>
     <message>
         <source>Click the screen or press Ctrl+Shift+K to type on the phone</source>
-        <translation type="unfinished"></translation>
+        <translation>Napsauta näyttöä tai paina Ctrl+Shift+K kirjoittaaksesi puhelimeen</translation>
     </message>
     <message>
         <source>Speed</source>
-        <translation type="unfinished"></translation>
+        <translation>Nopeus</translation>
     </message>
     <message>
         <source>Show frames per second and the time from an input to the picture</source>
-        <translation type="unfinished"></translation>
+        <translation>Näytä kuvat sekunnissa ja aika syötteestä kuvaan</translation>
     </message>
     <message>
         <source>Screenshot with frame</source>
-        <translation type="unfinished"></translation>
+        <translation>Kuvakaappaus kehyksellä</translation>
     </message>
     <message>
         <source>Save and copy a screenshot with a plain device frame and rounded corners</source>
-        <translation type="unfinished"></translation>
+        <translation>Tallenna ja kopioi kuvakaappaus yksinkertaisella laitekehyksellä ja pyöristetyillä kulmilla</translation>
     </message>
     <message>
         <source>%1 new · %2 fetched frames/s</source>
-        <translation type="unfinished"></translation>
+        <translation>%1 uutta · %2 noudettua kuvaa/s</translation>
     </message>
     <message>
         <source>Input to picture: %1 ms</source>
-        <translation type="unfinished"></translation>
+        <translation>Syötteestä kuvaan: %1 ms</translation>
     </message>
     <message>
         <source>Input to picture: not measured yet</source>
-        <translation type="unfinished"></translation>
+        <translation>Syötteestä kuvaan: ei vielä mitattu</translation>
     </message>
     <message>
         <source>The screenshot failed</source>
-        <translation type="unfinished"></translation>
+        <translation>Kuvakaappaus epäonnistui</translation>
     </message>
     <message>
         <source>Keyboard to phone · Ctrl+Shift+K switches it to the desktop and back</source>
-        <translation type="unfinished"></translation>
+        <translation>Näppäimistö puhelimelle · Ctrl+Shift+K vaihtaa sen työpöydälle ja takaisin</translation>
     </message>
 </context>
 <context>
     <name>IosResearch</name>
     <message>
         <source>Another app change is still running.</source>
-        <translation type="unfinished"></translation>
+        <translation>Toinen sovellusmuutos on vielä käynnissä.</translation>
     </message>
     <message>
         <source>Checking %1…</source>
-        <translation type="unfinished"></translation>
+        <translation>Tarkistetaan %1…</translation>
     </message>
     <message>
         <source>%1 added · installing on the running device</source>
-        <translation type="unfinished"></translation>
+        <translation>%1 lisätty · asennetaan käynnissä olevaan laitteeseen</translation>
     </message>
     <message>
         <source>%1 added · the next start installs it</source>
-        <translation type="unfinished"></translation>
+        <translation>%1 lisätty · seuraava käynnistys asentaa sen</translation>
     </message>
     <message>
         <source>The virtual iOS device takes one .app bundle built for arm64 iOS.</source>
-        <translation type="unfinished"></translation>
+        <translation>Virtuaalinen iOS-laite ottaa yhden arm64-iOS:lle käännetyn .app-paketin.</translation>
     </message>
     <message>
         <source>Set up the virtual iOS device&apos;s profile before adding apps.</source>
-        <translation type="unfinished"></translation>
+        <translation>Määritä virtuaalisen iOS-laitteen profiili ennen sovellusten lisäämistä.</translation>
     </message>
     <message>
         <source>%1 reads · %2 writes · %3 rejected</source>
-        <translation type="unfinished"></translation>
+        <translation>%1 luentaa · %2 kirjoitusta · %3 hylätty</translation>
     </message>
     <message>
         <source>%1 · Apple variant</source>
-        <translation type="unfinished"></translation>
+        <translation>%1 · Applen variantti</translation>
     </message>
     <message>
         <source>%1 · derived</source>
-        <translation type="unfinished"></translation>
+        <translation>%1 · johdettu</translation>
     </message>
     <message>
         <source>%1: %2 · state %3</source>
-        <translation type="unfinished"></translation>
+        <translation>%1: %2 · tila %3</translation>
     </message>
     <message numerus="yes">
         <source>%1: %n message(s)</source>
-        <translation type="unfinished">
-            <numerusform></numerusform>
-            <numerusform></numerusform>
+        <translation>
+            <numerusform>%1: %n viesti</numerusform>
+            <numerusform>%1: %n viestiä</numerusform>
         </translation>
     </message>
     <message numerus="yes">
         <source>%n byte(s) from %1 · checksum verified</source>
-        <translation type="unfinished">
-            <numerusform></numerusform>
-            <numerusform></numerusform>
+        <translation>
+            <numerusform>%n tavu lähteestä %1 · tarkistussumma vahvistettu</numerusform>
+            <numerusform>%n tavua lähteestä %1 · tarkistussumma vahvistettu</numerusform>
         </translation>
     </message>
     <message>
         <source>Simulated controller with timers · experimental</source>
-        <translation type="unfinished"></translation>
+        <translation>Simuloitu ohjain ajastimilla · kokeellinen</translation>
     </message>
     <message>
         <source>Add app…</source>
-        <translation type="unfinished"></translation>
+        <translation>Lisää sovellus…</translation>
     </message>
     <message>
         <source>Core ID</source>
-        <translation type="unfinished"></translation>
+        <translation>Ytimen tunnus</translation>
     </message>
     <message>
         <source>App to open at start</source>
-        <translation type="unfinished"></translation>
+        <translation>Käynnistyksessä avattava sovellus</translation>
     </message>
     <message>
         <source>Applies from the next start.</source>
-        <translation type="unfinished"></translation>
+        <translation>Tulee voimaan seuraavasta käynnistyksestä.</translation>
     </message>
     <message>
         <source>Your own arm64 .app bundles. Each start installs them together with the device&apos;s helper tools. Changes apply from the next start.</source>
-        <translation type="unfinished"></translation>
+        <translation>Omat arm64-.app-pakettisi. Jokainen käynnistys asentaa ne yhdessä laitteen apuohjelmien kanssa. Muutokset tulevat voimaan seuraavasta käynnistyksestä.</translation>
     </message>
     <message>
         <source>Boot image</source>
-        <translation type="unfinished"></translation>
+        <translation>Käynnistyslevykuva</translation>
     </message>
     <message>
         <source>Breakpoint reached</source>
-        <translation type="unfinished"></translation>
+        <translation>Keskeytyskohta saavutettu</translation>
     </message>
     <message>
         <source>Processor core ID (MPIDR affinity)</source>
-        <translation type="unfinished"></translation>
+        <translation>Suoritinytimen tunnus (MPIDR-affiniteetti)</translation>
     </message>
     <message>
         <source>Processor settings</source>
-        <translation type="unfinished"></translation>
+        <translation>Suoritinasetukset</translation>
     </message>
     <message>
         <source>Processor register not supported yet: %1 · %2 by code at %3</source>
-        <translation type="unfinished"></translation>
+        <translation>Suoritinrekisteriä ei vielä tueta: %1 · %2 koodista osoitteessa %3</translation>
     </message>
     <message>
         <source>Processor: MIDR %1 · core ID %2 · %3</source>
-        <translation type="unfinished"></translation>
+        <translation>Suoritin: MIDR %1 · ytimen tunnus %2 · %3</translation>
     </message>
     <message>
         <source>Cancel</source>
-        <translation type="unfinished"></translation>
+        <translation>Peruuta</translation>
     </message>
     <message>
         <source>Cancel the start and stop the device without saving</source>
-        <translation type="unfinished"></translation>
+        <translation>Peruuta käynnistys ja pysäytä laite tallentamatta</translation>
     </message>
     <message>
         <source>Check the bundle and add it to the profile · the next start installs it</source>
-        <translation type="unfinished"></translation>
+        <translation>Tarkista paketti ja lisää se profiiliin · seuraava käynnistys asentaa sen</translation>
     </message>
     <message>
         <source>Checking image…</source>
-        <translation type="unfinished"></translation>
+        <translation>Tarkistetaan levykuvaa…</translation>
     </message>
     <message>
         <source>Checking…</source>
-        <translation type="unfinished"></translation>
+        <translation>Tarkistetaan…</translation>
     </message>
     <message>
         <source>Choose</source>
-        <translation type="unfinished"></translation>
+        <translation>Valitse</translation>
     </message>
     <message>
         <source>Choose app bundle (.app directory)</source>
-        <translation type="unfinished"></translation>
+        <translation>Valitse sovelluspaketti (.app-hakemisto)</translation>
     </message>
     <message>
         <source>Choose iOS emulator</source>
-        <translation type="unfinished"></translation>
+        <translation>Valitse iOS-emulaattori</translation>
     </message>
     <message>
         <source>Choose prepared firmware package</source>
-        <translation type="unfinished"></translation>
+        <translation>Valitse valmisteltu laiteohjelmistopaketti</translation>
     </message>
     <message>
         <source>Choose prepared iOS package</source>
-        <translation type="unfinished"></translation>
+        <translation>Valitse valmisteltu iOS-paketti</translation>
     </message>
     <message>
         <source>Classic (Home button)</source>
-        <translation type="unfinished"></translation>
+        <translation>Perinteinen (kotipainike)</translation>
     </message>
     <message>
         <source>Closing the session…</source>
-        <translation type="unfinished"></translation>
+        <translation>Suljetaan istuntoa…</translation>
     </message>
     <message>
         <source>Snapshots of the running system: %1 · %2</source>
-        <translation type="unfinished"></translation>
+        <translation>Tilannevedoksia käynnissä olevasta järjestelmästä: %1 · %2</translation>
     </message>
     <message>
         <source>Reading the controller state failed: %1</source>
-        <translation type="unfinished"></translation>
+        <translation>Ohjaimen tilan lukeminen epäonnistui: %1</translation>
     </message>
     <message>
         <source>For controller development: Apple&apos;s original firmware runs alone on a simulated ARM processor. The simulated controller still rests on unconfirmed hardware guesses; the firmware&apos;s services and its connection to iOS are not verified.</source>
-        <translation type="unfinished"></translation>
+        <translation>Ohjainkehitystä varten: Applen alkuperäinen laiteohjelmisto toimii yksin simuloidulla ARM-suorittimella. Simuloitu ohjain perustuu yhä vahvistamattomiin laitteistoarvauksiin; laiteohjelmiston palveluita ja sen yhteyttä iOS:ään ei ole varmennettu.</translation>
     </message>
     <message>
         <source>Controller state</source>
-        <translation type="unfinished"></translation>
+        <translation>Ohjaimen tila</translation>
     </message>
     <message>
         <source>Work in progress: an agent starts the virtual iOS device, then it appears here. Starting takes many minutes. Apart from the built-in test app, apps with a user interface have not been shown to work yet.</source>
-        <translation type="unfinished"></translation>
+        <translation>Keskeneräinen: agentti käynnistää virtuaalisen iOS-laitteen, jonka jälkeen se näkyy tässä. Käynnistys kestää monta minuuttia. Sisäänrakennettua testisovellusta lukuun ottamatta käyttöliittymällisten sovellusten ei ole vielä osoitettu toimivan.</translation>
     </message>
     <message>
         <source>Diagnostics complete</source>
-        <translation type="unfinished"></translation>
+        <translation>Diagnostiikka valmis</translation>
     </message>
     <message>
         <source>Diagnostics ended with a finding</source>
-        <translation type="unfinished"></translation>
+        <translation>Diagnostiikka päättyi havaintoon</translation>
     </message>
     <message>
         <source>Folder with pmp-research.json</source>
-        <translation type="unfinished"></translation>
+        <translation>Kansio, jossa on pmp-research.json</translation>
     </message>
     <message>
         <source>Folder with tomacco-ios.json</source>
-        <translation type="unfinished"></translation>
+        <translation>Kansio, jossa on tomacco-ios.json</translation>
     </message>
     <message>
         <source>Experimental: iOS shows its first system screens. Setup, graphics and native apps do not fully work yet.</source>
-        <translation type="unfinished"></translation>
+        <translation>Kokeellinen: iOS näyttää ensimmäiset järjestelmänäkymänsä. Käyttöönotto, grafiikka ja natiivisovellukset eivät vielä toimi täysin.</translation>
     </message>
     <message>
         <source>First invalid memory access: code at %1 · address %2 · %3</source>
-        <translation type="unfinished"></translation>
+        <translation>Ensimmäinen virheellinen muistikäyttö: koodi osoitteessa %1 · osoite %2 · %3</translation>
     </message>
     <message>
         <source>Memory contents in hexadecimal</source>
-        <translation type="unfinished"></translation>
+        <translation>Muistin sisältö heksadesimaalina</translation>
     </message>
     <message>
         <source>Hide processor settings</source>
-        <translation type="unfinished"></translation>
+        <translation>Piilota suoritinasetukset</translation>
     </message>
     <message>
         <source>Hide processor registers</source>
-        <translation type="unfinished"></translation>
+        <translation>Piilota suoritinrekisterit</translation>
     </message>
     <message>
         <source>Hide boot image</source>
-        <translation type="unfinished"></translation>
+        <translation>Piilota käynnistyslevykuva</translation>
     </message>
     <message>
         <source>Address of a firmware instruction, e.g. 0x10280d4 · optional</source>
-        <translation type="unfinished"></translation>
+        <translation>Laiteohjelmiston käskyn osoite, esim. 0x10280d4 · valinnainen</translation>
     </message>
     <message>
         <source>Job &amp; logs</source>
-        <translation type="unfinished"></translation>
+        <translation>Työ ja lokit</translation>
     </message>
     <message>
         <source>The processor identity the firmware sees when it starts. Other values make it take other start-up paths; they add no hardware features.</source>
-        <translation type="unfinished"></translation>
+        <translation>Suorittimen identiteetti, jonka laiteohjelmisto näkee käynnistyessään. Muut arvot saavat sen kulkemaan muita käynnistyspolkuja; ne eivät lisää laitteisto-ominaisuuksia.</translation>
     </message>
     <message>
         <source>From the last snapshot · raw 64-bit values</source>
-        <translation type="unfinished"></translation>
+        <translation>Viimeisimmästä tilannevedoksesta · raa&apos;at 64-bittiset arvot</translation>
     </message>
     <message>
         <source>Loading…</source>
-        <translation type="unfinished"></translation>
+        <translation>Ladataan…</translation>
     </message>
     <message>
         <source>Maximum run time</source>
-        <translation type="unfinished"></translation>
+        <translation>Enimmäisajoaika</translation>
     </message>
     <message>
         <source>Maximum run time in seconds</source>
-        <translation type="unfinished"></translation>
+        <translation>Enimmäisajoaika sekunteina</translation>
     </message>
     <message>
         <source>Saved memory</source>
-        <translation type="unfinished"></translation>
+        <translation>Tallennettu muisti</translation>
     </message>
     <message>
         <source>Model</source>
-        <translation type="unfinished"></translation>
+        <translation>Malli</translation>
     </message>
     <message>
         <source>No controller · baseline for comparison</source>
-        <translation type="unfinished"></translation>
+        <translation>Ei ohjainta · vertailukohta</translation>
     </message>
     <message>
         <source>No apps of your own yet · the start opens the built-in test app.</source>
-        <translation type="unfinished"></translation>
+        <translation>Ei vielä omia sovelluksia · käynnistys avaa sisäänrakennetun testisovelluksen.</translation>
     </message>
     <message>
         <source>Number of bytes</source>
-        <translation type="unfinished"></translation>
+        <translation>Tavujen määrä</translation>
     </message>
     <message>
         <source>Open at start</source>
-        <translation type="unfinished"></translation>
+        <translation>Avaa käynnistyksessä</translation>
     </message>
     <message>
         <source>Open test system</source>
-        <translation type="unfinished"></translation>
+        <translation>Avaa testijärjestelmä</translation>
     </message>
     <message>
         <source>Your apps</source>
-        <translation type="unfinished"></translation>
+        <translation>Omat sovelluksesi</translation>
     </message>
     <message>
         <source>Built-in test app (diagnostics)</source>
-        <translation type="unfinished"></translation>
+        <translation>Sisäänrakennettu testisovellus (diagnostiikka)</translation>
     </message>
     <message>
         <source>Own window</source>
-        <translation type="unfinished"></translation>
+        <translation>Oma ikkuna</translation>
     </message>
     <message>
         <source>Firmware breakpoint</source>
-        <translation type="unfinished"></translation>
+        <translation>Laiteohjelmiston keskeytyskohta</translation>
     </message>
     <message>
         <source>Simulated firmware controller</source>
-        <translation type="unfinished"></translation>
+        <translation>Simuloitu laiteohjelmisto-ohjain</translation>
     </message>
     <message>
         <source>Power-management firmware (PMP)</source>
-        <translation type="unfinished"></translation>
+        <translation>Virranhallinnan laiteohjelmisto (PMP)</translation>
     </message>
     <message>
         <source>Firmware running</source>
-        <translation type="unfinished"></translation>
+        <translation>Laiteohjelmisto käynnissä</translation>
     </message>
     <message>
         <source>Path to an .app directory (arm64)</source>
-        <translation type="unfinished"></translation>
+        <translation>Polku .app-hakemistoon (arm64)</translation>
     </message>
     <message>
         <source>Addresses 0x1000000 to 0x11fffff of the firmware&apos;s memory. Reading checks the saved copy; the firmware is not run again for it.</source>
-        <translation type="unfinished"></translation>
+        <translation>Laiteohjelmiston muistin osoitteet 0x1000000–0x11fffff. Lukeminen tarkistaa tallennetun kopion; laiteohjelmistoa ei ajeta sitä varten uudelleen.</translation>
     </message>
     <message>
         <source>Memory address</source>
-        <translation type="unfinished"></translation>
+        <translation>Muistiosoite</translation>
     </message>
     <message>
         <source>Prepare package</source>
-        <translation type="unfinished"></translation>
+        <translation>Valmistele paketti</translation>
     </message>
     <message>
         <source>Prepare, boot, unlock and open the test app</source>
-        <translation type="unfinished"></translation>
+        <translation>Valmistele, käynnistä, avaa lukitus ja avaa testisovellus</translation>
     </message>
     <message>
         <source>Prepared firmware package</source>
-        <translation type="unfinished"></translation>
+        <translation>Valmisteltu laiteohjelmistopaketti</translation>
     </message>
     <message>
         <source>Prepared iOS package</source>
-        <translation type="unfinished"></translation>
+        <translation>Valmisteltu iOS-paketti</translation>
     </message>
     <message>
         <source>Preparing working copy</source>
-        <translation type="unfinished"></translation>
+        <translation>Valmistellaan työkopiota</translation>
     </message>
     <message>
         <source>Memory copy failed: %1</source>
-        <translation type="unfinished"></translation>
+        <translation>Muistin kopiointi epäonnistui: %1</translation>
     </message>
     <message>
         <source>Memory copy: 2 MiB from address %1 · saved in the report folder</source>
-        <translation type="unfinished"></translation>
+        <translation>Muistikopio: 2 MiB osoitteesta %1 · tallennettu raporttikansioon</translation>
     </message>
     <message>
         <source>Read</source>
-        <translation type="unfinished"></translation>
+        <translation>Lue</translation>
     </message>
     <message>
         <source>Ready for a test run</source>
-        <translation type="unfinished"></translation>
+        <translation>Valmis testiajoon</translation>
     </message>
     <message>
         <source>Actual image from the start-up screen · not yet the device&apos;s main display</source>
-        <translation type="unfinished"></translation>
+        <translation>Todellinen kuva käynnistysnäytöltä · ei vielä laitteen päänäyttö</translation>
     </message>
     <message>
         <source>Real iOS directly on Linux. The virtual iOS device shows the lock and Home screens and starts its own test app; general app development is not enabled yet.</source>
-        <translation type="unfinished"></translation>
+        <translation>Aito iOS suoraan Linuxissa. Virtuaalinen iOS-laite näyttää lukitus- ja kotinäytön ja käynnistää oman testisovelluksensa; yleinen sovelluskehitys ei ole vielä käytössä.</translation>
     </message>
     <message>
         <source>Refresh</source>
-        <translation type="unfinished"></translation>
+        <translation>Päivitä</translation>
     </message>
     <message>
         <source>Remove</source>
-        <translation type="unfinished"></translation>
+        <translation>Poista</translation>
     </message>
     <message>
         <source>Remove from the profile · an app already installed stays on the device</source>
-        <translation type="unfinished"></translation>
+        <translation>Poista profiilista · jo asennettu sovellus jää laitteeseen</translation>
     </message>
     <message>
         <source>Report folder</source>
-        <translation type="unfinished"></translation>
+        <translation>Raporttikansio</translation>
     </message>
     <message>
         <source>Run %1 · %2</source>
-        <translation type="unfinished"></translation>
+        <translation>Ajo %1 · %2</translation>
     </message>
     <message>
         <source>Run iOS, or the iPhone&apos;s power-management firmware on its own, directly on Linux. Each run writes its own report; runs started from the command line or by an agent appear here too.</source>
-        <translation type="unfinished"></translation>
+        <translation>Aja iOS tai iPhonen virranhallinnan laiteohjelmisto yksinään suoraan Linuxissa. Jokainen ajo kirjoittaa oman raporttinsa; myös komentoriviltä tai agentin käynnistämät ajot näkyvät tässä.</translation>
     </message>
     <message>
         <source>Run ended</source>
-        <translation type="unfinished"></translation>
+        <translation>Ajo päättyi</translation>
     </message>
     <message>
         <source>Save a copy of the firmware&apos;s memory with the report (2 MiB)</source>
-        <translation type="unfinished"></translation>
+        <translation>Tallenna kopio laiteohjelmiston muistista raportin mukana (2 MiB)</translation>
     </message>
     <message>
         <source>Save storage and shut down cleanly</source>
-        <translation type="unfinished"></translation>
+        <translation>Tallenna tallennustila ja sammuta hallitusti</translation>
     </message>
     <message>
         <source>System services not found in the snapshots: %1</source>
-        <translation type="unfinished"></translation>
+        <translation>Järjestelmäpalveluita ei löytynyt tilannevedoksista: %1</translation>
     </message>
     <message>
         <source>Show</source>
-        <translation type="unfinished"></translation>
+        <translation>Näytä</translation>
     </message>
     <message>
         <source>Show processor registers</source>
-        <translation type="unfinished"></translation>
+        <translation>Näytä suoritinrekisterit</translation>
     </message>
     <message>
         <source>Start</source>
-        <translation type="unfinished"></translation>
+        <translation>Käynnistä</translation>
     </message>
     <message>
         <source>Start failed</source>
-        <translation type="unfinished"></translation>
+        <translation>Käynnistys epäonnistui</translation>
     </message>
     <message>
         <source>Start test run</source>
-        <translation type="unfinished"></translation>
+        <translation>Aloita testiajo</translation>
     </message>
     <message>
         <source>Status currently unknown</source>
-        <translation type="unfinished"></translation>
+        <translation>Tila tällä hetkellä tuntematon</translation>
     </message>
     <message>
         <source>Stop</source>
-        <translation type="unfinished"></translation>
+        <translation>Pysäytä</translation>
     </message>
     <message>
         <source>Stop at a code address</source>
-        <translation type="unfinished"></translation>
+        <translation>Pysäytä koodiosoitteessa</translation>
     </message>
     <message>
         <source>Stop without saving</source>
-        <translation type="unfinished"></translation>
+        <translation>Pysäytä tallentamatta</translation>
     </message>
     <message>
         <source>Stop without saving · ends the run at once, whatever the device has not saved yet is lost</source>
-        <translation type="unfinished"></translation>
+        <translation>Pysäytä tallentamatta · lopettaa ajon heti, kaikki mitä laite ei ole vielä tallentanut menetetään</translation>
     </message>
     <message>
         <source>Stopped before the instruction at %1 · this does not show that the firmware started completely</source>
-        <translation type="unfinished"></translation>
+        <translation>Pysähtyi ennen käskyä osoitteessa %1 · tämä ei osoita, että laiteohjelmisto käynnistyi kokonaan</translation>
     </message>
     <message>
         <source>Stopping…</source>
-        <translation type="unfinished"></translation>
+        <translation>Pysäytetään…</translation>
     </message>
     <message>
         <source>What to run</source>
-        <translation type="unfinished"></translation>
+        <translation>Mitä ajetaan</translation>
     </message>
     <message>
         <source>Reading this state changes nothing: no message is taken from a queue and no interrupt is answered.</source>
-        <translation type="unfinished"></translation>
+        <translation>Tämän tilan lukeminen ei muuta mitään: jonosta ei oteta viestiä eikä keskeytykseen vastata.</translation>
     </message>
     <message>
         <source>The existing run is reused.</source>
-        <translation type="unfinished"></translation>
+        <translation>Olemassa olevaa ajoa käytetään uudelleen.</translation>
     </message>
     <message>
         <source>The device could not save before stopping (%1). “Stop without saving” ends the run at once; the next start uses the last saved state.</source>
-        <translation type="unfinished"></translation>
+        <translation>Laite ei voinut tallentaa ennen pysäytystä (%1). ”Pysäytä tallentamatta” lopettaa ajon heti; seuraava käynnistys käyttää viimeksi tallennettua tilaa.</translation>
     </message>
     <message>
         <source>The device is still starting, there is nothing to save. Ending the run…</source>
-        <translation type="unfinished"></translation>
+        <translation>Laite käynnistyy vielä, tallennettavaa ei ole. Lopetetaan ajo…</translation>
     </message>
     <message>
         <source>The run stops at that address and reports the processor state. The firmware itself is not modified.</source>
-        <translation type="unfinished"></translation>
+        <translation>Ajo pysähtyy kyseiseen osoitteeseen ja raportoi suorittimen tilan. Itse laiteohjelmistoa ei muuteta.</translation>
     </message>
     <message>
         <source>Time limit reached</source>
