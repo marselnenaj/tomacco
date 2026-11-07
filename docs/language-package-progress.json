@@ -47,6 +47,22 @@
       "conflicts_resolved": [
         "docs/language-package-progress.json"
       ],
+      "catalogs_1800_complete_verified": true,
+      "merge_commit": "b3402481604cd7f18e0a982005319ed15f950b1b"
+    },
+    {
+      "name": "rtl_indic",
+      "head": "1b73093eeef92b53c6d936df71234714eafb72c7",
+      "codes": [
+        "fa",
+        "he",
+        "ur",
+        "hi",
+        "bn"
+      ],
+      "conflicts_resolved": [
+        "docs/language-package-progress.json"
+      ],
       "catalogs_1800_complete_verified": true
     }
   ]
