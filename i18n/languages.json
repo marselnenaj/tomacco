@@ -540,7 +540,7 @@
       "zeroDigit": "0",
       "plural": "slovak",
       "omarchy": true,
-      "complete": false
+      "complete": true
     },
     {
       "code": "sl",
