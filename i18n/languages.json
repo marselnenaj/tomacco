@@ -638,7 +638,7 @@
       "zeroDigit": "0",
       "plural": "universal",
       "omarchy": true,
-      "complete": false
+      "complete": true
     },
     {
       "code": "uk",

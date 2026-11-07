@@ -53,7 +53,7 @@ review list, not an error count.
 | sw | Kiswahili (Swahili) | ltr | 2 (english) | 0/1800 | 1800 | 0 | 0 | 0/6 | untranslated |
 | ta | தமிழ் (Tamil) | ltr | 2 (english) | 0/1800 | 1800 | 0 | 0 | 0/6 | untranslated |
 | th | ไทย (Thai) | ltr | 1 (universal) | 0/1800 | 1800 | 0 | 0 | 0/6 | untranslated |
-| tr | Türkçe (Turkish) | ltr | 1 (universal) | 1800/1800 | 0 | 1 | 0 | 0/6 | partial |
+| tr | Türkçe (Turkish) | ltr | 1 (universal) | 1800/1800 | 0 | 1 | 0 | 6/6 | complete |
 | uk | Українська (Ukrainian) | ltr | 3 (russian) | 1800/1800 | 0 | 1 | 0 | 6/6 | complete |
 | ur | اردو (Urdu) | rtl | 2 (english) | 0/1800 | 1800 | 0 | 0 | 0/6 | untranslated |
 | uz | Oʻzbekcha (Uzbek) | ltr | 2 (english) | 0/1800 | 1800 | 0 | 0 | 0/6 | untranslated |
@@ -61,6 +61,6 @@ review list, not an error count.
 | zh-CN | 简体中文 (Chinese (Simplified)) | ltr | 1 (universal) | 1800/1800 | 0 | 1 | 0 | 6/6 | complete |
 | zh-TW | 繁體中文 (Chinese (Traditional)) | ltr | 1 (universal) | 1800/1800 | 0 | 1 | 0 | 6/6 | complete |
 
-Complete: 21 of 50 translated languages: ar, da, de, es, es-MX, fil, fr, id, it, ja, ms, nl, no, pl, pt, pt-BR, ru, sv, uk, zh-CN, zh-TW
+Complete: 22 of 50 translated languages: ar, da, de, es, es-MX, fil, fr, id, it, ja, ms, nl, no, pl, pt, pt-BR, ru, sv, tr, uk, zh-CN, zh-TW
 
-Not complete: bg, bn, ca, cs, el, et, fa, fi, ga, he, hi, hr, hu, is, ko, lt, lv, ro, si, sk, sl, sr, sw, ta, th, tr, ur, uz, vi
+Not complete: bg, bn, ca, cs, el, et, fa, fi, ga, he, hi, hr, hu, is, ko, lt, lv, ro, si, sk, sl, sr, sw, ta, th, ur, uz, vi
