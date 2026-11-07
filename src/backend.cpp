@@ -628,7 +628,12 @@ QVariantMap Backend::folderListing(const QString &typed,const QString &base,bool
         QDir::Filters filters=QDir::Dirs|QDir::NoDotAndDotDot;
         if(hidden)filters|=QDir::Hidden;
         auto entries=directory.entryInfoList(filters,QDir::NoSort);
-        QCollator collator;collator.setNumericMode(true);collator.setCaseSensitivity(Qt::CaseInsensitive);
+        // Reading order of the interface language (applyLanguage sets the default locale). In the C locale
+        // (LC_ALL=C, C.UTF-8, POSIX, LC_COLLATE=C) Qt compares plain UTF-16 and ignores numeric mode, so
+        // there the folders are ordered as in English, the source language.
+        QCollator collator;
+        if(collator.locale().language()==QLocale::C)collator.setLocale(QLocale(QLocale::English,QLocale::UnitedStates));
+        collator.setNumericMode(true);collator.setCaseSensitivity(Qt::CaseInsensitive);
         std::stable_sort(entries.begin(),entries.end(),[&](const QFileInfo &a,const QFileInfo &b){
             const int order=collator.compare(a.fileName(),b.fileName());
             return order?order<0:a.fileName()<b.fileName();

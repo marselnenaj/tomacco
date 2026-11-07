@@ -16,6 +16,8 @@
 #include <QScopeGuard>
 #include <QJsonDocument>
 #include <QJsonObject>
+#include <QLocale>
+#include <QCollator>
 #ifdef TOMACCO_HAVE_DBUS
 #include <QDBusConnection>
 #include <QDBusMessage>
@@ -132,6 +134,60 @@ private slots:
         QCOMPARE(backend.folderListing("/").value("parent").toString(),QString());
         // Choosing goes through projectFolder: a link opens its target, an app bundle is no project.
         QCOMPARE(backend.projectFolder(backend.resolveFolderPath("link to app1",base)),QFileInfo(base+"/app1").canonicalFilePath());
+    }
+    // The chooser's reading order in the C locale (LC_ALL=C, C.UTF-8, POSIX, as test pipelines and
+    // minimal systems run) and in interface languages; QLocale's default is set for the row only.
+    void theProjectChooserOrdersFoldersNaturallyInEveryLocale_data() {
+        QTest::addColumn<QLocale>("locale");
+        QTest::addColumn<QStringList>("order");
+        const QString decomposed=QStringLiteral(u"U\u0308ber"),composed=QStringLiteral(u"\u00dcber"),
+            mixed=QStringLiteral(u"Überlänge العربية"),apfel=QStringLiteral(u"Äpfel"),
+            arabic=QStringLiteral(u"العربية"),file2=QStringLiteral(u"ملف٢"),
+            file10=QStringLiteral(u"ملف١٠"),kana=QStringLiteral(u"かな"),kanji=QStringLiteral(u"日本語"),
+            long2=QString(250,'x')+"2",long10=QString(250,'x')+"10";
+        // Numbers as numbers, case ignored (a tie in the collation goes by code units: APP1 before app1,
+        // the decomposed U+0308 spelling before the composed one); letters with marks beside their base letter.
+        const QStringList latin{apfel,"APP1","app1","App9","app10","link to app1",decomposed,composed,mixed,long2,long10,"Zebra"};
+        const QStringList english=latin+QStringList{arabic,file2,file10,kana,kanji};
+        QTest::newRow("C")<<QLocale::c()<<english;
+        QTest::newRow("C.UTF-8")<<QLocale(QStringLiteral("C.UTF-8"))<<english;
+        QTest::newRow("POSIX")<<QLocale(QStringLiteral("POSIX"))<<english;
+        QTest::newRow("en-US")<<QLocale(QStringLiteral("en-US"))<<english;
+        QTest::newRow("de-DE")<<QLocale(QStringLiteral("de-DE"))<<english;
+        // Swedish keeps its own alphabet (Ä after Z, Ü as Y): the language's order, not English for all.
+        QTest::newRow("sv-SE")<<QLocale(QStringLiteral("sv-SE"))<<QStringList{"APP1","app1","App9","app10","link to app1",long2,long10,
+            decomposed,composed,mixed,"Zebra",apfel,arabic,file2,file10,kana,kanji};
+        // Arabic script first, Arabic-Indic digits as numbers.
+        QTest::newRow("ar-AE")<<QLocale(QStringLiteral("ar-AE"))<<QStringList{arabic,file2,file10}+latin+QStringList{kana,kanji};
+        QTest::newRow("ja-JP")<<QLocale(QStringLiteral("ja-JP"))<<latin+QStringList{kana,kanji,arabic,file2,file10};
+    }
+    void theProjectChooserOrdersFoldersNaturallyInEveryLocale() {
+        QFETCH(QLocale,locale);QFETCH(QStringList,order);
+        QTemporaryDir root; QVERIFY(root.isValid());
+        const QLocale before=QLocale();
+        {
+            const auto restore=qScopeGuard([&]{QLocale::setDefault(before);});
+            QLocale::setDefault(locale);
+            // What the listing's collator starts from: the C rows are Qt's C collation, the others the language's.
+            QCOMPARE(QCollator().locale().language(),locale.language());
+            // The same folders made in two orders list the same: one total order, whatever the directory returns.
+            QStringList created=order;std::reverse(created.begin(),created.end());
+            for(int pass=0;pass<2;++pass) {
+                const QStringList variant=pass?created:order;
+                const QString base=root.filePath(QString::number(pass));
+                for(const auto &name:variant) {
+                    if(name==QLatin1String("link to app1")) continue;
+                    QVERIFY2(QDir().mkpath(base+"/"+name),qPrintable(name));
+                }
+                QVERIFY(QFile::link(base+"/app1",base+"/link to app1"));
+                Backend backend(QString(),nullptr,false);
+                QStringList names;
+                for(const auto &entry:backend.folderListing(base).value("folders").toList())names<<entry.toMap().value("name").toString();
+                QCOMPARE(names,order);
+            }
+        }
+        QCOMPARE(QLocale(),before);
+        QCOMPARE(QCollator().locale(),before.collation());
     }
     void onlyJobLogFilesOpenAsJobLogs() {
         QTemporaryDir root; QVERIFY(root.isValid());
