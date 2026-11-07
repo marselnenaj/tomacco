@@ -1,0 +1,111 @@
+{
+  "package_id": "remaining",
+  "target_locales": [
+    "ms",
+    "fil",
+    "tr"
+  ],
+  "model": "claude-opus-5-5",
+  "branch": "finish/languages-remaining",
+  "base": "df0a353",
+  "current_head": "850036a8d6ee428478e84d08a05fc243cb70ae74",
+  "updated_at": "2026-11-07T05:23:27+00:00",
+  "source_digest": "3390181968e6",
+  "source_count": 1800,
+  "languages": {
+    "ms": {
+      "name": "Bahasa Melayu",
+      "plural": "universal",
+      "forms": 1,
+      "finished": 1800,
+      "unfinished": 0,
+      "stale": 0,
+      "problems": [],
+      "menu_entry": "6/6",
+      "registry_complete": true,
+      "status": "complete",
+      "suspicious": [
+        "NativeWorkspace: 'Claude Code Codex Gemini Cursor VS Code Zed OpenCode Grok He'"
+      ],
+      "suspicious_review": "Only the agent-name list (Claude Code Codex ... MCP) equals English and is flagged; it is a list of product names. 25 short entries equal the source by design: units (%1 ms, %1 s), key names (Ctrl), product/feature names (iOS, App Links, TalkBack, Demo Studio) and genuine Malay words (Model, Folder, Import, Platform, Emulator, Auto, Lavender, Obsidian, Pistachio, Pose). Terminology: Malaysian Malay (fail, peranti, tetapan, projek, binaan, tugas, ejen, muat turun, gandingkan), not Indonesian."
+    },
+    "fil": {
+      "name": "Filipino",
+      "plural": "tagalog",
+      "forms": 3,
+      "finished": 1800,
+      "unfinished": 0,
+      "stale": 0,
+      "problems": [],
+      "menu_entry": "6/6",
+      "registry_complete": true,
+      "status": "complete",
+      "suspicious": [
+        "Main: 'Tomacco · Web inspector'",
+        "NativeWorkspace: 'Full screen · web preview'",
+        "NativeWorkspace: 'Claude Code Codex Gemini Cursor VS Code Zed OpenCode Grok He'",
+        "EnvironmentPanel: 'QA environment (*.json)'"
+      ],
+      "suspicious_review": "Reviewed all 120 entries that equalled English; 33 were rewritten in Filipino (e.g. Code sa pagpapares, Button sa gilid, Numero ng build, Matatag, Paunang release, Mga frame bawat segundo). The rest are established Filipino tech loanwords as used in Android/Google Filipino UI (device, app, build, emulator, Dark mode, Airplane mode, Landscape/Portrait, Custom, Offline), iOS UI names that Apple does not localize into Filipino (Control Center, Notification Center, Dock, App switcher, Home button), debugger commands (Step in/out/over), colour marketing names and product names. 4 remaining detector hits: Tomacco · Web inspector, Full screen · web preview, QA environment (*.json), the agent-name list — all names/loan terms. Plural: Qt tagalog rule, 3 forms; form 2 (n%10 in 4,6,9) carries the linker \"na\", forms 1 and 3 do not."
+    },
+    "tr": {
+      "name": "Türkçe",
+      "plural": "universal",
+      "forms": 1,
+      "finished": 1800,
+      "unfinished": 0,
+      "stale": 0,
+      "problems": [],
+      "menu_entry": "6/6",
+      "registry_complete": true,
+      "status": "complete",
+      "suspicious": [
+        "NativeWorkspace: 'Claude Code Codex Gemini Cursor VS Code Zed OpenCode Grok He'"
+      ],
+      "suspicious_review": "Only the agent-name list is flagged. 16 short entries equal the source by design (%1 ms, Ctrl, iOS, Dock, Apple SDK, Sponsor, App Links, TalkBack, Demo Studio, and Turkish words Model, Platform). \"View at 100 %\" uses \"Yüzde 100\" because Turkish %100 would read as placeholder %1. Record actions use \"kayda al\"/\"Kaydı başlat\" to keep them distinct from Save (\"Kaydet\")."
+    }
+  },
+  "commits": [
+    "850036a i18n: complete tr (all current source texts, menu entry, registry complete)",
+    "95c1ff1 i18n: complete fil (all current source texts, menu entry, registry complete)",
+    "e4261b9 i18n: complete ms (all current source texts, menu entry, registry complete)"
+  ],
+  "tests": {
+    "test_i18n": "PYTHONPATH=.:tools:tests/python TMPDIR=/tmp python3 -m unittest tests/python/test_i18n.py: Ran 18 tests, OK (after each of ms, fil, tr)",
+    "apply": "every tranche applied through tools/i18n_catalog.py apply (digest, placeholders, plural count, mark-up, line breaks checked); 0 rejections remaining",
+    "qm_readback": "tools/ts2qm.py compiled ms/fil/tr .qm in /tmp; read_qm back: 1800 messages each, 0 mismatches vs finished .ts forms; numerus rules empty for ms/tr (universal), tagalog rules for fil; plural_index(1,2,4,10,24) fil = [0,2,1,2,1]",
+    "lrelease": "not run: Qt lrelease is not installed on this host (no lrelease/lrelease6 in PATH or /usr/lib/qt6/bin)",
+    "rendering": "not qualified here: Qt font/layout rendering and device checks belong to final integration"
+  },
+  "completed": [
+    "ms",
+    "fil",
+    "tr"
+  ],
+  "remaining": {},
+  "all_complete_catalogs_on_branch": [
+    "ar",
+    "da",
+    "de",
+    "es",
+    "es-MX",
+    "fil",
+    "fr",
+    "id",
+    "it",
+    "ja",
+    "ms",
+    "nl",
+    "no",
+    "pl",
+    "pt",
+    "pt-BR",
+    "ru",
+    "sv",
+    "tr",
+    "uk",
+    "zh-CN",
+    "zh-TW"
+  ],
+  "next_step": "Root merges this branch semantically (catalogs ms/fil/tr, desktop entry keys [ms]/[fil]/[tr], registry complete flags, COVERAGE.md regenerated) and then translates the final UI delta beyond source digest 3390181968e6 in the reconciliation pass."
+}
