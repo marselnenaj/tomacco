@@ -2,7 +2,7 @@
 
 # Error codes
 
-Every error code `tomaccoctl` returns, 534 codes, generated from `assets/errors.json`. A failure is `{"ok":false,"error":{"code":...,"message":...,"remedy":...}}`, and over MCP the same object under `structuredContent.error`. Branch on `code`. The message says what happened this time; when the place that failed has no remedy of its own, `remedy` is the general one below. In the middle column, … stands for a value the message fills in. [All operations](README.md).
+Every error code `tomaccoctl` returns, 544 codes, generated from `assets/errors.json`. A failure is `{"ok":false,"error":{"code":...,"message":...,"remedy":...}}`, and over MCP the same object under `structuredContent.error`. Branch on `code`. The message says what happened this time; when the place that failed has no remedy of its own, `remedy` is the general one below. In the middle column, … stands for a value the message fills in. [All operations](README.md).
 
 | Code | What it means | What to do |
 | --- | --- | --- |
@@ -125,9 +125,18 @@ Every error code `tomaccoctl` returns, 534 codes, generated from `assets/errors.
 | `environment_target_unreadable` | The device did not report its Android version, so Tomacco cannot tell which settings it supports. | Check with device.list that the device is online and booted, then plan again. |
 | `environment_unsupported` | The device does not support settings the preset names, such as airplane mode before Android 11 or TalkBack when it is not installed. | Apply with allow_partial to set the rest, or use a device that supports them. |
 | `environment_version_unsupported` | The preset document has a format version this Tomacco does not read. | Update Tomacco, or export the preset again from the version that made it. |
+| `field_not_focused` | No field took the focus within focus_timeout_ms after the verified fill's tap; nothing was typed. | Tap the field itself (screen.tree or screen.marks gives its bounds), or wait longer with focus_timeout_ms. |
+| `field_stale` | The field a verified fill found was replaced before any text was cleared or typed; nothing was typed. | Observe the screen and fill the field that is there now. |
+| `field_submit_not_sent` | A verified fill verified the value but did not send Return, because the focus left the field or Return could not be sent. | The field holds the text; do not fill it again. Submit with the screen's own button or a key step after observing. |
+| `field_tap_failed` | The tap that focuses the field for a verified fill failed or got no answer; nothing was typed. | Check runtime.state, observe the screen and fill again once the session answers. |
+| `field_uncertain` | A verified fill sent a clear or text whose effect could not be established: the value read back differs, equals the placeholder, the field was replaced, or the answer was lost (details.reason and details.writes). Nothing was typed again. | Do not resend the text: observe the field (screen.tree or runtime.observe) and decide from what it holds. |
+| `field_unobservable` | The focus, the focused element or its value could not be read (or a clear or write could not be sent) before anything was typed; nothing was typed. | Observe the screen and try again once the session answers; send fill without verify_value only for a field that cannot be read. |
+| `field_unsupported` | The focused element is not a text field whose value can be read back (details.reason: secure_field, not_a_text_editor or disabled); nothing was typed, and a secure field was not read. | Type into it with fill or text without verify_value and check the screen that follows, or fill once the field is enabled. |
+| `field_wrong_target` | The element with the focus after the verified fill's tap does not cover the tapped point or does not carry field_name; nothing was typed. details.focused says what has the focus. | Observe the screen and tap the intended field; for a field that moves as it takes the focus, name it with field_name. |
 | `file_conflict` | The file changed after files.read gave its digest. | Read it again with files.read, merge the changes, and write with the new digest as if_match. |
 | `file_exists` | Export destination already exists: … | Choose another destination, or remove the existing file if the person agrees. |
 | `file_too_large` | Text editing is limited to files up to 1 MiB. | Edit the file with another tool; files.read and files.write handle text up to 1 MiB. |
+| `fill_verification_unsupported` | A fill with verify_value was asked of a transport that cannot read an editor back (input_capabilities.fill_verification.supported is false); nothing was sent. | Send fill without verify_value and check the result with an expect postcondition or a fresh runtime.observe or screen.tree. |
 | `firmware_incomplete` | The virtual iOS device or its research engine refused the request or stopped answering. | Extract the required boot components first. |
 | `firmware_modified` | PMP bundle changed after submission. | Read the message; ios.virtual.status and the job's log show the device's state, and docs/virtual-ios/troubleshooting.md lists known causes. |
 | `fixture_runtime` | The offline fixture runtime was asked for but is off, or its scenario is missing or broken. | Set TOMACCO_FIXTURE_RUNTIME to the directory that holds NAME/scenario.json, or connect a real device instead; the fixture is for tests and benchmarks only. |
@@ -478,6 +487,7 @@ Every error code `tomaccoctl` returns, 534 codes, generated from `assets/errors.
 | `toolkit_toolchain_missing` | The private omarchy-apple-dev toolchain is not installed. | Check the name or path in the message; the matching list operation (device.list, job.list, workspace.list, catalog.list) shows what exists, and doctor what is set up. |
 | `trace_output` | Unterminated trace processor CSV value. | Read the message, change what it names and try again; docs/troubleshooting.md lists known errors. |
 | `transport_failed` | The MCP server could not write to its client. | Restart the client's connection to tomaccoctl mcp. |
+| `tree_stale` | screen.tree was given the digest of an earlier hierarchy and the screen's hierarchy is no longer the same, so its references may name other nodes. | Read the tree again (mode compact or tree) and use the references and digest it answers. |
 | `ui_hierarchy_unavailable` | … needs a UI hierarchy, and the virtual iPhone's guest tools do not report one. | Find text by its words instead (a selector with text or text_contains is read off the screenshot with OCR), or use screen.marks with source ocr, testing.run with tap, swipe, text, key, wait_screen and assert_screen steps, or ios.emulator.control with coordinates. |
 | `unsafe_data_directory` | The Tomacco data directory is not a directory owned by this user: … | Set TOMACCO_HOME to a directory you own. |
 | `unsafe_runtime_directory` | Runtime directory is not a private directory of this user: … | Remove it, or set TMPDIR to a directory only you can write. |

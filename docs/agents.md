@@ -815,6 +815,29 @@ gives `desktop_stale`.
 The Simulator also supports `fill`, `pinch`, `shake` and `hinge` when its companion does. Apple `text` sends ASCII keys, and `fill` replaces an
 accessible field at x/y with any Unicode. Apple rotation needs an explicit orientation. Pass the current decoded image size for mapping after a rotation.
 
+**Verified fill.** `fill` with `verify_value:true` does not report success until the field shows the text. After the tap it
+waits up to `focus_timeout_ms` (2000, at most 10000) for an editor that covers the tapped point (or carries `field_name`, its
+accessibility identifier or label, for a field that moves as it takes the focus) and is a text field, search field or text
+view. It reads that editor's value on the same session and element ID before writing (an already matching value is not typed
+again: `field_status:"already_matching"`, `writes:[]`), clears and types once, and reads the value back. Only an exact,
+code point for code point, match answers `verified:true`. XCUITest reports an empty field's placeholder as its value, so a
+value equal to the placeholder never counts as entered text: typing the placeholder's own words answers `field_uncertain`
+(`value_matches_placeholder`), and clearing to an empty field that shows its placeholder is verified. Before anything is
+typed it can refuse with `field_not_focused`, `field_wrong_target` (`details.focused` says what has the focus),
+`field_unsupported` (`secure_field`, `not_a_text_editor`, `disabled`), `field_stale`, `field_unobservable` or
+`field_tap_failed`; then nothing was typed. After a clear or write was sent, a different read-back, a replaced field or a
+lost answer is `field_uncertain` with `details.reason` and `details.writes` (each request sent and how it ended); nothing is
+ever typed again, so observe and decide. Secure (password) fields are refused without their value being requested.
+`submit:true` sends one Return once the value is verified or already matched and the field still has the focus, never
+otherwise; where it leads is for an `expect` postcondition or a fresh look to establish, separately. The USB iPhone does
+this over WebDriverAgent, contract-tested against a loopback double but not yet on hardware; the fixture runtime scripts
+editors for tests. Every other transport answers `fill_verification_unsupported` and sends nothing:
+`input_capabilities.fill_verification` says which a session offers. A plain `fill` without `verify_value` is unchanged.
+
+```sh
+tomaccoctl call runtime.input '{"session":"SESSION_ID","action":"fill","x":0.5,"y":0.12,"text":"tomacco","verify_value":true,"field_name":"query","submit":true}'
+```
+
 **Evidence.** `runtime.capture` and `runtime.hierarchy` give real app and OS evidence. `device.capture` waits for a screenshot, and
 `device.screenshot` is the asynchronous form.
 
@@ -836,13 +859,15 @@ yet. A USB iPhone's point size is read once and again only after a rotation or w
 request, and a phone the person turned is never mapped with the old size.
 
 **Ordered steps.** `runtime.actions` runs up to 50 input and wait steps in order on one session and answers a result per step
-(`applied`, `verified`, `failed`, `skipped`). A `text` step first waits until a field has the focus, polling the session's focus and
+(`applied`, `verified`, `uncertain`, `failed`, `skipped`). A `text` step first waits until a field has the focus, polling the session's focus and
 keyboard, so the first characters are not lost; no focus in `focus_timeout_ms` answers `focus_timeout` with nothing typed, and a
 transport that cannot report focus says so and settles briefly instead. A `tap` may name a `mark` from the last `screen.marks` of the
 session and is verified like `screen.tap`. A step's `expect` names text that must appear (or `text_gone`) afterwards: met makes it
-`verified`, otherwise `postcondition_failed` stops the batch with the step still counted as applied. The first failure stops the rest, and
-the error's details carry every step so far, `applied_steps` (what reached the device) and `skipped`, so an agent never resends an
-applied step. `timeout` bounds the whole batch; `frame` (from `runtime.observe`) refuses the batch with `frame_stale` when the screen's
+`verified`, otherwise `postcondition_failed` stops the batch with the step still counted as applied. A `fill` step with
+`verify_value` is `verified` when its exact value was read back (see Verified fill above); one whose text went out with an
+unknown effect is `uncertain` and stops the batch with `field_uncertain`. The first failure stops the rest, and
+the error's details carry every step so far, `applied_steps` (what reached the device), `uncertain_steps` (sent, effect
+unknown) and `skipped`, so an agent never resends an applied or uncertain step. `timeout` bounds the whole batch; `frame` (from `runtime.observe`) refuses the batch with `frame_stale` when the screen's
 size or orientation changed since; `observe_after` appends a fresh observation.
 
 ```sh
@@ -1237,7 +1262,23 @@ handled by also reading the colour-inverted picture (`invert`, on `auto`).
   and otherwise answers `mark_stale` and taps nothing; `duration` makes it a long press.
 - **`screen.tree`** is the hierarchy as short indented text for a model's context: only elements with text or a
   description, or that can be pressed or scroll, with `id`, bounds, state and `#N` for tappable ones, cut at `max_chars`
-  with a line that says how much is missing. Android only.
+  with a line that says how much is missing. Android and runtime sessions (a USB iPhone's WebDriverAgent hierarchy).
+  That default (`mode:"tree"`) is in document order, so a long header can push a control at the bottom past the budget.
+  `mode:"compact"` chooses from the whole tree instead: the focused node, editors and nodes matching `query` (words of
+  the task) first, then enabled controls, stateful widgets and scroll regions, then disabled controls and text, then what
+  lies below the window; repeated siblings (the fourth and later of one class under one parent) come after the rest of
+  their group, and the window's four horizontal bands take turns. Every record is whole or left out, with its `nN`
+  reference, class, text, `id`, `#N`, bounds and state (`checked`/`unchecked`, `disabled`, `scrollable`, `editable`,
+  `offscreen`, `cut` for a text shortened to 80 characters). A static text that belongs to exactly one control (no other
+  control, editor or scroll region in it) is folded into that control as `label="..." from=nN`, leaving the control's own
+  text and id as they are; a label that appears on several records gets `in=nN:"..."`, the nearest container known by
+  something else. Password text is never repeated. The answer counts what it left out (`omitted`, `omitted_by`,
+  `omitted_refs`, `folded`, `hidden`), and `mode:"detail"` with `refs` answers the complete records of any reference
+  (every attribute, parent, children, `label_sources` or `folded_into`). Every mode answers the hierarchy's `digest`;
+  giving it back answers `tree_stale` when the screen changed, so references never land on another screen. The budget
+  counts Unicode code points. Compact records carry more per line than the default tree, so when the whole default tree
+  fits, compact can be longer; on equal fixtures it kept the bottom controls the default lost (see
+  `docs/input-observation-progress.json`; fixture data, not a token or success measurement).
 - **`screen.ocr`** gives every word and line with its box and confidence, and with `text` (whole words) or
   `text_contains` the matches with their centre. It reads a device or an `image`.
 - **`screen.diff`** says what changed between two screens: two hierarchies (`.xml`: elements added, removed, changed in
@@ -1263,6 +1304,9 @@ tomaccoctl call screen.marks '{"device":"emulator-5554","path":"/absolute/marked
 tomaccoctl call screen.tap '{"device":"emulator-5554","mark":7}'
 # A compact tree to read, and a text check without a hierarchy
 tomaccoctl call screen.tree '{"device":"emulator-5554","max_chars":3000}'
+# The relevant whole records within the same budget, then one omitted record in full
+tomaccoctl call screen.tree '{"device":"emulator-5554","max_chars":3000,"mode":"compact","query":"checkout"}'
+tomaccoctl call screen.tree '{"device":"emulator-5554","mode":"detail","refs":["n42"],"digest":"3f9a0c1d2b4e5f60"}'
 tomaccoctl call screen.ocr '{"device":"virtual-iphone","text_contains":"Settings"}'
 # Wait for the screen to settle after an action, ignoring the clock
 tomaccoctl call screen.wait '{"device":"virtual-iphone","until":"stable","stable_ms":1000,"ignore":[{"x":0,"y":0,"width":1206,"height":170}]}'

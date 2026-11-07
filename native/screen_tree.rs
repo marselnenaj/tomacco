@@ -361,6 +361,9 @@ pub struct Tree {
 }
 
 /// The package most nodes belong to, which is the app in front.
+pub fn app_package_of(nodes: &[Node]) -> String {
+    app_package(nodes)
+}
 fn app_package(nodes: &[Node]) -> String {
     let mut counts: Vec<(&str, usize)> = Vec::new();
     for n in nodes.iter().filter(|n| !n.package.is_empty()) {
@@ -480,6 +483,489 @@ pub fn numbering(nodes: &[Node], limit: usize) -> Vec<Option<usize>> {
         numbers[at] = Some(i + 1);
     }
     numbers
+}
+
+// ---- Compact records: relevant nodes from the whole tree -------------------
+//
+// `tree` renders shown nodes in document order and stops at its budget, so a
+// long header can push a checkout button at the bottom of the screen out of
+// the text. `compact` first looks at every node, then spends the budget by
+// relevance: the focused node, editors and nodes matching the task's query
+// first, then enabled controls, stateful widgets and scroll regions, then
+// disabled controls and static text, then what lies outside the window.
+// Within each of these, repeated siblings (the fourth and later of one class
+// under one parent) come after the rest, and the window's four horizontal
+// bands take turns, so no band and no long list takes the whole budget. A record that does not fit is left out and a
+// shorter one may use the room (off-screen ones only when everything on the
+// screen fitted). Records are whole lines or absent, never cut,
+// and come out in document order with their `nN` reference (the node's index
+// in the hierarchy), mark number, bounds and state.
+//
+// A static leaf text is folded into the one control it belongs to: the
+// nearest clickable ancestor, inside no scroll region between them, that is
+// not an editor and holds no other control, editor or scroll region, and
+// whose bounds contain the text's. The control's own text, description and id
+// stay as they are; the folded text is shown apart as `label="…" from=nN`, so
+// no selector changes. Anything else stays a record of its own. `detail`
+// answers the complete record of any reference, folded or omitted.
+
+/// Classes that hold repeated items.
+fn collection(n: &Node) -> bool {
+    let class = n.short_class();
+    ["RecyclerView", "ListView", "GridView", "XCUIElementTypeTable", "XCUIElementTypeCollectionView"]
+        .iter()
+        .any(|c| class.ends_with(c))
+}
+
+fn container(n: &Node) -> bool {
+    n.scrollable || collection(n)
+}
+
+fn inside(inner: Rect, outer: Rect) -> bool {
+    inner.0 >= outer.0 && inner.1 >= outer.1 && inner.2 <= outer.2 && inner.3 <= outer.3
+}
+
+/// The window: the right and bottom edge of the top-level nodes, so a node
+/// laid out below it is off the screen rather than making it taller.
+fn viewport(nodes: &[Node]) -> (i64, i64) {
+    let windows = nodes.iter().filter(|n| n.parent.is_none() && n.has_area());
+    let (w, h) = windows.fold((0, 0), |(w, h), n| (w.max(n.rect.2), h.max(n.rect.3)));
+    if w > 0 && h > 0 { (w, h) } else { screen_size(nodes) }
+}
+
+/// Whether a node lies wholly outside the screen.
+fn offscreen(n: &Node, width: i64, height: i64) -> bool {
+    n.rect.2 <= 0 || n.rect.3 <= 0 || n.rect.0 >= width || n.rect.1 >= height
+}
+
+/// Which leaf texts fold into which control: `into[leaf] = Some(control)`.
+pub fn folding(nodes: &[Node]) -> Vec<Option<usize>> {
+    let count = nodes.len();
+    let has_text = |n: &Node| !n.text.trim().is_empty() || !n.description.trim().is_empty();
+    // Shown descendants and controls below each node.
+    let mut shown_below = vec![false; count];
+    let mut actionable_below = vec![0usize; count];
+    for n in nodes {
+        let actionable = n.interactive() || container(n);
+        let visible = shown(n);
+        let mut at = n.parent;
+        while let Some(p) = at {
+            if visible {
+                shown_below[p] = true;
+            }
+            if actionable {
+                actionable_below[p] += 1;
+            }
+            at = nodes[p].parent;
+        }
+    }
+    let mut into = vec![None; count];
+    let mut groups: std::collections::BTreeMap<usize, Vec<usize>> = Default::default();
+    for (i, n) in nodes.iter().enumerate() {
+        let leaf = shown(n) && has_text(n) && !n.interactive() && !container(n) && !n.password && !shown_below[i];
+        if !leaf {
+            continue;
+        }
+        let mut at = n.parent;
+        let mut owner = None;
+        while let Some(p) = at {
+            let a = &nodes[p];
+            if container(a) {
+                break;
+            }
+            if a.interactive() {
+                owner = Some(p);
+                break;
+            }
+            at = a.parent;
+        }
+        if let Some(p) = owner {
+            let a = &nodes[p];
+            if !a.editable() && shown(a) && actionable_below[p] == 0 && inside(n.rect, a.rect) {
+                groups.entry(p).or_default().push(i);
+            }
+        }
+    }
+    for (owner, leaves) in groups {
+        // More than four texts in one control is a layout, not a label.
+        if leaves.len() <= 4 {
+            for leaf in leaves {
+                into[leaf] = Some(owner);
+            }
+        }
+    }
+    into
+}
+
+/// What `compact` chose and left out.
+pub struct Compact {
+    pub text: String,
+    /// Records there were (shown nodes not folded into a control).
+    pub records: usize,
+    pub selected: Vec<usize>,
+    /// Records left out, the controls and editors first, then in document order.
+    pub omitted: Vec<usize>,
+    pub omitted_by: Value,
+    pub folded: usize,
+    /// Nodes with text or a control that have no area (invisible).
+    pub hidden: usize,
+    pub truncated: bool,
+    pub package: String,
+    pub width: i64,
+    pub height: i64,
+}
+
+fn tokens(query: &str) -> Vec<String> {
+    let query = query.to_lowercase();
+    let mut out: Vec<String> = query.split_whitespace().map(str::to_string).collect();
+    if out.len() > 1 {
+        out.push(query.split_whitespace().collect::<Vec<_>>().join(" "));
+    }
+    out.into_iter().filter(|t| !t.is_empty()).take(20).collect()
+}
+
+/// The text a record is known by: its text, description or folded label.
+fn known_as(n: &Node, folded: &str) -> String {
+    if !n.text.trim().is_empty() && !n.password {
+        one_line(&n.text)
+    } else if !n.description.trim().is_empty() {
+        one_line(&n.description)
+    } else {
+        folded.to_string()
+    }
+}
+
+fn kind(n: &Node) -> &'static str {
+    if n.editable() {
+        "editable"
+    } else if n.checkable || n.selected {
+        "stateful"
+    } else if n.interactive() {
+        "interactive"
+    } else if container(n) {
+        "scroll"
+    } else {
+        "text"
+    }
+}
+
+/// The relevant records of the whole tree within `max_chars` characters.
+/// `digest` names the hierarchy for `detail` and stale checks.
+pub fn compact(
+    nodes: &[Node],
+    numbers: &[Option<usize>],
+    max_chars: usize,
+    query: &str,
+    only_interactive: bool,
+    digest: &str,
+) -> Compact {
+    let (width, height) = viewport(nodes);
+    let package = app_package(nodes);
+    let into = folding(nodes);
+    let hidden = nodes
+        .iter()
+        .filter(|n| !n.has_area() && (n.interactive() || !n.text.trim().is_empty() || !n.description.trim().is_empty()))
+        .count();
+    let wanted = |i: usize| {
+        let n = &nodes[i];
+        shown(n) && into[i].is_none() && (!only_interactive || n.interactive() || numbers[i].is_some() || container(n))
+    };
+    let records: Vec<usize> = (0..nodes.len()).filter(|i| wanted(*i)).collect();
+    let is_record = {
+        let mut flags = vec![false; nodes.len()];
+        for i in &records {
+            flags[*i] = true;
+        }
+        flags
+    };
+    // Folded labels and their sources, per control.
+    let mut labels: std::collections::BTreeMap<usize, Vec<usize>> = Default::default();
+    for (leaf, owner) in into.iter().enumerate() {
+        if let Some(owner) = owner {
+            labels.entry(*owner).or_default().push(leaf);
+        }
+    }
+    let folded_label = |i: usize| -> String {
+        labels
+            .get(&i)
+            .map(|leaves| {
+                leaves
+                    .iter()
+                    .map(|l| known_as(&nodes[*l], ""))
+                    .collect::<Vec<_>>()
+                    .join(" | ")
+            })
+            .unwrap_or_default()
+    };
+    // The same name on more than one record gets the container it is in.
+    let mut names: std::collections::BTreeMap<String, usize> = Default::default();
+    for i in &records {
+        let name = known_as(&nodes[*i], &folded_label(*i));
+        if !name.is_empty() {
+            *names.entry(name).or_default() += 1;
+        }
+    }
+    // The nearest ancestor known by something else than the record itself:
+    // its own text, the texts inside it (as `label` reads them), or its id.
+    let context = |i: usize, own: &str| -> Option<String> {
+        let mut at = nodes[i].parent;
+        while let Some(p) = at {
+            let a = &nodes[p];
+            if a.has_area() {
+                let mut name = known_as(a, &folded_label(p));
+                if name.is_empty() {
+                    name = label(nodes, p);
+                }
+                if name.is_empty() {
+                    name = a.short_id().to_string();
+                }
+                if !name.is_empty() && name != own {
+                    return Some(format!("n{p}:\"{}\"", shorten(&name, 40)));
+                }
+            }
+            at = a.parent;
+        }
+        None
+    };
+    let terms = tokens(query);
+    // The fourth and later sibling of one class under one parent is a
+    // repetition (list items, links): it comes after the rest of its tier.
+    let mut repeated = vec![false; nodes.len()];
+    let mut seen: std::collections::BTreeMap<(Option<usize>, &str), usize> = Default::default();
+    for i in &records {
+        let count = seen.entry((nodes[*i].parent, nodes[*i].short_class())).or_default();
+        repeated[*i] = *count >= 3;
+        *count += 1;
+    }
+    let mut lines: Vec<String> = vec![String::new(); nodes.len()];
+    let mut tier = vec![0usize; nodes.len()];
+    let mut band = vec![0usize; nodes.len()];
+    for i in &records {
+        let i = *i;
+        let n = &nodes[i];
+        let depth = {
+            let mut d = 0;
+            let mut at = n.parent;
+            while let Some(p) = at {
+                if is_record[p] {
+                    d += 1;
+                }
+                at = nodes[p].parent;
+            }
+            d.min(12)
+        };
+        let mut line = " ".repeat(depth);
+        line.push_str(&format!("n{i} {}", n.short_class()));
+        let mut cut = false;
+        let mut quote = |text: &str| {
+            let flat = text.split_whitespace().collect::<Vec<_>>().join(" ");
+            cut |= flat.chars().count() > 80;
+            one_line(text)
+        };
+        if n.password {
+            // A password field's text is never repeated, whatever it shows.
+        } else if !n.text.trim().is_empty() {
+            line.push_str(&format!(" \"{}\"", quote(&n.text)));
+        }
+        let description_shown = n.description.trim().is_empty() || (!n.password && n.text == n.description);
+        if !description_shown {
+            if n.text.trim().is_empty() || n.password {
+                line.push_str(&format!(" \"{}\"", quote(&n.description)));
+            } else {
+                line.push_str(&format!(" desc=\"{}\"", quote(&n.description)));
+            }
+        }
+        let label = folded_label(i);
+        if !label.is_empty() {
+            let sources: Vec<String> = labels[&i].iter().map(|l| format!("n{l}")).collect();
+            line.push_str(&format!(" label=\"{}\" from={}", label, sources.join(",")));
+        }
+        if !n.id.is_empty() {
+            line.push_str(&format!(" id={}", n.short_id()));
+        }
+        if let Some(number) = numbers[i] {
+            line.push_str(&format!(" #{number}"));
+        }
+        line.push_str(&format!(" ({},{},{},{})", n.rect.0, n.rect.1, n.rect.2, n.rect.3));
+        let off = offscreen(n, width, height);
+        for (flag, name) in [
+            (n.checkable && n.checked, "checked"),
+            (n.checkable && !n.checked, "unchecked"),
+            (n.selected, "selected"),
+            (n.focused, "focused"),
+            (!n.enabled, "disabled"),
+            (n.scrollable, "scrollable"),
+            (n.password, "password"),
+            (n.editable(), "editable"),
+            (off, "offscreen"),
+            (cut, "cut"),
+        ] {
+            if flag {
+                line.push(' ');
+                line.push_str(name);
+            }
+        }
+        let name = known_as(n, &label);
+        if names.get(&name).is_some_and(|c| *c > 1) {
+            if let Some(found) = context(i, &name) {
+                line.push_str(&format!(" in={found}"));
+            }
+        }
+        let haystack = format!("{} {} {} {}", n.text, n.description, n.id, label).to_lowercase();
+        let matched = terms.iter().any(|t| haystack.contains(t.as_str()));
+        tier[i] = if n.focused || n.editable() || matched {
+            0
+        } else if off {
+            3
+        } else if (n.interactive() && n.enabled) || container(n) {
+            1
+        } else {
+            2
+        };
+        let centre = ((n.rect.1.max(0) + n.rect.3.min(height.max(1))) / 2).clamp(0, height.max(1) - 1);
+        band[i] = ((centre * 4) / height.max(1)).clamp(0, 3) as usize;
+        lines[i] = line;
+    }
+    // Spend the budget: tier by tier, the four bands in turn, document order within a band.
+    let mut order = Vec::with_capacity(records.len());
+    for t in 0..8 {
+        let mut bands: Vec<std::collections::VecDeque<usize>> = vec![Default::default(); 4];
+        for i in &records {
+            if tier[*i] * 2 + usize::from(repeated[*i]) == t {
+                bands[band[*i]].push_back(*i);
+            }
+        }
+        while bands.iter().any(|b| !b.is_empty()) {
+            for b in bands.iter_mut() {
+                if let Some(i) = b.pop_front() {
+                    order.push(i);
+                }
+            }
+        }
+    }
+    let header = format!(
+        "screen {width}x{height} package {} mode compact digest {digest}\n",
+        shorten(&package, 100)
+    );
+    let footer = |omitted: usize, controls: usize, offscreen: usize, folded: usize, hidden: usize| {
+        format!("… {omitted} records not shown ({controls} controls, {offscreen} offscreen); {folded} texts folded into their controls; {hidden} hidden; mode detail with refs shows any record\n")
+    };
+    let most = nodes.len().max(1);
+    let reserve = footer(most, most, most, most, most).chars().count();
+    let folded = into.iter().filter(|o| o.is_some()).count();
+    let mut left = max_chars.saturating_sub(header.chars().count() + reserve);
+    // A record that does not fit is left out whole and a shorter one may take
+    // the room, except that off-screen records only come in when everything
+    // on the screen fitted.
+    let mut chosen = vec![false; nodes.len()];
+    let mut dropped_on_screen = false;
+    for i in &order {
+        let cost = lines[*i].chars().count() + 1;
+        if tier[*i] == 3 && dropped_on_screen {
+            continue;
+        }
+        if cost <= left {
+            left -= cost;
+            chosen[*i] = true;
+        } else if tier[*i] < 3 {
+            dropped_on_screen = true;
+        }
+    }
+    let selected: Vec<usize> = records.iter().copied().filter(|i| chosen[*i]).collect();
+    let mut omitted: Vec<usize> = records.iter().copied().filter(|i| !chosen[*i]).collect();
+    omitted.sort_by_key(|i| (tier[*i] > 1, *i));
+    let mut by = json!({"interactive":0,"editable":0,"stateful":0,"scroll":0,"text":0,"offscreen":0});
+    for i in &omitted {
+        let k = if tier[*i] == 3 { "offscreen" } else { kind(&nodes[*i]) };
+        by[k] = json!(by[k].as_u64().unwrap_or(0) + 1);
+    }
+    let mut text = header;
+    for i in &selected {
+        text.push_str(&lines[*i]);
+        text.push('\n');
+    }
+    let truncated = !omitted.is_empty();
+    if truncated || folded > 0 || hidden > 0 {
+        let controls = omitted.iter().filter(|i| nodes[**i].interactive()).count();
+        let off = omitted.iter().filter(|i| tier[**i] == 3).count();
+        text.push_str(&footer(omitted.len(), controls, off, folded, hidden));
+    }
+    Compact {
+        text,
+        records: records.len(),
+        selected,
+        omitted,
+        omitted_by: by,
+        folded,
+        hidden,
+        truncated,
+        package,
+        width,
+        height,
+    }
+}
+
+/// The longest text a detail record quotes from one attribute.
+const DETAIL_CHARS: usize = 4000;
+
+/// A reference `nN` as a node index, or why it is none.
+pub fn reference(nodes: &[Node], text: &str) -> Result<usize> {
+    text.strip_prefix('n')
+        .and_then(|d| d.parse::<usize>().ok())
+        .filter(|i| *i < nodes.len())
+        .ok_or_else(|| {
+            Error::new(
+                "invalid_argument",
+                format!("{text:?} is not a node of this hierarchy ({} nodes, n0 to n{})", nodes.len(), nodes.len().saturating_sub(1)),
+            )
+        })
+}
+
+/// The complete record of a node: every attribute the hierarchy has, its
+/// parent and children, its mark, and what was folded into or out of it.
+/// A password field's text is withheld.
+pub fn detail(nodes: &[Node], numbers: &[Option<usize>], at: usize) -> Value {
+    let n = &nodes[at];
+    let into = folding(nodes);
+    let full = |text: &str| -> Value {
+        let chars = text.chars().count();
+        if chars <= DETAIL_CHARS {
+            json!(text)
+        } else {
+            json!(text.chars().take(DETAIL_CHARS).collect::<String>())
+        }
+    };
+    let children: Vec<usize> = (at + 1..nodes.len()).filter(|i| nodes[*i].parent == Some(at)).collect();
+    let sources: Vec<String> = into
+        .iter()
+        .enumerate()
+        .filter(|(_, o)| **o == Some(at))
+        .map(|(i, _)| format!("n{i}"))
+        .collect();
+    let mut record = json!({"ref":format!("n{at}"),"class":n.class,
+        "text":if n.password { Value::Null } else { full(&n.text) },
+        "description":full(&n.description),"resource_id":n.id,"package":n.package,
+        "bounds":{"left":n.rect.0,"top":n.rect.1,"right":n.rect.2,"bottom":n.rect.3,
+            "width":n.rect.2 - n.rect.0,"height":n.rect.3 - n.rect.1},
+        "clickable":n.clickable,"long_clickable":n.long_clickable,"checkable":n.checkable,"checked":n.checked,
+        "enabled":n.enabled,"focused":n.focused,"focusable":n.focusable,"scrollable":n.scrollable,
+        "selected":n.selected,"password":n.password,"editable":n.editable(),"has_area":n.has_area(),
+        "mark":numbers[at],"label":label(nodes, at),
+        "parent":n.parent.map(|p| format!("n{p}")),
+        "children":children.iter().take(50).map(|c| format!("n{c}")).collect::<Vec<_>>(),
+        "children_total":children.len(),
+        "label_sources":sources,"folded_into":into[at].map(|o| format!("n{o}")),"source":"hierarchy"});
+    if n.password {
+        record["text_withheld"] = json!("password");
+    }
+    for key in ["text", "description"] {
+        let original = if key == "text" { &n.text } else { &n.description };
+        if original.chars().count() > DETAIL_CHARS && !(key == "text" && n.password) {
+            record[format!("{key}_cut")] = json!(true);
+            record[format!("{key}_chars")] = json!(original.chars().count());
+        }
+    }
+    record
 }
 
 // ---- Differences between two hierarchies ---------------------------------
@@ -869,5 +1355,306 @@ mod tests {
         let long = "x".repeat(200);
         assert_eq!(one_line(&long).chars().count(), 80);
         assert!(one_line(&long).ends_with('…'));
+    }
+}
+
+#[cfg(test)]
+mod compact_tests {
+    use super::*;
+
+    fn node(class: &str, attributes: &str, children: &[String]) -> String {
+        let enabled = if attributes.contains("enabled=") { "" } else { "enabled=\"true\" " };
+        format!(
+            "<node class=\"{class}\" package=\"dev.example.shop\" {enabled}{attributes}>{}</node>",
+            children.concat()
+        )
+    }
+    fn text(words: &str, bounds: &str) -> String {
+        node("android.widget.TextView", &format!("text=\"{words}\" bounds=\"{bounds}\""), &[])
+    }
+    fn button(words: &str, id: &str, bounds: &str, extra: &str) -> String {
+        node(
+            "android.widget.Button",
+            &format!("text=\"{words}\" resource-id=\"dev.example.shop:id/{id}\" bounds=\"{bounds}\" clickable=\"true\" {extra}"),
+            &[],
+        )
+    }
+    /// A shop screen of 1080x2400: a long header of headlines and links,
+    /// then a search field, a cart list with duplicate Delete buttons, a
+    /// switch, a disabled button, the Pay now button at the bottom, a hidden
+    /// promotion, a button below the screen and an Arabic greeting.
+    pub fn shop() -> String {
+        let mut header = Vec::new();
+        for i in 0..30 {
+            let top = 20 + i * 26;
+            header.push(text(
+                &format!("Headline {i}: a long sentence of the news ticker that fills the header of the shop with words"),
+                &format!("[20,{top}][1060,{}]", top + 24),
+            ));
+        }
+        for i in 0..24 {
+            let top = 820 + i * 32;
+            header.push(button(&format!("Category {i}"), &format!("category_{i}"), &format!("[20,{top}][1060,{}]", top + 30), ""));
+        }
+        let header = node("android.widget.LinearLayout", "bounds=\"[0,0][1080,1600]\"", &header);
+        let search = node(
+            "android.widget.EditText",
+            "text=\"Search products\" resource-id=\"dev.example.shop:id/search\" bounds=\"[40,1650][1040,1750]\" clickable=\"true\" focusable=\"true\"",
+            &[],
+        );
+        let row = |name: &str, top: i64, inner: Vec<String>| {
+            node(
+                "android.widget.LinearLayout",
+                &format!("bounds=\"[0,{top}][1080,{}]\" clickable=\"true\"", top + 120),
+                &[vec![text(name, &format!("[40,{}][500,{}]", top + 20, top + 100))], inner].concat(),
+            )
+        };
+        let cart = node(
+            "androidx.recyclerview.widget.RecyclerView",
+            "resource-id=\"dev.example.shop:id/cart_list\" bounds=\"[0,1760][1080,2150]\" scrollable=\"true\"",
+            &[
+                row("Apple", 1760, vec![text("€1.20", "[600,1780][1040,1860]")]),
+                row("Pear", 1880, vec![button("Delete", "delete", "[800,1900][1040,1980]", "")]),
+                row("Plum", 2000, vec![button("Delete", "delete", "[800,2020][1040,2100]", "")]),
+            ],
+        );
+        let gift = node(
+            "android.widget.Switch",
+            "text=\"Gift wrap\" resource-id=\"dev.example.shop:id/gift\" bounds=\"[40,2160][500,2210]\" checkable=\"true\" checked=\"false\" clickable=\"true\"",
+            &[],
+        );
+        let coupon = button("Coupon", "coupon", "[540,2160][1040,2210]", "enabled=\"false\"");
+        let pay = button("Pay now", "pay", "[40,2220][1040,2340]", "");
+        let hidden = text("Hidden promo", "[0,0][0,0]");
+        let below = button("Below fold", "below", "[40,2500][1040,2600]", "");
+        let greeting = node(
+            "android.widget.LinearLayout",
+            "bounds=\"[0,2340][1080,2400]\" clickable=\"true\" resource-id=\"dev.example.shop:id/greeting\"",
+            &[text("مرحبا بالعالم 👋 שלום", "[40,2350][1040,2395]")],
+        );
+        format!(
+            "<?xml version='1.0' encoding='UTF-8'?><hierarchy rotation=\"0\">{}</hierarchy>",
+            node(
+                "android.widget.FrameLayout",
+                "bounds=\"[0,0][1080,2400]\"",
+                &[header, search, cart, gift, coupon, pay, hidden, below, greeting]
+            )
+        )
+    }
+    fn lines(text: &str) -> Vec<&str> {
+        text.lines()
+            .filter(|l| !l.starts_with("screen ") && !l.starts_with('…'))
+            .collect()
+    }
+    fn find<'a>(text: &'a str, words: &str) -> Option<&'a str> {
+        lines(text).into_iter().find(|l| l.contains(words))
+    }
+    fn index(nodes: &[Node], words: &str) -> usize {
+        nodes.iter().position(|n| n.text == words).unwrap()
+    }
+
+    #[test]
+    fn the_whole_tree_is_chosen_from_so_a_bottom_control_survives_a_long_header() {
+        let nodes = parse(&shop()).unwrap();
+        let numbers = numbering(&nodes, 200);
+        let old = tree(&nodes, &numbers, 2000, false);
+        assert!(old.truncated && !old.text.contains("Pay now"), "the document-order prefix loses it");
+        let c = compact(&nodes, &numbers, 2000, "", false, "0123456789abcdef");
+        assert!(c.text.chars().count() <= 2000, "{}", c.text.chars().count());
+        assert!(c.truncated);
+        let pay = index(&nodes, "Pay now");
+        let line = find(&c.text, "Pay now").expect(&c.text);
+        // The raw identity is kept: reference, class, id, mark and bounds.
+        assert!(line.contains(&format!("n{pay} Button \"Pay now\" id=pay #{} (40,2220,1040,2340)", numbers[pay].unwrap())), "{line}");
+        assert!(find(&c.text, "Search products").unwrap().ends_with("editable"));
+        assert!(find(&c.text, "Gift wrap").unwrap().contains("unchecked"));
+        assert!(find(&c.text, "cart_list").unwrap().contains("scrollable"));
+        // A disabled control waits behind the enabled ones, and keeps its state.
+        assert!(find(&c.text, "Coupon").is_none());
+        let roomy = compact(&nodes, &numbers, 4000, "", false, "0123456789abcdef");
+        assert!(find(&roomy.text, "Coupon").unwrap().contains("disabled"));
+        // What was left out is counted and can be named.
+        assert_eq!(c.omitted.len() + c.selected.len(), c.records);
+        assert!(c.omitted_by["text"].as_u64().unwrap() > 0);
+        assert!(c.text.ends_with("mode detail with refs shows any record\n"));
+        assert!(!c.text.contains("Hidden promo") && c.hidden == 1);
+        // The marks of the default tree are the marks of the compact one.
+        assert_eq!(numbers, numbering(&nodes, 200));
+    }
+
+    #[test]
+    fn records_are_whole_and_the_same_at_any_budget() {
+        let nodes = parse(&shop()).unwrap();
+        let numbers = numbering(&nodes, 200);
+        let all = compact(&nodes, &numbers, 100_000, "", false, "0123456789abcdef");
+        assert!(!all.truncated);
+        let every: std::collections::BTreeSet<&str> = lines(&all.text).into_iter().collect();
+        for budget in [500, 777, 1200, 2000, 3500, 6000] {
+            let c = compact(&nodes, &numbers, budget, "", false, "0123456789abcdef");
+            assert!(c.text.chars().count() <= budget, "{budget}: {}", c.text.chars().count());
+            for line in lines(&c.text) {
+                assert!(every.contains(line), "{budget}: a record that is not whole: {line}");
+            }
+            // Deterministic: the same input gives the same text.
+            assert_eq!(c.text, compact(&nodes, &numbers, budget, "", false, "0123456789abcdef").text);
+            // Selected records come out in document order.
+            let mut sorted = c.selected.clone();
+            sorted.sort();
+            assert_eq!(sorted, c.selected);
+        }
+        // The smallest budget still keeps the editor first and says what is missing.
+        let small = compact(&nodes, &numbers, 500, "", false, "0123456789abcdef");
+        assert!(small.text.contains("Search products"), "{}", small.text);
+        assert!(small.text.contains("records not shown"));
+    }
+
+    #[test]
+    fn static_labels_fold_only_into_the_one_control_they_belong_to() {
+        let nodes = parse(&shop()).unwrap();
+        let numbers = numbering(&nodes, 200);
+        let c = compact(&nodes, &numbers, 100_000, "", false, "0123456789abcdef");
+        let (apple, price) = (index(&nodes, "Apple"), index(&nodes, "€1.20"));
+        let row = nodes[apple].parent.unwrap();
+        let line = find(&c.text, "label=\"Apple | €1.20\"").expect(&c.text);
+        assert!(line.contains(&format!("n{row} LinearLayout label=\"Apple | €1.20\" from=n{apple},n{price}")), "{line}");
+        assert!(!lines(&c.text).iter().any(|l| l.contains("\"Apple\"")), "the folded leaf is no record of its own");
+        // The control's own text stays empty: a selector on it is unchanged.
+        assert_eq!(nodes[row].text, "");
+        let d = detail(&nodes, &numbers, row);
+        assert_eq!(d["label_sources"], json!([format!("n{apple}"), format!("n{price}")]));
+        assert_eq!(detail(&nodes, &numbers, apple)["folded_into"], format!("n{row}"));
+        // A row that also holds a button is ambiguous: its text stays a record.
+        let pear = index(&nodes, "Pear");
+        assert!(find(&c.text, &format!("n{pear} TextView \"Pear\"")).is_some());
+        assert_eq!(detail(&nodes, &numbers, pear)["folded_into"], Value::Null);
+        // Text directly in a scroll region or in the header is never folded.
+        assert!(find(&c.text, "Headline 3:").is_some());
+    }
+
+    #[test]
+    fn duplicate_labels_name_their_container_and_keep_their_own_identity() {
+        let nodes = parse(&shop()).unwrap();
+        let numbers = numbering(&nodes, 200);
+        let c = compact(&nodes, &numbers, 100_000, "", false, "0123456789abcdef");
+        let deletes: Vec<&str> = lines(&c.text).into_iter().filter(|l| l.contains("\"Delete\"")).collect();
+        assert_eq!(deletes.len(), 2);
+        assert!(deletes[0].contains("in=") && deletes[0].contains("Pear"), "{}", deletes[0]);
+        assert!(deletes[1].contains("in=") && deletes[1].contains("Plum"), "{}", deletes[1]);
+        assert_ne!(deletes[0], deletes[1]);
+        // Both keep the same raw resource id; only the reference and bounds differ.
+        assert!(deletes.iter().all(|l| l.contains(" id=delete ")));
+        // A unique label gets no context.
+        assert!(!find(&c.text, "Pay now").unwrap().contains("in="));
+    }
+
+    #[test]
+    fn the_task_query_and_the_screen_decide_what_a_small_budget_keeps() {
+        let nodes = parse(&shop()).unwrap();
+        let numbers = numbering(&nodes, 200);
+        let plain = compact(&nodes, &numbers, 500, "", false, "0123456789abcdef");
+        let asked = compact(&nodes, &numbers, 500, "coupon", false, "0123456789abcdef");
+        assert!(asked.text.contains("\"Coupon\""), "{}", asked.text);
+        assert!(!plain.text.contains("\"Coupon\""), "without the query the disabled button waits for room");
+        // Off-screen nodes come last, and say so when there is room.
+        let all = compact(&nodes, &numbers, 100_000, "", false, "0123456789abcdef");
+        assert!(find(&all.text, "Below fold").unwrap().contains("offscreen"));
+        let some = compact(&nodes, &numbers, 3000, "", false, "0123456789abcdef");
+        assert!(find(&some.text, "Below fold").is_none(), "on-screen controls came first");
+        assert!(some.omitted_by["offscreen"].as_u64().unwrap() >= 1);
+        // A long text is cut in the record, marked so, and whole in detail.
+        let line = find(&all.text, "Headline 0:").unwrap();
+        assert!(line.ends_with(" cut") && line.contains('…'), "{line}");
+        let headline = nodes.iter().position(|n| n.text.starts_with("Headline 0:")).unwrap();
+        assert_eq!(detail(&nodes, &numbers, headline)["text"], nodes[headline].text);
+    }
+
+    #[test]
+    fn unicode_and_right_to_left_text_is_counted_in_characters_and_kept_whole() {
+        let nodes = parse(&shop()).unwrap();
+        let numbers = numbering(&nodes, 200);
+        let greeting = "مرحبا بالعالم 👋 שלום";
+        for budget in [1500, 4000, 100_000] {
+            let c = compact(&nodes, &numbers, budget, "مرحبا", false, "0123456789abcdef");
+            assert!(c.text.chars().count() <= budget);
+            let line = find(&c.text, "greeting").expect(&c.text);
+            assert!(line.contains(&format!("label=\"{greeting}\"")), "{line}");
+            assert!(c.text.len() > c.text.chars().count(), "bytes are not the budget");
+        }
+    }
+
+    #[test]
+    fn nested_scroll_regions_editors_and_password_fields_stay_distinct() {
+        let xml = format!(
+            "<hierarchy rotation=\"0\">{}</hierarchy>",
+            node("android.widget.ScrollView", "resource-id=\"app:id/outer\" bounds=\"[0,0][1080,2000]\" scrollable=\"true\"", &[
+                node("android.widget.LinearLayout", "resource-id=\"app:id/card\" bounds=\"[0,0][1080,600]\" clickable=\"true\"", &[
+                    text("Note", "[20,20][300,80]"),
+                    node("android.widget.EditText", "resource-id=\"app:id/note\" text=\"Your note\" bounds=\"[20,100][1060,200]\" clickable=\"true\"", &[]),
+                ]),
+                node("androidx.recyclerview.widget.RecyclerView", "resource-id=\"app:id/inner\" bounds=\"[0,600][1080,1400]\" scrollable=\"true\"", &[
+                    text("Loose text", "[20,620][800,700]"),
+                ]),
+                node("android.widget.EditText", "resource-id=\"app:id/pin\" text=\"••••\" password=\"true\" bounds=\"[20,1500][1060,1600]\" clickable=\"true\"", &[]),
+            ])
+        );
+        let nodes = parse(&xml).unwrap();
+        let numbers = numbering(&nodes, 200);
+        let c = compact(&nodes, &numbers, 100_000, "", false, "0123456789abcdef");
+        assert!(find(&c.text, "id=outer").unwrap().contains("scrollable"));
+        assert!(find(&c.text, "id=inner").unwrap().contains("scrollable"));
+        // The inner region is a record inside the outer one.
+        assert!(find(&c.text, "id=inner").unwrap().starts_with(' '));
+        // The card holds an editor, so its text is not folded into it.
+        assert!(find(&c.text, "TextView \"Note\"").is_some(), "{}", c.text);
+        assert!(find(&c.text, "\"Your note\"").unwrap().contains("editable"));
+        assert!(find(&c.text, "TextView \"Loose text\"").is_some());
+        assert_eq!(c.folded, 0);
+        // A password field is a record, but its text is never repeated.
+        let pin = find(&c.text, "id=pin").unwrap();
+        assert!(pin.contains("password") && !pin.contains('•'), "{pin}");
+        let at = nodes.iter().position(|n| n.id == "app:id/pin").unwrap();
+        let d = detail(&nodes, &numbers, at);
+        assert_eq!(d["text"], Value::Null);
+        assert_eq!(d["text_withheld"], "password");
+        assert!(reference(&nodes, "n999").is_err() && reference(&nodes, "x1").is_err());
+        assert_eq!(reference(&nodes, &format!("n{at}")).unwrap(), at);
+    }
+
+    /// The same offline fixture through both modes at the same budgets: the
+    /// characters, bytes and marks each keeps, on and off the window.
+    /// Fixture data, not a measurement of any device or model.
+    #[test]
+    fn at_equal_budgets_compact_keeps_the_on_screen_controls_the_tree_keeps() {
+        let nodes = parse(&shop()).unwrap();
+        let numbers = numbering(&nodes, 200);
+        let (_, height) = viewport(&nodes);
+        let on_screen: Vec<usize> = (0..nodes.len()).filter(|i| numbers[*i].is_some() && nodes[*i].rect.1 < height).collect();
+        let off_screen = numbers.iter().flatten().count() - on_screen.len();
+        let kept = |text: &str, wanted: &[usize]| {
+            wanted
+                .iter()
+                .filter(|i| text.split(char::is_whitespace).any(|w| w == format!("#{}", numbers[**i].unwrap())))
+                .count()
+        };
+        let full_tree = tree(&nodes, &numbers, 100_000, false).text;
+        let full_compact = compact(&nodes, &numbers, 100_000, "", false, "0123456789abcdef").text;
+        let mut rows = vec![format!(
+            "unbudgeted: tree {} chars, compact {} chars; {} marks on the window, {off_screen} below it",
+            full_tree.chars().count(), full_compact.chars().count(), on_screen.len()
+        )];
+        for budget in [1500, 3000, 6000] {
+            let t = tree(&nodes, &numbers, budget, false);
+            let c = compact(&nodes, &numbers, budget, "", false, "0123456789abcdef");
+            let all: Vec<usize> = (0..nodes.len()).filter(|i| numbers[*i].is_some()).collect();
+            let (t_on, c_on) = (kept(&t.text, &on_screen), kept(&c.text, &on_screen));
+            assert!(c_on >= t_on, "{budget}: compact keeps {c_on} on-screen marks, tree {t_on}");
+            assert!(c.text.contains("Pay now"), "{budget}");
+            rows.push(format!(
+                "budget {budget}: tree {} chars {} bytes, marks {}/{} (on window {t_on}/{}), pay_now={}; compact {} chars {} bytes, marks {}/{} (on window {c_on}/{}), pay_now=true, omitted {}",
+                t.text.chars().count(), t.text.len(), kept(&t.text, &all), all.len(), on_screen.len(), t.text.contains("Pay now"),
+                c.text.chars().count(), c.text.len(), kept(&c.text, &all), all.len(), on_screen.len(), c.omitted.len()
+            ));
+        }
+        eprintln!("FIXTURE-MEASUREMENT\n{}", rows.join("\n"));
     }
 }

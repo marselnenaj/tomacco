@@ -92,6 +92,48 @@ def write_login_scenario(root, name="login", size=(360, 640), focus_after_ms=120
     return directory
 
 
+SEARCH_FIELD = "XCUIElementTypeSearchField"
+
+
+def write_search_scenario(root, name="search", write="accept", focus_after_ms=120, placeholder="Search", value="",
+                          focused_element=None):
+    """A search screen with scripted editors for the verified fill (native/runtime/fixture.rs):
+    a search field at 0.5, 0.2 that takes the focus focus_after_ms after its tap, a
+    secure PIN field at 0.5, 0.5 and a note field at 0.5, 0.35. Return on the search
+    field leads to a results screen. write is the search field's fault mode (accept,
+    lose_reply, refuse, drop_last or replace). Returns the scenario directory."""
+    directory = Path(root) / name
+    directory.mkdir(parents=True, exist_ok=True)
+    size = (360, 640)
+    w, h = size
+    render(directory / "search.png", size, "Search")
+    render(directory / "results.png", size, "Results", shade=(220, 228, 236))
+    (directory / "search.xml").write_text(hierarchy(w, h, 0, [
+        {"class": "android.widget.EditText", "id": "query", "rect": (20, 100, 340, 150)},
+        {"class": "android.widget.EditText", "id": "note", "rect": (20, 200, 340, 250)},
+        {"class": "android.widget.EditText", "id": "pin", "rect": (20, 300, 340, 350)}]))
+    (directory / "results.xml").write_text(hierarchy(w, h, 0, [
+        {"class": "android.widget.TextView", "text": "Results for tomacco", "rect": (20, 100, w - 20, 160)}]))
+    fields = [
+        {"element": "q-1", "class": SEARCH_FIELD, "name": "query", "label": "Search", "placeholder": placeholder,
+         "value": value, "left": 20, "top": 100, "right": 340, "bottom": 150, "focus_after_ms": focus_after_ms, "write": write},
+        {"element": "note-1", "class": "XCUIElementTypeTextField", "name": "note", "label": "Note", "placeholder": "",
+         "value": "draft", "left": 20, "top": 200, "right": 340, "bottom": 250},
+        {"element": "pin-1", "class": "XCUIElementTypeSecureTextField", "name": "pin", "label": "PIN", "placeholder": "",
+         "value": "2468", "left": 20, "top": 300, "right": 340, "bottom": 350}]
+    app = {"bundle_id": "com.example.search", "name": "Search", "home_screen": False}
+    home = {"frame": "search.png", "hierarchy": "search.xml", "app": app, "keyboard": False, "focused": False,
+            "fields": fields, "submit_to": "results", "key_to": {"back": "home"}}
+    if focused_element:
+        home["focused_element"] = focused_element
+    scenario = {"initial": "home", "latency_ms": 0, "states": {
+        "home": home,
+        "results": {"frame": "results.png", "hierarchy": "results.xml", "app": app, "keyboard": False, "focused": False,
+                    "key_to": {"back": "home"}}}}
+    (directory / "scenario.json").write_text(json.dumps(scenario, indent=1))
+    return directory
+
+
 class Isolated:
     """A scratch home with the fixture runtime on and every device helper trapped."""
 

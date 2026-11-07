@@ -16,6 +16,15 @@ const DEFAULT_RUNNER: &str = "com.facebook.WebDriverAgentRunner.xctrunner";
 fn err(message: impl Into<String>) -> Error {
     Error::new("iphone_runtime", message)
 }
+/// A request that never reached WebDriverAgent: nothing on the phone changed.
+fn not_sent(message: impl Into<String>) -> Error {
+    err(message).details(json!({"delivery":"not_sent"}))
+}
+/// A request that may have reached WebDriverAgent, with no answer to show
+/// what it did.
+fn unanswered(message: impl Into<String>) -> Error {
+    err(message).details(json!({"delivery":"unknown"}))
+}
 /// The hardware identifier the iPhone reports, such as `iPhone18,4`, or ""
 /// when ideviceinfo is missing or the answer is not one.
 fn product_type(device: &str) -> String {
@@ -96,10 +105,11 @@ impl Http {
             tokio::net::TcpStream::connect((Ipv4Addr::LOCALHOST, self.port)),
         )
         .await
-        .map_err(|_| err("USB connection timed out"))??;
+        .map_err(|_| not_sent("USB connection timed out"))?
+        .map_err(|e| not_sent(e.to_string()))?;
         let (mut sender, connection) = hyper::client::conn::http1::handshake(TokioIo::new(socket))
             .await
-            .map_err(|e| err(e.to_string()))?;
+            .map_err(|e| not_sent(e.to_string()))?;
         tokio::spawn(async move {
             let _ = connection.await;
         });
@@ -112,11 +122,12 @@ impl Http {
             .body(Full::new(Bytes::from(
                 body.map(Value::to_string).unwrap_or_default(),
             )))
-            .map_err(|e| err(e.to_string()))?;
+            .map_err(|e| not_sent(e.to_string()))?;
+        // From here on the request may have been carried out.
         tokio::time::timeout(Duration::from_secs(20), sender.send_request(request))
             .await
-            .map_err(|_| err("WebDriverAgent did not respond"))?
-            .map_err(|e| err(e.to_string()))
+            .map_err(|_| unanswered("WebDriverAgent did not respond"))?
+            .map_err(|e| unanswered(e.to_string()))
     }
     async fn json(&self, method: &str, path: &str, body: Option<&Value>) -> Result {
         let response = self.request(method, path, body).await?;
@@ -125,22 +136,23 @@ impl Http {
         let mut bytes = Vec::new();
         while let Some(frame) = tokio::time::timeout(Duration::from_secs(20), incoming.frame())
             .await
-            .map_err(|_| err("WebDriverAgent response timed out"))?
+            .map_err(|_| unanswered("WebDriverAgent response timed out"))?
         {
-            let frame = frame.map_err(|e| err(e.to_string()))?;
+            let frame = frame.map_err(|e| unanswered(e.to_string()))?;
             if let Ok(data) = frame.into_data() {
                 if bytes.len() + data.len() > LIMIT {
-                    return Err(err("WebDriverAgent response exceeds 16 MiB"));
+                    return Err(unanswered("WebDriverAgent response exceeds 16 MiB"));
                 }
                 bytes.extend_from_slice(&data);
             }
         }
-        let result: Value = serde_json::from_slice(&bytes)?;
+        let result: Value = serde_json::from_slice(&bytes)
+            .map_err(|e| unanswered(format!("WebDriverAgent answered no JSON: {e}")))?;
         if !status.is_success() || result["value"]["error"].is_string() {
             return Err(err(result["value"]["message"]
                 .as_str()
                 .unwrap_or("WebDriverAgent request failed"))
-            .details(json!({"status":status.as_u16(),"response":result})));
+            .details(json!({"status":status.as_u16(),"response":result,"delivery":"answered"})));
         }
         Ok(result)
     }
@@ -414,6 +426,109 @@ impl Iphone {
                 }
             }
         }
+    }
+}
+
+/// How a WebDriverAgent call failed, for the verified fill: never sent,
+/// answered with a refusal (W3C `stale element reference` and `no such
+/// element` told apart), or sent without an answer.
+fn failure(error: Error) -> field::Failure {
+    let details = error.details.as_deref().cloned().unwrap_or(Value::Null);
+    let fault = match s(&details, "delivery") {
+        "not_sent" => field::Fault::NotSent,
+        "answered" => match s(&details["response"]["value"], "error") {
+            "stale element reference" => field::Fault::Stale,
+            "no such element" => field::Fault::Missing,
+            _ => field::Fault::Refused,
+        },
+        _ => field::Fault::Lost,
+    };
+    field::Failure::new(fault, error.message)
+}
+fn element_id(value: &Value) -> Option<&str> {
+    value["element-6066-11e4-a52e-4f735466cecf"]
+        .as_str()
+        .or_else(|| value["ELEMENT"].as_str())
+}
+/// WebDriverAgent's element routes for the verified fill. Each read is one
+/// request on the same session and element ID; the value of a secure field
+/// is never requested (native/runtime/field.rs checks the class first).
+impl field::FieldDriver for Iphone {
+    fn evidence(&self) -> &'static str {
+        "wda"
+    }
+    fn tap(&mut self, a: &Value) -> field::Step<(f64, f64)> {
+        self.dimensions().map_err(failure)?;
+        let at = self.point(a, "x", "y");
+        self.call("POST", "/wda/tap", Some(&at)).map_err(failure)?;
+        Ok((number(&at, "x"), number(&at, "y")))
+    }
+    fn active(&mut self) -> field::Step<Option<String>> {
+        match self.call("GET", "/element/active", None).map_err(failure) {
+            Ok(found) => match element_id(&found) {
+                Some(id) if identifier(id, "element ID", Some("[A-Za-z0-9-]+")).is_ok() => Ok(Some(id.to_string())),
+                Some(_) => Err(field::Failure::new(field::Fault::Refused, "WebDriverAgent answered an invalid element ID")),
+                None => Ok(None),
+            },
+            Err(f) if f.fault == field::Fault::Missing => Ok(None),
+            Err(f) => Err(f),
+        }
+    }
+    fn describe(&mut self, id: &str) -> field::Step<field::Editor> {
+        let attribute = |name: &str| {
+            self.call("GET", &format!("/element/{id}/attribute/{name}"), None)
+                .map_err(failure)
+        };
+        let text = |v: Value| v.as_str().unwrap_or("").to_string();
+        let class = text(attribute("type")?);
+        let name = text(attribute("name")?);
+        let label = text(attribute("label")?);
+        let placeholder = text(attribute("placeholderValue")?);
+        let enabled = match attribute("enabled")? {
+            Value::Bool(v) => v,
+            Value::String(v) => v == "true" || v == "1",
+            Value::Number(v) => v.as_u64() == Some(1),
+            _ => false,
+        };
+        let rect = self
+            .call("GET", &format!("/element/{id}/rect"), None)
+            .map_err(failure)?;
+        let rect = ["x", "y", "width", "height"]
+            .iter()
+            .map(|k| rect[k].as_f64())
+            .collect::<Option<Vec<f64>>>()
+            .map(|r| (r[0], r[1], r[2], r[3]));
+        Ok(field::Editor {
+            class,
+            name,
+            label,
+            placeholder,
+            rect,
+            enabled,
+        })
+    }
+    fn value(&mut self, id: &str) -> field::Step<Option<String>> {
+        let value = self
+            .call("GET", &format!("/element/{id}/attribute/value"), None)
+            .map_err(failure)?;
+        Ok(match value {
+            Value::Null => None,
+            Value::String(v) => Some(v),
+            other => Some(other.to_string()),
+        })
+    }
+    fn clear(&mut self, id: &str) -> field::Step<()> {
+        self.call("POST", &format!("/element/{id}/clear"), Some(&json!({})))
+            .map(|_| ())
+            .map_err(failure)
+    }
+    fn write(&mut self, id: &str, text: &str) -> field::Step<()> {
+        self.call("POST", &format!("/element/{id}/value"), Some(&json!({"value":[text]})))
+            .map(|_| ())
+            .map_err(failure)
+    }
+    fn submit(&mut self) -> field::Step<()> {
+        self.text("\n").map(|_| ()).map_err(failure)
     }
 }
 
@@ -731,6 +846,13 @@ impl Device for Iphone {
             )),
         }
     }
+    fn verified_fill(&mut self, a: &Value) -> Result {
+        field::fill(self, a)
+    }
+    fn fill_verification(&self) -> Value {
+        json!({"supported":true,"evidence":"wda","editors":field::SUPPORTED,
+            "note":"Reads the focused element's type, rect and placeholder and its value before and after writing, on one WebDriverAgent session and element ID. Secure fields are refused unread. Contract-tested against a loopback WebDriverAgent double, not yet on hardware."})
+    }
     fn capture(&mut self, path: &Path) -> Result {
         let data = self.screenshot()?;
         atomic_write(path, &data)?;
@@ -1025,6 +1147,446 @@ mod tests {
             .unwrap();
         assert_eq!(pointer(trace)[3]["duration"], 280);
         assert_eq!(calls.last().unwrap()["method"], "DELETE");
+    }
+    // ---- Verified fill against a loopback WebDriverAgent double -------------
+    // A contract test of the requests and their order, explicitly not a
+    // physical-iPhone test: the double answers as WebDriverAgent's W3C routes
+    // do, including `no such element`, `stale element reference`, an empty
+    // field's placeholder reported as its value, and a lost reply.
+
+    #[derive(Clone)]
+    struct El {
+        class: &'static str,
+        name: String,
+        placeholder: String,
+        value: String,
+        rect: (f64, f64, f64, f64),
+        enabled: bool,
+    }
+    fn el(class: &'static str, name: &str, placeholder: &str, value: &str, top: f64) -> El {
+        El {
+            class,
+            name: name.into(),
+            placeholder: placeholder.into(),
+            value: value.into(),
+            rect: (20.0, top, 350.0, 44.0),
+            enabled: true,
+        }
+    }
+    #[derive(Default)]
+    struct Wda {
+        elements: std::collections::BTreeMap<String, El>,
+        active: Option<String>,
+        /// The element a tap focuses, after `focus_after` polls of the focus.
+        on_tap: Option<String>,
+        focus_after: u32,
+        pending: Option<u32>,
+        /// accept, lose_reply, autocorrect, stale_value or replace_after_write.
+        mode: &'static str,
+        calls: Vec<Value>,
+    }
+    /// One WebDriverAgent answer, or None to drop the connection unanswered.
+    fn answer(w: &mut Wda, method: &str, route: &str, body: &Value) -> Option<(u16, Value)> {
+        let ok = |v: Value| Some((200, json!({"value":v})));
+        let fail = |status: u16, error: &str| Some((status, json!({"value":{"error":error,"message":format!("{error} (double)")}})));
+        let route = route.strip_prefix("/session/test").unwrap_or(route).to_string();
+        let parts: Vec<&str> = route.trim_start_matches('/').split('/').collect();
+        let shown = |e: &El| {
+            if e.value.is_empty() {
+                if e.placeholder.is_empty() { Value::Null } else { json!(e.placeholder) }
+            } else {
+                json!(e.value)
+            }
+        };
+        match (method, parts.as_slice()) {
+            ("GET", ["window", "size"]) => ok(json!({"width":390,"height":844})),
+            ("GET", ["orientation"]) => ok(json!("PORTRAIT")),
+            ("POST", ["wda", "tap"]) => {
+                if w.on_tap.is_some() {
+                    if w.focus_after == 0 {
+                        w.active = w.on_tap.clone();
+                    } else {
+                        w.pending = Some(w.focus_after);
+                    }
+                }
+                ok(Value::Null)
+            }
+            ("GET", ["element", "active"]) => {
+                if let Some(left) = w.pending {
+                    if left <= 1 {
+                        w.pending = None;
+                        w.active = w.on_tap.clone();
+                    } else {
+                        w.pending = Some(left - 1);
+                    }
+                }
+                match &w.active {
+                    Some(id) => ok(json!({"element-6066-11e4-a52e-4f735466cecf":id})),
+                    None => fail(404, "no such element"),
+                }
+            }
+            ("GET", ["element", id, "attribute", name]) => {
+                let Some(e) = w.elements.get(*id) else {
+                    return fail(404, "stale element reference");
+                };
+                if *name == "value" && w.mode == "stale_value" {
+                    return fail(404, "stale element reference");
+                }
+                ok(match *name {
+                    "type" => json!(e.class),
+                    "name" | "label" => json!(e.name),
+                    "placeholderValue" => if e.placeholder.is_empty() { Value::Null } else { json!(e.placeholder) },
+                    "enabled" => json!(e.enabled),
+                    "value" if e.class == field::SECURE => json!("\u{2022}\u{2022}\u{2022}"),
+                    "value" => shown(e),
+                    _ => Value::Null,
+                })
+            }
+            ("GET", ["element", id, "rect"]) => match w.elements.get(*id) {
+                Some(e) => ok(json!({"x":e.rect.0,"y":e.rect.1,"width":e.rect.2,"height":e.rect.3})),
+                None => fail(404, "stale element reference"),
+            },
+            ("POST", ["element", id, "clear"]) => match w.elements.get_mut(*id) {
+                Some(e) => {
+                    e.value.clear();
+                    ok(Value::Null)
+                }
+                None => fail(404, "stale element reference"),
+            },
+            ("POST", ["element", id, "value"]) => {
+                let text = body["value"][0].as_str().unwrap_or("").to_string();
+                let mode = w.mode;
+                let Some(e) = w.elements.get_mut(*id) else {
+                    return fail(404, "stale element reference");
+                };
+                e.value.push_str(&if mode == "autocorrect" { text.replace("teh", "the") } else { text });
+                match mode {
+                    "lose_reply" => None,
+                    "replace_after_write" => {
+                        let rebuilt = w.elements.remove(*id).unwrap();
+                        w.elements.insert(format!("{id}-2"), rebuilt);
+                        w.active = Some(format!("{id}-2"));
+                        ok(Value::Null)
+                    }
+                    _ => ok(Value::Null),
+                }
+            }
+            _ => ok(Value::Null),
+        }
+    }
+    /// Runs a fill against the double; answers the result, every request in
+    /// order and the values the double's fields hold afterwards.
+    fn fill_on(wda: Wda, a: Value) -> (Result, Vec<Value>, std::collections::BTreeMap<String, String>) {
+        let listener = TcpListener::bind((Ipv4Addr::LOCALHOST, 0)).unwrap();
+        listener.set_nonblocking(true).unwrap();
+        let port = listener.local_addr().unwrap().port();
+        let state = Arc::new(Mutex::new(wda));
+        let shared = state.clone();
+        let stop = Arc::new(AtomicBool::new(false));
+        let stopping = stop.clone();
+        let server = thread::spawn(move || {
+            while !stopping.load(Ordering::Relaxed) {
+                let Ok((mut socket, _)) = listener.accept() else {
+                    thread::sleep(Duration::from_millis(2));
+                    continue;
+                };
+                socket.set_nonblocking(false).unwrap();
+                socket.set_read_timeout(Some(Duration::from_secs(2))).unwrap();
+                let mut reader = BufReader::new(socket.try_clone().unwrap());
+                let mut line = String::new();
+                if reader.read_line(&mut line).unwrap_or(0) == 0 {
+                    continue;
+                }
+                let words = line.split_whitespace().map(str::to_string).collect::<Vec<_>>();
+                let mut length = 0;
+                loop {
+                    line.clear();
+                    reader.read_line(&mut line).unwrap();
+                    if line == "\r\n" {
+                        break;
+                    }
+                    if let Some((key, value)) = line.split_once(':') {
+                        if key.eq_ignore_ascii_case("content-length") {
+                            length = value.trim().parse::<usize>().unwrap();
+                        }
+                    }
+                }
+                let mut body = vec![0; length];
+                reader.read_exact(&mut body).unwrap();
+                let body = serde_json::from_slice::<Value>(&body).unwrap_or(Value::Null);
+                let mut w = shared.lock().unwrap();
+                w.calls.push(json!({"method":words[0],"route":words[1],"body":body}));
+                let reply = answer(&mut w, &words[0], &words[1], &body);
+                drop(w);
+                if let Some((status, value)) = reply {
+                    let text = value.to_string();
+                    let _ = write!(socket, "HTTP/1.1 {status} OK\r\nContent-Type: application/json\r\nContent-Length: {}\r\nConnection: close\r\n\r\n{text}", text.len());
+                }
+                // None: the request was carried out and the answer is lost.
+            }
+        });
+        let mut device = Iphone {
+            rt: tokio::runtime::Runtime::new().unwrap(),
+            http: Http { port },
+            session: "test".into(),
+            width: 0.0,
+            height: 0.0,
+            orientation: String::new(),
+            epoch: Arc::new(std::sync::atomic::AtomicU64::new(0)),
+            seen_epoch: 0,
+            size_requests: 0,
+            gesture: Vec::new(),
+            last_touch: None,
+            video: None,
+            shared_state: None,
+            _processes: Vec::new(),
+            _lock: None,
+        };
+        // The runtime worker's own dispatch, as runtime.input reaches it.
+        let result = super::super::deliver(&mut device, &a);
+        drop(device);
+        stop.store(true, Ordering::Relaxed);
+        server.join().unwrap();
+        let w = state.lock().unwrap();
+        let values = w.elements.iter().map(|(k, e)| (k.clone(), e.value.clone())).collect();
+        (result, w.calls.clone(), values)
+    }
+    fn requests(calls: &[Value], method: &str, suffix: &str) -> usize {
+        calls
+            .iter()
+            .filter(|c| c["method"] == method && s(c, "route").ends_with(suffix))
+            .count()
+    }
+    /// The clears and value writes the double received.
+    fn writes(calls: &[Value]) -> (usize, usize) {
+        (requests(calls, "POST", "/clear"), requests(calls, "POST", "/value"))
+    }
+    /// A screen with the intended field at the tap (0.5, 0.2 is 195, 169 in
+    /// points) and another one below it.
+    fn screen(field: El) -> Wda {
+        let mut w = Wda {
+            mode: "accept",
+            on_tap: Some("field-1".into()),
+            ..Default::default()
+        };
+        w.elements.insert("field-1".into(), field);
+        w.elements.insert("other-1".into(), el("XCUIElementTypeTextField", "other", "", "kept", 400.0));
+        w
+    }
+    fn fill(text: &str) -> Value {
+        json!({"action":"fill","x":0.5,"y":0.2,"text":text,"verify_value":true,"focus_timeout_ms":400})
+    }
+    fn code(result: &Result) -> String {
+        result.as_ref().err().map(|e| e.code.clone()).unwrap_or_default()
+    }
+    fn details(result: &Result) -> Value {
+        result.as_ref().err().and_then(|e| e.details.as_deref().cloned()).unwrap_or(Value::Null)
+    }
+    const FIELD: &str = "XCUIElementTypeTextField";
+    const SEARCH: &str = "XCUIElementTypeSearchField";
+
+    #[test]
+    fn a_verified_fill_reads_the_exact_value_back_and_skips_a_matching_one() {
+        let (result, calls, values) = fill_on(screen(el(FIELD, "email", "Email", "old@example.com", 150.0)), fill("ana@example.com"));
+        let result = result.unwrap();
+        assert_eq!((result["verified"].clone(), result["field_status"].clone()), (json!(true), json!("verified")));
+        assert_eq!(result["writes"], json!([{"op":"clear","outcome":"answered"},{"op":"value","outcome":"answered"}]));
+        assert_eq!(result["editor"]["element"], "field-1");
+        assert_eq!(result["before"], json!({"state":"text","chars":15}));
+        assert_eq!(writes(&calls), (1, 1));
+        assert_eq!(values["field-1"], "ana@example.com");
+        // Read before and after the write, on the same element ID.
+        assert_eq!(requests(&calls, "GET", "/element/field-1/attribute/value"), 2);
+        let order: Vec<&str> = calls.iter().map(|c| s(c, "route")).filter(|r| r.contains("field-1") && (r.ends_with("/value") || r.ends_with("/clear"))).collect();
+        assert_eq!(order, ["/session/test/element/field-1/attribute/value", "/session/test/element/field-1/clear", "/session/test/element/field-1/value", "/session/test/element/field-1/attribute/value"]);
+        // Already holding the text: verified with nothing written.
+        let (result, calls, _) = fill_on(screen(el(FIELD, "email", "Email", "ana@example.com", 150.0)), fill("ana@example.com"));
+        let result = result.unwrap();
+        assert_eq!(result["field_status"], "already_matching");
+        assert_eq!(result["writes"], json!([]));
+        assert_eq!(result["typed"], false);
+        assert_eq!(writes(&calls), (0, 0));
+    }
+
+    #[test]
+    fn a_placeholder_equal_to_the_text_is_never_taken_for_entered_text() {
+        // Empty, showing "Search": not skipped, written once, and the read-back
+        // "Search" cannot be told from the placeholder, so it is uncertain.
+        let (result, calls, values) = fill_on(screen(el(SEARCH, "query", "Search", "", 150.0)), fill("Search"));
+        assert_eq!(code(&result), "field_uncertain");
+        assert_eq!(details(&result)["reason"], "value_matches_placeholder");
+        assert_eq!(details(&result)["before"]["state"], "placeholder");
+        assert_eq!(writes(&calls).1, 1, "typed exactly once, never again");
+        assert_eq!(values["field-1"], "Search");
+        // Clearing a field to its placeholder is verified: no entered text is left.
+        let (result, calls, values) = fill_on(screen(el(SEARCH, "query", "Search", "old query", 150.0)), fill(""));
+        let result = result.unwrap();
+        assert_eq!(result["value"]["shows_placeholder"], true);
+        assert_eq!(writes(&calls), (1, 0), "an empty text clears and types nothing");
+        assert_eq!(values["field-1"], "");
+    }
+
+    #[test]
+    fn focus_must_reach_the_tapped_field_within_the_wait() {
+        // The field takes the focus on the fourth look: waited for, then verified.
+        let mut w = screen(el(FIELD, "name", "", "", 150.0));
+        w.focus_after = 4;
+        let (result, _, _) = fill_on(w, fill("Ada"));
+        let result = result.unwrap();
+        assert!(n(&result, "focus_polls") >= 4, "{result}");
+        // Nothing takes the focus: nothing typed.
+        let mut w = screen(el(FIELD, "name", "", "", 150.0));
+        w.on_tap = None;
+        let (result, calls, _) = fill_on(w, fill("Ada"));
+        assert_eq!(code(&result), "field_not_focused");
+        assert_eq!(details(&result)["typed"], false);
+        assert_eq!(writes(&calls), (0, 0));
+        // Another field keeps the focus: it does not cover the tap, nothing typed.
+        let mut w = screen(el(FIELD, "name", "", "", 150.0));
+        w.on_tap = None;
+        w.active = Some("other-1".into());
+        let (result, calls, values) = fill_on(w, fill("Ada"));
+        assert_eq!(code(&result), "field_wrong_target");
+        assert_eq!(details(&result)["focused"]["name"], "other");
+        assert_eq!(writes(&calls), (0, 0));
+        assert_eq!(values["other-1"], "kept");
+        // A search field that moves as it takes the focus is found by its name.
+        let mut moved = el(SEARCH, "query", "Search", "", 40.0);
+        moved.rect.1 = 40.0;
+        let mut a = fill("tomacco");
+        a["field_name"] = json!("query");
+        let (result, _, _) = fill_on(screen(moved.clone()), a.clone());
+        assert_eq!(result.unwrap()["field_status"], "verified");
+        let (result, _, _) = fill_on(screen(moved), fill("tomacco"));
+        assert_eq!(code(&result), "field_wrong_target", "without a name, a field away from the tap is not trusted");
+    }
+
+    #[test]
+    fn a_replaced_or_unreadable_field_never_reports_success() {
+        // Replaced before anything was typed: refused, nothing written.
+        let mut w = screen(el(FIELD, "name", "", "old", 150.0));
+        w.mode = "stale_value";
+        let (result, calls, _) = fill_on(w, fill("Ada"));
+        assert_eq!(code(&result), "field_stale");
+        assert_eq!(writes(&calls), (0, 0));
+        // Replaced as it was written: the text went out once, the outcome is unknown.
+        let mut w = screen(el(FIELD, "name", "", "", 150.0));
+        w.mode = "replace_after_write";
+        let (result, calls, _) = fill_on(w, fill("Ada"));
+        assert_eq!(code(&result), "field_uncertain");
+        assert_eq!(details(&result)["reason"], "field_replaced");
+        assert_eq!(writes(&calls), (0, 1));
+        // A different value read back (autocorrection): uncertain, typed once.
+        let mut w = screen(el(FIELD, "name", "", "", 150.0));
+        w.mode = "autocorrect";
+        let (result, calls, values) = fill_on(w, fill("teh cat"));
+        assert_eq!(code(&result), "field_uncertain");
+        assert_eq!(details(&result)["reason"], "value_mismatch");
+        assert_eq!(details(&result)["observed"]["value"], "the cat");
+        assert_eq!(writes(&calls), (0, 1));
+        assert_eq!(values["field-1"], "the cat");
+        // The write was carried out and its answer lost: uncertain, exactly one write.
+        let mut w = screen(el(FIELD, "name", "", "", 150.0));
+        w.mode = "lose_reply";
+        let (result, calls, values) = fill_on(w, fill("Ada"));
+        assert_eq!(code(&result), "field_uncertain");
+        assert_eq!(details(&result)["reason"], "write_unknown");
+        assert_eq!(details(&result)["writes"], json!([{"op":"value","outcome":"lost_reply"}]));
+        assert_eq!(details(&result)["retried"], false);
+        assert_eq!(writes(&calls), (0, 1));
+        assert_eq!(values["field-1"], "Ada", "the double did type it");
+        let last = calls.iter().rev().find(|c| c["method"] != "DELETE").unwrap();
+        assert!(s(last, "route").ends_with("/element/field-1/value"), "nothing followed the lost write: {last}");
+    }
+
+    #[test]
+    fn unicode_is_written_and_compared_exactly() {
+        let text = "Gr\u{fc}\u{df}e \u{65e5}\u{672c} \u{1f3b5} \u{645}\u{631}\u{62d}\u{628}\u{627} \u{5e9}\u{5dc}\u{5d5}\u{5dd} e\u{301} %s $(literal) \"q\"";
+        let (result, calls, values) = fill_on(screen(el(FIELD, "name", "", "", 150.0)), fill(text));
+        let result = result.unwrap();
+        assert_eq!(result["value"]["chars"], text.chars().count());
+        assert_eq!(values["field-1"], text);
+        let write = calls.iter().find(|c| s(c, "route").ends_with("/element/field-1/value")).unwrap();
+        assert_eq!(write["body"]["value"], json!([text]));
+        // Precomposed and decomposed é are different texts: not verified.
+        let (result, calls, _) = fill_on(screen(el(FIELD, "name", "", "caf\u{e9}", 150.0)), fill("cafe\u{301}"));
+        assert_eq!(result.unwrap()["field_status"], "verified");
+        assert_eq!(writes(&calls), (1, 1), "a canonically equal value is still rewritten, not skipped");
+    }
+
+    #[test]
+    fn secure_and_unsupported_editors_are_refused_unread() {
+        let (result, calls, values) = fill_on(screen(el(field::SECURE, "password", "Password", "hunter2", 150.0)), fill("x"));
+        assert_eq!(code(&result), "field_unsupported");
+        assert_eq!(details(&result)["reason"], "secure_field");
+        assert_eq!(requests(&calls, "GET", "/attribute/value"), 0, "a secure field's value is never requested");
+        assert_eq!(writes(&calls), (0, 0));
+        assert_eq!(values["field-1"], "hunter2");
+        assert!(!result.unwrap_err().value().to_string().contains("hunter2"));
+        let (result, calls, _) = fill_on(screen(el("XCUIElementTypeButton", "Go", "", "", 150.0)), fill("x"));
+        assert_eq!(code(&result), "field_unsupported");
+        assert_eq!(details(&result)["reason"], "not_a_text_editor");
+        assert_eq!(writes(&calls), (0, 0));
+        let mut disabled = el(FIELD, "name", "", "", 150.0);
+        disabled.enabled = false;
+        let (result, calls, _) = fill_on(screen(disabled), fill("x"));
+        assert_eq!(details(&result)["reason"], "disabled");
+        assert_eq!(writes(&calls), (0, 0));
+    }
+
+    #[test]
+    fn submit_sends_one_return_only_after_the_value_is_verified() {
+        let mut a = fill("tomacco");
+        a["submit"] = json!(true);
+        let (result, calls, _) = fill_on(screen(el(SEARCH, "query", "Search", "", 150.0)), a.clone());
+        let result = result.unwrap();
+        assert_eq!(result["submitted"], true);
+        let keys: Vec<&Value> = calls.iter().filter(|c| s(c, "route").ends_with("/wda/keys")).collect();
+        assert_eq!(keys.len(), 1);
+        assert_eq!(keys[0]["body"]["value"], json!(["\n"]));
+        let value_at = calls.iter().position(|c| s(c, "route").ends_with("/element/field-1/value")).unwrap();
+        let keys_at = calls.iter().position(|c| s(c, "route").ends_with("/wda/keys")).unwrap();
+        assert!(keys_at > value_at);
+        // A value that does not match is not submitted.
+        let mut w = screen(el(SEARCH, "query", "Search", "", 150.0));
+        w.mode = "autocorrect";
+        let mut a = fill("teh");
+        a["submit"] = json!(true);
+        let (result, calls, _) = fill_on(w, a);
+        assert_eq!(code(&result), "field_uncertain");
+        assert_eq!(requests(&calls, "POST", "/wda/keys"), 0);
+        // submit without verify_value is refused before anything is sent.
+        let (result, calls, _) = fill_on(screen(el(SEARCH, "query", "", "", 150.0)), json!({"action":"fill","x":0.5,"y":0.2,"text":"a","submit":true}));
+        assert_eq!(code(&result), "invalid_argument");
+        assert!(calls.iter().all(|c| c["method"] == "DELETE"), "{calls:?}");
+    }
+
+    #[test]
+    fn an_unreachable_agent_is_named_and_nothing_counts_as_typed() {
+        // No double behind the port: the tap was never sent.
+        let port = TcpListener::bind((Ipv4Addr::LOCALHOST, 0)).unwrap().local_addr().unwrap().port();
+        let mut device = Iphone {
+            rt: tokio::runtime::Runtime::new().unwrap(),
+            http: Http { port },
+            session: String::new(),
+            width: 0.0,
+            height: 0.0,
+            orientation: String::new(),
+            epoch: Arc::new(std::sync::atomic::AtomicU64::new(0)),
+            seen_epoch: 0,
+            size_requests: 0,
+            gesture: Vec::new(),
+            last_touch: None,
+            video: None,
+            shared_state: None,
+            _processes: Vec::new(),
+            _lock: None,
+        };
+        let result = super::super::deliver(&mut device, &fill("Ada"));
+        assert_eq!(code(&result), "field_tap_failed");
+        assert_eq!(details(&result)["tapped"], false);
+        assert_eq!(details(&result)["typed"], false);
+        assert_eq!(device.fill_verification()["supported"], true);
     }
     #[test]
     fn jpeg_sizes_are_read_from_the_start_of_frame_header() {

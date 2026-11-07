@@ -56,16 +56,20 @@ tomaccoctl call screen.tap '{"device":"<device>","mark":1}'
 
 **Read UI tree as text**
 
-Read the Android UI hierarchy as a short indented text for a model's context: only the elements that carry text or a description, can be pressed or scroll, each with its class, text, id, bounds and state (checked, disabled, focused, editable), and #N on those screen.tap can tap. The first line says the screen size and the app's package. The text stops at max_chars with a last line that says how many nodes are missing. Android only: the virtual iPhone has no UI hierarchy (ui_hierarchy_unavailable); use screen.marks with source ocr there.
+Read the Android UI hierarchy as a short indented text for a model's context: only the elements that carry text or a description, can be pressed or scroll, each with its class, text, id, bounds and state (checked, disabled, focused, editable), and #N on those screen.tap can tap. The first line says the screen size and the app's package. The text stops at max_chars with a last line that says how many nodes are missing. mode compact instead chooses the most relevant whole records from the entire tree within max_chars (so a control at the bottom is not lost behind a long header) and says what it left out; mode detail answers the complete records of references; every mode answers the hierarchy's digest. Android only: the virtual iPhone has no UI hierarchy (ui_hierarchy_unavailable); use screen.marks with source ocr there.
 
 Annotations: writes, idempotent, open world.
 
 | Argument | Type | Required | Default | Details |
 | --- | --- | --- | --- | --- |
 | `device` | string | yes |  | non-empty; Android serial from device.list, virtual-iphone for the running virtual iPhone, or a runtime session ID from runtime.start (any connected session, including a USB iPhone: its WebDriverAgent hierarchy is read in screenshot pixels) |
-| `max_chars` | integer |  | `6000` | 500 to 100000; Longest text, in characters |
+| `max_chars` | integer |  | `6000` | 500 to 100000; Longest text, in characters (Unicode code points); for compact the budget its whole records fit in |
 | `only_interactive` | boolean |  | `false` | Leave out text that cannot be pressed |
 | `xml_path` | string |  |  | non-empty; Also keep the UI hierarchy as UIAutomator XML at this absolute path, for screen.diff |
+| `mode` | string |  | `"tree"` | one of `tree`, `compact`, `detail`; tree: the shown nodes in document order, cut at max_chars. compact: chooses from the whole tree within max_chars: the focused node, editors and query matches first, then enabled controls, stateful widgets and scroll regions, then disabled controls and text, then off-screen nodes, taking the four screen bands in turn; whole records only, each with its nN reference, and a static text that belongs to exactly one control folded into it as label=... from=nN; omitted and omitted_refs say what was left out. detail: the complete records of refs (every attribute, parent, children, label sources), password text withheld |
+| `query` | string |  |  | non-empty, up to 500 characters; For compact: words of the task (such as the button or field you are looking for); nodes whose text, description, id or folded label contains one come first. It ranks records and never changes them |
+| `refs` | array of string |  |  | 1 to 50 items; For detail: node references (nN) from a compact tree or its omitted_refs |
+| `digest` | string |  |  | matching `^[0-9a-f]{16}$`; The digest an earlier screen.tree answered: when the hierarchy is no longer the same, tree_stale is answered and nothing else is done, so references are never applied to another screen |
 
 ```sh
 tomaccoctl call screen.tree '{"device":"<device>"}'
