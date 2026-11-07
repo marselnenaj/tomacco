@@ -84,6 +84,12 @@ pub fn dispatch(name: &str, args: &Value) -> Result {
     check_cancelled()?;
     let a = arguments(name, args)?;
     let _request = jobs::Request::enter(name, &a["retry"]);
+    crate::coordination::participate(name, a, |a| route(name, a))
+}
+/// The operation's handler, with the arguments a participating input call
+/// is left with once its reservation token and request identity are taken
+/// out (coordination::participate).
+fn route(name: &str, a: Value) -> Result {
     match name {
         "doctor" => toolchain::doctor().map(crate::setup::with_next_steps),
         "capabilities" => crate::capabilities::capabilities(),
@@ -239,6 +245,9 @@ pub fn dispatch(name: &str, args: &Value) -> Result {
         name if name.starts_with("preview.") => preview::handle(name, &a),
         name if name.starts_with("remote.") => remote::handle(name, &a),
         name if name.starts_with("swift.") => swift::handle(name, &a),
+        name if name.starts_with("device.reservation.") || name.starts_with("device.request.") => {
+            crate::coordination::handle(name, &a)
+        }
         name if name.starts_with("device.")
             || name.starts_with("android.")
             || name.starts_with("ios.") =>

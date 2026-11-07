@@ -139,7 +139,7 @@ status is not 0. Branch on `code`; show the user `message`; follow `remedy`. Rea
 ## Safe and destructive operations
 
 Every operation carries the four MCP annotations, and `tomaccoctl schema` shows them under
-`annotations`. Of the 288 operations, 104 are read-only and 28 are destructive.
+`annotations`. Of the 296 operations, 108 are read-only and 29 are destructive.
 
 | Annotation | What it means for an agent |
 | --- | --- |
@@ -150,7 +150,7 @@ Every operation carries the four MCP annotations, and `tomaccoctl schema` shows 
 | `openWorldHint: true` | Reaches devices, tools, files or the network outside Tomacco's own state. |
 
 The destructive ones are `catalog.remove`, `project.configure`, `job.cancel`, `storage.prune`,
-`device.install`, `device.app`, `android.each`, `android.avd_profile`, `android.emulator`,
+`device.install`, `device.app`, `device.reservation.takeover`, `android.each`, `android.avd_profile`, `android.emulator`,
 `remote.run`, `workspace.remove`, `files.write`, `release.version`, `release.notes`, `apple.simulator`,
 `apple.device`, `play.commit`, `play.abort`, `ios.emulator.restore`, `ios.virtual.cleanup`,
 `ios.virtual.state_delete`, `android.environment.preset.delete`, `android.avd_manage`, `testing.baselines`, `profile.baseline_install`, `update.apply`, `update.rollback` and `workflow.run`, which runs a destructive
@@ -203,6 +203,14 @@ A refusal is an error like any other, and nothing ran:
 - **Busy is not broken.** `workspace_busy` names the job that holds the project. Wait for it, or
   cancel it with `job.cancel` if the user agrees; do not work around it with a copy of the project.
   A third build waits as `queued` with a `queued_reason`.
+- **Give each action an identity, and never resend a lost one.** Pass a `request_id` of your own with
+  `runtime.input`, `runtime.actions`, `screen.tap` and the other input operations. After a timeout or a
+  restart, call again with the same identity: you get the recorded answer (`retained: true`), or
+  `request_outcome_unknown` when nobody can tell whether it reached the device. Then observe and decide;
+  a new attempt gets a new identity.
+- **Reserved is not broken either.** `device_reserved` names the holder and when its reservation ends.
+  Wait, or ask the person; do not take the device over yourself (`device.reservation.takeover` is for
+  the person). Reserve a device yourself (`device.reservation.acquire`) before a task of several steps.
 - **Clean up what you start.** Stop an emulator you started (`android.emulator` with `stop`) and a
   display session (`runtime.stop`) when the task is done, unless the user wants them running.
 - **Report what you could not fix.** `tomaccoctl report` writes a local bug-report bundle with the

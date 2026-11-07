@@ -2,7 +2,7 @@
 
 # `device` operations
 
-9 operations. Generated from `assets/operations.json`; [all references](index.md).
+17 operations. Generated from `assets/operations.json`; [all references](index.md).
 
 ### device.list
 
@@ -54,6 +54,131 @@ The device a person means by name: its nickname, model name, AVD or ID, compared
 
 ```sh
 tomaccoctl call device.resolve '{"name":"<name>"}'
+```
+
+### device.reservation.acquire
+
+Reserve a device. writes.
+
+Reserve one device for a multi-step task for a bounded time, so the inputs of other clients (other agents, the desktop's live view) are refused with device_reserved until you release it or it expires. Answers reservation_token, the opaque capability that holds it, once: pass it to runtime.input, runtime.gesture, runtime.actions, screen.tap, android.input, testing.action and ios.emulator.control input on that device. owner, task and reason are labels others see, not authentication. The acquisition waits up to wait_ms for inputs already admitted (a tap in flight, a finger held down) to end, else device_input_in_flight; one already held answers device_reserved with its holder and expiry. Reading the screen stays possible for everyone. The guard is cooperative between Tomacco's routes for one user account: raw adb, SSH and fastboot are not governed.
+
+- `device` string, required (non-empty, up to 200 characters): The device: an Android serial, an iPhone UDID, virtual-iphone, a nickname from device.label, or a runtime session ID, which stands for the device it shows.…
+- `owner` string, required (non-empty, up to 100 characters): Who holds it, as others should read it (claude-code: checkout test)
+- `platform` string (one of android, ios): The device's platform. Omitted, a session knows its own; otherwise a remote or a UDID means ios, anything else android.
+- `remote` string (non-empty, up to 200 characters): The remote Mac (remote.list) an iPhone is reached through; part of the device's identity.
+- `task` string (up to 200 characters): What it is reserved for
+- `reason` string (up to 500 characters): Why others should wait
+- `ttl_ms` integer (1000 to 300000; default 60000): How long the reservation lasts from now, in milliseconds (1 second to 5 minutes); renew before it runs out
+- `wait_ms` integer (0 to 30000; default 2000): How long to wait for admitted inputs of others to end
+
+```sh
+tomaccoctl call device.reservation.acquire '{"device":"<device>","owner":"<owner>"}'
+```
+
+### device.reservation.get
+
+Device reservation state. read-only, idempotent.
+
+Whether a device is reserved, by whom (owner, task, reason, the client and channel it reported), until when, whether inputs are in flight on it, and how its last reservation ended. With reservation_token, token says whether that token holds it (holds) or why not (expired, released, revoked, not_held). Never shows a token.
+
+- `device` string, required (non-empty, up to 200 characters): The device: an Android serial, an iPhone UDID, virtual-iphone, a nickname from device.label, or a runtime session ID, which stands for the device it shows.…
+- `platform` string (one of android, ios): The device's platform. Omitted, a session knows its own; otherwise a remote or a UDID means ios, anything else android.
+- `remote` string (non-empty, up to 200 characters): The remote Mac (remote.list) an iPhone is reached through; part of the device's identity.
+- `reservation_token` string (up to 200 characters): The reservation_token device.reservation.acquire answered. It is the capability that holds the reservation: keep it out of logs and prompts; Tomacco masks it…
+
+```sh
+tomaccoctl call device.reservation.get '{"device":"<device>"}'
+```
+
+### device.reservation.list
+
+Reserved devices. read-only, idempotent.
+
+Every device reserved now, with its holder's labels, expiry and inputs in flight. Never shows a token.
+
+No arguments.
+
+```sh
+tomaccoctl call device.reservation.list
+```
+
+### device.reservation.renew
+
+Renew a device reservation. writes, idempotent.
+
+Extend your reservation to ttl_ms from now. Only a reservation that still holds can be renewed: an expired, released or taken-over one answers reservation_expired, reservation_released or reservation_revoked, and a new acquisition is needed.
+
+- `device` string, required (non-empty, up to 200 characters): The device: an Android serial, an iPhone UDID, virtual-iphone, a nickname from device.label, or a runtime session ID, which stands for the device it shows.…
+- `reservation_token` string, required (up to 200 characters): The reservation_token device.reservation.acquire answered. It is the capability that holds the reservation: keep it out of logs and prompts; Tomacco masks it…
+- `platform` string (one of android, ios): The device's platform. Omitted, a session knows its own; otherwise a remote or a UDID means ios, anything else android.
+- `remote` string (non-empty, up to 200 characters): The remote Mac (remote.list) an iPhone is reached through; part of the device's identity.
+- `ttl_ms` integer (1000 to 300000; default 60000): How long the reservation lasts from now, in milliseconds (1 second to 5 minutes); renew before it runs out
+
+```sh
+tomaccoctl call device.reservation.renew '{"device":"<device>","reservation_token":"<reservation_token>"}'
+```
+
+### device.reservation.release
+
+Release a device reservation. writes, idempotent.
+
+End your reservation now, so others may use the device. Inputs the device already received are not undone; inputs still queued under the token are refused. Releasing one that already ended answers released false with how it ended.
+
+- `device` string, required (non-empty, up to 200 characters): The device: an Android serial, an iPhone UDID, virtual-iphone, a nickname from device.label, or a runtime session ID, which stands for the device it shows.…
+- `reservation_token` string, required (up to 200 characters): The reservation_token device.reservation.acquire answered. It is the capability that holds the reservation: keep it out of logs and prompts; Tomacco masks it…
+- `platform` string (one of android, ios): The device's platform. Omitted, a session knows its own; otherwise a remote or a UDID means ios, anything else android.
+- `remote` string (non-empty, up to 200 characters): The remote Mac (remote.list) an iPhone is reached through; part of the device's identity.
+
+```sh
+tomaccoctl call device.reservation.release '{"device":"<device>","reservation_token":"<reservation_token>"}'
+```
+
+### device.reservation.takeover
+
+Take over a device reservation. **destructive, ask first**.
+
+For the person at the device: end another holder's reservation explicitly, with a reason its holder is shown (reservation_revoked), and with acquire true reserve the device for yourself once admitted inputs end. Nothing the device already received is undone. Agents should not call this to get around a reservation; ask the person.
+
+- `device` string, required (non-empty, up to 200 characters): The device: an Android serial, an iPhone UDID, virtual-iphone, a nickname from device.label, or a runtime session ID, which stands for the device it shows.…
+- `reason` string, required (non-empty, up to 500 characters): Why the reservation is taken over; its holder sees it
+- `platform` string (one of android, ios): The device's platform. Omitted, a session knows its own; otherwise a remote or a UDID means ios, anything else android.
+- `remote` string (non-empty, up to 200 characters): The remote Mac (remote.list) an iPhone is reached through; part of the device's identity.
+- `acquire` boolean (default false): Reserve the device for the caller afterwards and answer its reservation_token
+- `owner` string (up to 100 characters): The new holder's label, with acquire (person when omitted)
+- `task` string (up to 200 characters): What the new reservation is for, with acquire
+- `ttl_ms` integer (1000 to 300000; default 60000): How long the reservation lasts from now, in milliseconds (1 second to 5 minutes); renew before it runs out
+- `wait_ms` integer (0 to 30000; default 5000): With acquire, how long to wait for admitted inputs to end
+
+```sh
+tomaccoctl call device.reservation.takeover '{"device":"<device>","reason":"<reason>"}'
+```
+
+### device.request.get
+
+Recorded request. read-only, idempotent.
+
+What the request ledger knows about a request_id: its operation, canonical device, route, transport and executing instance, its state (pending, completed, unknown) and status (applied, verified, refused, failed, unknown), and its children, the inputs a runtime worker recorded for it (ID/1, ID/step-2). A request whose executing process ended before it recorded an answer is settled as unknown here, never resent. advice says what to do next; decide from a fresh observation. Records hold no typed text and are kept 24 hours.
+
+- `request_id` string, required (non-empty, up to 169 characters; matching `^[A-Za-z0-9][A-Za-z0-9_.:-]{0,127}(/[A-Za-z0-9][A-Za-z0-9_.-]{0,39})?$`): The request_id you gave, or one of its children
+
+```sh
+tomaccoctl call device.request.get '{"request_id":"<request_id>"}'
+```
+
+### device.request.list
+
+Recorded requests. read-only, idempotent.
+
+The newest requests in the request ledger, optionally for one device or in one state, without their children.
+
+- `device` string (non-empty, up to 200 characters): The device: an Android serial, an iPhone UDID, virtual-iphone, a nickname from device.label, or a runtime session ID, which stands for the device it shows.…
+- `platform` string (one of android, ios): The device's platform. Omitted, a session knows its own; otherwise a remote or a UDID means ios, anything else android.
+- `remote` string (non-empty, up to 200 characters): The remote Mac (remote.list) an iPhone is reached through; part of the device's identity.
+- `state` string (one of pending, completed, unknown)
+- `limit` integer (1 to 200; default 50)
+
+```sh
+tomaccoctl call device.request.list
 ```
 
 ### device.install

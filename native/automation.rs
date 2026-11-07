@@ -206,11 +206,17 @@ pub fn action(a: &Value) -> Result {
         if op == "fill" {
             let text = s(a, "text");
             // Android's documented key combinations select the existing editable value.
-            toolchain::run(
-                &devices::shell(device, &argv(&["input", "keycombination", "113", "29"]))?,
-                15,
-                None,
-                true,
+            crate::coordination::guarded(
+                &crate::coordination::Target::new("android", "", device),
+                crate::coordination::Kind::Action,
+                || {
+                    toolchain::run(
+                        &devices::shell(device, &argv(&["input", "keycombination", "113", "29"]))?,
+                        15,
+                        None,
+                        true,
+                    )
+                },
             )?;
             devices::handle(
                 "android.input",

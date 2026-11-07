@@ -18,6 +18,7 @@ mod capabilities;
 mod catalog;
 mod completions;
 mod contact_sheet;
+mod coordination;
 mod core;
 mod coverage;
 mod crashes;

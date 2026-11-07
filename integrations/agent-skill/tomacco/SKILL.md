@@ -14,7 +14,7 @@ description: >
 # Tomacco
 
 Tomacco builds, runs, tests and inspects mobile apps on Linux. Its control plane, `tomaccoctl`,
-offers 288 typed operations. The MCP server, the JSON CLI and the desktop app call the same
+offers 296 typed operations. The MCP server, the JSON CLI and the desktop app call the same
 operations. This file is the router: it says how to reach Tomacco, how to stay safe and where each
 task lives. The operation details are in `references/`, one file per area, read only when needed.
 
@@ -83,6 +83,10 @@ it with `result.read`. `workflow.run` runs up to 20 operations in order and foll
   `policy_denied` answer is final for you: do not look for another way round it. With desktop approval
   on, a destructive MCP call waits for the person to approve it in the Tomacco window;
   `approval_denied` means no.
+- **Share a device.** Before a task of several steps, `device.reservation.acquire` it and pass its
+  `reservation_token` with every input; release it after. `device_reserved` means wait or ask, never
+  `device.reservation.takeover`. Give each input a `request_id`; repeat it after a lost answer, and on
+  `request_outcome_unknown` observe instead of resending.
 - **Look before you act and after.** A launched app is not a working app. Take a fresh screenshot
   after every step and after a rotation; marks from an earlier screen are stale (see the loops).
 - **Clean up.** Stop emulators and sessions you started (`android.emulator` with `stop`,
@@ -114,6 +118,7 @@ The `Start with` operations are the usual entry points.
 | Named QA environments (theme, font size, animations, airplane mode, app language, GPS, TalkBack): plan, apply to one named device, restore | `android.environment.preset.save`, `android.environment.plan`, `android.environment.apply`, `android.environment.restore` | [android](references/android.md) |
 | Make a 3D device video from a local recording | `demo.capabilities`, `demo.media.inspect`, `demo.scene.create` | [demo](references/demo.md) |
 | Mirror a device as a session; observe, act and verify on it | `runtime.start`, `runtime.observe`, `runtime.actions`, `runtime.stop` | [runtime](references/runtime.md) |
+| Reserve a device; ask what happened to an action after a lost answer | `device.reservation.acquire`, `device.request.get` | [device](references/device.md) |
 | Hand the device to the person (Face ID, passcode, sign-in, purchase, permission) and wait | `handoff.request`, `handoff.wait` | [handoff](references/handoff.md) |
 | Play a GPX route on an emulator's location | `gpx.inspect`, `gpx.play`, `gpx.status` | [gpx](references/gpx.md) |
 | Remote build hosts | `remote.list`, `remote.run` | [remote](references/remote.md) |

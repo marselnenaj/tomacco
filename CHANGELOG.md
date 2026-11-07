@@ -6,7 +6,7 @@ operations and their JSON results.
 
 ## Unreleased
 
-`tomaccoctl` now has one typed API of 288 operations.
+`tomaccoctl` now has one typed API of 296 operations.
 
 ### Added
 - **One fresh look for agents.** `runtime.observe` answers a frame with its id, time and age, the
@@ -24,6 +24,20 @@ operations and their JSON results.
   gets marks, taps, tree, OCR, waits, diffs and exports: its WebDriverAgent hierarchy is read in
   screenshot pixels. Marks carry the frame id and size they were made on, and a tap after a rotation
   answers `mark_stale` naming it and taps nothing.
+- **Device reservations.** `device.reservation.acquire`, `get`, `list`, `renew`, `release` and
+  `takeover` reserve one canonical device (a session stands for the device it shows) for up to five
+  minutes through an opaque `reservation_token`, kept only as a digest and masked everywhere. Every
+  input route of Tomacco's operations (the runtime worker with the desktop's live view, `android.input`,
+  the virtual iPhone's control) admits each input right before its transport: input without the token
+  is refused with the holder's labels, a queued input whose reservation expired, was released or was
+  taken over is not sent, and an acquisition waits for admitted inputs and held touches to end. The
+  guard is cooperative within one user account; raw adb, SSH and fastboot are not governed.
+- **Request identities.** A `request_id` on `runtime.input`, `runtime.gesture`, `runtime.actions`,
+  `screen.tap`, `android.input`, `testing.action` and `ios.emulator.control` input records the action
+  durably before dispatch, with the runtime worker recording each input it delivered. A repeat answers
+  the recorded outcome (`retained: true`) or `request_outcome_unknown` and sends nothing again, other
+  arguments answer `request_conflict`; `device.request.get` and `device.request.list` show the
+  records. Physical execution is still not exactly-once: a lost answer stays unknown.
 - **Offline fixture runtime.** With `TOMACCO_FIXTURE_RUNTIME` set, `runtime.start` on
   `fixture:NAME` connects a scripted device for tests and the benchmark runner, labelled
   `evidence: fixture` everywhere.

@@ -1,0 +1,118 @@
+{
+ "$comment": "Scoped record of lane A (PhoneUse-derived device reservations and durable action outcomes). Fixture and loopback evidence only; nothing here was run on, or qualifies, a physical device.",
+ "date": "2026-11-07",
+ "model": "claude-opus-5-5 (workspace-local .claude settings, Bash sandbox enabled with failIfUnavailable)",
+ "branch": "feat/phoneuse-coordination",
+ "base": "39935232845346f3c72d03c91471ba8b07cb806a",
+ "commits": {
+  "implementation": "aca88c9",
+  "record": "the commit that adds this file"
+ },
+ "upstream_reference": {
+  "review": "/home/maslos/Work/tomacco-research-20261107/phoneuse-review.json (findings device-reservations, persistent-action-ledger)",
+  "read_only_snapshots": ["phoneuse-local 0255aeab12f9a6a7019951cf1845987d43ff009e", "phoneuse-android b2bf4abe43db26bca9364236ff1d2afc31a766ce"],
+  "copied_source": false,
+  "note": "Patterns only (TTL-bounded client reservation checked at queue admission and before input; request identity committed before dispatch, conflicts on changed arguments, no automatic replay across transports). The implementation is original Tomacco Rust; no upstream code, installer, test or prompt was run."
+ },
+ "capabilities": {
+  "reservations": {
+   "operations": ["device.reservation.acquire", "device.reservation.get", "device.reservation.list", "device.reservation.renew", "device.reservation.release", "device.reservation.takeover"],
+   "module": "native/coordination.rs",
+   "canonical_device": "platform/scope/device (scope local or remote:NAME); a runtime session ID resolves to the device it shows, virtual-iphone to ios/local/virtual-iphone, a device.label nickname to its serial or UDID offline; an emulator nickname is refused (only adb knows its serial)",
+   "capability": "reservation_token = tmres_ + 64 hex digits (two UUIDv4), answered only by acquire and takeover with acquire; stored as SHA-256 only; masked by redact (key reservation_token and the tmres_ pattern) in audit, errors, job records and session logs",
+   "labels": "owner (required), task, reason are caller labels; client and channel are what the caller reported (MCP clientInfo, TOMACCO_CLIENT, desktop); none is authentication",
+   "ttl": "1000..300000 ms, default 60000; renew extends a reservation that still holds; an ended one cannot be revived",
+   "admission": "each input is admitted inside one SQLite IMMEDIATE transaction right before its transport; discrete inputs are recorded in flight while they run (bound 120 s, PID+start-time liveness), a touch from down to up (bound 60 s); acquire waits up to wait_ms (default 2000, max 30000) for others' admitted inputs, else device_input_in_flight; exactly one of concurrent acquisitions wins",
+   "early_check": "coordination::participate does the same check read-only before a participating call prepares or queues anything, so a refusal there sent nothing",
+   "refusals": ["device_reserved", "device_input_in_flight", "reservation_expired", "reservation_released", "reservation_revoked", "reservation_not_held", "reservation_limit", "device_target_unknown"],
+   "human_control": "device.reservation.takeover (destructiveHint true, reason required, optional acquire) is the explicit path; the previous holder's queued inputs then answer reservation_revoked with the reason; touch cancel is always admitted so no finger stays down",
+   "restart_and_crash": "reservations belong to the device, not the session: they survive runtime.stop/start and worker restarts; admissions of dead processes and over-long touches are purged; a token of a reservation lost (other data directory, power cut in WAL synchronous=NORMAL) answers reservation_not_held"
+  },
+  "request_ledger": {
+   "operations": ["device.request.get", "device.request.list"],
+   "module": "native/coordination/ledger.rs",
+   "participating_arguments": "request_id (^[A-Za-z0-9][A-Za-z0-9_.:-]{0,127}$) and reservation_token on runtime.input, runtime.gesture, runtime.actions, screen.tap, android.input, testing.action, ios.emulator.control (input actions only)",
+   "before_dispatch": "the executing process commits id, operation, SHA-256 of the canonical arguments (session, device, token, identity, width/height removed; device compared as its canonical key), route, transport, instance (pid:PID:START or session:ID:pid:...), state pending; synchronous=FULL",
+   "children": "the runtime worker records each input it delivers under ID/N or ID/step-N with itself as executor, before the device gets it, and never runs one child identity twice",
+   "repeat": "same intent -> recorded outcome with request.retained true, replayed false; other operation/device/arguments -> request_conflict; pending with a live executor -> request_in_progress; executor gone or answer lost -> unknown and request_outcome_unknown, never resent through the same or another session/transport; a single-input request whose caller died is settled from its worker child's record",
+   "statuses": "applied (transport took it), verified (batch whose steps' expect held), refused (provably nothing dispatched; may be repeated under the same id), failed (ran and errored; its error says what reached the device), unknown",
+   "privacy": "no typed text (summary counts characters, stored answers replace text/value by length and are redacted), no token",
+   "bounds": "24 h retention, at most 20000 rows, stored answer at most 64 KiB (else a truncated summary); owner-only files in TOMACCO_HOME/coordination",
+   "cost": "a call without request_id writes nothing to the ledger; per-frame video and pointer moves are never recorded"
+  },
+  "not_exactly_once": "A transport that loses an answer leaves the effect unknown; the ledger only prevents Tomacco from resending and tells the agent to observe."
+ },
+ "routes": {
+  "participating": [
+   {"route": "runtime worker device loop (native/runtime.rs worker -> coordination::worker_input)", "operations": ["runtime.input", "runtime.gesture", "runtime.actions", "screen.tap on a session", "desktop NativeView control-socket input (no token)"]},
+   {"route": "adb input (native/devices.rs android.input -> coordination::guarded)", "operations": ["android.input", "screen.tap on an Android serial", "testing.action on an Android serial", "testing.run Android input steps", "testing.action fill select-all (automation.rs)", "instrumented fill (instrumentation.rs)"]},
+   {"route": "virtual iPhone control (native/ios_emulator/control.rs handle -> coordination::admit)", "operations": ["ios.emulator.control click/drag/text/key/home/power_button/move/touch_*", "screen.tap, testing.action, testing.run on virtual-iphone", "ios.virtual.unlock and the startup unlock (refused while another holder has it; no token argument)"]}
+  ],
+  "not_participating": [
+   {"what": "device mutations that are not input: device.install, device.app, android.launch, android.deep_link, android.settings, android.permission, android.display, android.environment.apply/restore, ios.virtual.* lifecycle, ios.emulator.control stop/trust_cache_update", "why": "not part of this lane's input contract; each would need its own admission kind and semantics (installs and lifecycle run as jobs)"},
+   {"what": "testing.run, ios.virtual.unlock", "why": "they honour a reservation (refused when another holds the device) but take no reservation_token argument yet"},
+   {"what": "raw adb, SSH, fastboot, flashing tools, other agents, the MacBook installer", "why": "outside Tomacco's process boundary; integration protocol documented in docs/agents.md (acquire before acting, renew while working, release after, read device.reservation.get before a raw step); no Harness or deployment agent is integrated"}
+  ]
+ },
+ "examples": {
+  "cli": [
+   "tomaccoctl call device.reservation.acquire '{\"device\":\"SESSION_ID\",\"owner\":\"claude-code\",\"task\":\"checkout test\",\"ttl_ms\":120000}'",
+   "tomaccoctl call device.reservation.get '{\"device\":\"SESSION_ID\"}'",
+   "tomaccoctl call device.reservation.list '{}'",
+   "tomaccoctl call device.reservation.renew '{\"device\":\"SESSION_ID\",\"reservation_token\":\"TOKEN\",\"ttl_ms\":120000}'",
+   "tomaccoctl call device.reservation.release '{\"device\":\"SESSION_ID\",\"reservation_token\":\"TOKEN\"}'",
+   "tomaccoctl call device.reservation.takeover '{\"device\":\"emulator-5554\",\"platform\":\"android\",\"reason\":\"I need the phone\",\"acquire\":true}'",
+   "tomaccoctl call runtime.input '{\"session\":\"SESSION_ID\",\"action\":\"key\",\"key\":\"enter\",\"reservation_token\":\"TOKEN\",\"request_id\":\"submit-order-42\"}'",
+   "tomaccoctl call device.request.get '{\"request_id\":\"submit-order-42\"}'",
+   "tomaccoctl call device.request.list '{\"device\":\"SESSION_ID\",\"state\":\"unknown\"}'"
+  ],
+  "mcp": "tools/call {\"name\":\"device.reservation.acquire\",\"arguments\":{\"device\":\"virtual-iphone\",\"owner\":\"agent\"}}; tool names and inputSchema are identical to tomaccoctl schema (asserted by test_mcp_offers_the_same_operations_and_records_its_client)",
+  "schema": "assets/operations.json; generated docs/reference/device.md and integrations/agent-skill/tomacco/references/device.md"
+ },
+ "tests": {
+  "environment": "CARGO_HOME=/home/maslos/.cargo RUSTUP_HOME=/home/maslos/.rustup CARGO_NET_OFFLINE=true TMPDIR=/tmp, own target/; TOMACCOCTL=<this checkout>/target/debug/tomaccoctl (never the installed one); PYTHONPATH=.:tools:tests/python:tests; every Python test in an isolated HOME/TOMACCO_HOME/XDG/TMPDIR with adb, scrcpy, ssh, go-ios and other device helpers trapped",
+  "results": [
+   {"command": "cargo test --offline --locked", "result": "702 unit tests passed, 0 failed; tests/update_e2e.rs 2 passed", "note": "includes javascript::tests::the_server_is_up_before_the_following_commands_run, which passed in this run; its race belongs to the baseline lane"},
+   {"command": "cargo test --bin tomaccoctl coordination", "result": "10 passed (5 reservation, 5 ledger)"},
+   {"command": "python3 -m unittest test_device_coordination", "result": "13 passed: two owners on one device, other devices independent, 8 parallel acquisitions with one winner, TTL expiry of a queued request, renew/release/takeover/stale and restarted service, reserved batch not interleaved and unreserved batch stopped by a new reservation, held desktop touch delays acquisition, android.input/screen.tap/ios.emulator.control refused before their transport, ledger across process exit and sessions, lost answer and worker crash never replayed or failed over, killed caller reconciled from the worker record, no token or typed text in audit/status/records/files, MCP schema equivalence and client recording, mark taps and gestures"},
+   {"command": "tests/python sweep, every module in its own process", "result": "120 modules, 1632 tests; 118 modules passed (13 with skips for tools not installed); 2 red", "red": [
+    {"module": "test_i18n", "test": "CatalogTests.test_operation_titles_are_english_and_translated_by_name", "cause": "the 8 new operation titles are not in qml/OperationTitles.js and the 51 catalogs; this lane may not add QML/UI strings (see blockers)"},
+    {"module": "test_avd", "tests": 3, "cause": "pre-existing on this host: identical 3 failures with a binary built from the base commit (a host AVD PocketStudioQA appears in the isolated listing); unrelated to this lane"}
+   ]},
+   {"command": "python3 tools/build_reference.py --check; python3 tools/build_mobile_parity.py --check", "result": "both up to date"},
+   {"command": "cargo clippy --bin tomaccoctl", "result": "5 warnings before and after this lane, none in changed lines"}
+  ],
+  "not_run": ["CTest Qt/C++ suites (no C++ or QML changed)", "native ARM64 builds", "any physical device, USB, ADB, fastboot, SSH or network to the Pixel, MacBook or iPhone", "the installed tomaccoctl"]
+ },
+ "overhead_on_fixture": {
+  "method": ".scratch measurement script (not committed): 300 inputs over a fixture session's control socket as the desktop sends them, debug builds of the base commit and of this lane, two runs each",
+  "discrete_key_p50_ms": {"base": [0.357, 0.356], "lane": [0.517, 0.491]},
+  "touch_move_p50_ms": {"base": [0.368, 0.371], "lane": [0.436, 0.427]},
+  "note": "A local fixture, not a device's or a physical performance benchmark."
+ },
+ "i18n": {
+  "before": {"texts": 1878, "digest": "d64e05550744", "sources_listing_sha256": "039a3b494a44bc725a0c2ed567507a1924904823e4354b24c1c7b2878f34888b"},
+  "after": {"texts": 1878, "digest": "d64e05550744", "sources_listing_sha256": "039a3b494a44bc725a0c2ed567507a1924904823e4354b24c1c7b2878f34888b"},
+  "qml_and_i18n_unchanged": true,
+  "english_catalog": {"file": "i18n/tomacco_en.ts", "messages": 21, "plural_messages": 12, "other_messages": 9}
+ },
+ "touched_paths": {
+  "new": ["native/coordination.rs", "native/coordination/ledger.rs", "tests/python/test_device_coordination.py", "docs/device-coordination-progress.json"],
+  "shared_runtime": ["native/api.rs (dispatch split into participate + route; device.reservation./device.request. routed before device.)", "native/runtime.rs (session_record; coordination member on input/gesture control requests; worker target/instance and worker_input around input and gesture)", "native/runtime/actions.rs (check and mutates pub(crate); set_label step-N around run_step)", "native/runtime/fixture.rs (journal, lose_reply_after, crash_after knobs; additive)", "native/devices.rs (android.input guarded)", "native/automation.rs (fill select-all guarded)", "native/instrumentation.rs (instrumented fill guarded)", "native/ios_emulator/control.rs (input_kind + admission in handle)", "native/redact.rs (reservation_token key, tmres_ pattern)", "native/main.rs (mod coordination)"],
+  "registry_and_generated": ["assets/operations.json (8 operations after device.resolve; reservation_token and request_id added to 7 operations, one sentence appended to their descriptions)", "assets/errors.json (12 codes)", "docs/reference/*, integrations/agent-skill/tomacco/references/* (build_reference.py)", "docs/mobile-parity.json/.md (build_mobile_parity.py, new rule in tools/build_mobile_parity.py)", "assets/readme how-it-works-dark/light and social SVG/PNG, social-preview.png (generate.py; only the count changed)"],
+  "docs": ["docs/agents.md (Sharing a device section, control_socket coordination member)", "docs/agent-patterns.md", "integrations/agent-skill/tomacco/SKILL.md", "CHANGELOG.md", "README.md, docs/agent-clients.md (counts)"],
+  "not_touched": ["native/runtime/iphone.rs", "native/screen_tree.rs", "native/screen.rs", "qml/", "i18n/", "src/"]
+ },
+ "blockers": [
+  {"id": "operation-title-translations", "state": "open", "detail": "test_i18n requires every operation title in qml/OperationTitles.js, finished in all complete catalogs. This lane was told not to add QML/UI strings; the user was asked (Harness task.ask, no answer within its 30-minute bound) and the recommended option was taken: no UI strings here. The desktop falls back to the English title for these 8 operations meanwhile. The integration task should add the 8 titles (and any new titles of lane B) and translate them once for all 51 catalogs, then the check is green."},
+  {"id": "hardware", "state": "not started by design", "detail": "No physical qualification: the Pixel is in use and unreleased; every result here is fixture evidence."}
+ ],
+ "integration_notes": [
+  "Operation counts (296 operations, 108 read-only, 29 destructive) in README.md, CHANGELOG.md, docs/agent-patterns.md (count and destructive list), docs/agent-clients.md, SKILL.md, the README graphics (assets/readme/generate.py), docs/reference and the skill references (tools/build_reference.py) and docs/mobile-parity (tools/build_mobile_parity.py) must be recomputed after merging lane B's operations.",
+  "assets/operations.json: lane B may add properties to runtime.input/runtime.actions/screen.* or new operations; this lane appended reservation_token and request_id as the last two properties of 7 operations and one sentence to their descriptions, and inserted 8 operations after device.resolve.",
+  "native/runtime/actions.rs: this lane only made check/mutates pub(crate) and wrapped run_step with set_label; a new verified-fill step in lane B must keep sending its input through runtime::request (or screen::tap) so the worker admits and records it.",
+  "native/runtime/iphone.rs field read-back (lane B) runs inside the worker's device.input and is admitted as one input; reads (context, hierarchy) are never admitted or recorded.",
+  "ledger::REFUSED lists error codes that prove nothing was dispatched; new pre-send refusal codes from lane B (for example a field-not-focused or editor-mismatch refusal) should be added there so they stay retryable under the same request_id."
+ ],
+ "final_ready": "Implementation and tests complete on fixtures; branch red only on the documented title-translation check and the pre-existing host-specific test_avd failures."
+}

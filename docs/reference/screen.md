@@ -35,7 +35,7 @@ tomaccoctl call screen.marks '{"device":"<device>","path":"<path>"}'
 
 **Tap a mark**
 
-Tap the centre of a numbered mark from the last screen.marks (or screen.tree) of this device. First it checks the screen still has what the mark was made from: on Android the same element (class, resource id, text and bounds) in the UI hierarchy; for a mark read by OCR, the pixels where it was, unchanged. If not it answers mark_stale and taps nothing, so a number never lands on another element after the screen moved on. Pass duration for a long press.
+Tap the centre of a numbered mark from the last screen.marks (or screen.tree) of this device. First it checks the screen still has what the mark was made from: on Android the same element (class, resource id, text and bounds) in the UI hierarchy; for a mark read by OCR, the pixels where it was, unchanged. If not it answers mark_stale and taps nothing, so a number never lands on another element after the screen moved on. Pass duration for a long press. With reservation_token it acts under a device reservation (device.reservation.acquire); with request_id it is recorded once in the request ledger, so a repeat after a lost answer is not sent again.
 
 Annotations: writes, not idempotent, open world.
 
@@ -45,6 +45,8 @@ Annotations: writes, not idempotent, open world.
 | `mark` | integer | yes |  | 1 to 200; The mark's number in the last screen.marks result for this device |
 | `duration` | integer |  |  | 100 to 5000; Hold for this many milliseconds (a long press) instead of tapping |
 | `verify` | boolean |  | `true` | Check the screen still matches the mark before tapping; false taps where the mark was whatever is there now |
+| `reservation_token` | string |  |  | up to 200 characters; Act under this device reservation (device.reservation.acquire). A reserved device takes input only with its token; a token whose reservation expired, was released or was taken over is refused before anything is sent. |
+| `request_id` | string |  |  | non-empty, up to 128 characters; matching `^[A-Za-z0-9][A-Za-z0-9_.:-]{0,127}$`; Your identity for this action, unique per intent (order-42-submit). It is recorded with a digest of the arguments before anything is sent; repeating it with the same arguments answers the recorded outcome (retained: true) or request_outcome_unknown instead of sending again, with other arguments request_conflict. A refusal that sent nothing may be repeated under it. device.request.get shows the record. |
 
 ```sh
 tomaccoctl call screen.tap '{"device":"<device>","mark":1}'

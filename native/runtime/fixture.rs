@@ -26,6 +26,15 @@
 //! A transition with `after_ms` becomes visible only after that time, so a
 //! caller can tell an acknowledged action from a visible one. Text sent while
 //! the state is not `focused` is counted as lost, as a phone would lose it.
+//!
+//! For the coordination tests a scenario may also set `"journal": true`,
+//! which appends every input the fixture accepted to `journal.jsonl` beside
+//! it (action, key, phase, worker PID; never text), so inputs can be counted
+//! across sessions and processes; `"lose_reply_after"` (an object such as
+//! `{"action":"key","key":"home"}`), which accepts a matching input and then
+//! answers `runtime_timeout` as if its answer were lost; and
+//! `"crash_after"`, which accepts a matching input and ends the worker
+//! before it answers or records anything.
 use super::*;
 
 pub const PREFIX: &str = "fixture:";
@@ -209,8 +218,43 @@ impl Fixture {
     }
 }
 
+impl Fixture {
+    /// Whether `a` matches every member of the scenario's knob `name`.
+    fn knob(&self, name: &str, a: &Value) -> bool {
+        self.scenario[name]
+            .as_object()
+            .is_some_and(|wanted| !wanted.is_empty() && wanted.iter().all(|(k, v)| &a[k] == v))
+    }
+    /// What happens after an input was accepted: the journal and the knobs.
+    fn accepted(&self, a: &Value) -> Result<()> {
+        if self.scenario["journal"] == true {
+            use std::io::Write;
+            let line = json!({"n":self.inputs,"action":a["action"],"key":a["key"],"phase":a["phase"],
+                "pid":std::process::id(),"state":self.state});
+            let mut file = fs::OpenOptions::new()
+                .create(true)
+                .append(true)
+                .open(self.directory.join("journal.jsonl"))?;
+            writeln!(file, "{line}")?;
+            file.sync_all()?;
+        }
+        if self.knob("crash_after", a) {
+            // Accepted, then gone: no answer and no record of it.
+            std::process::exit(86);
+        }
+        if self.knob("lose_reply_after", a) {
+            return Err(Error::new(
+                "runtime_timeout",
+                "The fixture accepted the input and withheld its answer",
+            ));
+        }
+        Ok(())
+    }
+}
+
 impl Device for Fixture {
     fn input(&mut self, a: &Value) -> Result {
+        let result = (|| -> Result {
         thread::sleep(self.latency);
         self.settle();
         self.inputs += 1;
@@ -290,6 +334,11 @@ impl Device for Fixture {
             }
         }
         Ok(json!({"delivered":true,"fixture":self.evidence()}))
+        })();
+        if result.is_ok() {
+            self.accepted(a)?;
+        }
+        result
     }
     fn capture(&mut self, path: &Path) -> Result {
         thread::sleep(self.latency);

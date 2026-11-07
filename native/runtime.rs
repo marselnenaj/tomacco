@@ -382,6 +382,11 @@ fn sockets() -> Result<PathBuf> {
 fn metadata(id: &str) -> Result {
     read_json(&directory(id)?.join("state.json"), None)
 }
+/// A session's record (platform, remote, device, transport, status), read
+/// from its directory without asking its worker; also once it ended.
+pub fn session_record(id: &str) -> Result {
+    metadata(id)
+}
 pub fn request(id: &str, operation: &str, args: &Value) -> Result {
     let state = metadata(id)?;
     let mut socket = UnixStream::connect(s(&state, "control_socket")).map_err(|_| {
@@ -396,11 +401,16 @@ pub fn request(id: &str, operation: &str, args: &Value) -> Result {
         30
     })))?;
     socket.set_write_timeout(Some(Duration::from_secs(3)))?;
-    writeln!(
-        socket,
-        "{}",
-        json!({"operation":operation,"arguments":args})
-    )?;
+    let mut message = json!({"operation":operation,"arguments":args});
+    if matches!(operation, "input" | "gesture") {
+        // The call's reservation token and ledger identity travel beside the
+        // arguments, which the worker validates against the public schema.
+        let block = crate::coordination::worker_block();
+        if !block.is_null() {
+            message["coordination"] = block;
+        }
+    }
+    writeln!(socket, "{message}")?;
     let mut bytes = Vec::new();
     BufReader::new(socket)
         .take(JSON_LIMIT + 1)
@@ -699,6 +709,8 @@ fn wait_listener(listener: &UnixListener) {
 struct Operation {
     op: String,
     args: Value,
+    /// The caller's reservation token and ledger identity, if any.
+    coordination: Value,
     result: mpsc::SyncSender<Result>,
 }
 pub fn worker(id: &str) -> Result<()> {
@@ -810,6 +822,7 @@ pub fn worker(id: &str) -> Result<()> {
                                 .try_send(Operation {
                                     op: op.into(),
                                     args: value["arguments"].clone(),
+                                    coordination: value["coordination"].clone(),
                                     result: tx,
                                 })
                                 .map_err(|_| {
@@ -844,6 +857,12 @@ pub fn worker(id: &str) -> Result<()> {
             .lock()
             .unwrap()
             .update(json!({"status":"connected","input_capabilities":device.capabilities()}))?;
+        // The device this session shows, as reservations and the request
+        // ledger name it, and this worker as the instance that executes.
+        let mut target = crate::coordination::Target::new(s(&spec, "platform"), s(&spec, "remote"), s(&spec, "device"));
+        target.session = Some(id.to_string());
+        let transport = s(&shared.lock().unwrap().state, "transport").to_string();
+        let instance = format!("session:{id}:{}", crate::coordination::ledger::instance());
         // A recording of a UI test (testing.record) takes Android input.
         let mut recording = if s(&spec, "platform") == "android" {
             crate::recorder::Store::home()
@@ -856,6 +875,8 @@ pub fn worker(id: &str) -> Result<()> {
             if let Ok(command) = receive.recv_timeout(Duration::from_millis(100)) {
                 let answer = match command.op.as_str() {
                     "input" => api::arguments("runtime.input", &command.args).and_then(|a| {
+                        let kind = crate::coordination::Kind::of_input(&a);
+                        crate::coordination::worker_input(&target, &transport, &instance, "runtime.input", &a, &command.coordination, kind, || {
                         let step = recording.as_mut().and_then(|live| {
                             live.before(&a, || {
                                 device
@@ -870,6 +891,7 @@ pub fn worker(id: &str) -> Result<()> {
                             live.after(step);
                         }
                         Ok(result)
+                        })
                     }),
                     "capture" => api::arguments("runtime.capture", &command.args)
                         .and_then(|a| device.capture(&output_path(s(&a, "path"))?)),
@@ -882,7 +904,10 @@ pub fn worker(id: &str) -> Result<()> {
                     }),
                     "gesture" => api::arguments("runtime.gesture", &command.args)
                         .and_then(|a| check_gesture(&a).map(|_| a))
-                        .and_then(|a| device.input(&gesture_input(&a))),
+                        .and_then(|a| {
+                            crate::coordination::worker_input(&target, &transport, &instance, "runtime.gesture", &a, &command.coordination,
+                                crate::coordination::Kind::Action, || device.input(&gesture_input(&a)))
+                        }),
                     _ => Err(Error::new("operation_not_found", command.op)),
                 };
                 let _ = command.result.send(answer);

@@ -40,7 +40,7 @@ tomaccoctl call android.store_screenshots '{"bundle_id":"<bundle_id>","devices":
 
 Tap / swipe / input. writes.
 
-Control real Android UI through adb, using device pixel coordinates. ASCII text is typed; other text is pasted through the device clipboard with the configured scrcpy 4.1 server on Android 7 and newer.
+Control real Android UI through adb, using device pixel coordinates. ASCII text is typed; other text is pasted through the device clipboard with the configured scrcpy 4.1 server on Android 7 and newer. With reservation_token it acts under a device reservation (device.reservation.acquire); with request_id it is recorded once in the request ledger, so a repeat after a lost answer is not sent again.
 
 - `device` string, required (non-empty): Device serial / UDID from device.list
 - `action` string, required (one of tap, swipe, text, keyevent)
@@ -51,6 +51,8 @@ Control real Android UI through adb, using device pixel coordinates. ASCII text 
 - `duration` integer (1 to 10000; default 300)
 - `text` string (default "")
 - `key` string (default "KEYCODE_HOME")
+- `reservation_token` string (up to 200 characters): Act under this device reservation (device.reservation.acquire). A reserved device takes input only with its token; a token whose reservation expired, was…
+- `request_id` string (non-empty, up to 128 characters; matching `^[A-Za-z0-9][A-Za-z0-9_.:-]{0,127}$`): Your identity for this action, unique per intent (order-42-submit). It is recorded with a digest of the arguments before anything is sent; repeating it with…
 
 ```sh
 tomaccoctl call android.input '{"device":"<device>","action":"tap"}'

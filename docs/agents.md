@@ -887,7 +887,100 @@ starting answers `runtime_start_failed` at once.
   {"operation":"input","arguments":{"session":"SESSION_ID","action":"tap","x":0.5,"y":0.5}}
   ```
 
+  An input may carry a `coordination` member beside `arguments`, `{"reservation_token":"TOKEN","request_id":"ID/1"}`, as the
+  operations send it; without one it is admitted as an input without a reservation (see below).
+
 **Stopping.** `runtime.stop` is idempotent. It releases the session's processes, sockets and forwarding, and leaves the app and device running.
+
+### Sharing a device: reservations and request identities
+
+Several agents, the desktop and a person can act on one phone. Two contracts keep a multi-step task from being
+interleaved and an action from running twice after a lost answer. Both are cooperative between the clients of one
+user account that go through Tomacco's operations: the owner-only data directory is the boundary, not a login.
+Raw `adb`, SSH, `fastboot`, flashing tools and agents that bypass Tomacco are not governed by them.
+
+**Reservations.** `device.reservation.acquire` reserves one device for `ttl_ms` (1 second to 5 minutes, default 60
+seconds) and answers `reservation_token` once. The token is the capability: Tomacco keeps only its SHA-256, masks it in
+audit records, errors, job records and session logs, and never shows it in `device.reservation.get` or
+`device.reservation.list`. `owner`, `task` and `reason` are labels other clients read; the `client` and `channel`
+recorded with them are what the caller reported (MCP `clientInfo`, `TOMACCO_CLIENT`), not authenticated. Every name of
+a device reserves the same device: a runtime session ID stands for the device it shows (`android/local/emulator-5554`,
+`ios/remote:mac/UDID`), a nickname from `device.label` for its serial or UDID (an emulator's nickname is refused, as only adb knows its serial),
+`virtual-iphone` for the virtual iPhone.
+While a device is reserved, input without its token answers `device_reserved` with the holder's labels and expiry and
+sends nothing; reading the screen stays possible. An acquisition waits up to `wait_ms` for inputs already admitted to
+end (a tap under way, a finger held down from the desktop, at most 60 seconds), else `device_input_in_flight`; of
+several acquisitions at once exactly one wins. Each input is checked when it is queued and again in the device service
+right before the transport gets it, so a request queued under a reservation that expired, was released or was taken
+over in the meantime answers `reservation_expired`, `reservation_released` or `reservation_revoked` and is not sent.
+Renew before `expires_at` (`device.reservation.renew`; an ended reservation cannot be revived), release when done
+(`device.reservation.release`). Releasing never undoes input the device already received. A reservation belongs to the
+device, not the session: it holds across `runtime.stop`/`runtime.start` and a restarted worker, and a token from another
+data directory, or of a reservation lost with a power cut, answers `reservation_not_held`. A person takes a device back
+explicitly with `device.reservation.takeover` (destructive: a `reason` its holder sees, and `acquire` to reserve it for
+themselves); agents should ask the person instead.
+
+```sh
+tomaccoctl call device.reservation.acquire '{"device":"SESSION_ID","owner":"claude-code","task":"checkout test","ttl_ms":120000}'
+tomaccoctl call runtime.actions '{"session":"SESSION_ID","reservation_token":"TOKEN","request_id":"checkout-1","steps":[{"action":"tap","mark":4},{"action":"text","text":"ana@example.com"}]}'
+tomaccoctl call device.reservation.renew '{"device":"SESSION_ID","reservation_token":"TOKEN","ttl_ms":120000}'
+tomaccoctl call device.reservation.get '{"device":"SESSION_ID"}'
+tomaccoctl call device.reservation.release '{"device":"SESSION_ID","reservation_token":"TOKEN"}'
+# The person, taking the phone back:
+tomaccoctl call device.reservation.takeover '{"device":"emulator-5554","platform":"android","reason":"I need the phone","acquire":true}'
+```
+
+Over MCP the same operations are tools of the same names with the same schemas, for example
+`{"name":"device.reservation.acquire","arguments":{"device":"virtual-iphone","owner":"agent"}}`.
+
+**Which routes honour them.** Every input route of Tomacco's operations passes the same check right before its transport:
+
+| Route | Operations |
+|---|---|
+| The runtime worker of a session | `runtime.input`, `runtime.gesture`, `runtime.actions`, `screen.tap` on a session, and the desktop's live view, which writes to the control socket |
+| adb on an Android serial | `android.input`, and through it `screen.tap`, `testing.action` and `testing.run` input steps on that serial; the select-all of a `testing.action` fill and an instrumented fill |
+| The virtual iPhone's control | `ios.emulator.control` input actions (`click`, `drag`, `text`, `key`, `home`, `power_button`, `move`, `touch_*`), and through it `screen.tap`, `testing.action` and `testing.run` on `virtual-iphone` |
+
+The desktop's live view takes no token, so a reserved device refuses its input and the view shows the refusal as its
+input notice; lifting a finger (`touch` `cancel`) is always allowed so none is left down. `testing.run`,
+`ios.virtual.unlock` and the virtual iPhone's startup unlock take no token yet: on a device another holder reserved
+their input is refused like any other. Not governed yet: operations that change a device without
+being input (`device.install`, `device.app`, `android.launch`, `android.deep_link`, `android.settings`,
+`android.permission`, `android.display`, `android.environment.apply`, `ios.virtual.*` lifecycle, `ios.emulator.control`
+`stop`), and everything outside Tomacco. Other tools can take part through the same operations: call
+`device.reservation.acquire` before they act (a flasher before it flashes), renew while they work, release after, and
+read `device.reservation.get` before a raw `adb` or `fastboot` step. No Harness or deployment agent does so yet.
+
+**Request identities.** Give every mutating call a `request_id` of your own (`checkout-1`, unique per intent;
+`runtime.input`, `runtime.gesture`, `runtime.actions`, `screen.tap`, `android.input`, `testing.action`,
+`ios.emulator.control` input). Before anything is dispatched, the process that executes it records the identity, a
+digest of the normalised arguments (the device as its canonical name; the session and token left out), the route,
+transport and executing instance, durably. Inputs the call hands to a runtime worker are recorded by that worker as
+children (`checkout-1/1`, `checkout-1/step-2`), so an input the device service accepted is on record even when its
+answer never reached you. Repeating the identity with the same arguments, from any process and through any session of
+the same device, answers the recorded outcome with `request.retained: true` and `replayed: false`, and sends nothing;
+other arguments answer `request_conflict`. A refusal that provably sent nothing (`device_reserved`, `frame_stale`,
+`focus_timeout` before any step applied, a malformed step) may be repeated under the same identity; a malformed
+request leaves no record at all. When the executing process ended before it recorded an answer, or the transport lost
+the answer, the record is `unknown` and a repeat answers `request_outcome_unknown`: it is never resent, neither through
+the same transport nor through a new session or another transport. Observe the screen and decide from what is there;
+a new attempt needs a new identity. `device.request.get` shows a record with its children and `advice`;
+`device.request.list` the newest ones. Status is `applied` (the transport took it), `verified` (a batch whose steps' `expect`
+held), `refused`, `failed` (it ran; its error says what reached the device) or `unknown`. Records hold no typed text
+(lengths only, answers with `text` replaced by its length) and no token, are kept 24 hours and at most 20 000, in an
+owner-only database. None of this makes a physical action exactly-once: a transport that loses an answer leaves the
+effect unknown, and only a fresh observation can tell.
+
+```sh
+tomaccoctl call runtime.input '{"session":"SESSION_ID","action":"key","key":"enter","request_id":"submit-order-42"}'
+# The answer was lost (a timeout, a killed client): ask again with the same identity, or read the record.
+tomaccoctl call runtime.input '{"session":"SESSION_ID","action":"key","key":"enter","request_id":"submit-order-42"}'
+tomaccoctl call device.request.get '{"request_id":"submit-order-42"}'
+tomaccoctl call device.request.list '{"device":"SESSION_ID","state":"unknown"}'
+```
+
+Per-frame video and the desktop's pointer moves are not recorded: a request without `request_id` costs no write to
+the ledger, and a reservation check is one read (a touch's down and up one write each).
 
 ## Windows
 

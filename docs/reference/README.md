@@ -2,13 +2,13 @@
 
 # Operation reference
 
-Every `tomaccoctl` operation, 288 in all, generated from `assets/operations.json`, the schema `tomaccoctl schema` prints and the MCP server offers as tools. Over MCP the operation name is the tool name.
+Every `tomaccoctl` operation, 296 in all, generated from `assets/operations.json`, the schema `tomaccoctl schema` prints and the MCP server offers as tools. Over MCP the operation name is the tool name.
 
 Each entry gives the arguments with their types, limits and defaults, what the operation changes (from its MCP annotations) and an example call made from the schema, the same one `tomaccoctl help OPERATION` prints. Values in angle brackets are placeholders. The [agent guide](../agents.md) explains jobs, errors and the workflows that combine these.
 
 The annotations are the hints MCP clients see. **Read-only** changes nothing. **Writes** changes state but is not marked as deleting data. **Destructive** may delete or overwrite data: ask the user first. **Idempotent** means repeating the call with the same arguments has no further effect. **Open world** means it reaches beyond Tomacco's own state: devices, tools, files or the network.
 
-[Error codes](errors.md) lists all 522 error codes with what each means and what to do.
+[Error codes](errors.md) lists all 534 error codes with what each means and what to do.
 
 ## [general](general.md)
 
@@ -149,6 +149,14 @@ The annotations are the hints MCP clients see. **Read-only** changes nothing. **
 | [`device.info`](device.md#deviceinfo) | Device information | read-only |
 | [`device.label`](device.md#devicelabel) | Name or pin a device | writes |
 | [`device.resolve`](device.md#deviceresolve) | Find a device by name | read-only |
+| [`device.reservation.acquire`](device.md#devicereservationacquire) | Reserve a device | writes |
+| [`device.reservation.get`](device.md#devicereservationget) | Device reservation state | read-only |
+| [`device.reservation.list`](device.md#devicereservationlist) | Reserved devices | read-only |
+| [`device.reservation.renew`](device.md#devicereservationrenew) | Renew a device reservation | writes |
+| [`device.reservation.release`](device.md#devicereservationrelease) | Release a device reservation | writes |
+| [`device.reservation.takeover`](device.md#devicereservationtakeover) | Take over a device reservation | **destructive** |
+| [`device.request.get`](device.md#devicerequestget) | Recorded request | read-only |
+| [`device.request.list`](device.md#devicerequestlist) | Recorded requests | read-only |
 | [`device.install`](device.md#deviceinstall) | Install app | **destructive** |
 | [`device.app`](device.md#deviceapp) | Control app | **destructive** |
 | [`device.screenshot`](device.md#devicescreenshot) | Device screenshot | writes |

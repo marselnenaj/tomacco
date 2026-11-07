@@ -89,6 +89,10 @@ RULES: list[tuple[tuple[str, ...], dict]] = [
         "phone": "local", "requires": ["network", "Play service account on the person's side"],
         "evidence": "HTTP API calls from the control program; each upload asks first.",
         "next_test": "play.prepare against the mocked endpoint in tests."}),
+    (("device.reservation.", "device.request."), {
+        "phone": "local", "requires": [],
+        "evidence": "Device reservations and the request ledger are owner-only SQLite records in the control program's data directory (native/coordination.rs); they touch no device, adb or network themselves.",
+        "next_test": "device.reservation.acquire, get and release and device.request.get on the device with TOMACCO_HOME in a temp dir."}),
     (("testing.", "debug.", "profile.", "screen.", "device."), {
         "phone": "local", "requires": ["adb (arm64)", "a paired device"],
         "evidence": "All device-facing operations go through adb/JDWP/perfetto on the device; no x86_64 binaries are involved.",
