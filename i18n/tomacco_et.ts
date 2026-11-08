@@ -7177,6 +7177,10 @@ Litsentsitud GNU General Public License&apos;i versiooni 2 või hilisema alusel.
         <source>This video has no audio track.</source>
         <translation>Sellel videol pole helirada.</translation>
     </message>
+    <message>
+        <source>Source audio requires the local AAC encoder.</source>
+        <translation>Lähtevideo heli vajab kohalikku AAC-koodrit.</translation>
+    </message>
 </context>
 <context>
     <name>EnvironmentPanel</name>

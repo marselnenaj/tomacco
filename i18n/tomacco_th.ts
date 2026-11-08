@@ -7166,6 +7166,10 @@ Licensed under the GNU General Public License, version 2 or later.</source>
         <source>This video has no audio track.</source>
         <translation>วิดีโอนี้ไม่มีแทร็กเสียง</translation>
     </message>
+    <message>
+        <source>Source audio requires the local AAC encoder.</source>
+        <translation>เสียงต้นฉบับต้องใช้ตัวเข้ารหัส AAC ในเครื่อง</translation>
+    </message>
 </context>
 <context>
     <name>EnvironmentPanel</name>

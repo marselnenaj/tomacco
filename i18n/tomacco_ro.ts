@@ -7188,6 +7188,10 @@ Licențiat sub Licența Publică Generală GNU, versiunea 2 sau ulterioară.</tr
         <source>This video has no audio track.</source>
         <translation>Acest videoclip nu are pistă audio.</translation>
     </message>
+    <message>
+        <source>Source audio requires the local AAC encoder.</source>
+        <translation>Sunetul sursă necesită codificatorul AAC local.</translation>
+    </message>
 </context>
 <context>
     <name>EnvironmentPanel</name>

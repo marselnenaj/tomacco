@@ -7166,6 +7166,10 @@ Licensed under the GNU General Public License, version 2 or later.</source>
         <source>This video has no audio track.</source>
         <translation>این ویدیو ترک صوتی ندارد.</translation>
     </message>
+    <message>
+        <source>Source audio requires the local AAC encoder.</source>
+        <translation>صدای منبع به رمزگذار محلی AAC نیاز دارد.</translation>
+    </message>
 </context>
 <context>
     <name>EnvironmentPanel</name>

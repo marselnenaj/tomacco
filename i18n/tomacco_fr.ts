@@ -7209,6 +7209,10 @@ Sous licence GNU General Public License, version 2 ou ultérieure.</translation>
         <source>This video has no audio track.</source>
         <translation>Cette vidéo n’a pas de piste audio.</translation>
     </message>
+    <message>
+        <source>Source audio requires the local AAC encoder.</source>
+        <translation>Le son d’origine nécessite l’encodeur AAC local.</translation>
+    </message>
 </context>
 <context>
     <name>EnvironmentPanel</name>

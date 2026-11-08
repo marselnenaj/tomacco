@@ -7188,6 +7188,10 @@ Licencēts saskaņā ar GNU General Public License 2. vai jaunāku versiju.</tra
         <source>This video has no audio track.</source>
         <translation>Šim videoklipam nav audio celiņa.</translation>
     </message>
+    <message>
+        <source>Source audio requires the local AAC encoder.</source>
+        <translation>Avota audio nepieciešams lokālais AAC kodētājs.</translation>
+    </message>
 </context>
 <context>
     <name>EnvironmentPanel</name>

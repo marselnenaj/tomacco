@@ -7198,6 +7198,10 @@ GNU General Public License バージョン 2 以降の下で公開されてい�
         <source>This video has no audio track.</source>
         <translation>この動画には音声トラックがありません。</translation>
     </message>
+    <message>
+        <source>Source audio requires the local AAC encoder.</source>
+        <translation>元の音声を含めるには、ローカルのAACエンコーダーが必要です。</translation>
+    </message>
 </context>
 <context>
     <name>EnvironmentPanel</name>

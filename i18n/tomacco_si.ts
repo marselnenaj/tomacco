@@ -7177,6 +7177,10 @@ GNU General Public License, අනුවාදය 2 හෝ පසු අනු�
         <source>This video has no audio track.</source>
         <translation>මෙම වීඩියෝවේ හඬ පථයක් නැත.</translation>
     </message>
+    <message>
+        <source>Source audio requires the local AAC encoder.</source>
+        <translation>මුල් වීඩියෝවේ හඬ සඳහා දේශීය AAC කේතකය අවශ්‍ය වේ.</translation>
+    </message>
 </context>
 <context>
     <name>EnvironmentPanel</name>

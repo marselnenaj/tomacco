@@ -7177,6 +7177,10 @@ Llicència: Llicència Pública General de GNU, versió 2 o posterior.</translat
         <source>This video has no audio track.</source>
         <translation>Aquest vídeo no té cap pista d’àudio.</translation>
     </message>
+    <message>
+        <source>Source audio requires the local AAC encoder.</source>
+        <translation>L’àudio de l’origen requereix el codificador AAC local.</translation>
+    </message>
 </context>
 <context>
     <name>EnvironmentPanel</name>

@@ -7188,6 +7188,10 @@ Lisensyado sa ilalim ng GNU General Public License, bersyon 2 o mas bago.</trans
         <source>This video has no audio track.</source>
         <translation>Walang audio track ang video na ito.</translation>
     </message>
+    <message>
+        <source>Source audio requires the local AAC encoder.</source>
+        <translation>Kailangan ng orihinal na audio ang lokal na AAC encoder.</translation>
+    </message>
 </context>
 <context>
     <name>EnvironmentPanel</name>

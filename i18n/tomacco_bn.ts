@@ -7177,6 +7177,10 @@ GNU জেনারেল পাবলিক লাইসেন্স, সংস
         <source>This video has no audio track.</source>
         <translation>এই ভিডিওতে কোনো অডিও ট্র্যাক নেই।</translation>
     </message>
+    <message>
+        <source>Source audio requires the local AAC encoder.</source>
+        <translation>মূল ভিডিওর অডিওর জন্য স্থানীয় AAC এনকোডার প্রয়োজন।</translation>
+    </message>
 </context>
 <context>
     <name>EnvironmentPanel</name>

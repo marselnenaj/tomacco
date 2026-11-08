@@ -7177,6 +7177,10 @@ Licensed under the GNU General Public License, version 2 or later.</source>
         <source>This video has no audio track.</source>
         <translation>Αυτό το βίντεο δεν έχει κομμάτι ήχου.</translation>
     </message>
+    <message>
+        <source>Source audio requires the local AAC encoder.</source>
+        <translation>Ο ήχος της πηγής απαιτεί τον τοπικό κωδικοποιητή AAC.</translation>
+    </message>
 </context>
 <context>
     <name>EnvironmentPanel</name>

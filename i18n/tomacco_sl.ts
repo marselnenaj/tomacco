@@ -7199,6 +7199,10 @@ Licencirano pod GNU General Public License, različica 2 ali novejša.</translat
         <source>This video has no audio track.</source>
         <translation>Ta videoposnetek nima zvočne sledi.</translation>
     </message>
+    <message>
+        <source>Source audio requires the local AAC encoder.</source>
+        <translation>Zvok vira zahteva lokalni kodirnik AAC.</translation>
+    </message>
 </context>
 <context>
     <name>EnvironmentPanel</name>

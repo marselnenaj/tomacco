@@ -7166,6 +7166,10 @@ Dilisensikan di bawah GNU General Public License, versi 2 atau yang lebih baru.<
         <source>This video has no audio track.</source>
         <translation>Video ini tidak memiliki trek audio.</translation>
     </message>
+    <message>
+        <source>Source audio requires the local AAC encoder.</source>
+        <translation>Audio sumber memerlukan enkoder AAC lokal.</translation>
+    </message>
 </context>
 <context>
     <name>EnvironmentPanel</name>

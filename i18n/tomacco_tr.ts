@@ -7166,6 +7166,10 @@ GNU Genel Kamu Lisansı, sürüm 2 veya sonrası kapsamında lisanslanmıştır.
         <source>This video has no audio track.</source>
         <translation>Bu videoda ses parçası yok.</translation>
     </message>
+    <message>
+        <source>Source audio requires the local AAC encoder.</source>
+        <translation>Kaynak ses için yerel AAC kodlayıcısı gerekir.</translation>
+    </message>
 </context>
 <context>
     <name>EnvironmentPanel</name>

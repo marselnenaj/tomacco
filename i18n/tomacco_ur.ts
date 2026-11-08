@@ -7177,6 +7177,10 @@ GNU جنرل پبلک لائسنس، ورژن 2 یا اس کے بعد کے تح�
         <source>This video has no audio track.</source>
         <translation>اس ویڈیو میں کوئی آڈیو ٹریک نہیں ہے۔</translation>
     </message>
+    <message>
+        <source>Source audio requires the local AAC encoder.</source>
+        <translation>اصل آڈیو کے لیے مقامی AAC انکوڈر درکار ہے۔</translation>
+    </message>
 </context>
 <context>
     <name>EnvironmentPanel</name>

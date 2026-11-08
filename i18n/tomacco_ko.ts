@@ -7166,6 +7166,10 @@ GNU General Public License 버전 2 또는 그 이후 버전에 따라 라이선
         <source>This video has no audio track.</source>
         <translation>이 동영상에는 오디오 트랙이 없습니다.</translation>
     </message>
+    <message>
+        <source>Source audio requires the local AAC encoder.</source>
+        <translation>원본 오디오를 포함하려면 로컬 AAC 인코더가 필요합니다.</translation>
+    </message>
 </context>
 <context>
     <name>EnvironmentPanel</name>

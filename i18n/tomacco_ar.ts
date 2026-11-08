@@ -7253,6 +7253,10 @@ Licensed under the GNU General Public License, version 2 or later.</source>
         <source>This video has no audio track.</source>
         <translation>لا يحتوي هذا الفيديو على مسار صوتي.</translation>
     </message>
+    <message>
+        <source>Source audio requires the local AAC encoder.</source>
+        <translation>يتطلب صوت المصدر مُرمِّز AAC المحلي.</translation>
+    </message>
 </context>
 <context>
     <name>EnvironmentPanel</name>

@@ -7177,6 +7177,10 @@ GNU General Public License, 2-versiya yoki undan keyingi versiya asosida litsenz
         <source>This video has no audio track.</source>
         <translation>Bu videoda audio yo‘lak yo‘q.</translation>
     </message>
+    <message>
+        <source>Source audio requires the local AAC encoder.</source>
+        <translation>Manba ovozi uchun mahalliy AAC kodlagichi kerak.</translation>
+    </message>
 </context>
 <context>
     <name>EnvironmentPanel</name>

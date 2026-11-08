@@ -7177,6 +7177,10 @@ Lisensiert under GNU General Public License, versjon 2 eller nyere.</translation
         <source>This video has no audio track.</source>
         <translation>Denne videoen har ikke noe lydspor.</translation>
     </message>
+    <message>
+        <source>Source audio requires the local AAC encoder.</source>
+        <translation>Kildelyden krever den lokale AAC-koderen.</translation>
+    </message>
 </context>
 <context>
     <name>EnvironmentPanel</name>

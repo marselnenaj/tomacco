@@ -7188,6 +7188,10 @@ Licencijuota pagal GNU General Public License 2 ar vėlesnę versiją.</translat
         <source>This video has no audio track.</source>
         <translation>Šiame vaizdo įraše nėra garso takelio.</translation>
     </message>
+    <message>
+        <source>Source audio requires the local AAC encoder.</source>
+        <translation>Šaltinio garsui reikia vietinio AAC koduotuvo.</translation>
+    </message>
 </context>
 <context>
     <name>EnvironmentPanel</name>

@@ -7188,6 +7188,10 @@ Faoi cheadúnas Cheadúnas Poiblí Ginearálta GNU, leagan 2 nó aon leagan nío
         <source>This video has no audio track.</source>
         <translation>Níl rian fuaime san fhíseán seo.</translation>
     </message>
+    <message>
+        <source>Source audio requires the local AAC encoder.</source>
+        <translation>Teastaíonn an t-ionchódóir áitiúil AAC le haghaidh fhuaim na foinse.</translation>
+    </message>
 </context>
 <context>
     <name>EnvironmentPanel</name>

@@ -7177,6 +7177,10 @@ Imepewa leseni chini ya Leseni ya Umma ya Jumla ya GNU, toleo la 2 au la baadaye
         <source>This video has no audio track.</source>
         <translation>Video hii haina mkondo wa sauti.</translation>
     </message>
+    <message>
+        <source>Source audio requires the local AAC encoder.</source>
+        <translation>Sauti ya chanzo inahitaji kisimbaji cha AAC cha ndani.</translation>
+    </message>
 </context>
 <context>
     <name>EnvironmentPanel</name>

@@ -7188,6 +7188,10 @@ Licencováno pod GNU General Public License, verze 2 nebo novejší.</translatio
         <source>This video has no audio track.</source>
         <translation>Toto video nemá zvukovou stopu.</translation>
     </message>
+    <message>
+        <source>Source audio requires the local AAC encoder.</source>
+        <translation>Zvuk zdrojového videa vyžaduje místní kodér AAC.</translation>
+    </message>
 </context>
 <context>
     <name>EnvironmentPanel</name>

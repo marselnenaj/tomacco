@@ -7212,6 +7212,10 @@ Na licencji GNU General Public License w wersji 2 lub nowszej.</translation>
         <source>This video has no audio track.</source>
         <translation>Ten film nie ma ścieżki dźwiękowej.</translation>
     </message>
+    <message>
+        <source>Source audio requires the local AAC encoder.</source>
+        <translation>Dźwięk źródłowy wymaga lokalnego kodera AAC.</translation>
+    </message>
 </context>
 <context>
     <name>EnvironmentPanel</name>

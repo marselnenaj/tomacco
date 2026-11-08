@@ -7166,6 +7166,10 @@ A GNU General Public License 2-es vagy későbbi verziója alatt licencelve.</tr
         <source>This video has no audio track.</source>
         <translation>Ehhez a videóhoz nem tartozik hangsáv.</translation>
     </message>
+    <message>
+        <source>Source audio requires the local AAC encoder.</source>
+        <translation>A forráshanghoz szükség van a helyi AAC-kódolóra.</translation>
+    </message>
 </context>
 <context>
     <name>EnvironmentPanel</name>

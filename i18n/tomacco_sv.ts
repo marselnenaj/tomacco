@@ -7201,6 +7201,10 @@ Licensierat under GNU General Public License, version 2 eller senare.</translati
         <source>This video has no audio track.</source>
         <translation>Den här videon har inget ljudspår.</translation>
     </message>
+    <message>
+        <source>Source audio requires the local AAC encoder.</source>
+        <translation>Originalljudet kräver den lokala AAC-kodaren.</translation>
+    </message>
 </context>
 <context>
     <name>EnvironmentPanel</name>

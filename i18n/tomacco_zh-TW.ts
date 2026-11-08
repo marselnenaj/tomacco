@@ -7198,6 +7198,10 @@ Licensed under the GNU General Public License, version 2 or later.</source>
         <source>This video has no audio track.</source>
         <translation>此影片沒有音軌。</translation>
     </message>
+    <message>
+        <source>Source audio requires the local AAC encoder.</source>
+        <translation>原始音訊需要本機 AAC 編碼器。</translation>
+    </message>
 </context>
 <context>
     <name>EnvironmentPanel</name>

@@ -7177,6 +7177,10 @@ Lisensoitu GNU General Public License -lisenssillä, versio 2 tai uudempi.</tran
         <source>This video has no audio track.</source>
         <translation>Tässä videossa ei ole ääniraitaa.</translation>
     </message>
+    <message>
+        <source>Source audio requires the local AAC encoder.</source>
+        <translation>Lähdevideon ääni vaatii paikallisen AAC-enkooderin.</translation>
+    </message>
 </context>
 <context>
     <name>EnvironmentPanel</name>

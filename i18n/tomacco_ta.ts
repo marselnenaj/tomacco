@@ -7177,6 +7177,10 @@ GNU General Public License, பதிப்பு 2 அல்லது அதற
         <source>This video has no audio track.</source>
         <translation>இந்தக் காணொளியில் ஒலித் தடம் இல்லை.</translation>
     </message>
+    <message>
+        <source>Source audio requires the local AAC encoder.</source>
+        <translation>மூல ஒலிக்கு உள்ளூர் AAC குறியாக்கி தேவை.</translation>
+    </message>
 </context>
 <context>
     <name>EnvironmentPanel</name>

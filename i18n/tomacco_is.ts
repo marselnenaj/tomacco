@@ -7177,6 +7177,10 @@ Með leyfi samkvæmt GNU General Public License, útgáfu 2 eða nýrri.</transl
         <source>This video has no audio track.</source>
         <translation>Þetta myndskeið hefur enga hljóðrás.</translation>
     </message>
+    <message>
+        <source>Source audio requires the local AAC encoder.</source>
+        <translation>Upprunalega hljóðið krefst staðbundins AAC-kóðara.</translation>
+    </message>
 </context>
 <context>
     <name>EnvironmentPanel</name>

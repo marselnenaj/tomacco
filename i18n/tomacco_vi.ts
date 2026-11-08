@@ -7166,6 +7166,10 @@ Licensed under the GNU General Public License, version 2 or later.</source>
         <source>This video has no audio track.</source>
         <translation>Video này không có rãnh âm thanh.</translation>
     </message>
+    <message>
+        <source>Source audio requires the local AAC encoder.</source>
+        <translation>Âm thanh gốc yêu cầu bộ mã hóa AAC cục bộ.</translation>
+    </message>
 </context>
 <context>
     <name>EnvironmentPanel</name>

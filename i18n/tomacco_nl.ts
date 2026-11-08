@@ -7209,6 +7209,10 @@ Gelicentieerd onder de GNU General Public License, versie 2 of later.</translati
         <source>This video has no audio track.</source>
         <translation>Deze video heeft geen audiotrack.</translation>
     </message>
+    <message>
+        <source>Source audio requires the local AAC encoder.</source>
+        <translation>Voor de originele audio is de lokale AAC-encoder nodig.</translation>
+    </message>
 </context>
 <context>
     <name>EnvironmentPanel</name>

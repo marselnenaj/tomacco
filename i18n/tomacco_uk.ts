@@ -7188,6 +7188,10 @@ Licensed under the GNU General Public License, version 2 or later.</source>
         <source>This video has no audio track.</source>
         <translation>У цьому відео немає звукової доріжки.</translation>
     </message>
+    <message>
+        <source>Source audio requires the local AAC encoder.</source>
+        <translation>Для оригінального звуку потрібен локальний кодувальник AAC.</translation>
+    </message>
 </context>
 <context>
     <name>EnvironmentPanel</name>
