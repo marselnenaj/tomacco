@@ -56,7 +56,18 @@ class DemoWorkspaceTest : public QObject {
     QVariantMap scene(){return {{"format","tomacco.demo"},{"version",1},{"revision",1},{"title","Fixture demo"},{"source",QVariantMap{{"path","/fixture/source.mp4"},{"width",360},{"height",780},{"duration",8}}},{"clip",QVariantMap{{"start",0}}},{"output",QVariantMap{{"width",1080},{"height",1920},{"duration",8},{"fps",30}}},{"device",QVariantMap{{"model","phone"},{"finish","#242421"},{"bezel",.035},{"thickness",.065},{"corner_radius",.09}}},{"background",QVariantMap{{"style","solid"},{"color","#f4f2ec"},{"color2","#f4f2ec"},{"image",""}}},{"shadow",QVariantMap{{"enabled",true},{"opacity",.22},{"blur",24},{"offset_x",0},{"offset_y",40}}},{"camera",QVariantMap{{"distance",4},{"fov",35}}},{"keyframes",QVariantList{pose(0,-18),pose(4,0),pose(8,18)}}};}
     QVariantMap reply(QVariantMap value,int revision=1){value["revision"]=revision;return {{"path","/fixture/scene.json"},{"scene",value},{"revision",revision}};}
     void load(){invoke("openScene","/fixture/scene.json");QCOMPARE(agent.calls.last().op,QString("demo.scene.get"));agent.finish(agent.calls.last(),reply(scene()));QVERIFY(page->property("loaded").toBool());}
-    void ready(){agent.finish(agent.calls.first(),{{"ready",true},{"presets",QStringList{"portrait-orbit","square-float"}},{"models",QStringList{"phone","tablet"}}});}
+    void ready(){agent.finish(agent.calls.first(),{{"ready",true},{"presets",QStringList{"portrait-orbit","square-float"}},{"models",QStringList{"phone","tablet"}},{"audio",QVariantMap{{"modes",QStringList{"muted","source"}},{"default","muted"}}}});}
+    void clickVisible(QQuickItem *item){
+        QVERIFY(item);
+        auto flick=page->property("contentItem").value<QQuickItem*>();QVERIFY(flick);
+        QTest::qWait(60);
+        const double before=item->mapToItem(page,QPointF()).y();
+        QVERIFY(flick->setProperty("contentY",flick->property("contentY").toDouble()+before-100));
+        QTest::qWait(20);
+        auto indicator=item->property("indicator").value<QQuickItem*>();QVERIFY(indicator);
+        QTest::mouseClick(window.get(),Qt::LeftButton,Qt::NoModifier,indicator->mapToScene(QPointF(indicator->width()/2,indicator->height()/2)).toPoint());
+        QCoreApplication::processEvents();
+    }
 private slots:
     void init(){
         agent.calls.clear();style.scale=100;style.dark=true;
@@ -101,7 +112,34 @@ private slots:
         agent.finish(agent.calls.first(),{{"ready",true}});invoke("numberField","output","duration",QString());QVERIFY(page->property("dirty").toBool());QVERIFY(!page->property("canRender").toBool());int count=agent.calls.size();invoke("saveChanges");QCOMPARE(agent.calls.size(),count);invoke("numberField","output","duration","8");invoke("saveChanges");QCOMPARE(agent.calls.last().op,QString("demo.scene.update"));
     }
     void capabilities_reply_still_applies_after_scene_request(){load();ready();QVERIFY(page->property("canRender").toBool());}
-    void responsive_layout_data(){QTest::addColumn<int>("width");QTest::addColumn<int>("height");QTest::addColumn<int>("scale");for(int s:{100,175,200})for(auto size:{QSize(1380,970),QSize(960,680),QSize(560,680)})QTest::newRow(qPrintable(QString("%1x%2-%3").arg(size.width()).arg(size.height()).arg(s)))<<size.width()<<size.height()<<s;}
+    void legacy_scene_stays_silent_until_the_person_selects_source_audio(){
+        ready();auto value=scene();auto source=value["source"].toMap();source["has_audio"]=true;value["source"]=source;
+        invoke("openScene","/fixture/scene.json");agent.finish(agent.calls.last(),reply(value));
+        auto toggle=qobject_cast<QQuickItem*>(object("demoSourceAudio"));QVERIFY(toggle);QVERIFY(toggle->isVisible());QVERIFY(toggle->isEnabled());
+        QVERIFY(!toggle->property("checked").toBool());QVERIFY(!draft().contains("audio"));QVERIFY(!page->property("dirty").toBool());
+        clickVisible(toggle);QVERIFY(toggle->property("checked").toBool());QCOMPARE(draft()["audio"].toMap()["mode"].toString(),QString("source"));
+        QVERIFY(page->property("dirty").toBool());QVERIFY(!page->property("canRender").toBool());invoke("saveChanges");
+        auto call=agent.calls.last();QCOMPARE(call.op,QString("demo.scene.update"));
+        auto changes=call.args["changes"].toMap();QCOMPARE(changes.size(),1);QCOMPARE(changes["audio"].toMap()["mode"].toString(),QString("source"));QCOMPARE(call.args["if_revision"].toInt(),1);
+        agent.finish(call,reply(draft(),2));QVERIFY(!page->property("dirty").toBool());QVERIFY(page->property("canRender").toBool());
+        clickVisible(toggle);QCOMPARE(draft()["audio"].toMap()["mode"].toString(),QString("muted"));
+    }
+    void recording_without_audio_cannot_enable_source_sound(){
+        ready();auto value=scene();auto source=value["source"].toMap();source["has_audio"]=false;value["source"]=source;
+        invoke("openScene","/fixture/scene.json");agent.finish(agent.calls.last(),reply(value));
+        auto toggle=qobject_cast<QQuickItem*>(object("demoSourceAudio"));QVERIFY(toggle);QVERIFY(!toggle->isEnabled());
+        clickVisible(toggle);QVERIFY(!toggle->property("checked").toBool());QVERIFY(!draft().contains("audio"));QVERIFY(!page->property("dirty").toBool());
+    }
+    void missing_aac_keeps_silent_exports_available_and_allows_muting_existing_scenes(){
+        agent.finish(agent.calls.first(),{{"ready",true},{"audio",QVariantMap{{"modes",QStringList{"muted","source"}},{"source_available",false}}}});
+        auto value=scene();auto source=value["source"].toMap();source["has_audio"]=true;value["source"]=source;
+        invoke("openScene","/fixture/scene.json");agent.finish(agent.calls.last(),reply(value));
+        auto toggle=qobject_cast<QQuickItem*>(object("demoSourceAudio"));QVERIFY(toggle);QVERIFY(!toggle->isEnabled());QVERIFY(page->property("canRender").toBool());
+        value["audio"]=QVariantMap{{"mode","source"}};invoke("openScene","/fixture/scene.json");agent.finish(agent.calls.last(),reply(value));
+        QVERIFY(toggle->property("checked").toBool());QVERIFY(toggle->isEnabled());
+        clickVisible(toggle);QCOMPARE(draft()["audio"].toMap()["mode"].toString(),QString("muted"));QVERIFY(!toggle->isEnabled());
+    }
+    void responsive_layout_data(){QTest::addColumn<int>("width");QTest::addColumn<int>("height");QTest::addColumn<int>("scale");for(int s:{100,175,200})for(auto size:{QSize(1380,970),QSize(960,680),QSize(560,680),QSize(390,844)})QTest::newRow(qPrintable(QString("%1x%2-%3").arg(size.width()).arg(size.height()).arg(s)))<<size.width()<<size.height()<<s;}
     void responsive_layout(){
         QFETCH(int,width);QFETCH(int,height);QFETCH(int,scale);ready();load();style.scale=scale;emit style.changed();window->resize(width,height);page->setSize(window->size());QTest::qWait(60);
         auto controls=page->findChildren<QQuickItem*>();int checked=0;

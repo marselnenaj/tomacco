@@ -1,0 +1,105 @@
+{
+  "scope": "Offline checked-in synthetic screenshot fixture only; no devices, hierarchy timing or PhoneUse comparison",
+  "load_average": [
+    44.9326171875,
+    40.357421875,
+    38.97119140625
+  ],
+  "runs": 5,
+  "variants": {
+    "cli_never": {
+      "median_ms": 137.53,
+      "samples_ms": [
+        149.48,
+        121.67,
+        118.66,
+        137.84,
+        137.53
+      ],
+      "passes": 1,
+      "words": 4,
+      "lines": [
+        "Settings",
+        "Signin",
+        "Forgot password?"
+      ]
+    },
+    "cli_auto": {
+      "median_ms": 281.65,
+      "samples_ms": [
+        290.74,
+        281.65,
+        275.79,
+        275.99,
+        288.16
+      ],
+      "passes": 2,
+      "words": 4,
+      "lines": [
+        "Settings",
+        "Signin",
+        "Forgot password?"
+      ]
+    }
+  },
+  "persistent_mcp_auto": {
+    "first": {
+      "ms": 264.02,
+      "cached": false
+    },
+    "warm_median_ms": 0.24,
+    "warm": [
+      {
+        "ms": 0.31,
+        "cached": true
+      },
+      {
+        "ms": 0.36,
+        "cached": true
+      },
+      {
+        "ms": 0.28,
+        "cached": true
+      },
+      {
+        "ms": 0.25,
+        "cached": true
+      },
+      {
+        "ms": 0.23,
+        "cached": true
+      },
+      {
+        "ms": 0.23,
+        "cached": true
+      },
+      {
+        "ms": 0.21,
+        "cached": true
+      },
+      {
+        "ms": 0.22,
+        "cached": true
+      }
+    ]
+  },
+  "date": "2026-11-08",
+  "fixture": "tests/fixtures/screen_text.png",
+  "fixture_sha256": "94012e549c17410d0096e4ba6b75d24976035be6cc08b1d8f7d387580257a9f6",
+  "source": "native/screen_ocr.rs",
+  "existing_features": [
+    "explicitinvert never/auto/always",
+    "pixelregion",
+    "8entryinprocessdigestcache",
+    "OCRmarks andwaitfallback"
+  ],
+  "inference": "A fast-first or persistent-engine strategy may reduce fresh recognition overhead, but requires accuracy and full capture/read/action benchmarks before changing defaults. Current fixture has equivalent words for1and2passes.",
+  "not_measured": [
+    "devicecapture",
+    "accessibilityhierarchydump",
+    "PhoneUseonMac",
+    "emulatorfps",
+    "GPUperformance",
+    "physicaldeviceinputlatency"
+  ]
+}

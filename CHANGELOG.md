@@ -9,6 +9,7 @@ operations and their JSON results.
 `tomaccoctl` now has one typed API of 296 operations.
 
 ### Added
+- **Original sound in Demo Studio.** Saved scenes can opt into the recording's first audio track. Exports trim and align AAC audio with the video, preserve gaps, and independently decode both streams. Old scenes and new defaults remain muted; PNG previews stay silent. The desktop and agent API share the same revisioned setting.
 - **One fresh look for agents.** `runtime.observe` answers a frame with its id, time and age, the
   geometry it was taken in, the foreground app, keyboard and focus where the transport reports them
   (`available: false` with the reason where it does not), the transport's `input_capabilities` and

@@ -8,7 +8,7 @@
 
 **Inspect Demo Studio capabilities**
 
-Discover local renderer, ffmpeg and ffprobe availability, supported presets, device models, output limits and silent export policy. Does not execute or probe a device.
+Discover local renderer, ffmpeg and ffprobe availability, supported presets, device models, output limits and audio modes. Exports are muted by default; source audio is an explicit saved-scene option. Does not execute or probe a device.
 
 Annotations: read-only, idempotent, closed world.
 
@@ -38,7 +38,7 @@ tomaccoctl call demo.media.inspect '{"path":"<path>"}'
 
 **Create demo scene**
 
-Create a versioned local scene from a verified recording and preset. Refuses existing destinations. Returns path, revision and scene. MVP exports are silent.
+Create a versioned local scene from a verified recording and preset. Refuses existing destinations. Returns path, revision and scene. New and legacy scenes default to muted audio; change audio.mode to source to include the recording's first audio track.
 
 Annotations: writes, not idempotent, closed world.
 
@@ -73,7 +73,7 @@ tomaccoctl call demo.scene.get '{"path":"<path>"}'
 
 **Update demo scene**
 
-Apply a partial scene change using optimistic revision control and atomic persistence. Source and scene identity are immutable. Keyframes are strictly ordered; easing belongs to the segment start. Image backgrounds must be local PNGs. Returns the new revision and complete scene.
+Apply a partial scene change using optimistic revision control and atomic persistence. Source and scene identity are immutable. Keyframes are strictly ordered; easing belongs to the segment start. Image backgrounds must be local PNGs. Returns the new revision and complete scene. Audio mode muted (default) or source is saved with the revision; source requires a recording with an audio track. PNG previews remain silent.
 
 Annotations: writes, not idempotent, closed world.
 
@@ -119,6 +119,8 @@ Annotations: writes, not idempotent, closed world.
 | `changes.keyframes[].x` | number | yes |  | 0 to 1 |
 | `changes.keyframes[].y` | number | yes |  | 0 to 1 |
 | `changes.keyframes[].easing` | string | yes |  | one of `linear`, `smooth`, `ease-in`, `ease-out` |
+| `changes.audio` | object |  |  |  |
+| `changes.audio.mode` | string |  |  | one of `muted`, `source`; Muted by default, including older scenes without audio settings. Source includes the first audio track, trimmed to the same clip and padded with silence to the rendered video duration. |
 
 ```sh
 tomaccoctl call demo.scene.update '{"path":"<path>","if_revision":1,"changes":{}}'
@@ -148,7 +150,7 @@ tomaccoctl call demo.preview '{"path":"<path>","if_revision":1,"time":0,"output"
 
 **Export demo video**
 
-Submit a durable job for silent H.264/yuv420p MP4, OUTPUT.mp4.poster.png and OUTPUT.mp4.manifest.json. Source inputs are copied and hashed privately. Success requires independent full decode and exact dimensions/FPS/frame-count validation. Output times are i/fps, count ceil(duration\*fps). Existing files are never overwritten. Reuse an identical request_id to retrieve its job; use a new output for an explicit retry after failure. Use job.wait/get/cancel.
+Submit a durable job for H.264/yuv420p MP4 (muted by default; saved audio.mode source includes AAC audio), OUTPUT.mp4.poster.png and OUTPUT.mp4.manifest.json. Source inputs are copied and hashed privately. Success requires independent full video and audio decode, exact dimensions/FPS/frame-count validation, and the requested audio policy. Output times are i/fps, count ceil(duration\*fps). Existing files are never overwritten. Reuse an identical request_id to retrieve its job; use a new output for an explicit retry after failure. Use job.wait/get/cancel.
 
 Annotations: writes, idempotent, closed world.
 
@@ -167,7 +169,7 @@ tomaccoctl call demo.export '{"path":"<path>","if_revision":1,"output":"<output>
 
 **Validate demo export**
 
-Fully decode and inspect a completed local export. Return actual dimensions, FPS, duration, audio, frame count, codec and SHA-256. If a sidecar exists, its media digest must match.
+Fully decode and inspect a completed local export. Return actual dimensions, FPS, duration, audio, frame count, codec and SHA-256. If a sidecar exists, its media digest must match. Reports the actual audio stream and checks the saved export audio policy when a scene sidecar is present.
 
 Annotations: read-only, idempotent, closed world.
 

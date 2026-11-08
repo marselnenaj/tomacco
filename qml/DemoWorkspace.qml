@@ -39,6 +39,7 @@ StudioScrollView {
     readonly property bool dirty: loaded && (Object.keys(invalidFields).length>0 || JSON.stringify(draft)!==JSON.stringify(savedScene))
     readonly property bool rendering: jobState==="queued" || jobState==="running"
     readonly property bool canRender: loaded && !dirty && !saving && !loading && !rendering && capabilities.ready===true
+    readonly property bool audioSupported: !!capabilities.audio && !!capabilities.audio.modes && capabilities.audio.modes.indexOf("source")>=0
     readonly property var poses: draft.keyframes || []
     readonly property var pose: poses[selectedPose] || ({})
     readonly property var presetIds: capabilities.presets && capabilities.presets.length ? capabilities.presets.map(p=>typeof p==="string"?p:p.id) : ["portrait-orbit","landscape-orbit","square-float","portrait-still"]
@@ -71,7 +72,7 @@ StudioScrollView {
         if(!loaded)return
         invalidNumber(group+"."+key,false)
         let next=clone(draft)
-        if(group)next[group][key]=value;else next[key]=value
+        if(group){if(!next[group])next[group]={};next[group][key]=value}else next[key]=value
         draft=next;editVersion++;message("",false)
     }
     // Numbers are typed the way the interface language writes them (Numbers.js) and stored canonically.
@@ -105,7 +106,7 @@ StudioScrollView {
         if(!dirty || saving)return
         if(Object.keys(invalidFields).length){message(qsTr("Enter a valid number."),true);return}
         const changes={}
-        for(const key of ["title","clip","output","device","background","shadow","camera","keyframes"])
+        for(const key of ["title","clip","output","audio","device","background","shadow","camera","keyframes"])
             if(JSON.stringify(draft[key])!==JSON.stringify(savedScene[key]))changes[key]=clone(draft[key])
         saving=true;call("demo.scene.update",{path:scenePath,if_revision:revision,changes:changes},{editVersion:editVersion})
     }
@@ -241,7 +242,34 @@ StudioScrollView {
         }
         StudioPanel {
             Layout.fillWidth:true;visible:view.loaded;title:qsTr("Preview & export")
-            lead:qsTr("Preview one frame, then export a silent MP4. A poster and a render record are saved beside it.")
+            lead:qsTr("Preview one frame, then export an MP4. A poster and a render record are saved beside it.")
+            StudioCheckBox {
+                id: audioToggle
+                objectName:"demoSourceAudio"
+                Layout.fillWidth:true;Layout.minimumWidth:0
+                visible:view.audioSupported
+                text:qsTr("Include source audio")
+                checked:!!view.draft.audio && view.draft.audio.mode==="source"
+                enabled:!!view.draft.source && view.draft.source.has_audio===true
+                    && (checked || view.capabilities.audio.source_available!==false)
+                    && !view.loading && !view.saving && !view.rendering
+                implicitHeight:Math.max(Theme.controlHeight,contentItem.implicitHeight)
+                contentItem: Text {
+                    text:audioToggle.text;font:audioToggle.font
+                    color:audioToggle.enabled?Theme.text:Theme.faint
+                    leftPadding:audioToggle.indicator.width+audioToggle.spacing
+                    verticalAlignment:Text.AlignVCenter;wrapMode:Text.WordWrap
+                }
+                onToggled:view.setField("audio","mode",checked?"source":"muted")
+            }
+            Caption {
+                visible:view.audioSupported
+                text:!view.draft.source || view.draft.source.has_audio!==true
+                    ?qsTr("This video has no audio track.")
+                    :view.capabilities.audio.source_available===false
+                        ?qsTr("Source audio requires the local AAC encoder.")
+                        :qsTr("Source audio follows the selected clip; preview frames are silent.")
+            }
             Rectangle {Layout.fillWidth:true;implicitHeight:Math.min(Theme.px(440),Math.max(Theme.px(180),width*(view.draft.output?view.draft.output.height/view.draft.output.width:1)));color:Theme.inset;border.color:Theme.border
                 Image {objectName:"demoPreviewImage";anchors.fill:parent;anchors.margins:Theme.gapSm;fillMode:Image.PreserveAspectFit;source:view.previewPath?view.fileUrl(view.previewPath):"";cache:false;asynchronous:true}
                 Text {anchors.centerIn:parent;width:parent.width-Theme.gapLg;visible:!view.previewPath;text:qsTr("Your rendered preview appears here.");color:Theme.muted;font.pixelSize:Theme.fontBody;horizontalAlignment:Text.AlignHCenter;wrapMode:Text.WordWrap}

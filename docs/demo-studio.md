@@ -88,10 +88,35 @@ easing. Supported easing functions are reported by `demo.capabilities`. Poses
 interpolate at explicit frame timestamps, so a render does not depend on the
 desktop's animation frame rate or window size.
 
+## Original sound
+
+The scene's optional `audio` object selects `mode: "muted"` or `mode: "source"`.
+New scenes start muted. Older version-1 scenes without `audio` also remain
+muted, so opening them never turns on sound unexpectedly.
+
+The desktop switch and agent edits use the same scene revision. For a recording
+with an audio track, save source sound explicitly:
+
+```sh
+tomaccoctl call demo.scene.update '{"path":"/home/me/Videos/app-demo.json","if_revision":2,"changes":{"audio":{"mode":"source"}}}'
+```
+
+Use the returned revision for preview and export. Source mode selects the first
+audio track, trims it to the chosen source clip and encodes AAC. Initial gaps
+and a shorter track are filled with silence to match the rendered video's
+frame-aligned duration. A recording without audio cannot enable source mode.
+The recording itself stays unchanged. This is original-sound inclusion;
+volume automation, background music and mixing are separate follow-up work.
+
+The export manifest records the requested audio mode and actual media streams.
+Success requires an independent audio/video decode and audio-policy check.
+`demo.export.inspect` reports whether the finished file actually has audio.
+
 ## Current bounds
 
-The initial renderer exports silent H.264 MP4 with yuv420p pixels and PNG preview
-frames. Its capabilities report the installed FFmpeg/renderer readiness, size,
+The renderer exports H.264 MP4 with yuv420p pixels and PNG preview
+frames. Exports are muted by default. Enable **Include source audio** to keep
+the recording's original sound; PNG preview frames remain silent. Its capabilities report the installed FFmpeg/renderer readiness, size,
 duration and geometry limits. A higher output frame rate can repeat source
 frames; a larger canvas does not create source detail. The manifest distinguishes
 source and output metadata.
