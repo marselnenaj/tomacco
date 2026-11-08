@@ -2205,7 +2205,7 @@ The model determines the display and frame. Android comes from the chosen system
     </message>
     <message>
         <source>locked · unlock on the device</source>
-        <translation>লক कরা · ডিভাইসে আনলক করুন</translation>
+        <translation>লক করা · ডিভাইসে আনলক করুন</translation>
     </message>
     <message>
         <source>no answer</source>
@@ -4875,7 +4875,7 @@ SSH আপনার বিদ্যমান কী ও পরিচিত হ�
     </message>
     <message>
         <source>Set app version</source>
-        <translation>অ্যাপ সंস্করণ সেট করুন</translation>
+        <translation>অ্যাপ সংস্করণ সেট করুন</translation>
     </message>
     <message>
         <source>Check Android release readiness</source>
@@ -7218,7 +7218,7 @@ GNU জেনারেল পাবলিক লাইসেন্স, সংস
     </message>
     <message>
         <source>Not supported here</source>
-        <translation>এखানে সমর্থিত নয়</translation>
+        <translation>এখানে সমর্থিত নয়</translation>
     </message>
     <message>
         <source>Applied and read back</source>
@@ -7385,7 +7385,7 @@ GNU জেনারেল পাবলিক লাইসেন্স, সংস
     </message>
     <message>
         <source>TalkBack here switches the screen reader on the device and keeps your other accessibility services. It does not show that your app works with a screen reader; the accessibility audit only checks the screen&apos;s structure.</source>
-        <translation>এखানে TalkBack ডিভাইসে স্ক্রিন রিডার চালু করে এবং আপনার অন্য অ্যাক্সেসিবিলিটি পরিষেবা বজায় রাখে। এটি দেখায় না যে আপনার অ্যাপ স্ক্রিন রিডারের সাথে কাজ করে; অ্যাক্সেসিবিলিটি অডিট শুধু স্ক্রিনের গঠন যাচাই করে।</translation>
+        <translation>এখানে TalkBack ডিভাইসে স্ক্রিন রিডার চালু করে এবং আপনার অন্য অ্যাক্সেসিবিলিটি পরিষেবা বজায় রাখে। এটি দেখায় না যে আপনার অ্যাপ স্ক্রিন রিডারের সাথে কাজ করে; অ্যাক্সেসিবিলিটি অডিট শুধু স্ক্রিনের গঠন যাচাই করে।</translation>
     </message>
     <message>
         <source>QA environment (*.json)</source>
