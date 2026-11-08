@@ -1,0 +1,226 @@
+{
+  "schema": "tomacco-public-release-performance/1",
+  "status": "qualified_common_api_offline",
+  "tested_at": "2026-11-08T12:16:42Z",
+  "old": {
+    "tag": "v1.4.1",
+    "release_url": "https://github.com/marselnenaj/tomacco/releases/tag/v1.4.1",
+    "source_commit": "c708ff649821e8de4a2d69752f2f4f9ee08af3a6",
+    "package_sha256": "24e718cbcfb6b7ea55d9a67f0534a20099b1bf62bb86fc5db9a0c2e5ef3ca35a",
+    "binary_sha256": "5850c6019bbaf313826f40453d22c774b4bb2c351f5c878ade042343ac9cf6c0",
+    "signature_verified_before_extract_run": true,
+    "trusted_verifier_sha256": "cfad72cd172158d4a6711611d1270bcd5abe01ad3cb5e691c1f425eeeb6ab960"
+  },
+  "new": {
+    "version": "1.5.0",
+    "code_candidate_commit": "c2e2326f66879a595d27f476bf7964b49faf8c33",
+    "runtime_commit": "e0b79fe4207a50c7f7416af8392ee4a0a5648906",
+    "binary_sha256": "cfad72cd172158d4a6711611d1270bcd5abe01ad3cb5e691c1f425eeeb6ab960",
+    "publication_performed_by_benchmark": false
+  },
+  "common_api": {
+    "operation": "screen.ocr",
+    "source_schema": "https://github.com/marselnenaj/tomacco/blob/c708ff649821e8de4a2d69752f2f4f9ee08af3a6/assets/operations.json",
+    "arguments": [
+      "image",
+      "language",
+      "invert",
+      "min_confidence",
+      "max_words",
+      "text_contains"
+    ],
+    "omitted_new_arguments": [
+      "adaptive",
+      "detail",
+      "engine_runs"
+    ],
+    "detail": "both versions default full word/line output;engine_runs is never sent as an argument"
+  },
+  "method": "Same native MCP boundary, same generated RGB pixels/text/selector per pair, changed top-left pixel outside labelled targets, old/new order alternated, first recognition per server kept separate. Server processes restarted each trial. Published oldAPI does not expose cached/engine_runs; only new metadata asserted. No device/agent reasoning/GPU/FPS or competitor measurements.",
+  "counts": {
+    "calls": 180,
+    "matched_pairs": 90,
+    "first_engine_pairs": 18,
+    "warm_fresh_pairs": 72,
+    "trials": 3,
+    "fresh_images_per_case_mode_trial": 5,
+    "real_app_crops": 3,
+    "word_text_rectangle_differences": 0,
+    "label_quality_differences": 0,
+    "operation_errors": 0,
+    "trapped_helpers": 0
+  },
+  "summary": {
+    "engine_first": {
+      "paired_ratio": {
+        "n": 18,
+        "unit": "ratio",
+        "p50": 0.7138840625885787,
+        "p95": 0.9380107525333863,
+        "min": 0.5010637787295812,
+        "max": 0.9380107525333863
+      },
+      "old_ms": {
+        "n": 18,
+        "unit": "ms",
+        "p50": 239.561107,
+        "p95": 424.764143,
+        "min": 136.344808,
+        "max": 424.764143
+      },
+      "new_ms": {
+        "n": 18,
+        "unit": "ms",
+        "p50": 157.042787,
+        "p95": 235.972476,
+        "min": 123.852194,
+        "max": 235.972476
+      },
+      "faster_pairs": 18,
+      "word_text_rectangle_differences": 0,
+      "label_quality_differences": 0
+    },
+    "warm_fresh": {
+      "paired_ratio": {
+        "n": 72,
+        "unit": "ratio",
+        "p50": 0.2961894134086934,
+        "p95": 0.3800903644644085,
+        "min": 0.20294609218564522,
+        "max": 0.40756962887636233
+      },
+      "old_ms": {
+        "n": 72,
+        "unit": "ms",
+        "p50": 242.82390199999998,
+        "p95": 422.745282,
+        "min": 133.800357,
+        "max": 436.100766
+      },
+      "new_ms": {
+        "n": 72,
+        "unit": "ms",
+        "p50": 69.293162,
+        "p95": 146.056713,
+        "min": 28.871053,
+        "max": 160.448625
+      },
+      "faster_pairs": 72,
+      "word_text_rectangle_differences": 0,
+      "label_quality_differences": 0
+    }
+  },
+  "warm_by_mode": {
+    "auto": {
+      "n": 36,
+      "median_paired_new_over_old": 0.3120699226200545,
+      "old_over_new_factor": 3.2044100617075526,
+      "old_p50_ms": 338.127978,
+      "new_p50_ms": 106.500351,
+      "faster_pairs": 36
+    },
+    "never": {
+      "n": 36,
+      "median_paired_new_over_old": 0.27620441532092266,
+      "old_over_new_factor": 3.6205069308472035,
+      "old_p50_ms": 156.3266785,
+      "new_p50_ms": 43.718500500000005,
+      "faster_pairs": 36
+    }
+  },
+  "quality": [
+    {
+      "variant": "published_v1_4_1",
+      "mode": "auto",
+      "target_hits": 16,
+      "target_total": 18,
+      "labelled_word_hits": 23,
+      "labelled_word_total": 28,
+      "primary_query_hits": 1,
+      "primary_query_total": 3
+    },
+    {
+      "variant": "published_v1_4_1",
+      "mode": "never",
+      "target_hits": 15,
+      "target_total": 18,
+      "labelled_word_hits": 22,
+      "labelled_word_total": 28,
+      "primary_query_hits": 1,
+      "primary_query_total": 3
+    },
+    {
+      "variant": "candidate_v1_5_0",
+      "mode": "auto",
+      "target_hits": 16,
+      "target_total": 18,
+      "labelled_word_hits": 23,
+      "labelled_word_total": 28,
+      "primary_query_hits": 1,
+      "primary_query_total": 3
+    },
+    {
+      "variant": "candidate_v1_5_0",
+      "mode": "never",
+      "target_hits": 15,
+      "target_total": 18,
+      "labelled_word_hits": 22,
+      "labelled_word_total": 28,
+      "primary_query_hits": 1,
+      "primary_query_total": 3
+    }
+  ],
+  "memory_process_tree_samples": [
+    {
+      "variant": "published_v1_4_1",
+      "n": 72,
+      "resident_rss_kib_p50": 11776.0,
+      "sampled_peak_rss_kib_p50": 103006.0
+    },
+    {
+      "variant": "candidate_v1_5_0",
+      "n": 72,
+      "resident_rss_kib_p50": 81658.0,
+      "sampled_peak_rss_kib_p50": 83620.0
+    }
+  ],
+  "primary_misses_preserved": [
+    "Save task on real-portrait: no query match in either version, bothauto/never",
+    "Toolchain on real-project-header: no query match in either version, bothauto/never"
+  ],
+  "cluster_bootstrap": {
+    "method": "2000 deterministic resamples of18 case/mode/trial clusters;4 warm frames each;median paired ratio;descriptive only",
+    "seed": 150,
+    "median_paired_ratio_ci95": [
+      0.26350369722972555,
+      0.3120699226200545
+    ]
+  },
+  "environment": {
+    "load1_min": 69.9921875,
+    "load1_max": 71.70361328125,
+    "logical_cpus": 32,
+    "tesseract_binary_sha256": "9c19bce33d5408d82d691e9827862da3276814033b32f5e5e3263175a3d8b917",
+    "eng_traineddata_sha256": "daa0c97d651c19fba3b25e81317cd697e9908c8208090c94c3905381c23fc047",
+    "pillow_version": "13.0.0",
+    "contention": "Portable verification,other root tests/ARM work active;paired order alternated and per-call load retained."
+  },
+  "limits": [
+    "Published1.4.1 artifact was actually downloaded and verified;this is distinct from private1caa baseline used by performance-final-qualification.json.",
+    "Defaultauto36 warm pairs: median matched ratio0.31207 (~3.20\u00d7 factor);never36 pairs0.27620 (~3.62\u00d7);combined0.29619 (~3.38\u00d7). Ratios of pooled medians are different statistics.",
+    "Same word/rectangle inventories does not mean perfect OCR;existing misses above remain. Labels are a declared subset,not precision/CER or language-general accuracy.",
+    "Three prerecorded app crops with one changed top-left RGB pixel outside labelled targets,not live capture/video. PNG preparation excluded.",
+    "No device,transport,tap/verify,agent reasoning,GPU/display,FPS,build/run or competitor speed claim.",
+    "MCP is persistent;first recognition per server and subsequent fresh recognition separated. OS caches were not flushed. PublicoldAPI has no cache/engine-run metadata;unique bytes/paths ensure new images.",
+    "Sampledp95 is exploratory;three trialclusters per case/mode and a loaded shared host do not establish production-tail/reliability guarantees.",
+    "Worker retains a model:resident memory increases even though recognition latency falls;10ms /proc sampled sums count shared pages per process and can miss short peaks."
+  ],
+  "public_evidence": {
+    "asset": "tomacco-1.5.0-performance-evidence.tar.gz",
+    "manifest": "tomacco-1.5.0-performance-evidence/MANIFEST.json",
+    "raw": "raw/public-v1.4.1-paired.json",
+    "runner": "runners/benchmark_public_ocr.py",
+    "signature_verification": "verification/v1.4.1-signature-verification.json",
+    "raw_sha256": "4b317c78d20b0639cf26bf5a687b33a5c677fa66c0dc7811cf59effae17fb681"
+  }
+}
