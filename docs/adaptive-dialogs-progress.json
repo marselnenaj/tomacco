@@ -1,0 +1,149 @@
+{
+  "$comment": "Record of the adaptive file/folder/save chooser fix for root integration and qualification. Every result below was measured in this clone; nothing here was run on a Pixel, iPhone, MacBook or any other device, and nothing was installed or published.",
+  "date": "2026-11-08",
+  "model": "claude-opus-5-5 (Claude Code, Bash sandbox on)",
+  "worktree": "/home/maslos/Work/tomacco-adaptive-dialogs-20261108",
+  "branch": "fix/adaptive-file-dialogs",
+  "base": "d4dbe958b95cbe183fa7da165ed5a4ae3210515b",
+  "commits": {
+    "d714877": "File choosers: one app-owned adaptive chooser for every open, save and folder entry point (code, tests, 50 catalogs, docs, design evidence)",
+    "next": "docs: this record (tested d714877)"
+  },
+  "final_source_ready": true,
+  "final_source_ready_note": "Source, tests, catalogs, docs and design evidence are complete and pass on d714877 in this clone (host x86_64, Debug, offscreen). Root still owns the integration merge, the release/ARM64 builds, CTest as a whole, rust-core, and any install.",
+
+  "user_report": "Remaining Qt fallback dialogs at 175 % (global font 23 px): folder chooser 600x400, file dialogs 600x497/542, 16 px icons, path/name/filter controls clipped. Evidence: /home/maslos/Work/tomacco-project-picker-fix-20261107/.scratch/evidence/other/other-dialogs.json and other-*-175.png (Choose a web build 600x400; Import settings, Install app on device, Import device profiles 600x497; Export settings 600x542).",
+  "root_cause": "23 entry points declared QtQuick.Dialogs FileDialog/FolderDialog. On this desktop Qt uses its non-native Quick Dialogs fallback, which opens a separate window of fixed size and lays out its own controls from Qt's style, independent of Tomacco's Theme.uiScale; only the application font grew with the interface size, so text outgrew the fixed window and its one-line fields. The project chooser alone had already been replaced (ProjectFolderDialog, 2026-11-07).",
+
+  "implementation": {
+    "shared_component": "qml/FileChooserDialog.qml: a StudioDialog (theme tokens, StudioButton/StudioCheckBox/StudioComboBox/StudioScrollView) with mode open | save | folder. ProjectFolderDialog.qml is now a 30-line form of it (mode folder, folderTarget = Backend::projectFolder, startAt = beside the open project, markPath, namePrefix projectFolder) with its object names, properties (listing, target, rowHeight, sheet, insets, openWith, caption, defaultTitle) and chosen(path) signal unchanged.",
+    "backend": "src/backend.{h,cpp}: folderListing and the new fileListing share one listing() (same natural, locale-aware order incl. the C-locale fallback; folderListing output unchanged, no files key). New: fileListing(typed, base, hidden, patterns) adds matching files (case-insensitive wildcards, links to files with their canonical target, broken links and dot-files left out unless hidden); filterPatterns(\"Videos (*.mp4 *.mov)\") -> [\"*.mp4\",\"*.mov\"] as Qt's qt_clean_filter_list; pathInfo(path) {exists (broken links count), folder, file, link, readable, writable}; saveTarget(name, base, defaultSuffix): typed name or path (relative, absolute, ~/, file: URL), neither trimmed nor resolved, suffix added only to a name without a dot that is no folder (Qt's rule), a trailing / names a folder; fileUrl(path) = QUrl::fromLocalFile.",
+    "layout": "Location (path) and file name are wrapping mono TextAreas (up to 3 lines, scrolling beyond), left-aligned also under RTL mirroring; Parent/Home (icon-only and named when narrow), Hidden; list of folders then files (whole names, wrap, link target in mono, plain text); file name; File type combobox with wrapping label and choices; problem line; foot Flow (accent action at the end side, natural widths, wraps instead of squeezing). Body scrolls; foot stays. Desktop: centred, up to 760x640 logical px x scale. Sheet (whole window, 48 px targets, 16 px text) below 600 logical px of width or 480 of height; insets from the window's SafeArea (probe item on the window content item) and the on-screen keyboard (Qt.inputMethod); the focused file name is scrolled into view when the room changes.",
+    "behaviour": {
+      "open": "Click on a file row names it (no choice); double click, Enter on a highlighted file, Ctrl+Enter or Open choose an existing readable regular file (link path kept). A typed folder name enters the folder; a pasted file path shows its folder and names it. Unreadable file: Open off, message. Filters only narrow the listing (a typed existing file of another type is accepted, as Qt's dialogs did).",
+      "save": "Typed name (or path) in the shown folder; default suffix as saveTarget; a folder name enters the folder; a missing parent folder disables Save with a message; an existing target (also a broken link) opens the replace question with No focused (focus ring visible): Yes chooses, No/Escape close only the question and keep name and folder. The chooser never writes, creates or deletes a file.",
+      "folder": "Folders only; Open chooses the folder the location names (as browsed, links not resolved); a file path or missing path shows the error and Open is off.",
+      "cancel": "Cancel, Escape (and closing) emit rejected; accepted (and so every caller's onAccepted request/render/import/export/install) only ever follows choose() with a valid target."
+    },
+    "keyboard": "Ctrl+L location (select all), Enter in location = show (or name a typed file), Ctrl+Enter = choose, Alt+Up/Backspace/Left = parent, Right/Enter on folder = enter, Up/Down highlight (a file is named), Tab/Backtab move on, Escape cancels (or closes only the replace question).",
+    "text_safety": "Every name, path and message Text is Text.PlainText; in a right-to-left interface a path inside a sentence and a filter's wildcards are isolated (U+2066..U+2069).",
+    "new_icon": "StudioIcon \"file\" (same 24-unit stroke grid as \"files\")."
+  },
+
+  "entry_points": [
+    {"object": "installFileDialog", "where": "qml/Workspace.qml:1082", "mode": "open", "filters": ["Mobile apps (*.apk *.ipa)"], "accept": "panel.request(device.install, {platform, device, paths:[selectedPath]})", "opened_by": "Install APK/IPA (desktop and phone device page)"},
+    {"object": "screenshotFileDialog", "where": "qml/Workspace.qml:1083", "mode": "save", "filters": ["PNG (*.png)"], "defaultSuffix": "", "accept": "panel.request(device.screenshot, {platform, device, path})", "note": "no defaultSuffix, as before: the typed name is kept"},
+    {"object": "scenarioFileDialog", "where": "qml/TestWorkspace.qml:50", "mode": "open", "filters": ["JSON (*.json)"], "accept": "scenario field = path", "title": "JSON scenario (existing TestWorkspace text; stock had none)"},
+    {"object": "traceFileDialog", "where": "qml/ProfileWorkspace.qml:63", "mode": "open", "filters": ["Perfetto (*.pftrace *.perfetto-trace)"], "accept": "trace field = path", "title": "Choose file (existing ProfileWorkspace text)"},
+    {"object": "settingsExportDialog", "where": "qml/NativeWorkspace.qml:1437", "mode": "save", "filters": ["Tomacco settings (*.json)"], "defaultSuffix": "json", "accept": "view.exportSettingsTo(path)"},
+    {"object": "settingsImportDialog", "where": "qml/NativeWorkspace.qml:1438", "mode": "open", "filters": ["Tomacco settings (*.json)"], "accept": "view.importSettingsFrom(path)"},
+    {"object": "appleSdkFileDialog", "where": "qml/NativeWorkspace.qml:1519", "mode": "open", "filters": ["Xcode archive (*.xip)", "All files (*)"], "accept": "workspace.request(ios.sdk_install, {path}); showTab(jobs); iphoneSetup.close()"},
+    {"object": "webBuildFolderDialog", "where": "qml/Main.qml:469", "mode": "folder", "accept": "Studio.serveFolder(selectedFolder) (file: URL, unchanged)"},
+    {"object": "profileImportDialog", "where": "qml/Main.qml:519", "mode": "open", "filters": ["Device profiles (*.json)"], "accept": "Agent.request(catalog.import, {path})"},
+    {"object": "profileExportDialog", "where": "qml/Main.qml:520", "mode": "save", "filters": ["JSON (*.json)"], "defaultSuffix": "", "accept": "Agent.request(catalog.export, {profile_id, path})"},
+    {"object": "iosEngineFileDialog", "where": "qml/IosResearch.qml:701", "mode": "open", "filters": [], "accept": "view.enginePath = path"},
+    {"object": "iosBundleFolderDialog", "where": "qml/IosResearch.qml:702", "mode": "folder", "accept": "view.setBundle(path)"},
+    {"object": "iosApplicationFolderDialog", "where": "qml/IosResearch.qml:703", "mode": "folder", "accept": "view.virtualAppPath = path (an .app directory is a valid folder here, unlike the project chooser)"},
+    {"object": "demoSourceDialog", "where": "qml/DemoWorkspace.qml:261", "mode": "open", "filters": ["Videos (*.mp4 *.mov *.mkv *.webm)"], "accept": "source field = path; view.inspectSource()"},
+    {"object": "demoSceneSaveDialog", "where": "qml/DemoWorkspace.qml:262", "mode": "save", "filters": ["Scenes (*.json)"], "defaultSuffix": "json", "accept": "scene field = path (nothing written)"},
+    {"object": "demoSceneOpenDialog", "where": "qml/DemoWorkspace.qml:263", "mode": "open", "filters": ["Scenes (*.json)"], "accept": "view.openScene(path)"},
+    {"object": "demoPreviewDialog", "where": "qml/DemoWorkspace.qml:264", "mode": "save", "filters": ["PNG image (*.png)"], "defaultSuffix": "png", "accept": "view.render(preview, path)"},
+    {"object": "demoExportDialog", "where": "qml/DemoWorkspace.qml:265", "mode": "save", "filters": ["MP4 video (*.mp4)"], "defaultSuffix": "mp4", "accept": "view.render(export, path)"},
+    {"object": "debugProgramDialog", "where": "qml/DebugWorkspace.qml:246", "mode": "open", "filters": "native Android: [Android libraries (*.so), All files (*)], else [All files (*)]", "accept": "program field = path"},
+    {"object": "routeFileDialog", "where": "qml/EnvironmentPanel.qml:248", "mode": "open", "filters": ["GPX route (*.gpx)"], "accept": "view.inspectRoute(path)", "title": "Route playback (existing EnvironmentPanel text)"},
+    {"object": "environmentImportDialog", "where": "qml/EnvironmentPanel.qml:249", "mode": "open", "filters": ["QA environment (*.json)"], "accept": "view.importFrom(path)", "title": "Import… (existing text)"},
+    {"object": "environmentExportDialog", "where": "qml/EnvironmentPanel.qml:250", "mode": "save", "filters": ["QA environment (*.json)"], "defaultSuffix": "json", "accept": "view.exportTo(path)", "title": "Export… (existing text)"},
+    {"object": "androidModelFileDialog", "where": "qml/AndroidDevices.qml:409", "mode": "open", "filters": ["Device profile (*.json)"], "accept": "library.request(catalog.import, {path})"},
+    {"object": "projectFolderDialog", "where": "qml/NativeWorkspace.qml:1268 (ProjectFolderDialog, already app-owned; now built on FileChooserDialog)", "mode": "folder", "accept": "workspace.openProject(canonical project folder)"}
+  ],
+  "entry_point_notes": [
+    "All 23 former stock uses keep their caller, button, title, file types, default suffix (none where there was none) and accept action; only the path conversion changed: callers read selectedPath (the plain local path) instead of decodeURIComponent(selectedFile.toString().replace(/^file:\\/\\//,\"\")), which gave the same string for every valid path (#, %, spaces, Unicode; checked in backend test via QUrl::fromPercentEncoding). Main.qml's web build still passes selectedFolder (a file: URL) to Studio.serveFolder.",
+    "Callers without a stock title got an existing text of their own context; no caller text was added.",
+    "import QtQuick.Dialogs is gone from all 10 files; no MessageDialog/ColorDialog/FontDialog was used anywhere.",
+    "DemoWorkspace.localPath(url), only used by the stock dialogs, was removed; DemoWorkspace.fileUrl is unchanged.",
+    "NativeWorkspace's three choosers no longer bind sheet/insets to view.phone: they use the component's own rule (sheet below 600 px wide or 480 px high, SafeArea and keyboard insets), like every other caller. The project chooser keeps its tested sheet:view.phone and view insets."
+  ],
+  "preserved_contracts": [
+    "Project chooser: all object names (projectFolderDialog*, projectFolderName/Link), properties and signal; the existing desktop (15 sizes, navigation, de/ar/ja) and phone (6 sizes) project chooser tests pass unchanged.",
+    "folderListing output and natural C-locale ordering (backend tests theProjectChooser* unchanged and passing).",
+    "No operation, policy, approval, reservation or request-id code changed; requests are sent only from the callers' unchanged onAccepted handlers.",
+    "User zoom is respected: everything scales from Theme (uiScale); nothing clamps or resets the interface size."
+  ],
+
+  "languages": {
+    "before": {"texts": 1889, "digest": "5d7260fd1b72", "sources_listing_sha256": "01786d156f35303741259b9c1d3bdc9e41caa865c06765e566e3325068c06025", "catalogs_concat_sha256": "fdd1f0c37a29723d96fa0e3f3dba7d0c0251a8279778bd1949c1455ec711a92a", "complete": "50/50"},
+    "after": {"texts": 1894, "digest": "161b3088e436", "sources_listing_sha256": "5a3ed08091f502b29b60872dbf7a35d836920070978073a6feadbfa19cb2321b", "catalogs_concat_sha256": "2fd3db1bbb43c8f19889187a5d0701e1aa70d7a8cea87b3a0aceef20c0c25970", "complete": "50/50"},
+    "hash_definitions": "sources_listing_sha256 = sha256 of `python3 tools/i18n_catalog.py sources`; catalogs_concat_sha256 = sha256 of the sorted i18n/*.ts files concatenated (base value from git show d4dbe95)",
+    "new_texts": {"context": "FileChooserDialog", "indexes": [1889, 1890, 1891, 1892, 1893], "sources": ["%1 already exists. Do you want to replace it?", "File name", "File type", "No files here", "Type or paste a folder path"], "plurals": 0, "placeholders": "%1 in the first only"},
+    "translations_changed": "250 (5 x 50 catalogs incl. generic es and es-MX); i18n/tomacco_en.ts unchanged (no new plural); i18n/COVERAGE.md regenerated (only counts and digest changed); 0 removed texts",
+    "reused_with_identical_meaning": ["StudioDialog: Open, Save, Cancel, Yes, No", "ProjectFolderDialog: Parent folder, Home folder, No folders here", "FileWorkspace: Hidden, Choose folder", "DebugWorkspace: Choose file", "Backend: %1 cannot be read.", "Workspace: Type the folder of a Swift, Kotlin or Flutter project (project chooser only)"],
+    "authorship": "Translations written by Claude (claude-opus-5-5) following each catalog's own terms (file, folder, path) and form of address; not reviewed by native speakers.",
+    "workflow": "tools/i18n_catalog.py sync -> .scratch/chooser_translations.py (writes .scratch/chooser-i18n/<code>.tsv, runs `apply CODE FILE`; 250 applied, 0 rejected, 0 unfinished) -> report --write i18n/COVERAGE.md",
+    "validation": ["test_i18n: 18 ran, 0 failed, 1 skipped (no usable node binary for the Numbers.js check, as before)", "qm roundtrip (.scratch/qm_roundtrip.py with tools/tomacco_i18n.compile_catalog/read_qm): 51 catalogs, 94721 finished messages read back identical, numerus rules valid, the 5 texts finished in every translated catalog with %1 kept once", "rendered: de, ar (RTL), ja in desktop-ui file_chooser_reads_in_german_arabic_and_japanese (translated title, labels, buttons, placeholder, file type, replace question)"]
+  },
+
+  "tests": {
+    "environment": "Every Qt test via .scratch/run_qt.sh: fresh private HOME/XDG_*/TOMACCO_HOME under /tmp, TMPDIR=/tmp, ANDROID_HOME pointing nowhere, PATH = traps + /usr/bin with adb, fastboot, ssh, scp, emulator, avdmanager, sdkmanager, xtool, idevice*, iproxy, scrcpy, go-ios, ios, usbmuxd, tailscale and agent CLIs trapped (exit 97, logged), QT_QPA_PLATFORM=offscreen, QT_QUICK_BACKEND=software, Basic style, generic platform theme, TOMACCO_UPDATES=off; QTWEBENGINE_DISABLE_SANDBOX unset, no --no-sandbox. Synthetic files only; no device, no network, no user project.",
+    "trapped": "Across the final runs only read-only discovery/version probes were caught: adb devices -l (274), idevice_id -l (143), xtool sdk status/--version, opencode --version, codex/claude mcp get, ssh -V, sdkmanager/scrcpy/iproxy/ideviceinfo/go-ios/emulator --version, avdmanager list target, adb version, xtool auth status. None reached a device.",
+    "build": "build/ (Ninja, Debug, BUILD_TESTING=ON, CARGO_EXECUTABLE=/usr/bin/true). build/cargo/release/tomaccoctl is a copy of /home/maslos/Work/tomacco-project-picker-final-20261107/build/tomaccoctl (sha256 8c8d523fb9958ee3164b1ef292c64ef7fab069389d6771ccb3e933b0a4e95a6c), built from the same base d4dbe95; not the installed CLI. No Rust input changed on this branch; rust-core not run.",
+    "new": {
+      "backend theFileChooserListsFilesNamesSaveTargetsAndEncodesUrls": "filterPatterns forms; fileListing type filter (case ignored), order, links with target, broken link and dot-files left out, hidden, Videos filter, missing folder; folderListing has no files key; pathInfo incl. broken link; saveTarget suffix rules, untrimmed names, folder names, .., relative/absolute/~/file: URL, line breaks, blank; fileUrl encodes # and %.",
+      "desktop-ui every_file_and_folder_entry_point_uses_the_app_chooser": "builds every page; no FileDialog/FolderDialog/QFileDialogOptions object in the window; each of the 23 is a FileChooserDialog with the caller's mode, filters, suffix and a title; one project chooser.",
+      "desktop-ui file_choosers_fit_at_every_interface_size": "10 rows (100/125/150/175/200 % x 1380x970 and 900x640) x open (scenario), save (settings export) and folder (web build): no separate window, inside the window, sheet rule, font sizes, location/name wrap and left alignment, controls inside, named, not overlapping where visible, touch targets on a sheet, foot buttons at natural width with uncut labels, list reachable with two rows, every row's whole plain-text name; only the type's files listed; Escape accepts nothing; nothing written.",
+      "desktop-ui save_chooser_adds_the_suffix_and_asks_before_replacing": "Demo scene path via its real button at 175 %: new name + .json chosen (field set, file not created, file: URL encodes # as %23), reopens in the same folder, name with a dot kept, folder name enters the folder, missing folder disables Save with message (Ctrl+Enter ignored), click names an existing file, Save opens the question with No focused, Escape and No keep everything (file content unchanged), Yes chooses it (content unchanged), Cancel and Escape choose nothing.",
+      "desktop-ui open_chooser_filters_validates_and_chooses_existing_files": "UI-test scenario via its real button at 150 %: keys highlight names a file without choosing, unreadable file refused with message, missing name refused, pasted file path shows its folder and names it, link row names its target, double click chooses (# % Unicode path in the field), Enter on the link chooses the link path, the listing made while opening keeps to the file type, folder click enters, empty folder says No files here, Cancel; Apple SDK: file type switched through the combobox lists all files, Escape requests no ios.sdk_install, the chosen type stays.",
+      "desktop-ui folder_chooser_chooses_the_folder_it_shows": "iOS app bundle chooser: path through a linked folder kept, only folders, a file path refused, clicking Bundle.app enters it without choosing, Open sets virtualAppPath and selectedFolder; web build chooser: layout, Escape leaves the browser.",
+      "desktop-ui choosers_that_start_an_operation_dispatch_nothing_on_cancel": "18 dispatching or state-changing choosers, each with a valid choice ready, alternately Cancel and Escape: no accepted, one rejected, empty selectedPath; no device.install, device.screenshot, catalog.import/export, ios.sdk_install, demo.*, environment.* or route request pending or answered; no file created.",
+      "desktop-ui file_chooser_reads_in_german_arabic_and_japanese": "settings export at 175 %: translated title, File name, Save, Cancel, Parent folder, placeholder, File type; full layout check; RTL: tools and foot mirrored, names start beside their icon, wildcards isolated; replace question translated with the path isolated in Arabic; No/Escape keep the file unchanged.",
+      "phone-routes file_choosers_are_phone_sheets_with_touch_targets": "8 rows: 320x640@100, 360x800@150, 393x852@175, 412x915@200, 393x852@125 with a 330 px keyboard inset, 360x480@150, 852x393@100 and 915x412@150 (landscape): Install IPA and Screenshot from the phone device page (or opened directly in landscape), sheet over the room above the keyboard, 16 px x scale, every control and row a 48 px x scale target inside the width, foot buttons visible above the keyboard at natural width on one line, typed path, only apps listed, whole names, tap names a file without choosing, the focused file name in view, Cancel/Escape install and save nothing."
+    },
+    "red_before_fix": [
+      "Base QML (d4dbe95 worktree, same new test file): every_file_and_folder_entry_point_uses_the_app_chooser FAILS 'stock.isEmpty()' with the stock dialogs' QFileDialogOptions objects; file_choosers_fit_at_every_interface_size(175-1380x970) FAILS (no app chooser exists). Geometry of the stock dialogs at 175 %: the earlier measurement other-dialogs.json (600x400 / 600x497 / 600x542).",
+      "Deliberate breakages of qml/FileChooserDialog.qml, each caught and reverted: no replace question -> save test fails at the question; no default suffix -> save test fails on the target; Cancel choosing -> cancel test fails on accepted. Regressions found and fixed during this work, each caught by the new tests or the rendered screenshots: overlay probe blocking Ctrl+O (project chooser test), stale current row in onCurrentIndexChanged (open test), sheet text fields below 48 px (fit test), focused name not kept in view on keyboard/resize (phone test), first listing ignoring the file type (open test after reordering), squeezed/elided foot buttons and RTL name alignment (screenshots; tests tightened to assert both).",
+      "Incident: the 'Cancel choosing' mutant ran in the isolated test app and accepted the first dialog (install), so one device.install request with a synthetic .json path and no device reached the isolated test control plane (build tomaccoctl, private TOMACCO_HOME). Its trap log shows only the usual discovery probes (adb devices -l x4, idevice_id -l x2, xtool, agent CLIs); no install command ran and no device was reachable. No further mutant touched a dispatching caller."
+    ],
+    "results_on_d714877": [
+      {"command": ".scratch/run_qt_chunks.sh test-desktop-ui 3 (whole suite, 93 functions, ordered thirds)", "result": "57 + 61 + 35 passed, 0 failed"},
+      {"command": ".scratch/run_qt_chunks.sh test-phone-routes 2 (whole suite, 12 functions)", "result": "28 + 18 passed, 0 failed"},
+      {"command": ".scratch/run_qt.sh for test-backend, test-environment-panel, test-demo-workspace, test-studio-button, test-mobile-nav, test-mobile-row, test-agent-client-picker, test-handoff-banner, test-nativeview, test-demo-renderer", "result": "27, 16, 21, 9, 10, 8, 6, 14, 8, 11 passed; 0 failed; no QML warning from FileChooserDialog/ProjectFolderDialog"},
+      {"command": "build/tomacco --smoke-test .scratch/smoke-project (isolated, offscreen, traps)", "result": "exit 0, passed: true, no QML errors"},
+      {"command": "TMPDIR=/tmp python3 .scratch/run_py_tests.py test_i18n test_docs_consistency test_mobile_parity test_docs_links test_docs_reference test_build_site_docs test_release_files test_install test_build_source_release", "result": "9 modules, 151 ran, 0 failed, 3 skipped (test_i18n: no usable node binary; test_install x2: only a debug tomaccoctl can be killed at a chosen point)"},
+      {"command": "TMPDIR=/tmp python3 .scratch/run_py_tests.py test_product", "result": "111 ran, 0 failed"},
+      {"command": "python3 -I .scratch/qm_roundtrip.py .", "result": "51 catalogs, 94721 messages identical"}
+    ],
+    "pre_existing_order_dependence": "In a 4-chunk split the last chunk's a_job_that_ends_in_the_background_is_notified and update_banner_offers_a_new_version_once_and_later_puts_it_away fail; the same function list fails identically on the unchanged base build (d4dbe95, logs .scratch/test-logs/chunk3-alone.log and base-chunk3.log); both pass in the ordered thirds above and update_banner alone. Not caused by this change.",
+    "not_run": ["rust-core (no Rust change)", "control-plane python unittest discovery as a CTest group beyond the modules above", "ARM64 build and container (root)", "any physical device, Pixel, iPhone or MacBook check"]
+  },
+
+  "screenshots": {
+    "directory": "docs/design/adaptive-dialogs/",
+    "kind": "Real renders of the built app (Qt offscreen, software renderer) from the tests above with synthetic files; window grabs, not retouched. The phone keyboard is a simulated 330 px inset (offscreen draws no keyboard; the page shows below the sheet).",
+    "files": "file-chooser-{open,save,folder}-{100,175,200}-{1380x970,900x640} (18), file-chooser-save-new-175, file-chooser-replace-question-175, file-chooser-open-filter-150, file-chooser-save-175-{de,ar,ja}, file-chooser-replace-175-{de,ar,ja}, phone-file-chooser-{install,screenshot}-{320-100,360-150,393-175,412-200,852-100,915-150}, phone-file-chooser-{install,screenshot}-keyboard-393-125 (41 files)",
+    "inspected": "Viewed at 1:1 to 2x in Bogen (canvas_screenshot of uploaded captures). The first renders showed defects the geometry checks had missed (Open elided to 'Op…', phone 'Cance l'/'Sav e', Arabic Cancel elided, RTL/LTR names away from their icons, '(json.*)' in Arabic, no focus ring on No, a cramped landscape dialog); all fixed and re-rendered, and the tests now assert the foot widths, uncut labels and alignments."
+  },
+
+  "bogen": {
+    "file": "u8uvnj33hx (Tomacco · App), brand mm6iq5cs67 v6; pages pvcps58bsa / ui226jha6w / u17qz4xpxe; no page, brand or file created, duplicated or archived; existing boards unchanged; Omarchy Mobile Settings file 4i2m3i6ssq not touched",
+    "checkpoint_before": "mw73b3ja-8f55895a",
+    "checkpoint_after": "mw73t6do-44d8c362",
+    "components": {"Mobile / File chooser": {"sheet": "wn42y1snnf", "dialog": "suu0bhd363", "props": ["title", "path", "file-name", "show-file", "file-type", "show-type", "problem", "show-problem", "action"], "slot": "entries"}, "Mobile / File chooser entry": {"folder": "8m44q5eqhx", "file": "5cj9u8jtpg", "props": ["name", "target", "show-target"]}, "Mobile / File chooser replace": {"id": "dyqk7tkjs2", "props": ["question"]}},
+    "artboards": {"cy5ndx7v8b": "02 · component & states (save, folder, error)", "kkdhpfje2k": "02 · desktop dialog at 100 %", "xw5eiqpyd2": "01 · 24 · Datei wählen · Sheet · 393", "kznxb39dd7": "03 · Desktop · Speichern & Ersetzen? · 1440x900", "m2ga8mchqa": "03 · App-Render evidence board (offscreen, synthetic files), 12 captures"},
+    "type_roles": "Archivo / JetBrains Mono through the existing text-style keys (mobile-page-title, mobile-body, mobile-small, mobile-section, mobile-meta, mobile-button) and app-* tokens; the desktop variant uses the app desktop roles (body 13, display 28/900) as inline token values.",
+    "brand_check": {"xw5eiqpyd2": "91, 0 hard, 0 soft", "cy5ndx7v8b": "92, 0 hard, 1 soft (disabled Open in the error state at 3.94:1, deliberate as Theme.faint)", "kkdhpfje2k": "96, 0 hard, 0 soft", "kznxb39dd7": "94, 0 hard, 0 soft", "m2ga8mchqa": "87, 0 hard, 0 soft"},
+    "responsive_check": {"xw5eiqpyd2": "ok at 320/360/393/412", "cy5ndx7v8b": "ok at 320/360/393/412", "kznxb39dd7": "ok at 1440/1380/900 (after centring the question)"},
+    "readme": "docs/design/README.md section 'Datei-, Ordner- und Speichern-Wahl (2026-11-08)'"
+  },
+
+  "docs": ["docs/desktop.md: new 'Choosing files and folders' section (the old sentence that the other choosers were still Qt's own is gone)", "docs/mobile-native.md: phone table row with test names", "CHANGELOG.md Unreleased/Fixed entry", "docs/design/README.md", "this record"],
+
+  "limitations": [
+    "No real-device qualification: the phone sheet, SafeArea insets (read through a probe item) and the on-screen keyboard inset were exercised only offscreen with simulated insets; nothing ran on the Pixel.",
+    "The project chooser keeps its own sheet rule (NativeWorkspace view.phone, width only) to preserve its tested contract, so in a short landscape window it stays a centred dialog while every other chooser becomes a sheet. Aligning it is a small follow-up.",
+    "Filters narrow only the listing; a typed existing file of another type is accepted, and no extension is changed when the file type is switched (as Qt's dialogs; a name is never changed silently).",
+    "A save into a folder that exists but is not writable is not refused by the chooser; the caller's operation reports the error, as before.",
+    "The chooser does not show sizes or dates and offers no rename, delete or new-folder actions (out of scope by request).",
+    "Translations of the five new texts are machine-authored, not native-speaker reviewed.",
+    "The ordered-chunk dependence of two existing desktop tests (see tests.pre_existing_order_dependence) remains."
+  ],
+  "not_done_on_purpose": ["No install of the built binary, no push, tag, release or upload, no message to anyone", "No device, network, USB, ADB, SSH or Bluetooth access", "No ARM64 build, no restart of earlier pipelines, no change to the deployed candidate", "No global configuration change; Bash sandbox and browser sandboxes untouched (no browser was used)"]
+}
