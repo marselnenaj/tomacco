@@ -3,6 +3,14 @@
 Tomacco 1.5.0 brings the desktop, phone layout and coding agents onto the same
 296-operation workflow. It follows [1.4.1](RELEASE_NOTES_1.4.1.md).
 
+## Highlights
+
+- Faster fresh-image OCR in persistent agent sessions, with a bounded isolated model worker.
+- Optional adaptive OCR and compact target results; complete two-polarity reads remain the default.
+- Scale-aware file choosers and phone layouts, with 50 translation catalogs plus English.
+- Ten coding-agent adapters, cooperative device reservations and durable action outcomes.
+- Agent-controlled Demo Studio for perspective device videos, with optional original sound.
+
 ## Desktop, phone and languages
 
 - All 50 Omarchy translation catalogs plus English cover 1,898 marked interface texts.
