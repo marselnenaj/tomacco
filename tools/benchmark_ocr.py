@@ -28,7 +28,8 @@ import threading
 import time
 
 ROOT = Path(__file__).resolve().parents[1]
-CORPUS = ROOT / 'tests/fixtures/ocr-corpus'
+SOURCE_CORPUS = ROOT / 'tests/fixtures/ocr-corpus'
+CORPUS = SOURCE_CORPUS if SOURCE_CORPUS.is_dir() else ROOT / 'benchmarks/ocr-corpus'
 TRAPS = ('adb','fastboot','ssh','scp','uxplay','bluetoothctl','ideviceinfo','idevicepair','iproxy','xtool','xcrun','pymobiledevice3','tidevice','go-ios','hyprctl','pactl','wpctl','tomacco')
 
 
@@ -295,11 +296,13 @@ def run(args):
 
 
 def main():
+    global CORPUS
     parser=argparse.ArgumentParser(description=__doc__);sub=parser.add_subparsers(dest='command',required=True)
     build=sub.add_parser('build');build.add_argument('--media-root',type=Path,required=True)
-    bench=sub.add_parser('run');bench.add_argument('--cli');bench.add_argument('--trials',type=int,default=3);bench.add_argument('--modes',default='auto,never');bench.add_argument('--cases');bench.add_argument('--detail',choices=['full','matches'],default='full');bench.add_argument('--min-confidence',type=float,default=40);bench.add_argument('--tessdata',type=Path,default=Path('/usr/share/tessdata'));bench.add_argument('--output',type=Path,default=ROOT/'qa/ocr-fast/result.json')
-    mcp=sub.add_parser('mcp');mcp.add_argument('--cli',required=True);mcp.add_argument('--tessdata',type=Path,default=Path('/usr/share/tessdata'));mcp.add_argument('--output',type=Path,default=ROOT/'qa/ocr-fast/mcp-cache.json')
+    bench=sub.add_parser('run');bench.add_argument('--cli');bench.add_argument('--trials',type=int,default=3);bench.add_argument('--modes',default='auto,never');bench.add_argument('--cases');bench.add_argument('--detail',choices=['full','matches'],default='full');bench.add_argument('--min-confidence',type=float,default=40);bench.add_argument('--tessdata',type=Path,default=Path('/usr/share/tessdata'));bench.add_argument('--corpus',type=Path,help='Use an explicit labelled corpus directory');bench.add_argument('--output',type=Path,default=ROOT/'qa/ocr-fast/result.json')
+    mcp=sub.add_parser('mcp');mcp.add_argument('--cli',required=True);mcp.add_argument('--tessdata',type=Path,default=Path('/usr/share/tessdata'));mcp.add_argument('--corpus',type=Path,help='Use an explicit labelled corpus directory');mcp.add_argument('--output',type=Path,default=ROOT/'qa/ocr-fast/mcp-cache.json')
     args=parser.parse_args()
+    if getattr(args,'corpus',None) is not None:CORPUS=args.corpus.resolve()
     if args.command=='build':build_corpus(args.media_root)
     elif args.command=='mcp':run_mcp(args)
     else:

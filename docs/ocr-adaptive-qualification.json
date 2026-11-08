@@ -4713,5 +4713,60 @@
     "qa/ocr-fast/candidate-debug-raw.json used an earlier all-words confidence guard and a debug build; it is excluded from final performance evidence"
   ],
   "forbidden_tool_calls": 0,
-  "physical_device_access": false
+  "physical_device_access": false,
+  "packaging_followup": {
+    "checked_at": "2026-11-08T10:01:41.087120+00:00",
+    "scope": "Corpus path resolution and --corpus options only; no OCR/native/schema change",
+    "tool_sha256_after_followup": "b4af00054e2e46b8f75784fc77dea2d93f8a8cea5c2c1d6ba977d59eb0bc5491",
+    "tool_sha256_measured_for_original180calls": "ec05ef2261e16386aa08eec5084e70dab69510a492c63df8e181631046100b70",
+    "original180call_measurement_preserved": true,
+    "default_corpus_paths": [
+      "<source>/tests/fixtures/ocr-corpus",
+      "<package>/benchmarks/ocr-corpus"
+    ],
+    "explicit_corpus_supported": [
+      "run",
+      "mcp"
+    ],
+    "resolution_checks_passed": [
+      "Source tree default",
+      "Unpacked package fallback",
+      "Explicit --corpus run",
+      "Explicit --corpus mcp"
+    ],
+    "installed_layout_smoke": {
+      "layout": "qa/ocr-fast/installed-smoke/share/tomacco/tools/benchmark_ocr.py + ../benchmarks/ocr-corpus",
+      "report": "qa/ocr-fast/packaging-smoke-raw.json",
+      "case": "real-landscape-inversion-target",
+      "calls": 9,
+      "trials_per_mode": 3,
+      "modes": [
+        "auto",
+        "never",
+        "adaptive"
+      ],
+      "same_release_binary_sha256": "5c458fccf723c343fb7c41a9852941bbfa712239638936704f28d451e4dc096a",
+      "errors": 0,
+      "hardware_traps": 0,
+      "primary_hits": {
+        "auto": [
+          1,
+          1,
+          1
+        ],
+        "never": [
+          0,
+          0,
+          0
+        ],
+        "adaptive": [
+          1,
+          1,
+          1
+        ]
+      },
+      "passed": true
+    },
+    "cmake_and_actual_package_install_validation": "Root owns CMake corpus installation and test_install verification; this proof only exercises an equivalent unpacked layout."
+  }
 }
