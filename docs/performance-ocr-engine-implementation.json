@@ -1,0 +1,46 @@
+{
+  "schema": "tomacco-ocr-engine-local-validation/1",
+  "checked_at": "2026-11-08T11:10:41.950972+00:00",
+  "source_sha256": {
+    "native/main.rs": "7d5c922af0609c4f28cc01b0a5416e26d3e1a984ba6236b3852ba1bb756ba404",
+    "native/screen_ocr.rs": "f45b46af4de2df931f5d77f32956cc2bad848de642fcaf5e58dd8c3190de8f12",
+    "native/screen_ocr_engine.rs": "029f980d8f50a7d641d99e03986c538c13932ec77bee862f808392cc570602b5",
+    "native/screen_ocr_worker.rs": "7c64c574cc1c779aadd13c1629f577d1a2acc72d6cc8f2bab26679f378259f1c",
+    "tests/ocr_engine_integration.py": "8e672914b1760be6aa0ff85193438e4f555326635b2c77514d4f8cc3174ca6b9"
+  },
+  "final_release_sha256": "1e000447e06564aaaa1e5a61ab305ecb52f62b852c9444ad0f0fc464d4806273",
+  "source_exact_rust_ocr_tests": {
+    "passed": 32,
+    "command": "cargo test --bin tomaccoctl ocr -- --nocapture"
+  },
+  "source_exact_debug_integration": {
+    "passed": 10,
+    "seconds": 78.297,
+    "command": "python3 -u tests/ocr_engine_integration.py --cli target/debug/tomaccoctl",
+    "scope": [
+      "140 fresh frames with cached:false/engine_runs1 and one128-read recycle",
+      "busy concurrent calls\u22641nativeworker",
+      "cancel during initialization and active recognition, clean recovery",
+      "custom and PATH wrappers/explicitOMP preservation",
+      "complete fresh-frame word/line/match parity",
+      "clean MCP shutdown reaps; hostdeath kills model",
+      "61.5s actual idle/partial-header timer; idleMCP PID fully reaped thenrewarm",
+      "missing-language CLIerror thenvalid recovery",
+      "unlinked MCP binary restarts same-image/protocol worker"
+    ]
+  },
+  "foreign_code_in_host": false,
+  "production_installed": false,
+  "hardware_access": false,
+  "independent_review_pending_final_lifecycle_delta": false,
+  "prototype_evidence": [
+    "thread-profile.json",
+    "capi-feasibility.json",
+    "capi-large-profile.json",
+    "actual-cli-omp-environment.json"
+  ],
+  "test_formatting_ast_verified_unchanged": true,
+  "implementation_commit": "4199344",
+  "independent_review": "performance-ocr-worker-review.json",
+  "integrated_runtime_commit": "d60b5e06d3f416d0f6d793914fd99e8f8563c1f5"
+}

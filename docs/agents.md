@@ -1297,6 +1297,13 @@ handled by also reading the colour-inverted picture (`invert`, on `auto`).
   `engine_runs` (zero when cached), `fallback_reason`, `capture_ms` (null for an image), `read_ms` and `total_ms`.
   The bounded in-process cache reuses normal/inverted readings between modes and queries; capture and OCR use
   one frozen picture per request. Existing action, wait and absence/uniqueness checks keep exhaustive reads.
+  Keep one MCP connection open for repeated pixel reads. With the standard system Tesseract 5, Tomacco can retain
+  the model in one isolated worker. Foreign OCR code never runs inside the MCP host. The worker is bounded,
+  recycled and retired when idle; it uses more resident memory while warm. Custom `TOMACCO_TESSERACT` settings,
+  busy workers, unsupported engines and images above 9 MP use the existing CLI path. The 64 MP image limit remains.
+  Explicit OpenMP limits are preserved. Recognition failures and cancellation are reported; a failed dispatched
+  request is not silently recognized again. Set `TOMACCO_TESSERACT` to your chosen executable to retain the
+  subprocess route. Image-content cache hits remain separate from model reuse (`engine_runs:0` versus actual reads).
 - **`screen.diff`** says what changed between two screens: two hierarchies (`.xml`: elements added, removed, changed in
   text, state or position) or two screenshots (`.png`: regions with box, size, share of changed pixels and position, and
   a note when only the status bar changed); `text:true` also lists lines of text added and removed. Give `device`

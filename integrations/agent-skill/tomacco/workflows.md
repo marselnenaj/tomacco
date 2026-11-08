@@ -213,3 +213,15 @@ Read `error.code` and `error.remedy` in the answer, then look the code up in
 `tomaccoctl schema OPERATION`. `workspace_busy` or `device_busy`: another job holds it, so
 `job.list` and wait for that job. `policy_denied`: `agent.policy` shows why; only the person can
 change it.
+
+## Repeated OCR and performance
+
+Keep the same MCP server connected when reading successive screenshots. Standard system Tesseract 5 can reuse a
+model in a bounded private process; cached pixels and a reused model are different: only an unchanged content-cache
+hit reports `engine_runs:0`. Custom `TOMACCO_TESSERACT` executables keep the subprocess path. Warm models retain RAM
+until idle cleanup. `auto` still reads both polarities; use `adaptive` only for a best-effort target observation,
+never as proof of absence or uniqueness. Keep fresh-frame, request/reservation and input-verification steps.
+
+Source-checkout benchmarks under `tools/benchmark_performance.py`, `tools/benchmark_iphone_observe.py` and the
+opt-in native-display test record CPU, bytes, p50/p95 and correctness. Fixture and loopback results do not measure
+hardware latency, GPU presentation or speed against another product.
