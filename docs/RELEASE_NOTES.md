@@ -42,12 +42,12 @@ OpenMP settings are preserved. Cancellation, time/output/memory limits, recyclin
 The warm model uses more resident RAM until cleanup.
 
 The integrated pre-release benchmark measured a median matched new/old elapsed ratio
-of **0.313** for warm fresh-image MCP reads (about 3.20× old/new) and **0.860** for the
+of **0.307** for warm fresh-image MCP reads (about 3.26× old/new) and **0.837** for the
 explicit-system CLI route. Across 540 corpus calls, 360 non-timing output comparisons
 matched. These are local PNG measurements, not device, GPU or competitor rankings.
 [Exact benchmark boundaries](performance-final-qualification.json) retain the measured
-20aba4 binary. The later source pin `2fea917` and catalogue-complete CLI `8614c90`
-are separate pre-release identities; a version change is not a new timing measurement.
+catalogue-complete `8614c90` binary and source `2fea917`. These are pre-release
+identities; a version change is not a new timing measurement.
 
 Fresh app, keyboard and focus reads now run together on one WDA session, preserving
 individual errors and ordered input. Delayed loopback results do not establish latency
