@@ -23,6 +23,11 @@ args=dict(zip(sys.argv[1::2],sys.argv[2::2])); scene=json.loads(pathlib.Path(arg
 root=pathlib.Path(__file__).parent.parent; mode=(root/'mode').read_text().strip()
 (root/'renderer-started').write_text('yes')
 if mode=='sleep': time.sleep(30)
+if mode=='gate':
+ deadline=time.monotonic()+20
+ while not (root/'renderer-release').exists():
+  if time.monotonic()>deadline:sys.exit('render gate timed out')
+  time.sleep(.02)
 if mode=='published-wait':
  request=json.loads((output.parent/'request.json').read_text()); entries=[]
  for source,target in [(pathlib.Path(str(output)+'.poster.png'),pathlib.Path(request['poster'])),(output.parent/'checked-manifest.json',pathlib.Path(request['manifest']))]:
@@ -34,13 +39,29 @@ if mode=='fail': print('intentional renderer failure',file=sys.stderr);sys.exit(
 if mode=='corrupt': output.write_bytes(b'not rendered media');sys.exit(0)
 if mode=='change-source': (root/'source.mp4').write_bytes(b'changed after private source preparation')
 w=scene['output']['width']+(2 if mode=='wrong-dimensions' else 0);h=scene['output']['height'];fps=scene['output']['fps'];duration=scene['output']['duration'];frames=math.ceil(fps*duration)
+audio=scene.get('audio',{}).get('mode','muted')=='source'
+if mode=='unexpected-audio':audio=True
+if mode=='missing-audio':audio=False
 def run(tail):
  subprocess.run(['/usr/bin/ffmpeg','-nostdin','-hide_banner','-loglevel','error','-f','lavfi','-i',f'color=c=blue:s={w}x{h}:r={fps}',*tail],check=True)
 if '--time' in args:
  run(['-frames:v','1','-threads','1',str(output)]);sys.exit(0)
-run(['-frames:v',str(frames),'-c:v','libx264','-threads','1','-pix_fmt','yuv420p',str(output)])
+if audio:
+ args=['/usr/bin/ffmpeg','-nostdin','-hide_banner','-loglevel','error','-f','lavfi','-i',f'color=c=blue:s={w}x{h}:r={fps}','-f','lavfi','-i',f'sine=frequency=733:sample_rate=48000:duration={frames/fps}','-map','0:v:0','-map','1:a:0']
+ if mode=='multiple-audio':args+=['-map','1:a:0']
+ args+=['-c:v','libx264','-threads','1','-pix_fmt','yuv420p','-c:a','libmp3lame' if mode=='wrong-audio-codec' else 'aac','-ac','2','-ar','48000','-t',str(frames/fps),str(output)]
+ subprocess.run(args,check=True)
+ if mode=='corrupt-audio':
+  packets=json.loads(subprocess.check_output(['/usr/bin/ffprobe','-v','error','-select_streams','a:0','-show_packets','-of','json',str(output)]))['packets']
+  packet=packets[len(packets)//2];data=bytearray(output.read_bytes());offset=int(packet['pos']);size=int(packet['size']);data[offset:offset+size]=b'\xff'*size;output.write_bytes(data)
+else:run(['-frames:v',str(frames),'-c:v','libx264','-threads','1','-pix_fmt','yuv420p',str(output)])
 poster=pathlib.Path(str(output)+'.poster.png');run(['-frames:v','1','-threads','1',str(poster)])
-manifest=pathlib.Path(str(output)+'.manifest.json');manifest.write_text(json.dumps(dict(format='tomacco.demo.render',version=1,frames=frames,width=w,height=h,fps=fps,duration=frames/fps,requested_duration=duration,silent=True)))
+manifest=pathlib.Path(str(output)+'.manifest.json');record=dict(format='tomacco.demo.render',version=1,frames=frames,width=w,height=h,fps=fps,duration=frames/fps,requested_duration=duration,silent=not audio)
+if audio:
+ record['audio']=dict(mode='source',codec='aac',sample_rate=48000,channels=2)
+ record['source_audio_origin']=scene['clip']['start']
+if mode=='manifest-lies':record['silent']=True
+manifest.write_text(json.dumps(record))
 print(json.dumps(dict(output=str(output),poster=str(poster),manifest=str(manifest),frames=frames)))
 '''
 
@@ -87,6 +108,12 @@ class DemoBackendTests(unittest.TestCase):
         result=self.call('demo.scene.create',{'path':str(self.scene),'source':str(self.source),'preset':'portrait-orbit'})
         return self.call('demo.scene.update',{'path':str(self.scene),'if_revision':result['revision'],'changes':{'output':{'width':320,'height':320,'duration':.2},'keyframes':[{'time':0,'yaw':0,'pitch':0,'roll':0,'scale':.72,'x':.5,'y':.5,'easing':'linear'}]}})
 
+    def create_with_audio(self):
+        subprocess.run(['/usr/bin/ffmpeg','-nostdin','-v','error','-f','lavfi','-i','testsrc2=s=320x640:r=24:d=1','-f','lavfi','-i','sine=frequency=557:sample_rate=48000:duration=1','-map','0:v:0','-map','1:a:0','-c:v','libx264','-threads','1','-pix_fmt','yuv420p','-c:a','aac','-y',str(self.source)],env=self.env,check=True,capture_output=True)
+        created=self.create()
+        self.assertTrue(created['scene']['source']['has_audio'])
+        return self.call('demo.scene.update',{'path':str(self.scene),'if_revision':created['revision'],'changes':{'audio':{'mode':'source'}}})
+
     def render(self,preview=False,**extra):
         args={'path':str(self.scene),'if_revision':2,'output':str(self.root/('preview.png' if preview else 'video.mp4')),**extra}
         if preview:args.setdefault('time',.1)
@@ -107,6 +134,15 @@ class DemoBackendTests(unittest.TestCase):
     def test_readiness_refuses_ffmpeg_without_h264_encoder(self):
         fake=self.root/'bin/ffmpeg';fake.write_text('#!'+sys.executable+'\nprint("Encoders: no H.264 encoder")\n');fake.chmod(0o700)
         caps=self.call('demo.capabilities');self.assertFalse(caps['ready']);self.assertFalse(caps['h264_encoder']['available']);self.assertIn('ffmpeg encoder libx264',caps['missing'])
+
+    def test_missing_aac_refuses_source_audio_but_keeps_silent_exports_ready(self):
+        scene=self.create_with_audio()
+        fake=self.root/'bin/ffmpeg';fake.write_text('#!'+sys.executable+'\nimport os,sys\nif "-encoders" in sys.argv:\n print(" V..... libx264 H.264 encoder");sys.exit(0)\nos.execv("/usr/bin/ffmpeg",["ffmpeg",*sys.argv[1:]])\n');fake.chmod(0o700)
+        caps=self.call('demo.capabilities');self.assertTrue(caps['ready']);self.assertFalse(caps['audio']['source_available'])
+        self.error('demo.export',{'path':str(self.scene),'if_revision':scene['revision'],'output':str(self.root/'video.mp4')},'demo_tool_missing')
+        muted=self.call('demo.scene.update',{'path':str(self.scene),'if_revision':scene['revision'],'changes':{'audio':{'mode':'muted'}}})
+        job=self.render(if_revision=muted['revision']);self.assertEqual(self.wait(job)['state'],'succeeded')
+        self.assertFalse(self.call('demo.export.inspect',{'path':str(self.root/'video.mp4')})['has_audio'])
 
     def test_concurrent_revision_writers_have_one_winner(self):
         self.create()
@@ -146,6 +182,68 @@ class DemoBackendTests(unittest.TestCase):
     def test_wrong_encoded_dimensions_are_rejected_after_zero_exit(self):
         self.create();(self.root/'mode').write_text('wrong-dimensions');job=self.render()
         self.assertEqual(self.wait(job)['state'],'failed');self.assertFalse((self.root/'video.mp4').exists())
+
+    def test_source_audio_is_validated_independently_of_renderer_claims(self):
+        scene=self.create_with_audio();job=self.render(if_revision=scene['revision']);final=self.wait(job)
+        self.assertEqual(final['state'],'succeeded',self.call('job.logs',{'job_id':job['id']}))
+        inspected=self.call('demo.export.inspect',{'path':str(self.root/'video.mp4')})
+        self.assertTrue(inspected['has_audio']);self.assertTrue(inspected['decoded'])
+        manifest=json.loads((self.root/'video.mp4.manifest.json').read_text())
+        self.assertFalse(manifest['validation']['silent']);self.assertEqual(manifest['scene']['audio']['mode'],'source')
+
+    def test_missing_source_audio_is_rejected_after_zero_exit(self):
+        scene=self.create_with_audio();(self.root/'mode').write_text('missing-audio');job=self.render(if_revision=scene['revision'])
+        self.assertEqual(self.wait(job)['state'],'failed');self.assertFalse((self.root/'video.mp4').exists())
+
+    def test_unexpected_audio_in_muted_export_is_rejected(self):
+        self.create();(self.root/'mode').write_text('unexpected-audio');job=self.render()
+        self.assertEqual(self.wait(job)['state'],'failed');self.assertFalse((self.root/'video.mp4').exists())
+
+    def test_multiple_audio_streams_are_rejected(self):
+        scene=self.create_with_audio();(self.root/'mode').write_text('multiple-audio');job=self.render(if_revision=scene['revision'])
+        self.assertEqual(self.wait(job)['state'],'failed');self.assertFalse((self.root/'video.mp4').exists())
+
+    def test_wrong_audio_codec_is_rejected(self):
+        scene=self.create_with_audio();(self.root/'mode').write_text('wrong-audio-codec');job=self.render(if_revision=scene['revision'])
+        self.assertEqual(self.wait(job)['state'],'failed');self.assertFalse((self.root/'video.mp4').exists())
+
+    def test_corrupt_audio_packet_cannot_pass_video_only_decode(self):
+        scene=self.create_with_audio();(self.root/'mode').write_text('corrupt-audio');job=self.render(if_revision=scene['revision'])
+        self.assertEqual(self.wait(job)['state'],'failed');self.assertFalse((self.root/'video.mp4').exists())
+
+    def test_renderer_manifest_silent_claim_must_match_decoded_audio(self):
+        scene=self.create_with_audio();(self.root/'mode').write_text('manifest-lies');job=self.render(if_revision=scene['revision'])
+        self.assertEqual(self.wait(job)['state'],'failed');self.assertFalse((self.root/'video.mp4').exists())
+
+    def test_audio_mode_is_frozen_with_the_submitted_scene_revision(self):
+        scene=self.create_with_audio();(self.root/'mode').write_text('gate');job=self.render(if_revision=scene['revision']);deadline=time.monotonic()+10
+        while not (self.root/'renderer-started').exists():
+            self.assertLess(time.monotonic(),deadline);time.sleep(.03)
+        updated=self.call('demo.scene.update',{'path':str(self.scene),'if_revision':scene['revision'],'changes':{'audio':{'mode':'muted'}}})
+        (self.root/'renderer-release').write_text('continue')
+        self.assertEqual(self.wait(job)['state'],'succeeded',self.call('job.logs',{'job_id':job['id']}))
+        manifest=json.loads((self.root/'video.mp4.manifest.json').read_text())
+        self.assertEqual(manifest['scene']['revision'],scene['revision']);self.assertEqual(manifest['scene']['audio']['mode'],'source')
+        self.assertTrue(self.call('demo.export.inspect',{'path':str(self.root/'video.mp4')})['has_audio'])
+        later=self.render(if_revision=updated['revision'],output=str(self.root/'muted.mp4'))
+        self.assertEqual(self.wait(later)['state'],'succeeded')
+        self.assertFalse(self.call('demo.export.inspect',{'path':str(self.root/'muted.mp4')})['has_audio'])
+
+    def test_export_inspection_refuses_sidecar_audio_contradictions(self):
+        scene=self.create_with_audio();job=self.render(if_revision=scene['revision'])
+        self.assertEqual(self.wait(job)['state'],'succeeded')
+        sidecar=self.root/'video.mp4.manifest.json';original=sidecar.read_bytes();value=json.loads(original)
+        for field in ('media','renderer','audio','scene'):
+            with self.subTest(field=field):
+                changed=json.loads(original)
+                if field=='media':changed['validation']['media']['has_audio']=False
+                elif field=='renderer':changed['validation']['renderer']['silent']=True
+                elif field=='audio':changed['validation']['audio']={'mode':'muted'}
+                else:changed['scene']['audio']={'mode':'muted'}
+                sidecar.write_text(json.dumps(changed))
+                self.error('demo.export.inspect',{'path':str(self.root/'video.mp4')},'demo_output_invalid')
+        sidecar.write_bytes(original)
+        self.assertTrue(self.call('demo.export.inspect',{'path':str(self.root/'video.mp4')})['has_audio'])
 
     def test_changed_source_is_rejected_before_and_during_render(self):
         self.create();(self.root/'mode').write_text('change-source');job=self.render()
