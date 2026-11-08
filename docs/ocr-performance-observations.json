@@ -101,5 +101,281 @@
     "emulatorfps",
     "GPUperformance",
     "physicaldeviceinputlatency"
-  ]
+  ],
+  "tesseract_version": "tesseract 5.5.3",
+  "theme_matrix": {
+    "scope": "Synthetic English text-only fixtures,3coldCLIcalls pertheme/size/mode; excludescapture/hierarchy/action/modelcost; noPhoneUse comparison",
+    "rows": [
+      {
+        "theme": "light",
+        "width": 390,
+        "height": 844,
+        "mode": "never",
+        "samples": 3,
+        "median_ms": 158.94,
+        "expected_words": 9,
+        "recognized_expected": 9,
+        "missing": [],
+        "lines": [
+          "Settings",
+          "Network",
+          "Display",
+          "Notifications",
+          "Privacy",
+          "About",
+          "Save changes",
+          "Cancel"
+        ]
+      },
+      {
+        "theme": "light",
+        "width": 390,
+        "height": 844,
+        "mode": "auto",
+        "samples": 3,
+        "median_ms": 344.55,
+        "expected_words": 9,
+        "recognized_expected": 9,
+        "missing": [],
+        "lines": [
+          "Settings",
+          "Network",
+          "Display",
+          "Notifications",
+          "Privacy",
+          "About",
+          "Save changes",
+          "Cancel"
+        ]
+      },
+      {
+        "theme": "dark",
+        "width": 390,
+        "height": 844,
+        "mode": "never",
+        "samples": 3,
+        "median_ms": 190.31,
+        "expected_words": 9,
+        "recognized_expected": 9,
+        "missing": [],
+        "lines": [
+          "Settings",
+          "Network",
+          "Display",
+          "Notifications",
+          "Privacy",
+          "About",
+          "Save changes",
+          "Cancel"
+        ]
+      },
+      {
+        "theme": "dark",
+        "width": 390,
+        "height": 844,
+        "mode": "auto",
+        "samples": 3,
+        "median_ms": 346.19,
+        "expected_words": 9,
+        "recognized_expected": 9,
+        "missing": [],
+        "lines": [
+          "Settings",
+          "Network",
+          "Display",
+          "Notifications",
+          "Privacy",
+          "About",
+          "Save changes",
+          "Cancel"
+        ]
+      },
+      {
+        "theme": "mixed",
+        "width": 390,
+        "height": 844,
+        "mode": "never",
+        "samples": 3,
+        "median_ms": 157.73,
+        "expected_words": 9,
+        "recognized_expected": 9,
+        "missing": [],
+        "lines": [
+          "Settings",
+          "Network",
+          "Display",
+          "Notifications",
+          "Privacy",
+          "About",
+          "Save changes",
+          "Cancel"
+        ]
+      },
+      {
+        "theme": "mixed",
+        "width": 390,
+        "height": 844,
+        "mode": "auto",
+        "samples": 3,
+        "median_ms": 341.68,
+        "expected_words": 9,
+        "recognized_expected": 9,
+        "missing": [],
+        "lines": [
+          "Settings",
+          "Network",
+          "Display",
+          "Notifications",
+          "Privacy",
+          "About",
+          "Save changes",
+          "Cancel"
+        ]
+      },
+      {
+        "theme": "light",
+        "width": 1080,
+        "height": 2340,
+        "mode": "never",
+        "samples": 3,
+        "median_ms": 231.6,
+        "expected_words": 9,
+        "recognized_expected": 9,
+        "missing": [],
+        "lines": [
+          "Settings",
+          "Network",
+          "Display",
+          "Notifications",
+          "Privacy",
+          "About",
+          "Save changes",
+          "Cancel"
+        ]
+      },
+      {
+        "theme": "light",
+        "width": 1080,
+        "height": 2340,
+        "mode": "auto",
+        "samples": 3,
+        "median_ms": 541.7,
+        "expected_words": 9,
+        "recognized_expected": 9,
+        "missing": [],
+        "lines": [
+          "Settings",
+          "Network",
+          "Display",
+          "Notifications",
+          "Privacy",
+          "About",
+          "Save changes",
+          "Cancel"
+        ]
+      },
+      {
+        "theme": "dark",
+        "width": 1080,
+        "height": 2340,
+        "mode": "never",
+        "samples": 3,
+        "median_ms": 302.13,
+        "expected_words": 9,
+        "recognized_expected": 9,
+        "missing": [],
+        "lines": [
+          "Settings",
+          "Network",
+          "Display",
+          "Notifications",
+          "Privacy",
+          "About",
+          "Save changes",
+          "Cancel"
+        ]
+      },
+      {
+        "theme": "dark",
+        "width": 1080,
+        "height": 2340,
+        "mode": "auto",
+        "samples": 3,
+        "median_ms": 522.65,
+        "expected_words": 9,
+        "recognized_expected": 9,
+        "missing": [],
+        "lines": [
+          "Settings",
+          "Network",
+          "Display",
+          "Notifications",
+          "Privacy",
+          "About",
+          "Save changes",
+          "Cancel"
+        ]
+      },
+      {
+        "theme": "mixed",
+        "width": 1080,
+        "height": 2340,
+        "mode": "never",
+        "samples": 3,
+        "median_ms": 246.58,
+        "expected_words": 9,
+        "recognized_expected": 9,
+        "missing": [],
+        "lines": [
+          "Settings",
+          "Network",
+          "Display",
+          "Notifications",
+          "Privacy",
+          "About",
+          "Save changes",
+          "Cancel"
+        ]
+      },
+      {
+        "theme": "mixed",
+        "width": 1080,
+        "height": 2340,
+        "mode": "auto",
+        "samples": 3,
+        "median_ms": 553.1,
+        "expected_words": 9,
+        "recognized_expected": 9,
+        "missing": [],
+        "lines": [
+          "Settings",
+          "Network",
+          "Display",
+          "Notifications",
+          "Privacy",
+          "About",
+          "Save changes",
+          "Cancel"
+        ]
+      }
+    ],
+    "load_average": [
+      41.5634765625,
+      42.40576171875,
+      43.10205078125
+    ],
+    "interpretation": "All9expectedEnglishwordsrecognizedinbothmodeson6syntheticfixtures(light/dark/mixedat390and1080px). Thisdoesnotcoverrealappicons,scripts,blur,animationsorotherlanguages; doesnotjustifychangingdefaultswithoutawidercorpus."
+  },
+  "reproduction": [
+    "tomaccoctl call screen.ocr {image:absolute_fixture_png,invert:never}",
+    "tomaccoctl call screen.ocr {image:absolute_fixture_png,invert:auto}",
+    "Runrepeatedscreen.ocrforidenticalimageinonepersistentMCPprocessandinspectcached; no device argument."
+  ],
+  "proposed_next_measurements": [
+    "Fullcapture→read→act→verifylatencyonsamefreedeviceandsameworkload",
+    "Recognitionaccuracyacrosslocalizedlight/dark/custom-drawnUIs",
+    "Fastfirstreadwithtarget-specificfallback ratherthanunconditionaldualpipeline",
+    "Avoid repeated screenshot/hierarchyroundtrips; compactagentpayloads; retainsemanticchecksforinputverification"
+  ],
+  "updated_at": "2026-11-08T08:50:47.666268+00:00"
 }
