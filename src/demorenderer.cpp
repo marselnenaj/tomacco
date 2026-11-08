@@ -74,6 +74,14 @@ std::optional<Scene> Scene::fromJson(const QJsonObject &doc,QString *error) {
     if(!QFileInfo(s.sourcePath).isAbsolute() || !QFileInfo(s.sourcePath).isFile())return fail("The source must be an existing absolute local video path.");
     if(!integer(source,"width",1,16384,s.sourceWidth) || !integer(source,"height",1,16384,s.sourceHeight) || qint64(s.sourceWidth)*s.sourceHeight>MaxPixels || !number(source,"duration",.1,86400,s.sourceDuration))return fail("Invalid source dimensions or duration (maximum 32 megapixels).");
     if(!integer(source,"rotation",0,270,s.sourceRotation) || s.sourceRotation%90)return fail("Source rotation must be 0, 90, 180 or 270 degrees.");
+    if(doc.contains("audio")) {
+        const auto value=doc.value("audio");
+        if(!value.isObject())return fail("Unsupported demo scene format or version.");
+        const auto audio=value.toObject();
+        if(audio.size()!=1 || !audio.value("mode").isString() || !QStringList{"muted","source"}.contains(audio.value("mode").toString()))return fail("Unsupported demo scene format or version.");
+        s.sourceAudio=audio.value("mode")=="source";
+        if(s.sourceAudio && source.value("has_audio")!=true)return fail("Unsupported demo scene format or version.");
+    }
     const auto clip=doc.value("clip").toObject(),out=doc.value("output").toObject();
     if(!number(clip,"start",0,s.sourceDuration,s.clipStart) || !integer(out,"width",320,3840,s.width) || !integer(out,"height",320,3840,s.height) || s.width%2 || s.height%2 || !integer(out,"fps",24,60,s.fps) || !QList<int>{24,25,30,60}.contains(s.fps) || !number(out,"duration",.1,60,s.duration) || s.clipStart+s.duration>s.sourceDuration+1e-6)return fail("Invalid output dimensions, frame rate, duration or source clip range.");
     const auto device=doc.value("device").toObject();s.model=device.value("model").toString();

@@ -29,6 +29,23 @@ struct Source {
     rotation: u32,
     has_audio: bool,
 }
+#[derive(Clone, Default, Serialize, Deserialize)]
+#[serde(deny_unknown_fields)]
+struct Audio {
+    mode: AudioMode,
+}
+#[derive(Clone, Copy, Default, PartialEq, Serialize, Deserialize)]
+#[serde(rename_all = "snake_case")]
+enum AudioMode {
+    #[default]
+    Muted,
+    Source,
+}
+impl Audio {
+    fn source(&self) -> bool {
+        self.mode == AudioMode::Source
+    }
+}
 #[derive(Clone, Serialize, Deserialize)]
 #[serde(deny_unknown_fields)]
 struct Clip {
@@ -97,6 +114,8 @@ struct Scene {
     id: String,
     title: String,
     source: Source,
+    #[serde(default)]
+    audio: Audio,
     clip: Clip,
     output: Output,
     device: Device,
@@ -315,6 +334,11 @@ impl Scene {
         {
             return Err(invalid("Invalid source geometry"));
         }
+        if self.audio.source() && !self.source.has_audio {
+            return Err(invalid(
+                "Source audio requires an inspected source audio stream",
+            ));
+        }
         bounded(self.source.duration, 0.1, 86400.0, "Source duration")?;
         bounded(self.source.fps, 0.01, 1000.0, "Source FPS")?;
         for d in [self.output.width, self.output.height] {
@@ -444,7 +468,7 @@ fn create(a: &Value) -> Result {
     };
     let duration = source.duration.min(8.0);
     let still = preset == "portrait-still";
-    let value = json!({"format":"tomacco.demo","version":1,"revision":1,"id":uuid::Uuid::new_v4().simple().to_string(),"title":a["title"].as_str().unwrap_or("Tomacco app demo"),"source":source,"clip":{"start":0.0},"output":{"width":w,"height":h,"fps":30,"duration":duration},"device":{"model":"phone","finish":"#242421","bezel":0.035,"thickness":0.065,"corner_radius":0.09},"background":{"color":"#f4f2ec","color2":"#e7e4da","style":"solid","image":""},"shadow":{"enabled":true,"opacity":0.22,"blur":24.0,"offset_x":0.0,"offset_y":40.0},"camera":{"distance":4.0,"fov":35.0},"keyframes":[{"time":0.0,"yaw":if still {0.0}else{-18.0},"pitch":8.0,"roll":if still {0.0}else{-4.0},"scale":0.72,"x":0.5,"y":0.5,"easing":"smooth"},{"time":duration,"yaw":if still {0.0}else{18.0},"pitch":8.0,"roll":if still {0.0}else{4.0},"scale":0.72,"x":0.5,"y":0.5,"easing":"smooth"}]});
+    let value = json!({"format":"tomacco.demo","version":1,"revision":1,"id":uuid::Uuid::new_v4().simple().to_string(),"title":a["title"].as_str().unwrap_or("Tomacco app demo"),"source":source,"audio":{"mode":"muted"},"clip":{"start":0.0},"output":{"width":w,"height":h,"fps":30,"duration":duration},"device":{"model":"phone","finish":"#242421","bezel":0.035,"thickness":0.065,"corner_radius":0.09},"background":{"color":"#f4f2ec","color2":"#e7e4da","style":"solid","image":""},"shadow":{"enabled":true,"opacity":0.22,"blur":24.0,"offset_x":0.0,"offset_y":40.0},"camera":{"distance":4.0,"fov":35.0},"keyframes":[{"time":0.0,"yaw":if still {0.0}else{-18.0},"pitch":8.0,"roll":if still {0.0}else{-4.0},"scale":0.72,"x":0.5,"y":0.5,"easing":"smooth"},{"time":duration,"yaw":if still {0.0}else{18.0},"pitch":8.0,"roll":if still {0.0}else{4.0},"scale":0.72,"x":0.5,"y":0.5,"easing":"smooth"}]});
     let scene: Scene = serde_json::from_value(value)?;
     scene.validate()?;
     let parent = p.parent().unwrap();
@@ -491,6 +515,7 @@ fn update(a: &Value) -> Result {
     if changes.keys().any(|k| {
         ![
             "title",
+            "audio",
             "clip",
             "output",
             "device",
@@ -519,7 +544,7 @@ fn update(a: &Value) -> Result {
     atomic_json(&p, &serde_json::to_value(&scene)?)?;
     Ok(response(&p, &scene))
 }
-fn h264_encoder(ffmpeg: &str) -> bool {
+fn encoder_available(ffmpeg: &str, name: &str) -> bool {
     tc::run(
         &[
             ffmpeg.to_string(),
@@ -533,14 +558,17 @@ fn h264_encoder(ffmpeg: &str) -> bool {
     .is_ok_and(|v| {
         s(&v, "stdout")
             .lines()
-            .any(|line| line.split_whitespace().nth(1) == Some("libx264"))
+            .any(|line| line.split_whitespace().nth(1) == Some(name))
     })
 }
 fn capabilities() -> Result {
     let r = renderer().ok();
     let f = tc::find_optional("ffmpeg")?;
     let p = tc::find_optional("ffprobe")?;
-    let encoder = f.as_deref().is_some_and(h264_encoder);
+    let encoder = f
+        .as_deref()
+        .is_some_and(|f| encoder_available(f, "libx264"));
+    let audio_encoder = f.as_deref().is_some_and(|f| encoder_available(f, "aac"));
     let mut missing = Vec::new();
     if r.is_none() {
         missing.push("tomacco-demo-render");
@@ -555,7 +583,7 @@ fn capabilities() -> Result {
         missing.push("ffmpeg encoder libx264");
     }
     Ok(
-        json!({"ready":r.is_some()&&f.is_some()&&p.is_some()&&encoder,"export_ready":r.is_some()&&f.is_some()&&p.is_some()&&encoder,"h264_encoder":{"name":"libx264","available":encoder},"missing":missing,"renderer":{"available":r.is_some(),"path":r},"ffmpeg":{"available":f.is_some(),"path":f},"ffprobe":{"available":p.is_some(),"path":p},"presets":PRESETS,"models":["phone","tablet"],"easings":["linear","smooth","ease-in","ease-out"],"backgrounds":["solid","gradient","image"],"limits":{"width_min":320,"width_max":3840,"height_min":320,"height_max":3840,"even_dimensions":true,"fps":[24,25,30,60],"duration_min":0.1,"duration_max":60,"keyframes_max":120,"source_bytes_max":MAX_MEDIA,"source_pixels_max":32000000,"background_format":"PNG","source_frame_rate_preserved":false},"silent":true,"timestamp_behavior":"Output frame i samples clip.start + i/fps; ffmpeg selects the source frame at that time. Source display dimensions include autorotation. Upscaling does not add source detail or frame rate."}),
+        json!({"ready":r.is_some()&&f.is_some()&&p.is_some()&&encoder,"export_ready":r.is_some()&&f.is_some()&&p.is_some()&&encoder,"h264_encoder":{"name":"libx264","available":encoder},"missing":missing,"renderer":{"available":r.is_some(),"path":r},"ffmpeg":{"available":f.is_some(),"path":f},"ffprobe":{"available":p.is_some(),"path":p},"presets":PRESETS,"models":["phone","tablet"],"easings":["linear","smooth","ease-in","ease-out"],"backgrounds":["solid","gradient","image"],"limits":{"width_min":320,"width_max":3840,"height_min":320,"height_max":3840,"even_dimensions":true,"fps":[24,25,30,60],"duration_min":0.1,"duration_max":60,"keyframes_max":120,"source_bytes_max":MAX_MEDIA,"source_pixels_max":32000000,"background_format":"PNG","source_frame_rate_preserved":false},"silent":true,"audio":{"modes":["muted","source"],"default":"muted","codec":"aac","sample_rate":48000,"channels":2,"source_available":audio_encoder},"timestamp_behavior":"Output frame i samples clip.start + i/fps; ffmpeg selects the source frame at that time. Source display dimensions include autorotation. Upscaling does not add source detail or frame rate."}),
     )
 }
 fn job_result(mut job: Value, request: &Value) -> Value {
@@ -604,10 +632,16 @@ fn render(a: &Value, preview: bool) -> Result {
     };
     let helper = renderer()?;
     let ffmpeg = tool("ffmpeg")?;
-    if !preview && !h264_encoder(&ffmpeg) {
+    if !preview && !encoder_available(&ffmpeg, "libx264") {
         return Err(Error::new(
             "demo_tool_missing",
             "The local ffmpeg does not provide the required libx264 encoder",
+        ));
+    }
+    if !preview && scene.audio.source() && !encoder_available(&ffmpeg, "aac") {
+        return Err(Error::new(
+            "demo_tool_missing",
+            "The local ffmpeg does not provide the required AAC encoder",
         ));
     }
     tool("ffprobe")?;
@@ -618,7 +652,17 @@ fn render(a: &Value, preview: bool) -> Result {
             .join(format!("demo-admit-{}.lock", digest(exclusive.as_bytes()))),
     )?;
     lock.acquire(false)?;
-    let identity = json!({"kind":if preview{"preview"}else{"export"},"scene_path":p,"scene_revision":scene.revision,"scene_digest":digest(&serde_json::to_vec(&scene)?),"output":output,"time":time});
+    // Silent v1 documents predate the audio field. Retain their render digest
+    // so upgrading does not turn a harmless request replay into a conflict.
+    let identity_scene = serde_json::to_string(&scene)?;
+    let identity_scene = if scene.audio.source() {
+        identity_scene
+    } else {
+        // Preserve struct serialization order as well as field content; going
+        // through Value would sort keys and change every legacy scene digest.
+        identity_scene.replacen(",\"audio\":{\"mode\":\"muted\"}", "", 1)
+    };
+    let identity = json!({"kind":if preview{"preview"}else{"export"},"scene_path":p,"scene_revision":scene.revision,"scene_digest":digest(identity_scene.as_bytes()),"output":output,"time":time});
     let token = if let Some(id) = a["request_id"].as_str() {
         identifier(id, "request ID", Some("[A-Za-z0-9][A-Za-z0-9_.:-]{0,127}"))?;
         format!("explicit:{id}")
@@ -818,9 +862,15 @@ fn validate_png(p: &Path, dimensions: Option<(u32, u32)>) -> Result<Value> {
         json!({"width":image.width,"height":image.height,"sha256":digest(&bytes),"bytes":bytes.len()}),
     )
 }
-fn validate_video(p: &Path, expected: Option<&Output>) -> Result<Value> {
+fn validate_video(p: &Path, expected: Option<(&Output, bool)>) -> Result<Value> {
     let metadata = probe(p, true)?;
     let v = video(&metadata)?;
+    let streams = metadata["streams"].as_array().unwrap();
+    let audio_streams: Vec<_> = streams
+        .iter()
+        .filter(|s| s["codec_type"] == "audio")
+        .collect();
+    let audio = !audio_streams.is_empty();
     let width = v["width"].as_u64().unwrap_or(0);
     let height = v["height"].as_u64().unwrap_or(0);
     let fps = rate(&v["avg_frame_rate"]).unwrap_or(0.0);
@@ -828,11 +878,6 @@ fn validate_video(p: &Path, expected: Option<&Output>) -> Result<Value> {
     let duration = number(&v["duration"])
         .or_else(|| number(&metadata["format"]["duration"]))
         .unwrap_or(0.0);
-    let audio = metadata["streams"]
-        .as_array()
-        .unwrap()
-        .iter()
-        .any(|s| s["codec_type"] == "audio");
     if width == 0
         || height == 0
         || width > 3840
@@ -841,26 +886,57 @@ fn validate_video(p: &Path, expected: Option<&Output>) -> Result<Value> {
         || frames > 3600
         || duration <= 0.0
         || duration > 61.0
+        || streams
+            .iter()
+            .filter(|s| s["codec_type"] == "video")
+            .count()
+            != 1
+        || audio_streams.len() > 1
+        || streams.len() != 1 + audio_streams.len()
     {
         return Err(Error::new(
             "demo_output_invalid",
-            "Output media exceeds the supported dimensions, frames or duration",
+            "Output media exceeds the supported stream, dimension, frame or duration bounds",
         ));
     }
-    if let Some(e) = expected {
+    if let Some((e, source_audio)) = expected {
         let requested_frames = (e.duration * e.fps as f64).ceil() as u64;
         if width != e.width as u64
             || height != e.height as u64
             || frames != requested_frames
             || (fps - e.fps as f64).abs() > 0.0001
             || (duration - frames as f64 / e.fps as f64).abs() > 0.002
-            || audio
+            || audio != source_audio
             || v["codec_name"] != "h264"
             || v["pix_fmt"] != "yuv420p"
         {
-            return Err(Error::new("demo_output_invalid","Encoded output does not match requested H.264 dimensions, FPS, frames, duration or silent audio policy").details(metadata));
+            return Err(Error::new(
+                "demo_output_invalid",
+                "Encoded output does not match requested H.264 media or audio policy",
+            )
+            .details(metadata));
         }
     }
+    let audio_metadata = if let Some(a) = audio_streams.first() {
+        let sample_rate = number(&a["sample_rate"]).unwrap_or(0.0);
+        let audio_duration = number(&a["duration"]).unwrap_or(0.0);
+        let audio_start = number(&a["start_time"]).unwrap_or(f64::INFINITY);
+        // AAC encoder priming and final packet padding are represented by the
+        // MP4 edit list. Permit one AAC packet plus rounding, never missing
+        // content or a shifted track. The full decode below checks both tracks.
+        if a["codec_name"] != "aac"
+            || sample_rate != 48000.0
+            || a["channels"] != 2
+            || number(&a["nb_read_frames"]).is_none_or(|n| n <= 0.0)
+            || audio_start.abs() > 0.002
+            || (audio_duration - duration).abs() > 0.03
+        {
+            return Err(Error::new("demo_output_invalid", "Encoded audio must be one decoded AAC stereo 48 kHz track aligned with the video duration").details(metadata));
+        }
+        json!({"mode":"source","codec":"aac","sample_rate":48000,"channels":2,"duration":audio_duration,"start_time":audio_start,"frames":a["nb_read_frames"]})
+    } else {
+        json!({"mode":"muted"})
+    };
     tc::run(
         &[
             tool("ffmpeg")?,
@@ -874,7 +950,8 @@ fn validate_video(p: &Path, expected: Option<&Output>) -> Result<Value> {
             p.to_string_lossy().into_owned(),
             "-map".into(),
             "0:v:0".into(),
-            "-an".into(),
+            "-map".into(),
+            "0:a:0?".into(),
             "-f".into(),
             "null".into(),
             "-".into(),
@@ -884,7 +961,7 @@ fn validate_video(p: &Path, expected: Option<&Output>) -> Result<Value> {
         true,
     )?;
     Ok(
-        json!({"path":p,"width":width,"height":height,"fps":fps,"frames":frames,"duration":duration,"has_audio":audio,"codec":v["codec_name"],"pixel_format":v["pix_fmt"],"sha256":hash_file(p,MAX_MEDIA)?,"decoded":true}),
+        json!({"path":p,"width":width,"height":height,"fps":fps,"frames":frames,"duration":duration,"has_audio":audio,"silent":!audio,"audio":audio_metadata,"codec":v["codec_name"],"pixel_format":v["pix_fmt"],"sha256":hash_file(p,MAX_MEDIA)?,"decoded":true}),
     )
 }
 /// Recorded hardlinks let the durable job supervisor clean a killed finalizer.
@@ -990,9 +1067,9 @@ pub fn finalize(request_path: &str) -> Result<()> {
     let actual = if preview {
         validate_png(temp, Some((scene.output.width, scene.output.height)))?
     } else {
-        validate_video(temp, Some(&scene.output))?
+        validate_video(temp, Some((&scene.output, scene.audio.source())))?
     };
-    let mut report = json!({"format":"tomacco.demo.validation","version":1,"validated_at":now(),"scene_revision":scene.revision,"source_sha256":scene.source.sha256,"source_verified":true,"media":actual,"silent":true,"output":out});
+    let mut report = json!({"format":"tomacco.demo.validation","version":1,"validated_at":now(),"scene_revision":scene.revision,"source_sha256":scene.source.sha256,"source_verified":true,"media":actual,"silent":preview || !scene.audio.source(),"audio":if preview {json!({"mode":"muted"})}else{serde_json::to_value(&scene.audio)?},"output":out});
     report["media"]["path"] = json!(out);
     let mut pairs = Vec::new();
     if preview {
@@ -1020,7 +1097,15 @@ pub fn finalize(request_path: &str) -> Result<()> {
                 .is_none_or(|d| (d - number(&actual["duration"]).unwrap()).abs() > 0.002)
             || number(&renderer_manifest["requested_duration"])
                 .is_none_or(|d| (d - scene.output.duration).abs() > 0.000001)
-            || renderer_manifest["silent"] != true
+            || renderer_manifest["silent"] != !scene.audio.source()
+            || (scene.audio.source()
+                && (renderer_manifest["audio"]["mode"] != "source"
+                    || renderer_manifest["audio"]["codec"] != "aac"
+                    || renderer_manifest["audio"]["sample_rate"] != 48000
+                    || renderer_manifest["audio"]["channels"] != 2))
+            || (!scene.audio.source()
+                && !renderer_manifest["audio"].is_null()
+                && renderer_manifest["audio"]["mode"] != "muted")
         {
             return Err(Error::new(
                 "demo_output_invalid",
@@ -1072,10 +1157,58 @@ pub fn handle(op: &str, a: &Value) -> Result {
         "demo.export" => render(a, false),
         "demo.export.inspect" => {
             let p = path(s(a, "path"), false, true)?;
-            let mut actual = validate_video(&p, None)?;
             let manifest = PathBuf::from(format!("{}.manifest.json", p.display()));
-            if manifest.exists() {
-                let m = read_json(&manifest)?;
+            let m = if manifest.exists() {
+                Some(read_json(&manifest)?)
+            } else {
+                None
+            };
+            let expected_scene = m
+                .as_ref()
+                .map(|m| {
+                    if m["format"] != "tomacco.demo.export" || m["version"] != 1 {
+                        return Err(Error::new(
+                            "demo_output_invalid",
+                            "Unsupported export manifest",
+                        ));
+                    }
+                    let scene: Scene =
+                        serde_json::from_value(m["scene"].clone()).map_err(|_| {
+                            Error::new(
+                                "demo_output_invalid",
+                                "Export manifest contains an invalid scene",
+                            )
+                        })?;
+                    scene.validate().map_err(|_| {
+                        Error::new(
+                            "demo_output_invalid",
+                            "Export manifest contains an invalid scene",
+                        )
+                    })?;
+                    Ok(scene)
+                })
+                .transpose()?;
+            let mut actual = validate_video(
+                &p,
+                expected_scene
+                    .as_ref()
+                    .map(|s| (&s.output, s.audio.source())),
+            )?;
+            if let Some(m) = m {
+                let source_audio = actual["has_audio"] == true;
+                let expected_mode = if source_audio { "source" } else { "muted" };
+                if m["validation"]["silent"] != actual["silent"]
+                    || m["validation"]["media"]["has_audio"] != actual["has_audio"]
+                    || m["validation"]["renderer"]["silent"] != actual["silent"]
+                    || (!m["validation"]["audio"].is_null()
+                        && m["validation"]["audio"]["mode"] != expected_mode)
+                    || (source_audio && m["validation"]["renderer"]["audio"]["mode"] != "source")
+                {
+                    return Err(Error::new(
+                        "demo_output_invalid",
+                        "Export manifest audio policy does not match media",
+                    ));
+                }
                 if m["validation"]["media"]["sha256"] != actual["sha256"] {
                     return Err(Error::new(
                         "demo_output_invalid",
@@ -1095,6 +1228,34 @@ mod tests {
     use super::*;
     fn scene() -> Scene {
         serde_json::from_value(json!({"format":"tomacco.demo","version":1,"revision":1,"id":"1234567890abcdef1234567890abcdef","title":"Fixture","source":{"path":"/tmp/demo-source.mp4","sha256":"0".repeat(64),"width":1080,"height":2400,"duration":8.0,"fps":30.0,"rotation":0,"has_audio":false},"clip":{"start":0.0},"output":{"width":1080,"height":1920,"fps":30,"duration":8.0},"device":{"model":"phone","finish":"#242421","bezel":0.035,"thickness":0.065,"corner_radius":0.09},"background":{"color":"#f4f2ec","color2":"#f4f2ec","style":"solid","image":""},"shadow":{"enabled":true,"opacity":0.22,"blur":24.0,"offset_x":0.0,"offset_y":40.0},"camera":{"distance":4.0,"fov":35.0},"keyframes":[{"time":0.0,"yaw":-18.0,"pitch":8.0,"roll":-4.0,"scale":0.72,"x":0.5,"y":0.5,"easing":"smooth"},{"time":8.0,"yaw":18.0,"pitch":8.0,"roll":4.0,"scale":0.72,"x":0.5,"y":0.5,"easing":"smooth"}]})).unwrap()
+    }
+    #[test]
+    fn old_scenes_are_muted_and_source_audio_requires_a_real_source_stream() {
+        let mut old = scene();
+        assert!(!old.audio.source());
+        old.validate().unwrap();
+        assert_eq!(
+            serde_json::to_value(&old).unwrap()["audio"]["mode"],
+            "muted"
+        );
+        old.audio.mode = AudioMode::Source;
+        assert_eq!(old.validate().unwrap_err().code, "demo_invalid");
+        old.source.has_audio = true;
+        old.validate().unwrap();
+    }
+    #[test]
+    fn audio_modes_and_nested_keys_are_strict() {
+        for audio in [
+            json!({"mode":"external"}),
+            json!({"mode":"source","path":"/tmp/music"}),
+            json!({}),
+            json!(null),
+            json!("source"),
+        ] {
+            let mut value = serde_json::to_value(scene()).unwrap();
+            value["audio"] = audio;
+            assert!(serde_json::from_value::<Scene>(value).is_err());
+        }
     }
     #[test]
     fn rejects_unordered_keyframes_and_unknown_nested_fields() {

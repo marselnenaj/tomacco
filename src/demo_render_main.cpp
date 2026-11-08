@@ -126,7 +126,23 @@ int run(const QString &scenePath,const QString &output,std::optional<double> tim
     if(!verifyDisplaySize(scene,ffprobe,error))return 1;
     Child decoder,encoder;if(!decoder.start(ffmpeg,decoderArguments(scene,time),error))return 1;
     if(!time) {
-        QStringList args{"-v","error","-nostdin","-threads","2","-f","rawvideo","-pixel_format","rgba","-video_size",QString("%1x%2").arg(scene.width).arg(scene.height),"-framerate",QString::number(scene.fps),"-i","pipe:0","-an","-c:v","libx264","-preset","fast","-crf","18","-pix_fmt","yuv420p","-threads","2","-movflags","+faststart","-f","mp4","-y",movie.temporary.fileName()};
+        QStringList args{"-v","error","-nostdin","-threads","2"};
+        if(scene.sourceAudio)args<<"-copyts"<<"-start_at_zero";
+        args<<"-f"<<"rawvideo"<<"-pixel_format"<<"rgba"<<"-video_size"<<QString("%1x%2").arg(scene.width).arg(scene.height)<<"-framerate"<<QString::number(scene.fps)<<"-i"<<"pipe:0";
+        if(scene.sourceAudio) {
+            const QString start=QString::number(scene.clipStart,'f',9);
+            const QString end=QString::number(scene.clipStart+scene.duration,'f',9);
+            const QString duration=QString::number(double(scene.frameCount())/scene.fps,'f',9);
+            // Keep source timestamps relative to the container's start, just as
+            // the video seek does. Subtract the clip origin, not STARTPTS: the
+            // latter would move a late-starting audio stream to the first frame.
+            // A finite silence bed also covers an audio track that ends before
+            // this clip; it never extends or truncates the rendered video.
+            args<<"-ss"<<start<<"-protocol_whitelist"<<"file,pipe"<<"-i"<<scene.sourcePath;
+            const QString filter=QString("[1:a:0]atrim=start=%1:end=%2,asetpts=PTS-%1/TB,aresample=48000:async=0:first_pts=0,aformat=channel_layouts=stereo[src];anullsrc=r=48000:cl=stereo,atrim=duration=%3[bed];[bed][src]amix=inputs=2:duration=first:dropout_transition=0:normalize=0,atrim=duration=%3[audio]").arg(start,end,duration);
+            args<<"-filter_complex_threads"<<"1"<<"-filter_complex"<<filter<<"-map"<<"0:v:0"<<"-map"<<"[audio]"<<"-c:a"<<"aac"<<"-ar"<<"48000"<<"-ac"<<"2"<<"-b:a"<<"192k";
+        } else args<<"-map"<<"0:v:0"<<"-an";
+        args<<"-map_metadata"<<"-1"<<"-map_chapters"<<"-1"<<"-c:v"<<"libx264"<<"-preset"<<"fast"<<"-crf"<<"18"<<"-pix_fmt"<<"yuv420p"<<"-threads"<<"2"<<"-movflags"<<"+faststart"<<"-f"<<"mp4"<<"-y"<<movie.temporary.fileName();
         if(!encoder.start(ffmpeg,args,error))return 1;
     }
     Demo::Renderer renderer(scene);QImage frame(scene.sourceWidth,scene.sourceHeight,QImage::Format_RGBA8888);
@@ -142,7 +158,7 @@ int run(const QString &scenePath,const QString &output,std::optional<double> tim
     }
     if(!waitFinished(decoder,10000,error))return 1;
     if(!time){encoder.process.closeWriteChannel();if(!waitFinished(encoder,60000,error))return 1;if(!posterFrame.save(poster.temporary.fileName(),"PNG")){error="Could not save the export poster.";return 1;}}
-    QJsonObject metadata{{"format","tomacco.demo.render"},{"version",1},{"output",output},{"width",scene.width},{"height",scene.height},{"frames",count},{"fps",scene.fps},{"duration",time?0:double(count)/scene.fps},{"requested_duration",scene.duration},{"silent",true},{"source_sha256",scene.sourceDigest},{"source_frame_selection","fixed-rate samples from clip start; repeated frames are held, never interpolated"}};
+    QJsonObject metadata{{"format","tomacco.demo.render"},{"version",1},{"output",output},{"width",scene.width},{"height",scene.height},{"frames",count},{"fps",scene.fps},{"duration",time?0:double(count)/scene.fps},{"requested_duration",scene.duration},{"silent",bool(time) || !scene.sourceAudio},{"audio",scene.sourceAudio && !time ? QJsonObject{{"mode","source"},{"codec","aac"},{"sample_rate",48000},{"channels",2}} : QJsonObject{{"mode","muted"}}},{"source_sha256",scene.sourceDigest},{"source_frame_selection","fixed-rate samples from clip start; repeated frames are held, never interpolated"}};
     if(time)metadata["time"]=*time;
     else {metadata["poster"]=poster.destination;metadata["manifest"]=manifest.destination;if(!manifest.writeJson(metadata,error))return 1;}
     progress({{"phase","publishing"},{"frames",count}});

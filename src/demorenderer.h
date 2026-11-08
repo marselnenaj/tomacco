@@ -19,7 +19,7 @@ struct Scene {
     QString model, backgroundStyle;
     QColor finish, background, background2;
     double bezel=.035, thickness=.065, cornerRadius=.09;
-    bool shadow=true;
+    bool shadow=true, sourceAudio=false;
     double shadowOpacity=.22, shadowBlur=24, shadowX=0, shadowY=40;
     double distance=4, fov=35;
     QVector<Pose> keyframes;

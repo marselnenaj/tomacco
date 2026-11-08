@@ -30,10 +30,13 @@ class DemoRendererTest:public QObject {
         int count=0;for(int y=0;y<image.height();++y)for(int x=0;x<image.width();++x){const auto c=image.pixelColor(x,y);if(std::abs(c.red()-color.red())<tolerance && std::abs(c.green()-color.green())<tolerance && std::abs(c.blue()-color.blue())<tolerance)++count;}return count;
     }
     QString rendererPath() const {return QCoreApplication::applicationDirPath()+"/tomacco-demo-render";}
-    QString makeVideo() const {
-        const QString video=directory.filePath("source.mp4");
+    QString makeVideo(bool audio=false) const {
+        const QString video=directory.filePath(audio?"source-audio.mp4":"source.mp4");
         if(QFileInfo::exists(video))return video;
-        QProcess process;process.start(QStandardPaths::findExecutable("ffmpeg"),{"-v","error","-nostdin","-f","lavfi","-i","testsrc2=size=200x400:rate=12:duration=2","-c:v","libx264","-threads","2","-pix_fmt","yuv420p",video});
+        QStringList args{"-v","error","-nostdin","-f","lavfi","-i","testsrc2=size=200x400:rate=12:duration=2"};
+        if(audio)args<<"-f"<<"lavfi"<<"-i"<<"sine=frequency=733:sample_rate=44100:duration=2"<<"-c:a"<<"aac";
+        args<<"-c:v"<<"libx264"<<"-threads"<<"2"<<"-pix_fmt"<<"yuv420p"<<video;
+        QProcess process;process.start(QStandardPaths::findExecutable("ffmpeg"),args);
         if(!process.waitForFinished(15000) || process.exitCode()!=0)return {};return video;
     }
     QString writeScene(QJsonObject d,const QString &name) const {
@@ -42,6 +45,16 @@ class DemoRendererTest:public QObject {
     static QByteArray read(const QString &path) {QFile f(path);if(!f.open(QIODevice::ReadOnly))return {};return f.readAll();}
 private slots:
     void initTestCase() {QVERIFY(directory.isValid());source=directory.filePath("recording.fixture");QFile file(source);QVERIFY(file.open(QIODevice::WriteOnly));file.write("Only local validation; no media process is started by these tests.");}
+    void audio_contract_keeps_old_documents_muted_and_refuses_missing_audio() {
+        auto d=document();QString error;
+        auto old=Demo::Scene::fromJson(d,&error);QVERIFY(old);QVERIFY(!old->sourceAudio);
+        d["audio"]=QJsonObject{{"mode","source"}};QVERIFY(!Demo::Scene::fromJson(d,&error));
+        auto input=d["source"].toObject();input["has_audio"]=true;d["source"]=input;
+        const auto audio=Demo::Scene::fromJson(d,&error);QVERIFY(audio);QVERIFY(audio->sourceAudio);
+        for(const auto &invalid:QList<QJsonValue>{QJsonObject{{"mode","external"}},QJsonObject{{"mode","source"},{"path","/tmp/music"}},QJsonObject{},QJsonValue(QJsonValue::Null),QJsonValue("source")}) {
+            d["audio"]=invalid;QVERIFY(!Demo::Scene::fromJson(d,&error));
+        }
+    }
     void rejects_invalid_scene_boundaries() {
         auto valid=document();QString error;QVERIFY(Demo::Scene::fromJson(valid,&error));
         for(const auto &patch:QList<QJsonObject>{QJsonObject{{"width",641}},QJsonObject{{"width",4000}},QJsonObject{{"fps",29}},QJsonObject{{"duration",61}}}) {
@@ -89,6 +102,23 @@ private slots:
         auto noShadow=s;noShadow.shadow=false;QVERIFY(image!=Demo::Renderer(noShadow).render(frame,.5));
         QString error;QVERIFY(Demo::Renderer(s).render(QImage(1,1,QImage::Format_RGB32),0,&error).isNull());QVERIFY(!error.isEmpty());QVERIFY(Demo::Renderer(s).render(frame,3,&error).isNull());
     }
+    void cli_source_audio_is_opt_in_and_preview_stays_silent() {
+        const auto video=makeVideo(true);QVERIFY(!video.isEmpty());auto d=document();
+        auto input=d["source"].toObject();input["path"]=video;input["has_audio"]=true;d["source"]=input;
+        d["audio"]=QJsonObject{{"mode","source"}};d["clip"]=QJsonObject{{"start",.4}};
+        auto out=d["output"].toObject();out["width"]=320;out["height"]=640;out["fps"]=24;out["duration"]=.51;d["output"]=out;
+        auto keys=d["keyframes"].toArray();auto last=keys.last().toObject();last["time"]=.51;keys[1]=last;d["keyframes"]=keys;
+        const auto scenePath=writeScene(d,"audio.json"),output=directory.filePath("audio.mp4");
+        QProcess renderer;renderer.start(rendererPath(),{"--scene",scenePath,"--output",output});QVERIFY(renderer.waitForFinished(30000));QVERIFY2(renderer.exitCode()==0,renderer.readAllStandardError().constData());
+        const auto metadata=QJsonDocument::fromJson(renderer.readAllStandardOutput()).object();QCOMPARE(metadata["silent"],QJsonValue(false));QCOMPARE(metadata["audio"].toObject()["mode"],QJsonValue("source"));
+        QProcess probe;probe.start(QStandardPaths::findExecutable("ffprobe"),{"-v","error","-count_frames","-show_streams","-of","json",output});QVERIFY(probe.waitForFinished(15000));QCOMPARE(probe.exitCode(),0);
+        const auto streams=QJsonDocument::fromJson(probe.readAllStandardOutput()).object()["streams"].toArray();QCOMPARE(streams.size(),2);
+        const auto a=streams[1].toObject(),v=streams[0].toObject();QCOMPARE(a["codec_name"],QJsonValue("aac"));QCOMPARE(a["sample_rate"],QJsonValue("48000"));QCOMPARE(a["channels"],QJsonValue(2));QCOMPARE(v["nb_read_frames"],QJsonValue("13"));
+        QVERIFY(std::abs(a["duration"].toString().toDouble()-13./24)<.03);QVERIFY(std::abs(a["start_time"].toString().toDouble())<.002);
+        const auto original=QCryptographicHash::hash(read(output),QCryptographicHash::Sha256);renderer.start(rendererPath(),{"--scene",scenePath,"--output",output});QVERIFY(renderer.waitForFinished(15000));QVERIFY(renderer.exitCode()!=0);QCOMPARE(QCryptographicHash::hash(read(output),QCryptographicHash::Sha256),original);
+        const auto preview=directory.filePath("audio-preview.png");renderer.start(rendererPath(),{"--scene",scenePath,"--output",preview,"--time",".2"});QVERIFY(renderer.waitForFinished(15000));QCOMPARE(renderer.exitCode(),0);QVERIFY(!QImage(preview).isNull());
+        const auto paused=QJsonDocument::fromJson(renderer.readAllStandardOutput()).object();QCOMPARE(paused["silent"],QJsonValue(true));QCOMPARE(paused["audio"].toObject()["mode"],QJsonValue("muted"));
+    }
     void cli_exports_valid_media_and_refuses_overwrite() {
         QVERIFY(QFileInfo::exists(rendererPath()));const auto video=makeVideo();QVERIFY(!video.isEmpty());
         auto d=document();auto input=d["source"].toObject();input["path"]=video;d["source"]=input;
@@ -113,8 +143,10 @@ private slots:
         input["width"]=200;input["height"]=400;d["source"]=input;const auto invalid=writeScene(d,"wrong-size.json"),badOutput=directory.filePath("invalid.png");
         renderer.start(rendererPath(),{"--scene",invalid,"--output",badOutput,"--time","0"});QVERIFY(renderer.waitForFinished(15000));QVERIFY(renderer.exitCode()!=0);QVERIFY(!QFileInfo::exists(badOutput));
     }
+    void cli_cancel_removes_partial_artifacts_and_only_stops_own_children_data() {QTest::addColumn<bool>("audio");QTest::newRow("muted")<<false;QTest::newRow("source-audio")<<true;}
     void cli_cancel_removes_partial_artifacts_and_only_stops_own_children() {
-        const auto video=makeVideo();QVERIFY(!video.isEmpty());auto d=document();auto input=d["source"].toObject();input["path"]=video;d["source"]=input;
+        QFETCH(bool,audio);const auto video=makeVideo(audio);QVERIFY(!video.isEmpty());auto d=document();auto input=d["source"].toObject();input["path"]=video;input["has_audio"]=audio;d["source"]=input;
+        d["audio"]=QJsonObject{{"mode",audio?"source":"muted"}};
         auto out=d["output"].toObject();out["width"]=2160;out["height"]=3840;out["fps"]=60;d["output"]=out;
         const auto scenePath=writeScene(d,"cancel.json"),output=directory.filePath("cancel.mp4");
         QProcess unrelated;unrelated.start("/usr/bin/sleep",{"30"});QVERIFY(unrelated.waitForStarted());
