@@ -3,14 +3,6 @@
   "historical_review_notes": "history/4584d6b/ROOT-QA-NOTES.json",
   "historical_resolution_index": "review-resolutions.json",
   "current_evidence": "demo-audio-delta-acceptance.json",
-  "current_review": {
-    "reviewer": "root",
-    "boards": [
-      "D23",
-      "D19",
-      "D20"
-    ],
-    "result": "Actual full-board screenshots reviewed by root; readable without clipping, D23 audio lanes, limits and source correct."
-  },
-  "root_final_acceptance_pending": true
+  "current_review": "Root actual screenshots, source hashes, full map, render hashes, layout, live lint and brand accepted; see root-final-review.json",
+  "root_final_acceptance_pending": false
 }

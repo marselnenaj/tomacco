@@ -1,5 +1,5 @@
 {
-  "state": "ready_for_root_final_qa",
+  "state": "complete",
   "desktop_installed": true,
   "source_audio_product_expected": "578819be350cc430196fef59a8d07ea91b3c34e4",
   "file_id": "u8uvnj33hx",
@@ -17,7 +17,7 @@
     "all33footerbaseline-labels"
   ],
   "physical_device_access": false,
-  "updated_at": "2026-11-08T08:58:11.894770+00:00",
+  "updated_at": "2026-11-08T09:02:11.589977+00:00",
   "product_expected": "1713806db7ef00eda9754bb5bea23cd803179aa0",
   "audio_runtime_source": "578819be350cc430196fef59a8d07ea91b3c34e4",
   "product_commit": "1713806db7ef00eda9754bb5bea23cd803179aa0",
@@ -92,13 +92,15 @@
     }
   ],
   "checkpoint": {
-    "id": "mw7lmw6j-13a28bdc",
-    "name": "Tomacco · Demo Originalton · Produkt1713806 · 33 Flows / 296 Operationen"
+    "id": "mw7lront-a8f559a8",
+    "name": "Tomacco · ARM Originalton578819b geprüft und bereitgelegt · Pixel unverändert"
   },
   "logical_nodes": 981,
   "actual_nodes_verified": 981,
   "prototype_links": 382,
   "png_exports": 36,
   "critical_lint": 0,
-  "brand_hard": 0
+  "brand_hard": 0,
+  "final_ready": true,
+  "root_review": "root-final-review.json"
 }

@@ -48,3 +48,5 @@ Existing Bogen screen pages 01–03 are referenced, not changed by this atlas. T
 D23 models saved `audio.mode` (`muted` by default, optional `source`), source-track/AAC admission, silent PNG previews and independently checked AAC exports aligned to the first decoded video timestamp. `demo-audio-delta-state.json` records the installation gate and subsequent canvas mutations. Current provenance changes only after the qualification receipt confirms `desktop_installed: true`; the helper never installs software or calls hardware.
 
 Current audio-delta checks: 981 actual logical nodes, 382 verified links to 56 existing targets and 36 complete PNG exports. `demo-audio-delta-acceptance.json` separates completed checks from the final root review. Historical acceptance and PNGs remain in `history/4584d6b/`. Reconcile new live-tool observations with `tools/audio_acceptance.py`; the helper deliberately leaves final approval to the root reviewer.
+
+Final root review passed: `final-acceptance.json` and `root-final-review.json` record the current accepted atlas. Historical4584 evidence remains under `history/4584d6b/`.

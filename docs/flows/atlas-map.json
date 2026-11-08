@@ -40783,7 +40783,8 @@
     "prototype_evidence": "prototype-validation.json",
     "layout_evidence": "layout-final.json",
     "review_resolutions": "review-resolutions.json",
-    "root_final_acceptance_pending": true,
-    "final_ready": false
+    "root_final_acceptance_pending": false,
+    "final_ready": true,
+    "root_review": "root-final-review.json"
   }
 }
