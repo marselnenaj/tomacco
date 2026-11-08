@@ -8,12 +8,14 @@
   "commits": {
     "d714877": "File choosers: one app-owned adaptive chooser for every open, save and folder entry point (code, tests, 50 catalogs, docs, design evidence)",
     "2d46fca": "docs: this record (tested d714877)",
-    "next": "i18n: four Devanagari code points inside Bengali words replaced by their Bengali letters (follow-up below), with this record"
+    "e54656c": "i18n(bn): four Devanagari code points inside Bengali words replaced by their Bengali letters (follow-up below), with this record",
+    "next": "i18n(bg): Latin e U+0065 in Bulgarian 'се' replaced by Cyrillic U+0435 (follow-up below), with this record"
   },
   "final_source_ready": true,
-  "final_source_ready_note": "Source, tests, catalogs, docs and design evidence are complete and pass on d714877 in this clone (host x86_64, Debug, offscreen); the catalog-only Bengali follow-up below was checked on its own tree. Root still owns the integration merge, the release/ARM64 builds, CTest as a whole, rust-core, and any install.",
+  "final_source_ready_note": "Source, tests, catalogs, docs and design evidence are complete and pass on d714877 in this clone (host x86_64, Debug, offscreen); the catalog-only Bengali and Bulgarian follow-ups below were each checked on their own tree. Root still owns the integration merge, the release/ARM64 builds, CTest as a whole, rust-core, and any install.",
 
   "bengali_mixed_script_followup": {
+    "note": "Despite the key name, this section also covers the one Bulgarian typo found by the same scan; root authorized its fix afterwards (see bulgarian_fix).",
     "origin": "Root's narrow follow-up after the MacBook native ARM preflight (/home/maslos/Work/tomacco-macbook-preflight-20261108/docs/macbook-native-preflight-progress.json, fonts_and_languages: four mixed-script typos in Bengali). Catalog-only; no UI, product, test or Bogen change.",
     "fixes_in_i18n/tomacco_bn.ts": [
       {
@@ -58,8 +60,9 @@
       "tool": ".scratch/mixed_script_scan.py over i18n/*.ts (51 files, every translation and numerus form): a word is a run of letters, marks and format joiners; script from the Unicode name; Han/Hiragana/Katakana one group; punctuation such as U+0964 never counts. Also lists whole words in a third script (neither Latin nor the catalog's main script).",
       "before": "256 mixed words: the 4 Bengali+Devanagari words above, 1 Bulgarian Cyrillic+Latin word, 251 native+Latin forms",
       "after": "252 mixed words: 0 with Devanagari in Bengali; the Bulgarian word; 251 native+Latin forms. 0 whole words in a third script in any catalog.",
+      "after_bulgarian_fix": "251 mixed words, all native+Latin forms (ko 185, ar 24, bn 22, si 18, fa 2); against the previous scan exactly one entry removed (bg 'сe') and none added; third-script word lists unchanged (0). .scratch/mixed-scan-after-bg.json",
       "legitimate_not_changed": "ko 185 (particles attached to Latin names: Tomacco를, Linux에서, iPhone에서 ...), ar 24 (conjunction و attached to Latin terms: وiOS, وMCP ...), fa 2 (Macهای, Macی), and %n placeholders followed by a counter (bn nটি x22, si nක් x18, ko n개/n바이트) - orthographic, not contamination",
-      "finding_not_fixed": "i18n/tomacco_bg.ts line 3482, context NativeWorkspace, source 'The Mac needs Xcode with an iOS simulator runtime, SSH access and idb_companion. ...': 'Mac сe нуждае ...' - the particle 'сe' is U+0441 CYRILLIC SMALL LETTER ES + U+0065 LATIN SMALL LETTER E; Bulgarian 'се' needs U+0435 CYRILLIC SMALL LETTER IE. Same class of typo (missed by the preflight scan, which reported no other mixed-script word). Left unchanged because this follow-up was scoped to the four Bengali characters; a one-code-point fix (U+0065 -> U+0435) for root to decide."
+      "bulgarian_finding": "CORRECTED in the next commit (see bulgarian_fix). i18n/tomacco_bg.ts line 3482, context NativeWorkspace, source 'The Mac needs Xcode with an iOS simulator runtime, SSH access and idb_companion. ...': 'Mac сe нуждае ...' had U+0441 CYRILLIC SMALL LETTER ES + U+0065 LATIN SMALL LETTER E; the preflight scan had missed it."
     },
     "checks_on_the_fixed_tree": [
       "python3 -I tools/i18n_catalog.py sources: 1894 texts, listing sha256 5a3ed08091f502b29b60872dbf7a35d836920070978073a6feadbfa19cb2321b (unchanged); report: digest 161b3088e436, 50/50 complete, bn 0 problems; report --write to a copy is identical to i18n/COVERAGE.md",
@@ -67,7 +70,23 @@
       "python3 -I .scratch/qm_roundtrip.py .: 51 catalogs, 94721 finished messages read back identical",
       "catalogs_concat_sha256 (sorted i18n/*.ts) now d2a98de26ea4a567f511f41384e3ab9d4abb138570bbd32c0b123be1b7c593a3 (was 2fd3db1b...; only tomacco_bn.ts differs)"
     ],
-    "not_run_on_purpose": "Desktop UI, phone routes, backend, Rust, ARM: no code, QML or test changed; no test mirroring literal translations was added. Rendered Bengali glyphs not re-captured here."
+    "not_run_on_purpose": "Desktop UI, phone routes, backend, Rust, ARM: no code, QML or test changed; no test mirroring literal translations was added. Rendered Bengali glyphs not re-captured here.",
+    "bulgarian_fix": {
+      "authorized_by": "root follow-up after inspecting e54656c: replace only the Latin e inside Bulgarian 'се'",
+      "file_line": "i18n/tomacco_bg.ts:3482 (context NativeWorkspace)",
+      "before": "Mac сe нуждае от Xcode ...",
+      "after": "Mac се нуждае от Xcode ...",
+      "codepoint": "U+0065 LATIN SMALL LETTER E -> U+0435 CYRILLIC SMALL LETTER IE (file offset 131542; 'Mac', 'Xcode', 'SSH', 'idb_companion' unchanged)",
+      "method": ".scratch/fix_bg_mixed_script.py: bound to the exact <source> and its translation, must match once; asserted exactly 1 code point differs and the length is unchanged. sha256sum of every i18n/*.ts before/after: only tomacco_bg.ts differs; git diff: 1 line. tomacco_bn.ts still 0ed6a7ab... (the four Bengali fixes intact).",
+      "bg_sha256": {"before": "dd6b43a5fad0ef369a9bd91e171e9a7053f4bf4d62eea65bc87af31e3955cd4c", "after": "57b171d795e7eb8aa914904d2777eac0a263413a65b73b759159b4b5aaf9a0c3"},
+      "checks": [
+        "python3 -I .scratch/mixed_script_scan.py i18n/*.ts: see scan_of_all_catalogs.after_bulgarian_fix",
+        "python3 -I tools/i18n_catalog.py sources: 1894 texts, listing sha256 5a3ed08091f502b29b60872dbf7a35d836920070978073a6feadbfa19cb2321b (unchanged); report: digest 161b3088e436, 50/50 complete, bg 1894/1894 with 0 problems; report --write to a copy is identical to i18n/COVERAGE.md",
+        "TMPDIR=/tmp python3 .scratch/run_py_tests.py test_i18n test_docs_consistency test_docs_links test_docs_reference test_mobile_parity: 5 modules, 37 ran, 0 failed, 1 skipped (test_i18n Numbers.js: no usable node binary, as before); trapped attempts 0",
+        "python3 -I .scratch/qm_roundtrip.py .: 51 catalogs, 94721 finished messages read back identical",
+        "catalogs_concat_sha256 (sorted i18n/*.ts) now 25a6fd169ed05dccc80fffc737d154d54acfbfce89dab96d1fea5e96b201dd6a (was d2a98de2... at e54656c; only tomacco_bg.ts differs)"
+      ]
+    }
   },
 
   "user_report": "Remaining Qt fallback dialogs at 175 % (global font 23 px): folder chooser 600x400, file dialogs 600x497/542, 16 px icons, path/name/filter controls clipped. Evidence: /home/maslos/Work/tomacco-project-picker-fix-20261107/.scratch/evidence/other/other-dialogs.json and other-*-175.png (Choose a web build 600x400; Import settings, Install app on device, Import device profiles 600x497; Export settings 600x542).",

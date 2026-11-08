@@ -3479,7 +3479,7 @@ SSH използва вашите съществуващи ключове и п�
     </message>
     <message>
         <source>The Mac needs Xcode with an iOS simulator runtime, SSH access and idb_companion. Your own Mac or a rented one works.</source>
-        <translation>Mac сe нуждае от Xcode със среда за изпълнение на iOS симулатор, SSH достъп и idb_companion. Работи както ваш собствен, така и нает Mac.</translation>
+        <translation>Mac се нуждае от Xcode със среда за изпълнение на iOS симулатор, SSH достъп и idb_companion. Работи както ваш собствен, така и нает Mac.</translation>
     </message>
     <message>
         <source>The desktop and its control program come from different versions. Install both from the same build.</source>
