@@ -1,6 +1,6 @@
 pkgbase = tomacco
 	pkgdesc = Build, run and test Android and iOS apps on Linux, with a coding agent or a Qt desktop
-	pkgver = 1.4.1
+	pkgver = 1.5.0
 	pkgrel = 1
 	url = https://tomacco.dev
 	arch = x86_64
@@ -22,7 +22,7 @@ pkgbase = tomacco
 	optdepends = uxplay: iPhone screen mirroring over Wi-Fi (AirPlay, 1.73 or newer)
 	optdepends = bluez: control a mirrored iPhone over Bluetooth
 	options = !lto
-	source = https://github.com/marselnenaj/tomacco/releases/download/v1.4.1/tomacco-1.4.1-source.tar.gz
-	sha256sums = d709ceb9390ea85b48e8c8ef607d2111ebdf15d024e1f2ce2624ff77d8929b7b
+	source = https://github.com/marselnenaj/tomacco/releases/download/v1.5.0/tomacco-1.5.0-source.tar.gz
+	sha256sums = 199ede4139dc56662370ad192e1cef202981c62594ba7b8b5bbe639c8e9472fa
 
 pkgname = tomacco

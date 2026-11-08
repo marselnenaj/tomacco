@@ -1,0 +1,25 @@
+{
+  "passed": true,
+  "checks": [
+    {
+      "check": "device-screenshot",
+      "pass": true
+    },
+    {
+      "check": "fullscreen",
+      "pass": true
+    },
+    {
+      "check": "android-category-filter",
+      "pass": true
+    },
+    {
+      "check": "apple-category-search-preserved",
+      "pass": true
+    },
+    {
+      "check": "17e-attached-notch-and-proportions",
+      "pass": true
+    }
+  ]
+}

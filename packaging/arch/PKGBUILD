@@ -3,7 +3,7 @@
 # Builds Tomacco from the corresponding-source tarball of a release. That
 # tarball holds the vendored Rust crates, so the build needs no network.
 pkgname=tomacco
-pkgver=1.4.1
+pkgver=1.5.0
 pkgrel=1
 pkgdesc='Build, run and test Android and iOS apps on Linux, with a coding agent or a Qt desktop'
 arch=('x86_64')
@@ -23,9 +23,9 @@ options=('!lto')
 # The release commit, from SOURCE_RELEASE.md in the tarball. The installed
 # SOURCE.md names it; without it the build would ask Git, which in an AUR
 # checkout answers with the PKGBUILD's own commit.
-_commit=c708ff649821e8de4a2d69752f2f4f9ee08af3a6
+_commit=a2f3ad8bdf731fd7337f6fcfd6bfd4b40f3d2c59
 source=("https://github.com/marselnenaj/tomacco/releases/download/v$pkgver/tomacco-$pkgver-source.tar.gz")
-sha256sums=('d709ceb9390ea85b48e8c8ef607d2111ebdf15d024e1f2ce2624ff77d8929b7b')
+sha256sums=('199ede4139dc56662370ad192e1cef202981c62594ba7b8b5bbe639c8e9472fa')
 
 build() {
   # TOMACCO_DISABLE_UPDATES: pacman updates this package, so tomaccoctl never

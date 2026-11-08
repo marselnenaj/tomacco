@@ -295,6 +295,53 @@ check() {
     label="$1"; shift; start=$(date +%s)
     if "$@"; then result "$label" "ok($(( $(date +%s) - start ))s)"; else result "$label" "fail($?)"; status=1; fi
 }
+smoke() {
+    capture=$(mktemp /tmp/tomacco-smoke.XXXXXX) || return 1
+    if "$@" >"$capture" 2>&1; then code=0; else code=$?; fi
+    cat "$capture"
+    python3 - "$capture" "$code" <<'PYSMOKE'
+import json, re, sys
+from pathlib import Path
+expected = {
+    "initial-viewport", "landscape-viewport", "duo-folded-portrait",
+    "duo-folded-landscape", "duo-open-portrait", "duo-open-landscape",
+    "duo-edge-to-edge", "demo-interaction", "device-screenshot", "fullscreen",
+    "android-category-filter", "apple-category-search-preserved",
+    "17e-attached-notch-and-proportions",
+}
+text = Path(sys.argv[1]).read_text(errors="replace")
+errors = []
+if int(sys.argv[2]) != 0:
+    errors.append("smoke process exited " + sys.argv[2])
+if re.search(r"FATAL|Check failed:|core dumped|dumped core|segmentation fault|trace/breakpoint trap|received signal\s*\d|uncaught target signal|\bSIG(?:SEGV|ABRT|ILL|BUS)\b", text, re.I):
+    errors.append("fatal/crash diagnostic")
+reports = [line[len("TOMACCO_TEST "):] for line in text.splitlines()
+           if line.startswith("TOMACCO_TEST ")]
+if len(reports) != 1:
+    errors.append("expected exactly one TOMACCO_TEST report")
+else:
+    try:
+        report = json.loads(reports[0])
+        checks = report.get("checks") if isinstance(report, dict) else None
+        if not isinstance(checks, list) or not all(isinstance(c, dict) for c in checks):
+            errors.append("checks must be an array of objects")
+        else:
+            names = [c.get("check") for c in checks]
+            if len(names) != 13 or any(not isinstance(n, str) for n in names) or set(names) != expected:
+                errors.append("expected all 13 unique named checks")
+            if report.get("passed") is not True or not all(c.get("pass") is True for c in checks):
+                errors.append("every check and overall passed must be boolean true")
+    except (ValueError, TypeError) as error:
+        errors.append("invalid smoke report: " + str(error))
+if errors:
+    print("STRICT_SMOKE failed: " + "; ".join(errors), file=sys.stderr)
+    sys.exit(1)
+print("STRICT_SMOKE passed: all 13 expected checks; no fatal diagnostics")
+PYSMOKE
+    strict=$?
+    rm -f "$capture"
+    return "$strict"
+}
 missing() {
     found=$(find "$top/bin" "$top/lib/tomacco/runtime/lib" "$top/lib/tomacco/runtime/plugins" "$top/lib/tomacco/runtime/qml" \
         "$top/lib/tomacco/runtime/libexec" -type f \( -name '*.so*' -o -perm -u+x \) -exec sh -c 'file="$1"; head -c 4 "$file" | grep -q ELF || exit 0; ldd "$file" 2>/dev/null | grep "not found" | sed "s|^|$file: |"' _ {} \; )
@@ -306,12 +353,12 @@ check tomaccoctl-version "$top/bin/tomaccoctl" --version
 python3 -c 'import json,sys; v=json.load(open("/tmp/doctor.json")); print("doctor ok=%s, %d keys" % (v.get("ok"), len(v.get("result", v))))' 2>&1
 [ $code = 0 ] && result tomaccoctl-doctor ok || { result tomaccoctl-doctor "fail($code)"; head -c 600 /tmp/doctor.json; status=1; }
 check libraries-resolve missing
-check smoke-offscreen env QT_QPA_PLATFORM=offscreen QT_QUICK_BACKEND=software timeout 300 "$top/bin/tomacco" --smoke-test
-check smoke-xcb-xvfb env QT_QUICK_BACKEND=software timeout 300 xvfb-run -a -s "-screen 0 1920x1200x24" "$top/bin/tomacco" --smoke-test
+check smoke-offscreen smoke env QT_QPA_PLATFORM=offscreen QT_QUICK_BACKEND=software timeout 300 "$top/bin/tomacco" --smoke-test
+check smoke-xcb-xvfb smoke env QT_QUICK_BACKEND=software timeout 300 xvfb-run -a -s "-screen 0 1920x1200x24" "$top/bin/tomacco" --smoke-test
 home=/tmp/home; mkdir -p "$home"
 check install-py python3 "$top/install.py" --user-home "$home" --no-window-rule
 check installed-tomaccoctl "$home/.local/bin/tomaccoctl" --version
-check installed-smoke-offscreen env QT_QPA_PLATFORM=offscreen QT_QUICK_BACKEND=software timeout 300 "$home/.local/bin/tomacco" --smoke-test
+check installed-smoke-offscreen smoke env QT_QPA_PLATFORM=offscreen QT_QUICK_BACKEND=software timeout 300 "$home/.local/bin/tomacco" --smoke-test
 check uninstall python3 "$home/.local/lib/tomacco/install.py" --uninstall --user-home "$home"
 check uninstall-left-nothing test ! -e "$home/.local/lib/tomacco"
 exit $status

@@ -1,0 +1,180 @@
+{
+  "checks": [
+    {
+      "check": "initial-viewport",
+      "pass": true,
+      "result": {
+        "dpr": 3,
+        "height": 874,
+        "title": "Fokus \u00b7 Tomacco Demo",
+        "width": 402
+      }
+    },
+    {
+      "check": "landscape-viewport",
+      "pass": true,
+      "result": {
+        "height": 402,
+        "width": 874
+      }
+    },
+    {
+      "check": "duo-folded-portrait",
+      "island": false,
+      "pass": true,
+      "punch": true,
+      "result": {
+        "height": 678,
+        "layout": {
+          "barEdge": "right",
+          "controlsTop": 126,
+          "display": "outer",
+          "height": 678,
+          "model": "duo",
+          "orientation": "portrait",
+          "platform": "ios",
+          "safeArea": {
+            "bottom": 34,
+            "left": 0,
+            "right": 84,
+            "top": 0
+          },
+          "version": 1,
+          "width": 466
+        },
+        "width": 466
+      },
+      "screen": [
+        466,
+        678
+      ]
+    },
+    {
+      "check": "duo-folded-landscape",
+      "island": false,
+      "pass": true,
+      "punch": true,
+      "result": {
+        "height": 466,
+        "layout": {
+          "barEdge": "left",
+          "controlsTop": 126,
+          "display": "outer",
+          "height": 466,
+          "model": "duo",
+          "orientation": "landscape",
+          "platform": "ios",
+          "safeArea": {
+            "bottom": 0,
+            "left": 72,
+            "right": 0,
+            "top": 0
+          },
+          "version": 1,
+          "width": 678
+        },
+        "width": 678
+      },
+      "screen": [
+        678,
+        466
+      ]
+    },
+    {
+      "check": "duo-open-portrait",
+      "island": false,
+      "pass": true,
+      "punch": false,
+      "result": {
+        "height": 951,
+        "layout": {
+          "barEdge": "bottom",
+          "controlsTop": 0,
+          "display": "inner",
+          "height": 951,
+          "model": "duo",
+          "orientation": "portrait",
+          "platform": "ios",
+          "safeArea": {
+            "bottom": 20,
+            "left": 0,
+            "right": 0,
+            "top": 28
+          },
+          "version": 1,
+          "width": 669
+        },
+        "width": 669
+      },
+      "screen": [
+        669,
+        951
+      ]
+    },
+    {
+      "check": "duo-open-landscape",
+      "island": false,
+      "pass": true,
+      "punch": false,
+      "result": {
+        "height": 669,
+        "layout": {
+          "barEdge": "right",
+          "controlsTop": 86,
+          "display": "inner",
+          "height": 669,
+          "model": "duo",
+          "orientation": "landscape",
+          "platform": "ios",
+          "safeArea": {
+            "bottom": 34,
+            "left": 0,
+            "right": 84,
+            "top": 0
+          },
+          "version": 1,
+          "width": 951
+        },
+        "width": 951
+      },
+      "screen": [
+        951,
+        669
+      ]
+    },
+    {
+      "check": "duo-edge-to-edge",
+      "pass": true,
+      "result": {
+        "height": 669,
+        "width": 951
+      }
+    },
+    {
+      "check": "demo-interaction",
+      "pass": true,
+      "result": "\u2161  Pause"
+    },
+    {
+      "check": "device-screenshot",
+      "pass": true
+    },
+    {
+      "check": "fullscreen",
+      "pass": true
+    },
+    {
+      "check": "android-category-filter",
+      "pass": true
+    },
+    {
+      "check": "apple-category-search-preserved",
+      "pass": true
+    },
+    {
+      "check": "17e-attached-notch-and-proportions",
+      "pass": true
+    }
+  ],
+  "passed": true
+}
