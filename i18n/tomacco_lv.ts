@@ -7094,7 +7094,7 @@ Licencēts saskaņā ar GNU General Public License 2. vai jaunāku versiju.</tra
     </message>
     <message>
         <source>Preview one frame, then export a silent MP4. A poster and a render record are saved beside it.</source>
-        <translation>Priekšskatiet vienu kadru, pēc tam eksportējiet MP4 bez skaņas. Blakus tiek saglabāts plakāts un renderēšanas ieraksts.</translation>
+        <translation type="vanished">Priekšskatiet vienu kadru, pēc tam eksportējiet MP4 bez skaņas. Blakus tiek saglabāts plakāts un renderēšanas ieraksts.</translation>
     </message>
     <message>
         <source>Your rendered preview appears here.</source>
@@ -7171,6 +7171,22 @@ Licencēts saskaņā ar GNU General Public License 2. vai jaunāku versiju.</tra
     <message>
         <source>Discard and reload</source>
         <translation>Atmest un pārlādēt</translation>
+    </message>
+    <message>
+        <source>Include source audio</source>
+        <translation>Iekļaut avota audio</translation>
+    </message>
+    <message>
+        <source>Preview one frame, then export an MP4. A poster and a render record are saved beside it.</source>
+        <translation>Priekšskatiet vienu kadru un pēc tam eksportējiet MP4. Blakus tiek saglabāts vāka attēls un renderēšanas žurnāls.</translation>
+    </message>
+    <message>
+        <source>Source audio follows the selected clip; preview frames are silent.</source>
+        <translation>Avota audio atbilst izvēlētajam klipam; priekšskatījuma kadri ir bez skaņas.</translation>
+    </message>
+    <message>
+        <source>This video has no audio track.</source>
+        <translation>Šim videoklipam nav audio celiņa.</translation>
     </message>
 </context>
 <context>

@@ -7094,7 +7094,7 @@ Lisensyado sa ilalim ng GNU General Public License, bersyon 2 o mas bago.</trans
     </message>
     <message>
         <source>Preview one frame, then export a silent MP4. A poster and a render record are saved beside it.</source>
-        <translation>I-preview ang isang frame, pagkatapos ay mag-export ng MP4 na walang tunog. May poster at render record na naka-save sa tabi nito.</translation>
+        <translation type="vanished">I-preview ang isang frame, pagkatapos ay mag-export ng MP4 na walang tunog. May poster at render record na naka-save sa tabi nito.</translation>
     </message>
     <message>
         <source>Your rendered preview appears here.</source>
@@ -7171,6 +7171,22 @@ Lisensyado sa ilalim ng GNU General Public License, bersyon 2 o mas bago.</trans
     <message>
         <source>Discard and reload</source>
         <translation>Itapon at i-reload</translation>
+    </message>
+    <message>
+        <source>Include source audio</source>
+        <translation>Isama ang orihinal na audio</translation>
+    </message>
+    <message>
+        <source>Preview one frame, then export an MP4. A poster and a render record are saved beside it.</source>
+        <translation>I-preview ang isang frame, saka mag-export ng MP4. May larawan ng pabalat at tala ng pag-render na ise-save sa tabi nito.</translation>
+    </message>
+    <message>
+        <source>Source audio follows the selected clip; preview frames are silent.</source>
+        <translation>Sumusunod ang orihinal na audio sa napiling clip; walang tunog ang mga frame ng preview.</translation>
+    </message>
+    <message>
+        <source>This video has no audio track.</source>
+        <translation>Walang audio track ang video na ito.</translation>
     </message>
 </context>
 <context>

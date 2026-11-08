@@ -7083,7 +7083,7 @@ Licensed under the GNU General Public License, version 2 or later.</source>
     </message>
     <message>
         <source>Preview one frame, then export a silent MP4. A poster and a render record are saved beside it.</source>
-        <translation>Προεπισκοπήστε ένα καρέ και μετά εξαγάγετε ένα MP4 χωρίς ήχο. Δίπλα του αποθηκεύονται μια εικόνα εξώφυλλου και ένα αρχείο απόδοσης.</translation>
+        <translation type="vanished">Προεπισκοπήστε ένα καρέ και μετά εξαγάγετε ένα MP4 χωρίς ήχο. Δίπλα του αποθηκεύονται μια εικόνα εξώφυλλου και ένα αρχείο απόδοσης.</translation>
     </message>
     <message>
         <source>Your rendered preview appears here.</source>
@@ -7160,6 +7160,22 @@ Licensed under the GNU General Public License, version 2 or later.</source>
     <message>
         <source>Discard and reload</source>
         <translation>Απόρριψη και επαναφόρτωση</translation>
+    </message>
+    <message>
+        <source>Include source audio</source>
+        <translation>Συμπερίληψη ήχου πηγής</translation>
+    </message>
+    <message>
+        <source>Preview one frame, then export an MP4. A poster and a render record are saved beside it.</source>
+        <translation>Δείτε προεπισκόπηση ενός καρέ και μετά εξαγάγετε ένα MP4. Μια εικόνα εξωφύλλου και μια αναφορά απόδοσης αποθηκεύονται δίπλα του.</translation>
+    </message>
+    <message>
+        <source>Source audio follows the selected clip; preview frames are silent.</source>
+        <translation>Ο ήχος της πηγής ακολουθεί το επιλεγμένο απόσπασμα· τα καρέ προεπισκόπησης είναι χωρίς ήχο.</translation>
+    </message>
+    <message>
+        <source>This video has no audio track.</source>
+        <translation>Αυτό το βίντεο δεν έχει κομμάτι ήχου.</translation>
     </message>
 </context>
 <context>

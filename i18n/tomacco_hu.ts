@@ -7072,7 +7072,7 @@ A GNU General Public License 2-es vagy későbbi verziója alatt licencelve.</tr
     </message>
     <message>
         <source>Preview one frame, then export a silent MP4. A poster and a render record are saved beside it.</source>
-        <translation>Tekints meg egy képkockát, majd exportálj egy néma MP4-et. Mellé egy poszter és egy renderelési jegyzőkönyv is mentődik.</translation>
+        <translation type="vanished">Tekints meg egy képkockát, majd exportálj egy néma MP4-et. Mellé egy poszter és egy renderelési jegyzőkönyv is mentődik.</translation>
     </message>
     <message>
         <source>Your rendered preview appears here.</source>
@@ -7149,6 +7149,22 @@ A GNU General Public License 2-es vagy későbbi verziója alatt licencelve.</tr
     <message>
         <source>Discard and reload</source>
         <translation>Elvetés és újratöltés</translation>
+    </message>
+    <message>
+        <source>Include source audio</source>
+        <translation>Forráshang hozzáadása</translation>
+    </message>
+    <message>
+        <source>Preview one frame, then export an MP4. A poster and a render record are saved beside it.</source>
+        <translation>Nézzen meg egy képkockát, majd exportáljon MP4-et. Mellette egy borítókép és egy renderelési napló is létrejön.</translation>
+    </message>
+    <message>
+        <source>Source audio follows the selected clip; preview frames are silent.</source>
+        <translation>A forráshang a kiválasztott részletet követi; az előnézeti képkockák némák.</translation>
+    </message>
+    <message>
+        <source>This video has no audio track.</source>
+        <translation>Ehhez a videóhoz nem tartozik hangsáv.</translation>
     </message>
 </context>
 <context>

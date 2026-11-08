@@ -7104,7 +7104,7 @@ GNU General Public License バージョン 2 以降の下で公開されてい�
     </message>
     <message>
         <source>Preview one frame, then export a silent MP4. A poster and a render record are saved beside it.</source>
-        <translation>1 フレームをプレビューし、無音の MP4 をエクスポートします。ポスターとレンダリング記録がその横に保存されます。</translation>
+        <translation type="vanished">1 フレームをプレビューし、無音の MP4 をエクスポートします。ポスターとレンダリング記録がその横に保存されます。</translation>
     </message>
     <message>
         <source>Your rendered preview appears here.</source>
@@ -7181,6 +7181,22 @@ GNU General Public License バージョン 2 以降の下で公開されてい�
     <message>
         <source>Discard and reload</source>
         <translation>破棄して再読み込み</translation>
+    </message>
+    <message>
+        <source>Include source audio</source>
+        <translation>元の音声を含める</translation>
+    </message>
+    <message>
+        <source>Preview one frame, then export an MP4. A poster and a render record are saved beside it.</source>
+        <translation>1フレームをプレビューしてからMP4を書き出します。同じ場所にポスター画像とレンダリング記録が保存されます。</translation>
+    </message>
+    <message>
+        <source>Source audio follows the selected clip; preview frames are silent.</source>
+        <translation>元の音声は選択したクリップに合わせて出力されます。プレビュー画像には音声はありません。</translation>
+    </message>
+    <message>
+        <source>This video has no audio track.</source>
+        <translation>この動画には音声トラックがありません。</translation>
     </message>
 </context>
 <context>

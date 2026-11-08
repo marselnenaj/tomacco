@@ -7094,7 +7094,7 @@ Licencirano pod GNU General Public License, verzija 2 ili novija.</translation>
     </message>
     <message>
         <source>Preview one frame, then export a silent MP4. A poster and a render record are saved beside it.</source>
-        <translation>Pregledajte jedan okvir, a zatim izvezite MP4 bez zvuka. Uz njega se spremaju naslovna slika i zapis iscrtavanja.</translation>
+        <translation type="vanished">Pregledajte jedan okvir, a zatim izvezite MP4 bez zvuka. Uz njega se spremaju naslovna slika i zapis iscrtavanja.</translation>
     </message>
     <message>
         <source>Your rendered preview appears here.</source>
@@ -7171,6 +7171,22 @@ Licencirano pod GNU General Public License, verzija 2 ili novija.</translation>
     <message>
         <source>Discard and reload</source>
         <translation>Odbaci i ponovno učitaj</translation>
+    </message>
+    <message>
+        <source>Include source audio</source>
+        <translation>Uključi zvuk izvornika</translation>
+    </message>
+    <message>
+        <source>Preview one frame, then export an MP4. A poster and a render record are saved beside it.</source>
+        <translation>Pregledajte jedan kadar, a zatim izvezite MP4. Uz njega se spremaju naslovna slika i zapis iscrtavanja.</translation>
+    </message>
+    <message>
+        <source>Source audio follows the selected clip; preview frames are silent.</source>
+        <translation>Zvuk izvornika prati odabrani isječak; kadrovi za pregled nemaju zvuk.</translation>
+    </message>
+    <message>
+        <source>This video has no audio track.</source>
+        <translation>Ovaj videozapis nema zvučni zapis.</translation>
     </message>
 </context>
 <context>

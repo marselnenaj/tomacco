@@ -7094,7 +7094,7 @@ Licencované pod GNU General Public License, verzia 2 alebo novšia.</translatio
     </message>
     <message>
         <source>Preview one frame, then export a silent MP4. A poster and a render record are saved beside it.</source>
-        <translation>Zobrazte náhľad jednej snímky a potom exportujte nemé MP4. Vedľa neho sa uloží náhľadový obrázok a záznam o vykreslení.</translation>
+        <translation type="vanished">Zobrazte náhľad jednej snímky a potom exportujte nemé MP4. Vedľa neho sa uloží náhľadový obrázok a záznam o vykreslení.</translation>
     </message>
     <message>
         <source>Your rendered preview appears here.</source>
@@ -7171,6 +7171,22 @@ Licencované pod GNU General Public License, verzia 2 alebo novšia.</translatio
     <message>
         <source>Discard and reload</source>
         <translation>Zahodiť a znova načítať</translation>
+    </message>
+    <message>
+        <source>Include source audio</source>
+        <translation>Zahrnúť zvuk zdrojového videa</translation>
+    </message>
+    <message>
+        <source>Preview one frame, then export an MP4. A poster and a render record are saved beside it.</source>
+        <translation>Pozrite si náhľad jednej snímky a potom exportujte MP4. Vedľa neho sa uloží obrázok obálky a záznam vykresľovania.</translation>
+    </message>
+    <message>
+        <source>Source audio follows the selected clip; preview frames are silent.</source>
+        <translation>Zvuk zdrojového videa zodpovedá vybranému úseku; náhľadové snímky sú bez zvuku.</translation>
+    </message>
+    <message>
+        <source>This video has no audio track.</source>
+        <translation>Toto video nemá zvukovú stopu.</translation>
     </message>
 </context>
 <context>

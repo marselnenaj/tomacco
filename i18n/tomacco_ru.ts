@@ -7126,7 +7126,7 @@ Licensed under the GNU General Public License, version 2 or later.</source>
     </message>
     <message>
         <source>Preview one frame, then export a silent MP4. A poster and a render record are saved beside it.</source>
-        <translation>Просмотрите один кадр, затем экспортируйте MP4 без звука. Рядом сохраняются постер и запись о рендеринге.</translation>
+        <translation type="vanished">Просмотрите один кадр, затем экспортируйте MP4 без звука. Рядом сохраняются постер и запись о рендеринге.</translation>
     </message>
     <message>
         <source>Your rendered preview appears here.</source>
@@ -7203,6 +7203,22 @@ Licensed under the GNU General Public License, version 2 or later.</source>
     <message>
         <source>Discard and reload</source>
         <translation>Отменить и перезагрузить</translation>
+    </message>
+    <message>
+        <source>Include source audio</source>
+        <translation>Включить исходный звук</translation>
+    </message>
+    <message>
+        <source>Preview one frame, then export an MP4. A poster and a render record are saved beside it.</source>
+        <translation>Просмотрите один кадр, затем экспортируйте MP4. Рядом сохраняются изображение обложки и журнал рендеринга.</translation>
+    </message>
+    <message>
+        <source>Source audio follows the selected clip; preview frames are silent.</source>
+        <translation>Исходный звук соответствует выбранному фрагменту; кадры предпросмотра не содержат звука.</translation>
+    </message>
+    <message>
+        <source>This video has no audio track.</source>
+        <translation>В этом видео нет звуковой дорожки.</translation>
     </message>
 </context>
 <context>

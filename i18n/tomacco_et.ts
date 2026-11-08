@@ -7083,7 +7083,7 @@ Litsentsitud GNU General Public License&apos;i versiooni 2 või hilisema alusel.
     </message>
     <message>
         <source>Preview one frame, then export a silent MP4. A poster and a render record are saved beside it.</source>
-        <translation>Vaata ühe kaadri eelvaadet ja ekspordi seejärel helita MP4. Selle kõrvale salvestatakse plakat ja renderduskirje.</translation>
+        <translation type="vanished">Vaata ühe kaadri eelvaadet ja ekspordi seejärel helita MP4. Selle kõrvale salvestatakse plakat ja renderduskirje.</translation>
     </message>
     <message>
         <source>Your rendered preview appears here.</source>
@@ -7160,6 +7160,22 @@ Litsentsitud GNU General Public License&apos;i versiooni 2 või hilisema alusel.
     <message>
         <source>Discard and reload</source>
         <translation>Loobu ja laadi uuesti</translation>
+    </message>
+    <message>
+        <source>Include source audio</source>
+        <translation>Kaasa lähtevideo heli</translation>
+    </message>
+    <message>
+        <source>Preview one frame, then export an MP4. A poster and a render record are saved beside it.</source>
+        <translation>Vaata ühe kaadri eelvaadet ja ekspordi seejärel MP4. Selle kõrvale salvestatakse kaanepilt ja renderduslogi.</translation>
+    </message>
+    <message>
+        <source>Source audio follows the selected clip; preview frames are silent.</source>
+        <translation>Lähtevideo heli järgib valitud lõiku; eelvaatekaadrid on helita.</translation>
+    </message>
+    <message>
+        <source>This video has no audio track.</source>
+        <translation>Sellel videol pole helirada.</translation>
     </message>
 </context>
 <context>

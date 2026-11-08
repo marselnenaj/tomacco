@@ -7094,7 +7094,7 @@ Licencijuota pagal GNU General Public License 2 ar vėlesnę versiją.</translat
     </message>
     <message>
         <source>Preview one frame, then export a silent MP4. A poster and a render record are saved beside it.</source>
-        <translation>Peržiūrėkite vieną kadrą, tada eksportuokite begarsį MP4. Šalia jo išsaugomas plakatas ir atvaizdavimo įrašas.</translation>
+        <translation type="vanished">Peržiūrėkite vieną kadrą, tada eksportuokite begarsį MP4. Šalia jo išsaugomas plakatas ir atvaizdavimo įrašas.</translation>
     </message>
     <message>
         <source>Your rendered preview appears here.</source>
@@ -7171,6 +7171,22 @@ Licencijuota pagal GNU General Public License 2 ar vėlesnę versiją.</translat
     <message>
         <source>Discard and reload</source>
         <translation>Atmesti ir įkelti iš naujo</translation>
+    </message>
+    <message>
+        <source>Include source audio</source>
+        <translation>Įtraukti šaltinio garsą</translation>
+    </message>
+    <message>
+        <source>Preview one frame, then export an MP4. A poster and a render record are saved beside it.</source>
+        <translation>Peržiūrėkite vieną kadrą, tada eksportuokite MP4. Šalia išsaugomas viršelio vaizdas ir atvaizdavimo žurnalas.</translation>
+    </message>
+    <message>
+        <source>Source audio follows the selected clip; preview frames are silent.</source>
+        <translation>Šaltinio garsas atitinka pasirinktą ištrauką; peržiūros kadrai yra be garso.</translation>
+    </message>
+    <message>
+        <source>This video has no audio track.</source>
+        <translation>Šiame vaizdo įraše nėra garso takelio.</translation>
     </message>
 </context>
 <context>

@@ -7083,7 +7083,7 @@ GNU General Public License, பதிப்பு 2 அல்லது அதற
     </message>
     <message>
         <source>Preview one frame, then export a silent MP4. A poster and a render record are saved beside it.</source>
-        <translation>ஒரு சட்டகத்தை முன்னோட்டமிட்டு, பின்னர் ஒலியில்லாத MP4-ஐ ஏற்றுமதி செய்யவும். ஒரு போஸ்டரும் ரெண்டர் பதிவேடும் அதன் அருகில் சேமிக்கப்படும்.</translation>
+        <translation type="vanished">ஒரு சட்டகத்தை முன்னோட்டமிட்டு, பின்னர் ஒலியில்லாத MP4-ஐ ஏற்றுமதி செய்யவும். ஒரு போஸ்டரும் ரெண்டர் பதிவேடும் அதன் அருகில் சேமிக்கப்படும்.</translation>
     </message>
     <message>
         <source>Your rendered preview appears here.</source>
@@ -7160,6 +7160,22 @@ GNU General Public License, பதிப்பு 2 அல்லது அதற
     <message>
         <source>Discard and reload</source>
         <translation>நிராகரித்து மீண்டும் ஏற்று</translation>
+    </message>
+    <message>
+        <source>Include source audio</source>
+        <translation>மூல ஒலியைச் சேர்க்கவும்</translation>
+    </message>
+    <message>
+        <source>Preview one frame, then export an MP4. A poster and a render record are saved beside it.</source>
+        <translation>ஒரு சட்டகத்தை முன்னோட்டமிட்டு, பின்னர் MP4 ஆக ஏற்றுமதி செய்யவும். அதன் அருகில் ஒரு சுவரொட்டிப் படமும் உருவாக்கப் பதிவும் சேமிக்கப்படும்.</translation>
+    </message>
+    <message>
+        <source>Source audio follows the selected clip; preview frames are silent.</source>
+        <translation>மூல ஒலி தேர்ந்தெடுத்த பகுதிக்கு ஏற்ப இருக்கும்; முன்னோட்டச் சட்டகங்களில் ஒலி இல்லை.</translation>
+    </message>
+    <message>
+        <source>This video has no audio track.</source>
+        <translation>இந்தக் காணொளியில் ஒலித் தடம் இல்லை.</translation>
     </message>
 </context>
 <context>

@@ -7115,7 +7115,7 @@ Sous licence GNU General Public License, version 2 ou ultérieure.</translation>
     </message>
     <message>
         <source>Preview one frame, then export a silent MP4. A poster and a render record are saved beside it.</source>
-        <translation>Prévisualisez une image, puis exportez un MP4 sans son. Une affiche et un relevé du rendu sont enregistrés à côté.</translation>
+        <translation type="vanished">Prévisualisez une image, puis exportez un MP4 sans son. Une affiche et un relevé du rendu sont enregistrés à côté.</translation>
     </message>
     <message>
         <source>Your rendered preview appears here.</source>
@@ -7192,6 +7192,22 @@ Sous licence GNU General Public License, version 2 ou ultérieure.</translation>
     <message>
         <source>Discard and reload</source>
         <translation>Abandonner et recharger</translation>
+    </message>
+    <message>
+        <source>Include source audio</source>
+        <translation>Inclure le son d’origine</translation>
+    </message>
+    <message>
+        <source>Preview one frame, then export an MP4. A poster and a render record are saved beside it.</source>
+        <translation>Prévisualisez une image, puis exportez un MP4. Une image d’affiche et un rapport de rendu sont enregistrés à ses côtés.</translation>
+    </message>
+    <message>
+        <source>Source audio follows the selected clip; preview frames are silent.</source>
+        <translation>Le son d’origine suit l’extrait sélectionné ; les images d’aperçu sont muettes.</translation>
+    </message>
+    <message>
+        <source>This video has no audio track.</source>
+        <translation>Cette vidéo n’a pas de piste audio.</translation>
     </message>
 </context>
 <context>

@@ -7107,7 +7107,7 @@ Licenseret under GNU General Public License, version 2 eller nyere.</translation
     </message>
     <message>
         <source>Preview one frame, then export a silent MP4. A poster and a render record are saved beside it.</source>
-        <translation>Forhåndsvis ét billede, og eksportér derefter en lydløs MP4. En plakat og en gengivelsespost gemmes ved siden af.</translation>
+        <translation type="vanished">Forhåndsvis ét billede, og eksportér derefter en lydløs MP4. En plakat og en gengivelsespost gemmes ved siden af.</translation>
     </message>
     <message>
         <source>Your rendered preview appears here.</source>
@@ -7184,6 +7184,22 @@ Licenseret under GNU General Public License, version 2 eller nyere.</translation
     <message>
         <source>Discard and reload</source>
         <translation>Kassér og genindlæs</translation>
+    </message>
+    <message>
+        <source>Include source audio</source>
+        <translation>Medtag kildens lyd</translation>
+    </message>
+    <message>
+        <source>Preview one frame, then export an MP4. A poster and a render record are saved beside it.</source>
+        <translation>Se en forhåndsvisning af ét billede, og eksportér derefter en MP4. Et plakatbillede og en renderingsrapport gemmes ved siden af.</translation>
+    </message>
+    <message>
+        <source>Source audio follows the selected clip; preview frames are silent.</source>
+        <translation>Kildens lyd følger det valgte klip; forhåndsvisningsbilleder er uden lyd.</translation>
+    </message>
+    <message>
+        <source>This video has no audio track.</source>
+        <translation>Denne video har intet lydspor.</translation>
     </message>
 </context>
 <context>

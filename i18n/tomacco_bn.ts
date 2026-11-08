@@ -7083,7 +7083,7 @@ GNU জেনারেল পাবলিক লাইসেন্স, সংস
     </message>
     <message>
         <source>Preview one frame, then export a silent MP4. A poster and a render record are saved beside it.</source>
-        <translation>একটি ফ্রেমের প্রিভিউ দেখুন, তারপর শব্দহীন MP4 এক্সপোর্ট করুন। এর পাশে একটি পোস্টার ও রেন্ডার রেকর্ড সংরক্ষিত হয়।</translation>
+        <translation type="vanished">একটি ফ্রেমের প্রিভিউ দেখুন, তারপর শব্দহীন MP4 এক্সপোর্ট করুন। এর পাশে একটি পোস্টার ও রেন্ডার রেকর্ড সংরক্ষিত হয়।</translation>
     </message>
     <message>
         <source>Your rendered preview appears here.</source>
@@ -7160,6 +7160,22 @@ GNU জেনারেল পাবলিক লাইসেন্স, সংস
     <message>
         <source>Discard and reload</source>
         <translation>বাতিল করে আবার লোড করুন</translation>
+    </message>
+    <message>
+        <source>Include source audio</source>
+        <translation>মূল ভিডিওর অডিও অন্তর্ভুক্ত করুন</translation>
+    </message>
+    <message>
+        <source>Preview one frame, then export an MP4. A poster and a render record are saved beside it.</source>
+        <translation>একটি ফ্রেমের পূর্বরূপ দেখুন, তারপর MP4 রপ্তানি করুন। এর পাশে একটি পোস্টার ছবি ও রেন্ডারের বিবরণ সংরক্ষিত হয়।</translation>
+    </message>
+    <message>
+        <source>Source audio follows the selected clip; preview frames are silent.</source>
+        <translation>মূল ভিডিওর অডিও নির্বাচিত ক্লিপ অনুযায়ী থাকে; পূর্বরূপের ফ্রেমে শব্দ থাকে না।</translation>
+    </message>
+    <message>
+        <source>This video has no audio track.</source>
+        <translation>এই ভিডিওতে কোনো অডিও ট্র্যাক নেই।</translation>
     </message>
 </context>
 <context>

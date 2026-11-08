@@ -7072,7 +7072,7 @@ Licensed under the GNU General Public License, version 2 or later.</source>
     </message>
     <message>
         <source>Preview one frame, then export a silent MP4. A poster and a render record are saved beside it.</source>
-        <translation>Xem trước một khung hình, rồi xuất một tệp MP4 không tiếng. Một ảnh poster và một bản ghi kết xuất được lưu bên cạnh nó.</translation>
+        <translation type="vanished">Xem trước một khung hình, rồi xuất một tệp MP4 không tiếng. Một ảnh poster và một bản ghi kết xuất được lưu bên cạnh nó.</translation>
     </message>
     <message>
         <source>Your rendered preview appears here.</source>
@@ -7149,6 +7149,22 @@ Licensed under the GNU General Public License, version 2 or later.</source>
     <message>
         <source>Discard and reload</source>
         <translation>Bỏ và tải lại</translation>
+    </message>
+    <message>
+        <source>Include source audio</source>
+        <translation>Bao gồm âm thanh gốc</translation>
+    </message>
+    <message>
+        <source>Preview one frame, then export an MP4. A poster and a render record are saved beside it.</source>
+        <translation>Xem trước một khung hình, rồi xuất MP4. Ảnh bìa và bản ghi kết xuất được lưu bên cạnh tệp.</translation>
+    </message>
+    <message>
+        <source>Source audio follows the selected clip; preview frames are silent.</source>
+        <translation>Âm thanh gốc theo đoạn clip đã chọn; các khung hình xem trước không có âm thanh.</translation>
+    </message>
+    <message>
+        <source>This video has no audio track.</source>
+        <translation>Video này không có rãnh âm thanh.</translation>
     </message>
 </context>
 <context>

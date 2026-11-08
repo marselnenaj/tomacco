@@ -7083,7 +7083,7 @@ GNU جنرل پبلک لائسنس، ورژن 2 یا اس کے بعد کے تح�
     </message>
     <message>
         <source>Preview one frame, then export a silent MP4. A poster and a render record are saved beside it.</source>
-        <translation>ایک فریم کا پیش نظارہ کریں، پھر بے آواز MP4 ایکسپورٹ کریں۔ اس کے ساتھ ایک پوسٹر اور رینڈر ریکارڈ محفوظ ہوتا ہے۔</translation>
+        <translation type="vanished">ایک فریم کا پیش نظارہ کریں، پھر بے آواز MP4 ایکسپورٹ کریں۔ اس کے ساتھ ایک پوسٹر اور رینڈر ریکارڈ محفوظ ہوتا ہے۔</translation>
     </message>
     <message>
         <source>Your rendered preview appears here.</source>
@@ -7160,6 +7160,22 @@ GNU جنرل پبلک لائسنس، ورژن 2 یا اس کے بعد کے تح�
     <message>
         <source>Discard and reload</source>
         <translation>رد کریں اور دوبارہ لوڈ کریں</translation>
+    </message>
+    <message>
+        <source>Include source audio</source>
+        <translation>اصل آڈیو شامل کریں</translation>
+    </message>
+    <message>
+        <source>Preview one frame, then export an MP4. A poster and a render record are saved beside it.</source>
+        <translation>ایک فریم کا پیش منظر دیکھیں، پھر MP4 برآمد کریں۔ اس کے ساتھ ایک پوسٹر تصویر اور رینڈر کا ریکارڈ محفوظ کیا جاتا ہے۔</translation>
+    </message>
+    <message>
+        <source>Source audio follows the selected clip; preview frames are silent.</source>
+        <translation>اصل آڈیو منتخب کلپ کے مطابق رہتی ہے؛ پیش منظر کے فریم بے آواز ہوتے ہیں۔</translation>
+    </message>
+    <message>
+        <source>This video has no audio track.</source>
+        <translation>اس ویڈیو میں کوئی آڈیو ٹریک نہیں ہے۔</translation>
     </message>
 </context>
 <context>

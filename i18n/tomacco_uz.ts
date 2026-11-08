@@ -7083,7 +7083,7 @@ GNU General Public License, 2-versiya yoki undan keyingi versiya asosida litsenz
     </message>
     <message>
         <source>Preview one frame, then export a silent MP4. A poster and a render record are saved beside it.</source>
-        <translation>Bitta kadrni oldindan koʻring, soʻng ovozsiz MP4’ni eksport qiling. Uning yoniga poster va render yozuvi saqlanadi.</translation>
+        <translation type="vanished">Bitta kadrni oldindan koʻring, soʻng ovozsiz MP4’ni eksport qiling. Uning yoniga poster va render yozuvi saqlanadi.</translation>
     </message>
     <message>
         <source>Your rendered preview appears here.</source>
@@ -7160,6 +7160,22 @@ GNU General Public License, 2-versiya yoki undan keyingi versiya asosida litsenz
     <message>
         <source>Discard and reload</source>
         <translation>Bekor qilish va qayta yuklash</translation>
+    </message>
+    <message>
+        <source>Include source audio</source>
+        <translation>Manba ovozini qo‘shish</translation>
+    </message>
+    <message>
+        <source>Preview one frame, then export an MP4. A poster and a render record are saved beside it.</source>
+        <translation>Bitta kadrni oldindan ko‘ring, so‘ng MP4 eksport qiling. Uning yoniga muqova rasmi va renderlash qaydi saqlanadi.</translation>
+    </message>
+    <message>
+        <source>Source audio follows the selected clip; preview frames are silent.</source>
+        <translation>Manba ovozi tanlangan parchaga mos keladi; oldindan ko‘rish kadrlari ovozsiz.</translation>
+    </message>
+    <message>
+        <source>This video has no audio track.</source>
+        <translation>Bu videoda audio yo‘lak yo‘q.</translation>
     </message>
 </context>
 <context>

@@ -7072,7 +7072,7 @@ Licensed under the GNU General Public License, version 2 or later.</source>
     </message>
     <message>
         <source>Preview one frame, then export a silent MP4. A poster and a render record are saved beside it.</source>
-        <translation>یک فریم را پیش‌نمایش کنید، سپس یک MP4 بی‌صدا خروجی بگیرید. یک پوستر و یک سابقهٔ رندر کنار آن ذخیره می‌شود.</translation>
+        <translation type="vanished">یک فریم را پیش‌نمایش کنید، سپس یک MP4 بی‌صدا خروجی بگیرید. یک پوستر و یک سابقهٔ رندر کنار آن ذخیره می‌شود.</translation>
     </message>
     <message>
         <source>Your rendered preview appears here.</source>
@@ -7149,6 +7149,22 @@ Licensed under the GNU General Public License, version 2 or later.</source>
     <message>
         <source>Discard and reload</source>
         <translation>دور ریختن و بارگذاری دوباره</translation>
+    </message>
+    <message>
+        <source>Include source audio</source>
+        <translation>گنجاندن صدای منبع</translation>
+    </message>
+    <message>
+        <source>Preview one frame, then export an MP4. A poster and a render record are saved beside it.</source>
+        <translation>پیش‌نمایش یک فریم را ببینید، سپس یک MP4 صادر کنید. یک تصویر پوستر و گزارش رندر در کنار آن ذخیره می‌شود.</translation>
+    </message>
+    <message>
+        <source>Source audio follows the selected clip; preview frames are silent.</source>
+        <translation>صدای منبع با بخش انتخاب‌شده هماهنگ است؛ فریم‌های پیش‌نمایش بی‌صدا هستند.</translation>
+    </message>
+    <message>
+        <source>This video has no audio track.</source>
+        <translation>این ویدیو ترک صوتی ندارد.</translation>
     </message>
 </context>
 <context>

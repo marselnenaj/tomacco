@@ -7115,7 +7115,7 @@ Distribuito sotto la GNU General Public License, versione 2 o successiva.</trans
     </message>
     <message>
         <source>Preview one frame, then export a silent MP4. A poster and a render record are saved beside it.</source>
-        <translation>Visualizza un fotogramma in anteprima, poi esporta un MP4 senza audio. Un’immagine di copertina e un resoconto del rendering vengono salvati accanto al video.</translation>
+        <translation type="vanished">Visualizza un fotogramma in anteprima, poi esporta un MP4 senza audio. Un’immagine di copertina e un resoconto del rendering vengono salvati accanto al video.</translation>
     </message>
     <message>
         <source>Your rendered preview appears here.</source>
@@ -7192,6 +7192,22 @@ Distribuito sotto la GNU General Public License, versione 2 o successiva.</trans
     <message>
         <source>Discard and reload</source>
         <translation>Scarta e ricarica</translation>
+    </message>
+    <message>
+        <source>Include source audio</source>
+        <translation>Includi l’audio originale</translation>
+    </message>
+    <message>
+        <source>Preview one frame, then export an MP4. A poster and a render record are saved beside it.</source>
+        <translation>Visualizza l’anteprima di un fotogramma, poi esporta un MP4. Un’immagine di copertina e un registro del rendering vengono salvati accanto al file.</translation>
+    </message>
+    <message>
+        <source>Source audio follows the selected clip; preview frames are silent.</source>
+        <translation>L’audio originale segue il segmento selezionato; i fotogrammi di anteprima sono senza audio.</translation>
+    </message>
+    <message>
+        <source>This video has no audio track.</source>
+        <translation>Questo video non ha una traccia audio.</translation>
     </message>
 </context>
 <context>

@@ -7159,7 +7159,7 @@ Licensed under the GNU General Public License, version 2 or later.</source>
     </message>
     <message>
         <source>Preview one frame, then export a silent MP4. A poster and a render record are saved beside it.</source>
-        <translation>عاين إطارًا واحدًا، ثم صدّر MP4 صامتًا. يُحفظ ملصق وسجل عرض بجانبه.</translation>
+        <translation type="vanished">عاين إطارًا واحدًا، ثم صدّر MP4 صامتًا. يُحفظ ملصق وسجل عرض بجانبه.</translation>
     </message>
     <message>
         <source>Your rendered preview appears here.</source>
@@ -7236,6 +7236,22 @@ Licensed under the GNU General Public License, version 2 or later.</source>
     <message>
         <source>Discard and reload</source>
         <translation>تجاهل وإعادة التحميل</translation>
+    </message>
+    <message>
+        <source>Include source audio</source>
+        <translation>تضمين صوت المصدر</translation>
+    </message>
+    <message>
+        <source>Preview one frame, then export an MP4. A poster and a render record are saved beside it.</source>
+        <translation>عاين إطارًا واحدًا، ثم صدّر ملف MP4. تُحفظ صورة ملصق وسجل التصيير بجانبه.</translation>
+    </message>
+    <message>
+        <source>Source audio follows the selected clip; preview frames are silent.</source>
+        <translation>يتبع صوت المصدر المقطع المحدد؛ إطارات المعاينة صامتة.</translation>
+    </message>
+    <message>
+        <source>This video has no audio track.</source>
+        <translation>لا يحتوي هذا الفيديو على مسار صوتي.</translation>
     </message>
 </context>
 <context>

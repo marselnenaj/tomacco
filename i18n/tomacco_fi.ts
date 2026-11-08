@@ -7083,7 +7083,7 @@ Lisensoitu GNU General Public License -lisenssillä, versio 2 tai uudempi.</tran
     </message>
     <message>
         <source>Preview one frame, then export a silent MP4. A poster and a render record are saved beside it.</source>
-        <translation>Esikatsele yksi kuva ja vie sitten äänetön MP4. Juliste ja renderöintitietue tallennetaan sen viereen.</translation>
+        <translation type="vanished">Esikatsele yksi kuva ja vie sitten äänetön MP4. Juliste ja renderöintitietue tallennetaan sen viereen.</translation>
     </message>
     <message>
         <source>Your rendered preview appears here.</source>
@@ -7160,6 +7160,22 @@ Lisensoitu GNU General Public License -lisenssillä, versio 2 tai uudempi.</tran
     <message>
         <source>Discard and reload</source>
         <translation>Hylkää ja lataa uudelleen</translation>
+    </message>
+    <message>
+        <source>Include source audio</source>
+        <translation>Sisällytä lähdevideon ääni</translation>
+    </message>
+    <message>
+        <source>Preview one frame, then export an MP4. A poster and a render record are saved beside it.</source>
+        <translation>Esikatsele yksi ruutu ja vie sitten MP4. Sen viereen tallennetaan kansikuva ja renderöintiloki.</translation>
+    </message>
+    <message>
+        <source>Source audio follows the selected clip; preview frames are silent.</source>
+        <translation>Lähdevideon ääni seuraa valittua leikettä; esikatseluruudut ovat äänettömiä.</translation>
+    </message>
+    <message>
+        <source>This video has no audio track.</source>
+        <translation>Tässä videossa ei ole ääniraitaa.</translation>
     </message>
 </context>
 <context>

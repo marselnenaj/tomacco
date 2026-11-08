@@ -7115,7 +7115,7 @@ Gelicentieerd onder de GNU General Public License, versie 2 of later.</translati
     </message>
     <message>
         <source>Preview one frame, then export a silent MP4. A poster and a render record are saved beside it.</source>
-        <translation>Bekijk één frame en exporteer dan een geluidloze MP4. Een poster en een renderverslag worden ernaast opgeslagen.</translation>
+        <translation type="vanished">Bekijk één frame en exporteer dan een geluidloze MP4. Een poster en een renderverslag worden ernaast opgeslagen.</translation>
     </message>
     <message>
         <source>Your rendered preview appears here.</source>
@@ -7192,6 +7192,22 @@ Gelicentieerd onder de GNU General Public License, versie 2 of later.</translati
     <message>
         <source>Discard and reload</source>
         <translation>Verwerpen en herladen</translation>
+    </message>
+    <message>
+        <source>Include source audio</source>
+        <translation>Originele audio opnemen</translation>
+    </message>
+    <message>
+        <source>Preview one frame, then export an MP4. A poster and a render record are saved beside it.</source>
+        <translation>Bekijk een voorbeeld van één frame en exporteer daarna een MP4. Een posterafbeelding en een renderlog worden ernaast opgeslagen.</translation>
+    </message>
+    <message>
+        <source>Source audio follows the selected clip; preview frames are silent.</source>
+        <translation>De originele audio volgt het geselecteerde fragment; voorbeeldframes zijn stil.</translation>
+    </message>
+    <message>
+        <source>This video has no audio track.</source>
+        <translation>Deze video heeft geen audiotrack.</translation>
     </message>
 </context>
 <context>

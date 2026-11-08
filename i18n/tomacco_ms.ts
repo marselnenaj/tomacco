@@ -7072,7 +7072,7 @@ Dilesenkan di bawah GNU General Public License, versi 2 atau lebih baharu.</tran
     </message>
     <message>
         <source>Preview one frame, then export a silent MP4. A poster and a render record are saved beside it.</source>
-        <translation>Pratonton satu bingkai, kemudian eksport MP4 tanpa bunyi. Poster dan rekod pemaparan disimpan di sebelahnya.</translation>
+        <translation type="vanished">Pratonton satu bingkai, kemudian eksport MP4 tanpa bunyi. Poster dan rekod pemaparan disimpan di sebelahnya.</translation>
     </message>
     <message>
         <source>Your rendered preview appears here.</source>
@@ -7149,6 +7149,22 @@ Dilesenkan di bawah GNU General Public License, versi 2 atau lebih baharu.</tran
     <message>
         <source>Discard and reload</source>
         <translation>Buang dan muat semula</translation>
+    </message>
+    <message>
+        <source>Include source audio</source>
+        <translation>Sertakan audio sumber</translation>
+    </message>
+    <message>
+        <source>Preview one frame, then export an MP4. A poster and a render record are saved beside it.</source>
+        <translation>Pratonton satu bingkai, kemudian eksport MP4. Imej poster dan rekod pemaparan disimpan di sebelahnya.</translation>
+    </message>
+    <message>
+        <source>Source audio follows the selected clip; preview frames are silent.</source>
+        <translation>Audio sumber mengikut klip yang dipilih; bingkai pratonton tidak bersuara.</translation>
+    </message>
+    <message>
+        <source>This video has no audio track.</source>
+        <translation>Video ini tiada trek audio.</translation>
     </message>
 </context>
 <context>

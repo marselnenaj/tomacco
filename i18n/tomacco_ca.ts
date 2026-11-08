@@ -7083,7 +7083,7 @@ Llicència: Llicència Pública General de GNU, versió 2 o posterior.</translat
     </message>
     <message>
         <source>Preview one frame, then export a silent MP4. A poster and a render record are saved beside it.</source>
-        <translation>Previsualitza un fotograma i després exporta un MP4 sense so. Al costat es desen un pòster i un registre de la renderització.</translation>
+        <translation type="vanished">Previsualitza un fotograma i després exporta un MP4 sense so. Al costat es desen un pòster i un registre de la renderització.</translation>
     </message>
     <message>
         <source>Your rendered preview appears here.</source>
@@ -7160,6 +7160,22 @@ Llicència: Llicència Pública General de GNU, versió 2 o posterior.</translat
     <message>
         <source>Discard and reload</source>
         <translation>Descarta i torna a carregar</translation>
+    </message>
+    <message>
+        <source>Include source audio</source>
+        <translation>Inclou l’àudio de l’origen</translation>
+    </message>
+    <message>
+        <source>Preview one frame, then export an MP4. A poster and a render record are saved beside it.</source>
+        <translation>Previsualitza un fotograma i després exporta un MP4. Al costat s’hi desen una imatge de portada i un registre de renderització.</translation>
+    </message>
+    <message>
+        <source>Source audio follows the selected clip; preview frames are silent.</source>
+        <translation>L’àudio de l’origen segueix el fragment seleccionat; els fotogrames de previsualització són muts.</translation>
+    </message>
+    <message>
+        <source>This video has no audio track.</source>
+        <translation>Aquest vídeo no té cap pista d’àudio.</translation>
     </message>
 </context>
 <context>

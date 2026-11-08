@@ -7072,7 +7072,7 @@ GNU Genel Kamu Lisansı, sürüm 2 veya sonrası kapsamında lisanslanmıştır.
     </message>
     <message>
         <source>Preview one frame, then export a silent MP4. A poster and a render record are saved beside it.</source>
-        <translation>Bir kareyi önizleyin, ardından sessiz bir MP4 dışa aktarın. Yanına bir poster ve bir oluşturma kaydı kaydedilir.</translation>
+        <translation type="vanished">Bir kareyi önizleyin, ardından sessiz bir MP4 dışa aktarın. Yanına bir poster ve bir oluşturma kaydı kaydedilir.</translation>
     </message>
     <message>
         <source>Your rendered preview appears here.</source>
@@ -7149,6 +7149,22 @@ GNU Genel Kamu Lisansı, sürüm 2 veya sonrası kapsamında lisanslanmıştır.
     <message>
         <source>Discard and reload</source>
         <translation>At ve yeniden yükle</translation>
+    </message>
+    <message>
+        <source>Include source audio</source>
+        <translation>Kaynak sesi dahil et</translation>
+    </message>
+    <message>
+        <source>Preview one frame, then export an MP4. A poster and a render record are saved beside it.</source>
+        <translation>Bir kareyi önizleyin, ardından MP4 olarak dışa aktarın. Yanına bir kapak görseli ve işleme kaydı kaydedilir.</translation>
+    </message>
+    <message>
+        <source>Source audio follows the selected clip; preview frames are silent.</source>
+        <translation>Kaynak ses seçilen kesiti izler; önizleme kareleri sessizdir.</translation>
+    </message>
+    <message>
+        <source>This video has no audio track.</source>
+        <translation>Bu videoda ses parçası yok.</translation>
     </message>
 </context>
 <context>

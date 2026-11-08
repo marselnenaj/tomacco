@@ -1,0 +1,385 @@
+{
+  "date": "2026-11-08",
+  "source_text_count": 1897,
+  "source_digest": "8c035a6783d5",
+  "new_context": "DemoWorkspace",
+  "new_source_texts": [
+    "Include source audio",
+    "Preview one frame, then export an MP4. A poster and a render record are saved beside it.",
+    "Source audio follows the selected clip; preview frames are silent.",
+    "This video has no audio track."
+  ],
+  "vanished_source_text": "Preview one frame, then export a silent MP4. A poster and a render record are saved beside it.",
+  "translated_catalogs": 50,
+  "new_finished_translations": 200,
+  "existing_messages_verified_unchanged": 94822,
+  "catalog_preservation": "All pre-existing translation forms/plurals unchanged; only prior silent-MP4 lead became vanished; four keys added per translated catalog.",
+  "coverage": {
+    "complete": 50,
+    "unfinished": 0,
+    "missing": 0,
+    "stale": 0,
+    "problems": 0
+  },
+  "technical_tests": {
+    "suite": "tests/python/test_i18n.py",
+    "passed": 18,
+    "failed": 0,
+    "skipped": 0,
+    "result": "passed after root refreshed generated i18n/COVERAGE.md"
+  },
+  "native_speaker_review": false,
+  "physical_device_access": false,
+  "catalogs": [
+    {
+      "code": "ar",
+      "path": "i18n/tomacco_ar.ts",
+      "sha256": "ae33308ca51c4a31c4fe259f1cb731784ee530c780f9b2e7897182c06b087588",
+      "new_finished_messages": 4,
+      "existing_forms_preserved": true
+    },
+    {
+      "code": "bg",
+      "path": "i18n/tomacco_bg.ts",
+      "sha256": "b0fde3646a27835a9d28d896322d9a14e8dbc34fccbd0a2ed19e1612ce19ccd8",
+      "new_finished_messages": 4,
+      "existing_forms_preserved": true
+    },
+    {
+      "code": "bn",
+      "path": "i18n/tomacco_bn.ts",
+      "sha256": "53d5d045c2ba36f871e8da0762cb77b420e63bdc9f55f73809d3ad9f2d2d110e",
+      "new_finished_messages": 4,
+      "existing_forms_preserved": true
+    },
+    {
+      "code": "ca",
+      "path": "i18n/tomacco_ca.ts",
+      "sha256": "a01aab0dd4176a2b57003b642ae9d632d73c5aba87fb315b1adb300777698d27",
+      "new_finished_messages": 4,
+      "existing_forms_preserved": true
+    },
+    {
+      "code": "cs",
+      "path": "i18n/tomacco_cs.ts",
+      "sha256": "565e6c3bcca2259271beed91f2e6dcba7c341daeb53f5ad3f3d48fadfc079faf",
+      "new_finished_messages": 4,
+      "existing_forms_preserved": true
+    },
+    {
+      "code": "da",
+      "path": "i18n/tomacco_da.ts",
+      "sha256": "9cce8e8af7811a77b5d59f4f1c790fa6d7857915a63af5d16ca2fa743255aabd",
+      "new_finished_messages": 4,
+      "existing_forms_preserved": true
+    },
+    {
+      "code": "de",
+      "path": "i18n/tomacco_de.ts",
+      "sha256": "1e071f394bf80ca1d82d9f8c76fc7b0564144750336da436fd81463a63bda154",
+      "new_finished_messages": 4,
+      "existing_forms_preserved": true
+    },
+    {
+      "code": "el",
+      "path": "i18n/tomacco_el.ts",
+      "sha256": "4813566798b7b321fdd3654b6bc1e1e759e697e5fa36d6d0845e82a32f06dd1a",
+      "new_finished_messages": 4,
+      "existing_forms_preserved": true
+    },
+    {
+      "code": "es",
+      "path": "i18n/tomacco_es.ts",
+      "sha256": "e279f2cc7ee5cd88540711807c60a5ab557cc74b913f99992a11afef5c53de9e",
+      "new_finished_messages": 4,
+      "existing_forms_preserved": true
+    },
+    {
+      "code": "es-MX",
+      "path": "i18n/tomacco_es-MX.ts",
+      "sha256": "e563c2a1274a8efa20d822fbbace8508d4fe21b1514b6ccea306e148e7d52ff6",
+      "new_finished_messages": 4,
+      "existing_forms_preserved": true
+    },
+    {
+      "code": "et",
+      "path": "i18n/tomacco_et.ts",
+      "sha256": "63f29eb0f5143a1c5dbd94e9da316fe6eb154aee6016061a36f81219edbbffbd",
+      "new_finished_messages": 4,
+      "existing_forms_preserved": true
+    },
+    {
+      "code": "fa",
+      "path": "i18n/tomacco_fa.ts",
+      "sha256": "c9b85b14c55177893f36aa7b55b00f1ffac056a6b7af6b26183bd02397892236",
+      "new_finished_messages": 4,
+      "existing_forms_preserved": true
+    },
+    {
+      "code": "fi",
+      "path": "i18n/tomacco_fi.ts",
+      "sha256": "dd4b542cf8cd6911c98f55ca9aa86834e4c6bd94493354c5255a80e005e3b3e0",
+      "new_finished_messages": 4,
+      "existing_forms_preserved": true
+    },
+    {
+      "code": "fil",
+      "path": "i18n/tomacco_fil.ts",
+      "sha256": "c1654c23764e3af167bb2df26ec4dc5681aa22e1489de50ffcb4615fcacd0030",
+      "new_finished_messages": 4,
+      "existing_forms_preserved": true
+    },
+    {
+      "code": "fr",
+      "path": "i18n/tomacco_fr.ts",
+      "sha256": "e7e5852c48db6415e8c1f9d29f9213454e881a0e2986e9f683abb68eabdb9034",
+      "new_finished_messages": 4,
+      "existing_forms_preserved": true
+    },
+    {
+      "code": "ga",
+      "path": "i18n/tomacco_ga.ts",
+      "sha256": "e65ddd95089782957c810820c049fb0a9e6804be96683a488e61f201c5d9c662",
+      "new_finished_messages": 4,
+      "existing_forms_preserved": true
+    },
+    {
+      "code": "he",
+      "path": "i18n/tomacco_he.ts",
+      "sha256": "1493e2ccb7a93eb597449798a64af944ba6548042b388a476b9feec35bab1431",
+      "new_finished_messages": 4,
+      "existing_forms_preserved": true
+    },
+    {
+      "code": "hi",
+      "path": "i18n/tomacco_hi.ts",
+      "sha256": "19ededa8195555cd02e2b383d0b038915c5b445a468acd11503636d6c5a13884",
+      "new_finished_messages": 4,
+      "existing_forms_preserved": true
+    },
+    {
+      "code": "hr",
+      "path": "i18n/tomacco_hr.ts",
+      "sha256": "35c0b944d6015be4b2bb9bb3961424e678f9fcdf7ed0e404cb6a7ba2aef08123",
+      "new_finished_messages": 4,
+      "existing_forms_preserved": true
+    },
+    {
+      "code": "hu",
+      "path": "i18n/tomacco_hu.ts",
+      "sha256": "801110d8a9fe39727a3ddb738176f8cabb843d463349b408ebfbf7d7cbf40ecb",
+      "new_finished_messages": 4,
+      "existing_forms_preserved": true
+    },
+    {
+      "code": "id",
+      "path": "i18n/tomacco_id.ts",
+      "sha256": "e4042c02c42e0982046ed74a1363a9b8d89443486f49e81e882b3851ebd16212",
+      "new_finished_messages": 4,
+      "existing_forms_preserved": true
+    },
+    {
+      "code": "is",
+      "path": "i18n/tomacco_is.ts",
+      "sha256": "4444acb0539bc28edd0782aa11f6ea61729ec0fb83430b9c16c2e4982398cdf3",
+      "new_finished_messages": 4,
+      "existing_forms_preserved": true
+    },
+    {
+      "code": "it",
+      "path": "i18n/tomacco_it.ts",
+      "sha256": "3bd9c3f0edddd4674adb30ec528e3c607e612f96747b4bd71be1890fa3059768",
+      "new_finished_messages": 4,
+      "existing_forms_preserved": true
+    },
+    {
+      "code": "ja",
+      "path": "i18n/tomacco_ja.ts",
+      "sha256": "bc28a433bf585436f9bf5464b1ddc9b8c16cb964d6aeec72b2b8ec506fd70e3b",
+      "new_finished_messages": 4,
+      "existing_forms_preserved": true
+    },
+    {
+      "code": "ko",
+      "path": "i18n/tomacco_ko.ts",
+      "sha256": "9e9f77ddd8891c56e6f3e8de5d2acc87d39829186cfc47be4fc848ccee75b60b",
+      "new_finished_messages": 4,
+      "existing_forms_preserved": true
+    },
+    {
+      "code": "lt",
+      "path": "i18n/tomacco_lt.ts",
+      "sha256": "84f7e2151fefaf7205914ad29b86fd473edb9843bbde9714fc776033702078ac",
+      "new_finished_messages": 4,
+      "existing_forms_preserved": true
+    },
+    {
+      "code": "lv",
+      "path": "i18n/tomacco_lv.ts",
+      "sha256": "cdd0775e3c5fb276795b9a80506a2232d10f824cf65c56cdcf636e58bc519376",
+      "new_finished_messages": 4,
+      "existing_forms_preserved": true
+    },
+    {
+      "code": "ms",
+      "path": "i18n/tomacco_ms.ts",
+      "sha256": "84300024840920df1b136c88044f9320d2f2de3a031d4094afdcee33ba800722",
+      "new_finished_messages": 4,
+      "existing_forms_preserved": true
+    },
+    {
+      "code": "nl",
+      "path": "i18n/tomacco_nl.ts",
+      "sha256": "937921dd25dfc66a20d20a334fe9e5ef60ccf302b0ebadc90174e337a0f3420d",
+      "new_finished_messages": 4,
+      "existing_forms_preserved": true
+    },
+    {
+      "code": "no",
+      "path": "i18n/tomacco_no.ts",
+      "sha256": "b1358501b64fb7ce92f5f0f5d41d51cf292fe30df40aa92d6e47fad86b26c325",
+      "new_finished_messages": 4,
+      "existing_forms_preserved": true
+    },
+    {
+      "code": "pl",
+      "path": "i18n/tomacco_pl.ts",
+      "sha256": "04e82674972b533f4d320f28a48f2e93967579b7ea516ae3131e24209a4b8499",
+      "new_finished_messages": 4,
+      "existing_forms_preserved": true
+    },
+    {
+      "code": "pt",
+      "path": "i18n/tomacco_pt.ts",
+      "sha256": "f0d3ba83400a2eb9ac82f89dfc573ea1387b74eee44965390938dae9567f0f32",
+      "new_finished_messages": 4,
+      "existing_forms_preserved": true
+    },
+    {
+      "code": "pt-BR",
+      "path": "i18n/tomacco_pt-BR.ts",
+      "sha256": "2721d7cafcac8576d36dadc4e6f7c75e522ebdb51dd5cb440010704eebf14c52",
+      "new_finished_messages": 4,
+      "existing_forms_preserved": true
+    },
+    {
+      "code": "ro",
+      "path": "i18n/tomacco_ro.ts",
+      "sha256": "ac90d3c3ef06f21e1e7a5aa56ccc1780d54f2e09ab4b8f400cbbf9d9e22ce5bd",
+      "new_finished_messages": 4,
+      "existing_forms_preserved": true
+    },
+    {
+      "code": "ru",
+      "path": "i18n/tomacco_ru.ts",
+      "sha256": "aab37f53389705fc7e2f447a797a27cddb87690938d76413689155f73a544859",
+      "new_finished_messages": 4,
+      "existing_forms_preserved": true
+    },
+    {
+      "code": "si",
+      "path": "i18n/tomacco_si.ts",
+      "sha256": "5bf13f2f1264f9bfa6d94bc7cc85b636ab5bcbc832ca45030bb07b594bd0aa38",
+      "new_finished_messages": 4,
+      "existing_forms_preserved": true
+    },
+    {
+      "code": "sk",
+      "path": "i18n/tomacco_sk.ts",
+      "sha256": "9c8e9fe3b4ab27b28a25e3899e95377f9242266a34a392bc5f59370ba282009a",
+      "new_finished_messages": 4,
+      "existing_forms_preserved": true
+    },
+    {
+      "code": "sl",
+      "path": "i18n/tomacco_sl.ts",
+      "sha256": "dd55d7e0e1b3e88c93a682111148d48a162898fbe3b9fb9a9b5f090822065800",
+      "new_finished_messages": 4,
+      "existing_forms_preserved": true
+    },
+    {
+      "code": "sr",
+      "path": "i18n/tomacco_sr.ts",
+      "sha256": "50345ab05a1876073bcde6bd58daf65c83cc73753a79fb386f2c74f1009b2df5",
+      "new_finished_messages": 4,
+      "existing_forms_preserved": true
+    },
+    {
+      "code": "sv",
+      "path": "i18n/tomacco_sv.ts",
+      "sha256": "ef3cbd488ae7135eb2e2119484577ac0a9f3d860e74fc157390d457bae8cb7b8",
+      "new_finished_messages": 4,
+      "existing_forms_preserved": true
+    },
+    {
+      "code": "sw",
+      "path": "i18n/tomacco_sw.ts",
+      "sha256": "d2fb1aafdc26277ff754072baacd2f9317ee030208ea23ac621b9a502c443765",
+      "new_finished_messages": 4,
+      "existing_forms_preserved": true
+    },
+    {
+      "code": "ta",
+      "path": "i18n/tomacco_ta.ts",
+      "sha256": "59ac50617267cda86db67e2cde54cdd6261216b6e27b5dc3e39390e487528d7e",
+      "new_finished_messages": 4,
+      "existing_forms_preserved": true
+    },
+    {
+      "code": "th",
+      "path": "i18n/tomacco_th.ts",
+      "sha256": "5842050b5fd4d9ef04b446ed454f3fcb3ef34c45d0270a605685c7183a5a450e",
+      "new_finished_messages": 4,
+      "existing_forms_preserved": true
+    },
+    {
+      "code": "tr",
+      "path": "i18n/tomacco_tr.ts",
+      "sha256": "9c62c5194a27ff5af7c2747feb1b71e3c4d88a9d9f0195fc9ec02c489194615d",
+      "new_finished_messages": 4,
+      "existing_forms_preserved": true
+    },
+    {
+      "code": "uk",
+      "path": "i18n/tomacco_uk.ts",
+      "sha256": "8eeeb6dcf6a443a0917b96d1510c2f37ae92c24a46bf32245d3fe27604de0713",
+      "new_finished_messages": 4,
+      "existing_forms_preserved": true
+    },
+    {
+      "code": "ur",
+      "path": "i18n/tomacco_ur.ts",
+      "sha256": "7f04d4bdbbf43325b6319e9714675496ed77857c98350db7a4aa13bbc66a6845",
+      "new_finished_messages": 4,
+      "existing_forms_preserved": true
+    },
+    {
+      "code": "uz",
+      "path": "i18n/tomacco_uz.ts",
+      "sha256": "ab53c5b9dbbe4b01d272762b15a8d2b1f1423e5a134fc93785dad3c889ad2b47",
+      "new_finished_messages": 4,
+      "existing_forms_preserved": true
+    },
+    {
+      "code": "vi",
+      "path": "i18n/tomacco_vi.ts",
+      "sha256": "1849dd8c8619e78b7a5285d65cafc1483909004ef789ad24066dbae2ac71f258",
+      "new_finished_messages": 4,
+      "existing_forms_preserved": true
+    },
+    {
+      "code": "zh-CN",
+      "path": "i18n/tomacco_zh-CN.ts",
+      "sha256": "a08f697947e330b4727278780f790d1476f364ab90dbf85ed4a37c20505f4af1",
+      "new_finished_messages": 4,
+      "existing_forms_preserved": true
+    },
+    {
+      "code": "zh-TW",
+      "path": "i18n/tomacco_zh-TW.ts",
+      "sha256": "dca87e1d4941ae2357aca5276d7d02b6fd1f32883af01412b110b749664eddf1",
+      "new_finished_messages": 4,
+      "existing_forms_preserved": true
+    }
+  ]
+}

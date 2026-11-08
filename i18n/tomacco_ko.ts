@@ -7072,7 +7072,7 @@ GNU General Public License 버전 2 또는 그 이후 버전에 따라 라이선
     </message>
     <message>
         <source>Preview one frame, then export a silent MP4. A poster and a render record are saved beside it.</source>
-        <translation>한 프레임을 미리 본 다음 무음 MP4로 내보내세요. 포스터와 렌더링 기록이 옆에 저장됩니다.</translation>
+        <translation type="vanished">한 프레임을 미리 본 다음 무음 MP4로 내보내세요. 포스터와 렌더링 기록이 옆에 저장됩니다.</translation>
     </message>
     <message>
         <source>Your rendered preview appears here.</source>
@@ -7149,6 +7149,22 @@ GNU General Public License 버전 2 또는 그 이후 버전에 따라 라이선
     <message>
         <source>Discard and reload</source>
         <translation>버리고 다시 불러오기</translation>
+    </message>
+    <message>
+        <source>Include source audio</source>
+        <translation>원본 오디오 포함</translation>
+    </message>
+    <message>
+        <source>Preview one frame, then export an MP4. A poster and a render record are saved beside it.</source>
+        <translation>한 프레임을 미리 본 다음 MP4로 내보내세요. 포스터 이미지와 렌더링 기록이 같은 위치에 저장됩니다.</translation>
+    </message>
+    <message>
+        <source>Source audio follows the selected clip; preview frames are silent.</source>
+        <translation>원본 오디오는 선택한 클립에 맞춰 출력됩니다. 미리보기 프레임에는 소리가 없습니다.</translation>
+    </message>
+    <message>
+        <source>This video has no audio track.</source>
+        <translation>이 동영상에는 오디오 트랙이 없습니다.</translation>
     </message>
 </context>
 <context>

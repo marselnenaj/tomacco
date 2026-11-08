@@ -7083,7 +7083,7 @@ GNU General Public License, අනුවාදය 2 හෝ පසු අනු�
     </message>
     <message>
         <source>Preview one frame, then export a silent MP4. A poster and a render record are saved beside it.</source>
-        <translation>එක් රාමුවක් පෙරදසුන් කර, පසුව නිහඬ MP4 එකක් අපනයනය කරන්න. පෝස්ටරයක් සහ රෙන්ඩර් වාර්තාවක් එය අසල සුරැකේ.</translation>
+        <translation type="vanished">එක් රාමුවක් පෙරදසුන් කර, පසුව නිහඬ MP4 එකක් අපනයනය කරන්න. පෝස්ටරයක් සහ රෙන්ඩර් වාර්තාවක් එය අසල සුරැකේ.</translation>
     </message>
     <message>
         <source>Your rendered preview appears here.</source>
@@ -7160,6 +7160,22 @@ GNU General Public License, අනුවාදය 2 හෝ පසු අනු�
     <message>
         <source>Discard and reload</source>
         <translation>ඉවතලා නැවත පූරණය කරන්න</translation>
+    </message>
+    <message>
+        <source>Include source audio</source>
+        <translation>මුල් වීඩියෝවේ හඬ ඇතුළත් කරන්න</translation>
+    </message>
+    <message>
+        <source>Preview one frame, then export an MP4. A poster and a render record are saved beside it.</source>
+        <translation>එක් රූපරාමුවක් පෙරදසුන් කර, ඉන්පසු MP4 අපනයනය කරන්න. ඒ අසල පෝස්ටර් රූපයක් සහ විදැහුම් වාර්තාවක් සුරැකේ.</translation>
+    </message>
+    <message>
+        <source>Source audio follows the selected clip; preview frames are silent.</source>
+        <translation>මුල් වීඩියෝවේ හඬ තෝරාගත් කොටසට අනුව යෙදේ; පෙරදසුන් රූපරාමුවල හඬ නැත.</translation>
+    </message>
+    <message>
+        <source>This video has no audio track.</source>
+        <translation>මෙම වීඩියෝවේ හඬ පථයක් නැත.</translation>
     </message>
 </context>
 <context>

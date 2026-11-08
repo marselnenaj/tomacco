@@ -7083,7 +7083,7 @@ Imepewa leseni chini ya Leseni ya Umma ya Jumla ya GNU, toleo la 2 au la baadaye
     </message>
     <message>
         <source>Preview one frame, then export a silent MP4. A poster and a render record are saved beside it.</source>
-        <translation>Kagua fremu moja, kisha uhamishe MP4 isiyo na sauti. Picha ya bango na rekodi ya utengenezaji huhifadhiwa kando yake.</translation>
+        <translation type="vanished">Kagua fremu moja, kisha uhamishe MP4 isiyo na sauti. Picha ya bango na rekodi ya utengenezaji huhifadhiwa kando yake.</translation>
     </message>
     <message>
         <source>Your rendered preview appears here.</source>
@@ -7160,6 +7160,22 @@ Imepewa leseni chini ya Leseni ya Umma ya Jumla ya GNU, toleo la 2 au la baadaye
     <message>
         <source>Discard and reload</source>
         <translation>Tupa na upakie upya</translation>
+    </message>
+    <message>
+        <source>Include source audio</source>
+        <translation>Jumuisha sauti ya chanzo</translation>
+    </message>
+    <message>
+        <source>Preview one frame, then export an MP4. A poster and a render record are saved beside it.</source>
+        <translation>Hakiki fremu moja, kisha hamisha MP4. Picha ya bango na rekodi ya uundaji huhifadhiwa kando yake.</translation>
+    </message>
+    <message>
+        <source>Source audio follows the selected clip; preview frames are silent.</source>
+        <translation>Sauti ya chanzo inafuata kipande kilichochaguliwa; fremu za hakikisho hazina sauti.</translation>
+    </message>
+    <message>
+        <source>This video has no audio track.</source>
+        <translation>Video hii haina mkondo wa sauti.</translation>
     </message>
 </context>
 <context>

@@ -7083,7 +7083,7 @@ Með leyfi samkvæmt GNU General Public License, útgáfu 2 eða nýrri.</transl
     </message>
     <message>
         <source>Preview one frame, then export a silent MP4. A poster and a render record are saved beside it.</source>
-        <translation>Forskoðaðu einn ramma og flyttu svo út hljóðlaust MP4. Veggspjald og teikniská eru vistuð við hliðina.</translation>
+        <translation type="vanished">Forskoðaðu einn ramma og flyttu svo út hljóðlaust MP4. Veggspjald og teikniská eru vistuð við hliðina.</translation>
     </message>
     <message>
         <source>Your rendered preview appears here.</source>
@@ -7160,6 +7160,22 @@ Með leyfi samkvæmt GNU General Public License, útgáfu 2 eða nýrri.</transl
     <message>
         <source>Discard and reload</source>
         <translation>Henda og endurhlaða</translation>
+    </message>
+    <message>
+        <source>Include source audio</source>
+        <translation>Hafa upprunalegt hljóð með</translation>
+    </message>
+    <message>
+        <source>Preview one frame, then export an MP4. A poster and a render record are saved beside it.</source>
+        <translation>Forskoðaðu einn ramma og flyttu síðan út MP4. Forsíðumynd og skýrsla um myndgerð eru vistuð við hliðina.</translation>
+    </message>
+    <message>
+        <source>Source audio follows the selected clip; preview frames are silent.</source>
+        <translation>Upprunalega hljóðið fylgir valda bútnum; forskoðunarrammar eru hljóðlausir.</translation>
+    </message>
+    <message>
+        <source>This video has no audio track.</source>
+        <translation>Þetta myndskeið hefur enga hljóðrás.</translation>
     </message>
 </context>
 <context>

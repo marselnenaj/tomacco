@@ -7094,7 +7094,7 @@ Faoi cheadúnas Cheadúnas Poiblí Ginearálta GNU, leagan 2 nó aon leagan nío
     </message>
     <message>
         <source>Preview one frame, then export a silent MP4. A poster and a render record are saved beside it.</source>
-        <translation>Réamhamharc ar fhráma amháin, ansin easpórtáil MP4 gan fuaim. Sábháiltear póstaer agus taifead rindreála in aice leis.</translation>
+        <translation type="vanished">Réamhamharc ar fhráma amháin, ansin easpórtáil MP4 gan fuaim. Sábháiltear póstaer agus taifead rindreála in aice leis.</translation>
     </message>
     <message>
         <source>Your rendered preview appears here.</source>
@@ -7171,6 +7171,22 @@ Faoi cheadúnas Cheadúnas Poiblí Ginearálta GNU, leagan 2 nó aon leagan nío
     <message>
         <source>Discard and reload</source>
         <translation>Caith i leataobh agus athlódáil</translation>
+    </message>
+    <message>
+        <source>Include source audio</source>
+        <translation>Cuir fuaim na foinse san áireamh</translation>
+    </message>
+    <message>
+        <source>Preview one frame, then export an MP4. A poster and a render record are saved beside it.</source>
+        <translation>Réamhamharc ar fhráma amháin, ansin easpórtáil MP4. Sábháiltear íomhá póstaeir agus taifead rindreála taobh leis.</translation>
+    </message>
+    <message>
+        <source>Source audio follows the selected clip; preview frames are silent.</source>
+        <translation>Leanann fuaim na foinse an ghearrthóg roghnaithe; tá frámaí réamhamhairc gan fhuaim.</translation>
+    </message>
+    <message>
+        <source>This video has no audio track.</source>
+        <translation>Níl rian fuaime san fhíseán seo.</translation>
     </message>
 </context>
 <context>

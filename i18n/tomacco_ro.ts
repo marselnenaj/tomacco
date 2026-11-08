@@ -7094,7 +7094,7 @@ Licențiat sub Licența Publică Generală GNU, versiunea 2 sau ulterioară.</tr
     </message>
     <message>
         <source>Preview one frame, then export a silent MP4. A poster and a render record are saved beside it.</source>
-        <translation>Previzualizează un cadru, apoi exportă un MP4 fără sunet. Un poster și o înregistrare a randării sunt salvate alături.</translation>
+        <translation type="vanished">Previzualizează un cadru, apoi exportă un MP4 fără sunet. Un poster și o înregistrare a randării sunt salvate alături.</translation>
     </message>
     <message>
         <source>Your rendered preview appears here.</source>
@@ -7171,6 +7171,22 @@ Licențiat sub Licența Publică Generală GNU, versiunea 2 sau ulterioară.</tr
     <message>
         <source>Discard and reload</source>
         <translation>Renunță și reîncarcă</translation>
+    </message>
+    <message>
+        <source>Include source audio</source>
+        <translation>Include sunetul sursă</translation>
+    </message>
+    <message>
+        <source>Preview one frame, then export an MP4. A poster and a render record are saved beside it.</source>
+        <translation>Previzualizați un cadru, apoi exportați un MP4. Alături sunt salvate o imagine de copertă și un jurnal de randare.</translation>
+    </message>
+    <message>
+        <source>Source audio follows the selected clip; preview frames are silent.</source>
+        <translation>Sunetul sursă urmează fragmentul selectat; cadrele de previzualizare sunt fără sunet.</translation>
+    </message>
+    <message>
+        <source>This video has no audio track.</source>
+        <translation>Acest videoclip nu are pistă audio.</translation>
     </message>
 </context>
 <context>
