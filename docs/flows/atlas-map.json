@@ -42268,8 +42268,9 @@
     "prototype_evidence": "prototype-validation.json",
     "layout_evidence": "layout-final.json",
     "review_resolutions": "review-resolutions.json",
-    "root_final_acceptance_pending": true,
-    "final_ready": false,
-    "perf_observations": "reviews/perf-bogen-observations.json"
+    "root_final_acceptance_pending": false,
+    "final_ready": true,
+    "perf_observations": "reviews/perf-bogen-observations.json",
+    "root_final_review": "root-final-review.json"
   }
 }

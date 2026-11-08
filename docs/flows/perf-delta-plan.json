@@ -1,6 +1,6 @@
 {
   "schema": "tomacco-performance-atlas-delta/1",
-  "state": "ready_for_root_final_qa",
+  "state": "complete",
   "file_id": "u8uvnj33hx",
   "page_id": "f5zgae58fy",
   "entry_artboard": "bxx82h1gcm",
@@ -64,7 +64,7 @@
   "public_release_commit": null,
   "publication_receipt": null,
   "installed_gate_checked_at": "2026-11-08T12:28:30.121704+00:00",
-  "updated_at": "2026-11-08T12:43:07.388679+00:00",
+  "updated_at": "2026-11-08T12:48:39.814625+00:00",
   "mutations": [
     {
       "board": "D12",
@@ -115,5 +115,8 @@
     "S1"
   ],
   "critical_lint": 0,
-  "brand_hard": 0
+  "brand_hard": 0,
+  "final_ready": true,
+  "root_final_acceptance_pending": false,
+  "root_final_review": "root-final-review.json"
 }
