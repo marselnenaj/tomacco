@@ -428,11 +428,17 @@ pub fn keyboard_state(dump: &str) -> (Option<bool>, Option<bool>) {
     let input_type = regex::Regex::new(r"inputType=(?:0x)?([0-9a-fA-F]+)").unwrap();
     let editor = dump
         .lines()
-        .filter(|line| line.contains("mCurAttribute") || line.contains("mCurEditorInfo") || line.contains("mEditorInfo"))
+        .filter(|line| {
+            line.contains("mCurAttribute")
+                || line.contains("mCurEditorInfo")
+                || line.contains("mEditorInfo")
+        })
         .find_map(|line| {
-            input_type
-                .captures(line)
-                .and_then(|c| u64::from_str_radix(&c[1], 16).ok().or_else(|| c[1].parse().ok()))
+            input_type.captures(line).and_then(|c| {
+                u64::from_str_radix(&c[1], 16)
+                    .ok()
+                    .or_else(|| c[1].parse().ok())
+            })
         })
         .map(|v| v != 0);
     (shown, editor)
@@ -442,10 +448,13 @@ pub fn launcher_package(output: &str) -> Option<String> {
     output
         .lines()
         .map(str::trim)
-        .filter(|line| line.contains('/'))
-        .last()
+        .rfind(|line| line.contains('/'))
         .and_then(|line| line.split('/').next())
-        .filter(|p| !p.is_empty() && p.chars().all(|c| c.is_ascii_alphanumeric() || c == '.' || c == '_'))
+        .filter(|p| {
+            !p.is_empty()
+                && p.chars()
+                    .all(|c| c.is_ascii_alphanumeric() || c == '.' || c == '_')
+        })
         .map(String::from)
 }
 impl Android {
@@ -586,7 +595,13 @@ impl Device for Android {
                 for (id, trace) in contacts.iter().enumerate() {
                     let last = trace.len() - 1;
                     for (i, (x, y, t)) in trace.iter().enumerate() {
-                        let phase = if i == 0 { 0 } else if i == last { 1 } else { 2 };
+                        let phase = if i == 0 {
+                            0
+                        } else if i == last {
+                            1
+                        } else {
+                            2
+                        };
                         events.push((*t, id as u64 + 1, *x, *y, phase));
                     }
                 }
@@ -600,8 +615,10 @@ impl Device for Android {
                     }
                     self.touch_pointer(id, x, y, phase)?;
                 }
-                return Ok(json!({"delivered":true,"mode":"live","contacts":contacts.len(),
-                    "elapsed_ms":started.elapsed().as_millis() as u64}));
+                return Ok(
+                    json!({"delivered":true,"mode":"live","contacts":contacts.len(),
+                    "elapsed_ms":started.elapsed().as_millis() as u64}),
+                );
             }
             _ => {
                 return Err(Error::new(
@@ -626,8 +643,10 @@ impl Device for Android {
         let h = self.shared.lock().unwrap();
         let (width, height) = (n(&h.state, "width") as u32, n(&h.state, "height") as u32);
         drop(h);
-        Ok(json!({"width":width,"height":height,"orientation":super::derived_orientation(width, height),
-            "rotation":Value::Null,"source":"scrcpy display header","coordinate_space":super::coordinate_space()}))
+        Ok(
+            json!({"width":width,"height":height,"orientation":super::derived_orientation(width, height),
+            "rotation":Value::Null,"source":"scrcpy display header","coordinate_space":super::coordinate_space()}),
+        )
     }
     fn context(&mut self) -> Result {
         let app = match self.shell(&["dumpsys", "window"], 15) {
@@ -637,12 +656,27 @@ impl Device for Android {
                     Some(package) => {
                         if self.launcher.is_none() {
                             self.launcher = Some(
-                                self.shell(&["cmd", "package", "resolve-activity", "--brief", "-a", "android.intent.action.MAIN", "-c", "android.intent.category.HOME"], 15)
-                                    .ok()
-                                    .and_then(|o| launcher_package(&o)),
+                                self.shell(
+                                    &[
+                                        "cmd",
+                                        "package",
+                                        "resolve-activity",
+                                        "--brief",
+                                        "-a",
+                                        "android.intent.action.MAIN",
+                                        "-c",
+                                        "android.intent.category.HOME",
+                                    ],
+                                    15,
+                                )
+                                .ok()
+                                .and_then(|o| launcher_package(&o)),
                             );
                         }
-                        let home = self.launcher.as_ref().and_then(|l| l.as_ref().map(|l| *l == package));
+                        let home = self
+                            .launcher
+                            .as_ref()
+                            .and_then(|l| l.as_ref().map(|l| *l == package));
                         json!({"available":true,"bundle_id":package,"name":Value::Null,"activity":window.activity,
                             "home_screen":home,"rotation":window.rotation,"source":"dumpsys window"})
                     }
@@ -655,12 +689,18 @@ impl Device for Android {
             Ok(dump) => {
                 let (shown, editor) = keyboard_state(&dump);
                 let keyboard = match shown {
-                    Some(visible) => json!({"available":true,"visible":visible,"source":"dumpsys input_method (mInputShown)"}),
+                    Some(visible) => {
+                        json!({"available":true,"visible":visible,"source":"dumpsys input_method (mInputShown)"})
+                    }
                     None => super::unavailable("dumpsys input_method reported no mInputShown"),
                 };
                 let focus = match (editor, shown) {
-                    (Some(attached), _) => json!({"available":true,"focused":attached,"source":"dumpsys input_method (editor inputType)"}),
-                    (None, Some(true)) => json!({"available":true,"focused":true,"source":"dumpsys input_method (keyboard shown)"}),
+                    (Some(attached), _) => {
+                        json!({"available":true,"focused":attached,"source":"dumpsys input_method (editor inputType)"})
+                    }
+                    (None, Some(true)) => {
+                        json!({"available":true,"focused":true,"source":"dumpsys input_method (keyboard shown)"})
+                    }
                     _ => super::unavailable("dumpsys input_method reported no attached editor"),
                 };
                 (keyboard, focus)
@@ -741,7 +781,9 @@ mod tests {
         assert_eq!(keyboard_state(hidden), (Some(false), Some(false)));
         assert_eq!(keyboard_state("nothing here"), (None, None));
         assert_eq!(
-            launcher_package("priority=-1000 preferredOrder=0 match=0x108000\ncom.google.android.apps.nexuslauncher/.NexusLauncherActivity\n"),
+            launcher_package(
+                "priority=-1000 preferredOrder=0 match=0x108000\ncom.google.android.apps.nexuslauncher/.NexusLauncherActivity\n"
+            ),
             Some("com.google.android.apps.nexuslauncher".into())
         );
         assert_eq!(launcher_package("No activity found"), None);

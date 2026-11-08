@@ -56,7 +56,11 @@ pub(crate) fn check(steps: &[Value]) -> Result<()> {
         if action == "gesture" {
             super::check_gesture(step).map_err(|e| invalid(format!("Step {i}: {}", e.message)))?;
         }
-        if action == "fill" || step.get("verify_value").is_some() || step.get("submit").is_some() || step.get("field_name").is_some() {
+        if action == "fill"
+            || step.get("verify_value").is_some()
+            || step.get("submit").is_some()
+            || step.get("field_name").is_some()
+        {
             // focus_timeout_ms is also a text step's; only a verified fill bounds it at 10 s.
             let mut fill = step.clone();
             if !b(step, "verify_value") {
@@ -67,7 +71,9 @@ pub(crate) fn check(steps: &[Value]) -> Result<()> {
             super::field::check(&fill).map_err(|e| invalid(format!("Step {i}: {}", e.message)))?;
         }
         if let Some(expect) = step.get("expect") {
-            if !expect.is_object() || (expect.get("text").is_none() && expect.get("text_gone").is_none()) {
+            if !expect.is_object()
+                || (expect.get("text").is_none() && expect.get("text_gone").is_none())
+            {
                 return Err(invalid(format!("Step {i}: expect names text or text_gone")));
             }
         }
@@ -111,15 +117,22 @@ fn wait_for_focus(id: &str, deadline: Instant, timeout: Duration) -> Result<Valu
         let focus = &context["focus"];
         let keyboard = &context["keyboard"];
         let observable = focus["available"] == true || keyboard["available"] == true;
-        let ready = focus["focused"] == true || (focus["available"] != true && keyboard["visible"] == true);
+        let ready =
+            focus["focused"] == true || (focus["available"] != true && keyboard["visible"] == true);
         if !observable {
-            return Ok(json!({"observable":false,"focused":Value::Null,"polls":polls,"reason":focus["reason"]}));
+            return Ok(
+                json!({"observable":false,"focused":Value::Null,"polls":polls,"reason":focus["reason"]}),
+            );
         }
         if ready {
-            return Ok(json!({"observable":true,"focused":true,"polls":polls,"source":focus["source"]}));
+            return Ok(
+                json!({"observable":true,"focused":true,"polls":polls,"source":focus["source"]}),
+            );
         }
         if Instant::now() >= end {
-            return Ok(json!({"observable":true,"focused":false,"polls":polls,"source":focus["source"]}));
+            return Ok(
+                json!({"observable":true,"focused":false,"polls":polls,"source":focus["source"]}),
+            );
         }
         thread::sleep(Duration::from_millis(80).min(end.saturating_duration_since(Instant::now())));
     }
@@ -131,7 +144,18 @@ fn run_step(id: &str, step: &Value, deadline: Instant, store: &Store) -> Result<
     let remaining = deadline.saturating_duration_since(Instant::now());
     let input = |extra: Value| -> Value {
         let mut a = json!({"session":id,"action":action});
-        for key in ["x", "y", "x2", "y2", "duration", "key", "text", "orientation", "scale", "contacts"] {
+        for key in [
+            "x",
+            "y",
+            "x2",
+            "y2",
+            "duration",
+            "key",
+            "text",
+            "orientation",
+            "scale",
+            "contacts",
+        ] {
             if let Some(v) = step.get(key) {
                 a[key] = v.clone();
             }
@@ -181,7 +205,11 @@ fn run_step(id: &str, step: &Value, deadline: Instant, store: &Store) -> Result<
             Ok((result, json!({})))
         }
         "swipe" | "key" | "fill" | "pinch" | "rotate" | "gesture" => {
-            let op = if action == "gesture" { "gesture" } else { "input" };
+            let op = if action == "gesture" {
+                "gesture"
+            } else {
+                "input"
+            };
             Ok((super::request(id, op, &input(json!({})))?, json!({})))
         }
         "text" => {
@@ -202,7 +230,9 @@ fn run_step(id: &str, step: &Value, deadline: Instant, store: &Store) -> Result<
                     }
                     // Nothing can be observed: a short settle instead of a blind
                     // send, and the result says the focus was not seen.
-                    thread::sleep(Duration::from_millis(ms(step, "settle_ms", 300, 5000)).min(remaining));
+                    thread::sleep(
+                        Duration::from_millis(ms(step, "settle_ms", 300, 5000)).min(remaining),
+                    );
                     focus["status"] = json!("unobservable");
                 } else if seen["focused"] != true {
                     return Err(Error::new(
@@ -250,7 +280,11 @@ fn run_step(id: &str, step: &Value, deadline: Instant, store: &Store) -> Result<
             Ok((screen::wait(&a, &mut session, &mut Tesseract)?, json!({})))
         }
         "observe" => Ok((
-            super::request(id, "observe", &json!({"session":id,"context":step.get("context").cloned().unwrap_or(json!(true))}))?,
+            super::request(
+                id,
+                "observe",
+                &json!({"session":id,"context":step.get("context").cloned().unwrap_or(json!(true))}),
+            )?,
             json!({}),
         )),
         other => Err(invalid(format!("unknown action {other:?}"))),
@@ -261,7 +295,9 @@ fn run_step(id: &str, step: &Value, deadline: Instant, store: &Store) -> Result<
 /// within its timeout. Answers what the wait saw.
 fn expect(id: &str, expect: &Value, deadline: Instant) -> Result {
     let mut session = Session::open(id)?;
-    let remaining = deadline.saturating_duration_since(Instant::now()).as_millis() as u64;
+    let remaining = deadline
+        .saturating_duration_since(Instant::now())
+        .as_millis() as u64;
     let timeout = ms(expect, "timeout_ms", 3000, 300_000).min(remaining);
     let (until, text) = match expect.get("text") {
         Some(text) => ("text", text.clone()),
@@ -296,7 +332,10 @@ fn check_frame(id: &str, frame: &Value) -> Result<Value> {
         }
     }
     if let Some(expected) = frame["orientation"].as_str() {
-        if geometry["orientation"].as_str().is_some_and(|o| o != expected) {
+        if geometry["orientation"]
+            .as_str()
+            .is_some_and(|o| o != expected)
+        {
             mismatch.push("orientation");
         }
     }
@@ -343,7 +382,10 @@ pub fn run(a: &Value) -> Result {
         let mutated = mutates(&action);
         if let Err(error) = check_cancelled() {
             return Err(stopped(
-                Error::new("request_cancelled", format!("{} before step {index}", error.message)),
+                Error::new(
+                    "request_cancelled",
+                    format!("{} before step {index}", error.message),
+                ),
                 "The steps listed as applied reached the device; the rest did not",
                 &done,
                 total,
@@ -351,14 +393,18 @@ pub fn run(a: &Value) -> Result {
         }
         if Instant::now() >= deadline {
             return Err(stopped(
-                Error::new("actions_timeout", format!("The batch's timeout ran out before step {index}")),
+                Error::new(
+                    "actions_timeout",
+                    format!("The batch's timeout ran out before step {index}"),
+                ),
                 "The steps listed as applied reached the device; the rest did not. Observe, then continue from the first skipped step",
                 &done,
                 total,
             ));
         }
         let at = Instant::now();
-        let mut record = json!({"index":index,"action":action,"mutated":mutated,"started_at":now()});
+        let mut record =
+            json!({"index":index,"action":action,"mutated":mutated,"started_at":now()});
         // The step's input is recorded in the request ledger as `ID/step-N`.
         crate::coordination::set_label(Some(format!("step-{index}")));
         let ran = run_step(id, step, deadline, &store);
@@ -367,7 +413,11 @@ pub fn run(a: &Value) -> Result {
             Ok((result, extra)) => {
                 // A verified fill read its exact value back from the editor.
                 let field_verified = action == "fill" && result["verified"] == true;
-                record["status"] = json!(if field_verified { "verified" } else { "applied" });
+                record["status"] = json!(if field_verified {
+                    "verified"
+                } else {
+                    "applied"
+                });
                 if action == "fill" && b(step, "verify_value") {
                     record["field_verified"] = json!(field_verified);
                 }
@@ -391,7 +441,13 @@ pub fn run(a: &Value) -> Result {
                             record["verified_ms"] = json!(at.elapsed().as_millis() as u64);
                             done.push(record);
                             return Err(stopped(
-                                Error::new("postcondition_failed", format!("Step {index} ({}) was applied, but its expected screen did not follow", s(step, "action"))),
+                                Error::new(
+                                    "postcondition_failed",
+                                    format!(
+                                        "Step {index} ({}) was applied, but its expected screen did not follow",
+                                        s(step, "action")
+                                    ),
+                                ),
                                 "The step reached the device: do not send it again. Observe the screen and decide from what is there",
                                 &done,
                                 total,
@@ -414,7 +470,11 @@ pub fn run(a: &Value) -> Result {
                 record["duration_ms"] = json!(at.elapsed().as_millis() as u64);
                 record["error"] = error.value();
                 let code = error.code.clone();
-                let message = format!("Step {index} ({}) failed: {}", s(step, "action"), error.message);
+                let message = format!(
+                    "Step {index} ({}) failed: {}",
+                    s(step, "action"),
+                    error.message
+                );
                 done.push(record);
                 // A step the transport refused did not change the device, unless
                 // it says otherwise; the earlier steps did.
@@ -483,7 +543,11 @@ mod tests {
         let error = stopped(
             Error::new("actions_timeout", "late"),
             "go on",
-            &[json!({"index":0,"status":"applied","mutated":true}), json!({"index":1,"status":"applied","mutated":false}), json!({"index":2,"status":"failed","mutated":true})],
+            &[
+                json!({"index":0,"status":"applied","mutated":true}),
+                json!({"index":1,"status":"applied","mutated":false}),
+                json!({"index":2,"status":"failed","mutated":true}),
+            ],
             5,
         );
         let details = error.details.unwrap();
@@ -493,7 +557,10 @@ mod tests {
         let error = stopped(
             Error::new("field_uncertain", "lost"),
             "look",
-            &[json!({"index":0,"status":"verified","mutated":true}), json!({"index":1,"status":"uncertain","mutated":true})],
+            &[
+                json!({"index":0,"status":"verified","mutated":true}),
+                json!({"index":1,"status":"uncertain","mutated":true}),
+            ],
             3,
         );
         let details = error.details.unwrap();
@@ -501,13 +568,19 @@ mod tests {
         assert_eq!(details["uncertain_steps"], json!([1]));
         assert_eq!(details["skipped"], json!([2]));
         // A verified fill is checked like the rest before anything is sent.
-        let fill = json!({"action":"fill","x":0.5,"y":0.5,"text":"a","verify_value":true,"submit":true});
+        let fill =
+            json!({"action":"fill","x":0.5,"y":0.5,"text":"a","verify_value":true,"submit":true});
         assert!(check(std::slice::from_ref(&fill)).is_ok());
-        assert!(check(&[json!({"action":"fill","x":0.5,"y":0.5,"text":"a","submit":true})]).is_err());
+        assert!(
+            check(&[json!({"action":"fill","x":0.5,"y":0.5,"text":"a","submit":true})]).is_err()
+        );
         assert!(check(&[json!({"action":"key","key":"enter","submit":true})]).is_err());
         assert!(check(&[json!({"action":"fill","x":0.5,"y":0.5,"text":"a","verify_value":true,"focus_timeout_ms":30000})]).is_err());
         // A plain fill and a text step keep their old focus bound.
-        assert!(check(&[json!({"action":"fill","x":0.5,"y":0.5,"text":"a","focus_timeout_ms":30000})]).is_ok());
+        assert!(
+            check(&[json!({"action":"fill","x":0.5,"y":0.5,"text":"a","focus_timeout_ms":30000})])
+                .is_ok()
+        );
         assert!(check(&[json!({"action":"text","text":"a","focus_timeout_ms":30000})]).is_ok());
     }
 }

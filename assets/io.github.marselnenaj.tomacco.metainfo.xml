@@ -58,6 +58,18 @@
   </provides>
   <content_rating type="oars-1.1"/>
   <releases>
+    <release version="1.5.0" date="2026-11-08">
+      <description>
+        <p>One shared desktop and agent workflow, with 50 complete translation catalogs, adaptive phone layouts and 296 typed operations.</p>
+        <ul>
+          <li>Ten coding-agent adapters, cooperative device reservations, durable action outcomes and compact screen observations.</li>
+          <li>Optional adaptive OCR, a bounded warm OCR worker for persistent MCP sessions and parallel fresh iPhone context reads.</li>
+          <li>Agent-controlled Demo Studio with revisioned local scenes, perspective device renders and optional original audio.</li>
+          <li>Scale-aware file choosers and improved AirPlay backlog and pointer handling; physical Pixel and AirPlay qualification remains pending.</li>
+        </ul>
+      </description>
+      <url type="details">https://github.com/marselnenaj/tomacco/blob/v1.5.0/docs/RELEASE_NOTES.md</url>
+    </release>
     <release version="1.4.1" date="2026-11-04">
       <url type="details">https://github.com/marselnenaj/tomacco/blob/v1.4.1/docs/RELEASE_NOTES.md</url>
     </release>

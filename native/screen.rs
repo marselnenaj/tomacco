@@ -741,25 +741,43 @@ pub fn tree_text(a: &Value, screen: &mut dyn Screen, store: &Store) -> Result {
     let mode = a["mode"].as_str().unwrap_or("tree");
     let refs: Vec<String> = a["refs"]
         .as_array()
-        .map(|r| r.iter().filter_map(|v| v.as_str().map(str::to_string)).collect())
+        .map(|r| {
+            r.iter()
+                .filter_map(|v| v.as_str().map(str::to_string))
+                .collect()
+        })
         .unwrap_or_default();
     match mode {
         "tree" | "compact" if a.get("refs").is_some() => {
             return Err(Error::new("invalid_argument", "refs belong to mode detail"));
         }
         "tree" | "detail" if a.get("query").is_some() => {
-            return Err(Error::new("invalid_argument", "query ranks the records of mode compact"));
+            return Err(Error::new(
+                "invalid_argument",
+                "query ranks the records of mode compact",
+            ));
         }
         "detail" if refs.is_empty() => {
-            return Err(Error::new("invalid_argument", "mode detail needs refs, such as [\"n12\"] from a compact tree"));
+            return Err(Error::new(
+                "invalid_argument",
+                "mode detail needs refs, such as [\"n12\"] from a compact tree",
+            ));
         }
         "tree" | "compact" | "detail" => {}
-        other => return Err(Error::new("invalid_argument", format!("Unknown mode {other:?}"))),
+        other => {
+            return Err(Error::new(
+                "invalid_argument",
+                format!("Unknown mode {other:?}"),
+            ));
+        }
     }
     let xml = screen
         .hierarchy()?
         .ok_or_else(|| no_hierarchy("screen.tree", device))?;
-    let digest: String = crate::core::digest(xml.as_bytes()).chars().take(16).collect();
+    let digest: String = crate::core::digest(xml.as_bytes())
+        .chars()
+        .take(16)
+        .collect();
     if let Some(expected) = a["digest"].as_str() {
         if expected != digest {
             return Err(Error::new(
@@ -789,18 +807,32 @@ pub fn tree_text(a: &Value, screen: &mut dyn Screen, store: &Store) -> Result {
     )?;
     match mode {
         "compact" => {
-            let c = tree::compact(&nodes, &numbers, max_chars, s(a, "query"), b(a, "only_interactive"), &digest);
-            Ok(json!({"text":c.text,"chars":c.text.chars().count(),"bytes":c.text.len(),"package":c.package,
+            let c = tree::compact(
+                &nodes,
+                &numbers,
+                max_chars,
+                s(a, "query"),
+                b(a, "only_interactive"),
+                &digest,
+            );
+            Ok(
+                json!({"text":c.text,"chars":c.text.chars().count(),"bytes":c.text.len(),"package":c.package,
                 "width":c.width,"height":c.height,"nodes":c.records,"shown":c.selected.len(),
                 "truncated":c.truncated,"marks":found.len(),"source":"hierarchy","mode":"compact","digest":digest,
                 "omitted":c.omitted.len(),"omitted_by":c.omitted_by,
                 "omitted_refs":c.omitted.iter().take(100).map(|i| format!("n{i}")).collect::<Vec<_>>(),
-                "omitted_refs_truncated":c.omitted.len() > 100,"folded":c.folded,"hidden":c.hidden}))
+                "omitted_refs_truncated":c.omitted.len() > 100,"folded":c.folded,"hidden":c.hidden}),
+            )
         }
         "detail" => {
-            let records: Vec<Value> = wanted.iter().map(|i| tree::detail(&nodes, &numbers, *i)).collect();
-            Ok(json!({"records":records,"count":records.len(),"package":tree::app_package_of(&nodes),
-                "width":width,"height":height,"marks":found.len(),"source":"hierarchy","mode":"detail","digest":digest}))
+            let records: Vec<Value> = wanted
+                .iter()
+                .map(|i| tree::detail(&nodes, &numbers, *i))
+                .collect();
+            Ok(
+                json!({"records":records,"count":records.len(),"package":tree::app_package_of(&nodes),
+                "width":width,"height":height,"marks":found.len(),"source":"hierarchy","mode":"detail","digest":digest}),
+            )
         }
         _ => {
             let rendered = tree::tree(&nodes, &numbers, max_chars, b(a, "only_interactive"));
@@ -1657,10 +1689,7 @@ mod tests {
         let (dir, store) = store();
         // Marks on a portrait hierarchy; the screen then reports a landscape one.
         let wide = "<hierarchy rotation=\"1\"><node class=\"android.widget.FrameLayout\" bounds=\"[0,0][2400,1080]\"><node class=\"android.widget.Button\" text=\"Sign in\" resource-id=\"dev.example.app:id/sign_in\" bounds=\"[900,500][1500,600]\" clickable=\"true\" enabled=\"true\"/></node></hierarchy>";
-        let mut fake = Fake::new(
-            vec![solid(1080, 2400, 255)],
-            vec![Some(LOGIN), Some(wide)],
-        );
+        let mut fake = Fake::new(vec![solid(1080, 2400, 255)], vec![Some(LOGIN), Some(wide)]);
         let out = dir.path().join("marked.png");
         let made = marks(
             &json!({"device":"emulator-5554","path":out}),
@@ -1670,7 +1699,12 @@ mod tests {
         )
         .unwrap();
         assert_eq!(made["frame_id"].as_str().unwrap().len(), 16);
-        let error = tap(&json!({"device":"emulator-5554","mark":5}), &mut fake, &store).unwrap_err();
+        let error = tap(
+            &json!({"device":"emulator-5554","mark":5}),
+            &mut fake,
+            &store,
+        )
+        .unwrap_err();
         assert_eq!(error.code, "mark_stale");
         assert!(error.message.contains("it rotated"), "{}", error.message);
         assert!(fake.taps.is_empty());
@@ -1683,7 +1717,12 @@ mod tests {
             &store,
         )
         .unwrap();
-        let error = tap(&json!({"device":"emulator-5554","mark":1}), &mut fake, &store).unwrap_err();
+        let error = tap(
+            &json!({"device":"emulator-5554","mark":1}),
+            &mut fake,
+            &store,
+        )
+        .unwrap_err();
         assert_eq!(error.code, "mark_stale");
         assert!(error.message.contains("640x360"), "{}", error.message);
         assert!(fake.taps.is_empty());
@@ -2233,13 +2272,24 @@ mod tests {
 
     #[test]
     fn adaptive_fallback_uses_one_capture_and_reports_device_capture_time() {
-        let mut screen=Fake::new(vec![solid(200,200,255),solid(200,200,20)],vec![None]);
-        let mut ocr=Script(VecDeque::from([EMPTY.to_string(),tsv(&[(10,10,50,20,95.0,"Save")])]));
-        let result=read_text(&json!({"invert":"adaptive","text":"Save","detail":"matches"}),Some(&mut screen),&mut ocr).unwrap();
-        assert_eq!(screen.pictures.len(),1);
-        assert_eq!(result["passes"],2);
-        assert!(result["capture_ms"].as_f64().unwrap()>=0.0);
-        assert!(result["total_ms"].as_f64().unwrap()>=result["capture_ms"].as_f64().unwrap()+result["read_ms"].as_f64().unwrap());
+        let mut screen = Fake::new(vec![solid(200, 200, 255), solid(200, 200, 20)], vec![None]);
+        let mut ocr = Script(VecDeque::from([
+            EMPTY.to_string(),
+            tsv(&[(10, 10, 50, 20, 95.0, "Save")]),
+        ]));
+        let result = read_text(
+            &json!({"invert":"adaptive","text":"Save","detail":"matches"}),
+            Some(&mut screen),
+            &mut ocr,
+        )
+        .unwrap();
+        assert_eq!(screen.pictures.len(), 1);
+        assert_eq!(result["passes"], 2);
+        assert!(result["capture_ms"].as_f64().unwrap() >= 0.0);
+        assert!(
+            result["total_ms"].as_f64().unwrap()
+                >= result["capture_ms"].as_f64().unwrap() + result["read_ms"].as_f64().unwrap()
+        );
     }
 
     #[test]

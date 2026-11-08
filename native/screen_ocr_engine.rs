@@ -83,6 +83,8 @@ fn thread_policy(explicit_limit: bool, standard: bool) -> Vec<(&'static str, &'s
     }
 }
 
+type ModelIdentity = (PathBuf, Option<(u64, i64, i64)>);
+
 #[derive(Clone, Debug, PartialEq, Eq)]
 struct Key {
     language: String,
@@ -90,7 +92,7 @@ struct Key {
     threads: Option<OsString>,
     num_threads: Option<OsString>,
     binary: (u64, u64, i64, i64, u32),
-    models: Vec<(PathBuf, Option<(u64, i64, i64)>)>,
+    models: Vec<ModelIdentity>,
 }
 impl Key {
     fn new(binary: &Path, language: &str) -> Option<Self> {
@@ -162,6 +164,9 @@ pub(crate) fn shutdown() {
 // Linux PDEATHSIG follows the creating *thread*, not just its process. MCP
 // request threads are short-lived, so all retained workers are created by one
 // long-lived session owner. The owner never calls Tesseract or foreign code.
+// The one-slot spawn queue bounds inline Command storage. Preserve the reviewed
+// handoff ownership instead of adding heap indirection for the small Stop variant.
+#[allow(clippy::large_enum_variant)]
 enum SpawnJob {
     Start(Command, SyncSender<std::io::Result<Spawned>>),
     Stop,

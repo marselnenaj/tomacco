@@ -474,12 +474,18 @@ impl Device for Ios {
     fn geometry(&mut self) -> Result {
         let h = self.shared.lock().unwrap();
         let (width, height) = (n(&h.state, "width") as u32, n(&h.state, "height") as u32);
-        let (points_w, points_h, density) = (h.state["points_width"].clone(), h.state["points_height"].clone(), h.state["density"].clone());
+        let (points_w, points_h, density) = (
+            h.state["points_width"].clone(),
+            h.state["points_height"].clone(),
+            h.state["density"].clone(),
+        );
         drop(h);
-        Ok(json!({"width":width,"height":height,"point_width":points_w,"point_height":points_h,"scale":density,
+        Ok(
+            json!({"width":width,"height":height,"point_width":points_w,"point_height":points_h,"scale":density,
             "orientation":super::derived_orientation(width, height),"rotation":Value::Null,
             "source":"idb screen description at connect; pass width/height after a rotation",
-            "coordinate_space":super::coordinate_space()}))
+            "coordinate_space":super::coordinate_space()}),
+        )
     }
     fn capabilities(&self) -> Value {
         json!({"transport":"ssh/idb","evidence":"device","capture":true,"hierarchy":"idb accessibility json (not converted for screen.*)",

@@ -419,25 +419,44 @@ impl CompletionWait {
         {
             use std::os::fd::FromRawFd;
             let fd = unsafe { libc::syscall(libc::SYS_pidfd_open, child.id() as libc::pid_t, 0) };
-            Self { fd: (fd >= 0).then(|| unsafe { std::os::fd::OwnedFd::from_raw_fd(fd as i32) }) }
+            Self {
+                fd: (fd >= 0).then(|| unsafe { std::os::fd::OwnedFd::from_raw_fd(fd as i32) }),
+            }
         }
         #[cfg(not(target_os = "linux"))]
-        { let _ = child; Self {} }
+        {
+            let _ = child;
+            Self {}
+        }
     }
 
     /// The deadline and check interval still bound timeout/cancellation
     /// checks, but successful completion wakes immediately.
     pub(crate) fn pause(&self, deadline: Instant, interval: Duration) {
-        let remaining = deadline.saturating_duration_since(Instant::now()).min(interval);
-        if remaining.is_zero() { return; }
+        let remaining = deadline
+            .saturating_duration_since(Instant::now())
+            .min(interval);
+        if remaining.is_zero() {
+            return;
+        }
         #[cfg(target_os = "linux")]
         if let Some(fd) = &self.fd {
             use std::os::fd::AsRawFd;
-            let timeout = remaining.as_millis().saturating_add(u128::from(remaining.subsec_nanos() % 1_000_000 != 0)).min(i32::MAX as u128) as i32;
-            let mut event = libc::pollfd { fd: fd.as_raw_fd(), events: libc::POLLIN, revents: 0 };
+            let timeout = remaining
+                .as_nanos()
+                .div_ceil(1_000_000)
+                .min(i32::MAX as u128) as i32;
+            let mut event = libc::pollfd {
+                fd: fd.as_raw_fd(),
+                events: libc::POLLIN,
+                revents: 0,
+            };
             let polled = unsafe { libc::poll(&mut event, 1, timeout) };
-            if polled == 0 || (polled > 0 && event.revents & libc::POLLIN != 0)
-                || (polled < 0 && std::io::Error::last_os_error().kind() == std::io::ErrorKind::Interrupted) {
+            if polled == 0
+                || (polled > 0 && event.revents & libc::POLLIN != 0)
+                || (polled < 0
+                    && std::io::Error::last_os_error().kind() == std::io::ErrorKind::Interrupted)
+            {
                 return;
             }
         }
@@ -594,7 +613,13 @@ pub fn run(args: &[String], timeout: u64, cwd: Option<&Path>, check: bool) -> Re
 }
 
 /// Environment overrides belong to this child, never the multithreaded host.
-pub fn run_with_env(args: &[String], timeout: u64, cwd: Option<&Path>, check: bool, overrides: &[(&str, &str)]) -> Result {
+pub fn run_with_env(
+    args: &[String],
+    timeout: u64,
+    cwd: Option<&Path>,
+    check: bool,
+    overrides: &[(&str, &str)],
+) -> Result {
     check_cancelled()?;
     if args.is_empty() {
         return Err(Error::new("invalid_command", "Missing command"));
@@ -764,7 +789,18 @@ mod doctor_tests {
     fn child_environment_overrides_are_local_and_exit_status_is_preserved() {
         let name = "TOMACCO_TEST_CHILD_ONLY_PERF_VALUE";
         let before = std::env::var_os(name);
-        let result = run_with_env(&argv(&["/bin/sh", "-c", "printf '%s' \"$TOMACCO_TEST_CHILD_ONLY_PERF_VALUE\"; printf err >&2; exit 7"]), 2, None, false, &[(name, "isolated")]).unwrap();
+        let result = run_with_env(
+            &argv(&[
+                "/bin/sh",
+                "-c",
+                "printf '%s' \"$TOMACCO_TEST_CHILD_ONLY_PERF_VALUE\"; printf err >&2; exit 7",
+            ]),
+            2,
+            None,
+            false,
+            &[(name, "isolated")],
+        )
+        .unwrap();
         assert_eq!(result["stdout"], "isolated");
         assert_eq!(result["stderr"], "err");
         assert_eq!(result["exit_code"], 7);
@@ -774,7 +810,8 @@ mod doctor_tests {
     #[test]
     fn completion_wait_unsupported_fallback_and_timeout_keep_their_bounds() {
         let fallback = CompletionWait {
-            #[cfg(target_os = "linux")] fd: None,
+            #[cfg(target_os = "linux")]
+            fd: None,
         };
         let started = Instant::now();
         fallback.pause(started + Duration::from_millis(10), Duration::from_secs(1));
@@ -796,7 +833,10 @@ mod doctor_tests {
         }
         let mut kept = samples[10..].to_vec();
         kept.sort_by(f64::total_cmp);
-        println!("RUNNER_MICROBENCH {}",json!({"samples_ms":samples,"warmups":10,"p50_ms":kept[49],"p95_ms":kept[94]}));
+        println!(
+            "RUNNER_MICROBENCH {}",
+            json!({"samples_ms":samples,"warmups":10,"p50_ms":kept[49],"p95_ms":kept[94]})
+        );
     }
 
     #[test]

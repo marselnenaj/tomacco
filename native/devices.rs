@@ -162,7 +162,8 @@ pub fn fold_name(value: &str) -> String {
     let mut space = true;
     for c in value.chars() {
         let c = match c {
-            '\u{2018}' | '\u{2019}' | '\u{201a}' | '\u{201b}' | '\u{2032}' | '\u{02bc}' | '\u{ff07}' | '`' => '\'',
+            '\u{2018}' | '\u{2019}' | '\u{201a}' | '\u{201b}' | '\u{2032}' | '\u{02bc}'
+            | '\u{ff07}' | '`' => '\'',
             '\u{201c}' | '\u{201d}' | '\u{201e}' | '\u{201f}' | '\u{2033}' | '\u{ff02}' => '"',
             '\u{2010}' | '\u{2011}' | '\u{2012}' | '\u{2013}' | '\u{2014}' | '\u{2212}' => '-',
             c if c.is_whitespace() || c == '\u{200b}' || c == '\u{feff}' => ' ',
@@ -189,7 +190,10 @@ pub fn fold_name(value: &str) -> String {
 pub fn resolve_name(entries: &[Value], name: &str) -> Result {
     let wanted = fold_name(name);
     if wanted.is_empty() {
-        return Err(Error::new("invalid_argument", "name is the device's name, nickname, AVD or ID"));
+        return Err(Error::new(
+            "invalid_argument",
+            "name is the device's name, nickname, AVD or ID",
+        ));
     }
     let names = |entry: &Value| -> Vec<String> {
         ["nickname", "name", "original_name", "avd", "id"]
@@ -200,13 +204,20 @@ pub fn resolve_name(entries: &[Value], name: &str) -> Result {
             .collect()
     };
     let lower = wanted.to_lowercase();
-    let tiers: [(&str, Box<dyn Fn(&str) -> bool>); 3] = [
+    type NamePredicate<'a> = Box<dyn Fn(&str) -> bool + 'a>;
+    let tiers: [(&str, NamePredicate<'_>); 3] = [
         ("exact", Box::new(|v: &str| v == wanted)),
-        ("case_insensitive", Box::new(|v: &str| v.to_lowercase() == lower)),
-        ("partial", Box::new(|v: &str| {
-            let v = v.to_lowercase();
-            v.starts_with(&lower) || v.contains(&lower)
-        })),
+        (
+            "case_insensitive",
+            Box::new(|v: &str| v.to_lowercase() == lower),
+        ),
+        (
+            "partial",
+            Box::new(|v: &str| {
+                let v = v.to_lowercase();
+                v.starts_with(&lower) || v.contains(&lower)
+            }),
+        ),
     ];
     for (how, matches) in &tiers {
         let found: Vec<&Value> = entries
@@ -216,7 +227,9 @@ pub fn resolve_name(entries: &[Value], name: &str) -> Result {
         match found.len() {
             0 => continue,
             1 => {
-                return Ok(json!({"device":found[0],"id":found[0]["id"],"platform":found[0]["platform"],"matched":how,"name":name}));
+                return Ok(
+                    json!({"device":found[0],"id":found[0]["id"],"platform":found[0]["platform"],"matched":how,"name":name}),
+                );
             }
             _ => {
                 return Err(Error::new(
@@ -790,32 +803,33 @@ pub fn handle(op: &str, a: &Value) -> Result {
             identifier(device, "Android serial", None)?;
             let target = crate::coordination::Target::new("android", "", device);
             crate::coordination::guarded(&target, crate::coordination::Kind::Action, || {
-            let action = s(a, "action");
-            let mut args = argv(&["input", action]);
-            match action {
-                "tap" => args.extend([n(a, "x").to_string(), n(a, "y").to_string()]),
-                "swipe" => args
-                    .extend(["x", "y", "end_x", "end_y", "duration"].map(|k| n(a, k).to_string())),
-                "text" => {
-                    let text = s(a, "text");
-                    if !text.is_ascii() || text.contains("%s") {
-                        // adb input text types ASCII only and reads %s as a space.
-                        identifier(device, "Android serial", None)?;
-                        return crate::runtime::android::paste(device, text);
+                let action = s(a, "action");
+                let mut args = argv(&["input", action]);
+                match action {
+                    "tap" => args.extend([n(a, "x").to_string(), n(a, "y").to_string()]),
+                    "swipe" => args.extend(
+                        ["x", "y", "end_x", "end_y", "duration"].map(|k| n(a, k).to_string()),
+                    ),
+                    "text" => {
+                        let text = s(a, "text");
+                        if !text.is_ascii() || text.contains("%s") {
+                            // adb input text types ASCII only and reads %s as a space.
+                            identifier(device, "Android serial", None)?;
+                            return crate::runtime::android::paste(device, text);
+                        }
+                        args.push(text.replace(' ', "%s"));
                     }
-                    args.push(text.replace(' ', "%s"));
+                    "keyevent" => args.push(
+                        identifier(
+                            s(a, "key"),
+                            "key code",
+                            Some(r"KEYCODE_[A-Z0-9_]+|[0-9]{1,4}"),
+                        )?
+                        .into(),
+                    ),
+                    _ => return Err(Error::new("invalid_argument", action)),
                 }
-                "keyevent" => args.push(
-                    identifier(
-                        s(a, "key"),
-                        "key code",
-                        Some(r"KEYCODE_[A-Z0-9_]+|[0-9]{1,4}"),
-                    )?
-                    .into(),
-                ),
-                _ => return Err(Error::new("invalid_argument", action)),
-            }
-            run(shell(device, &args)?)
+                run(shell(device, &args)?)
             })
         }
         "android.hierarchy" => {
@@ -2100,20 +2114,53 @@ mod tests {
         ];
         // A straight apostrophe finds the curly one, and the emoji stays part of the name.
         let found = resolve_name(&devices, "Ana's Pixel \u{1F4F1}").unwrap();
-        assert_eq!((found["id"].as_str(), found["matched"].as_str()), (Some("emulator-5554"), Some("exact")));
-        assert_eq!(resolve_name(&devices, "  Pixel_9 ").unwrap()["id"], "emulator-5554");
-        assert_eq!(resolve_name(&devices, "iphone").unwrap()["matched"], "case_insensitive");
+        assert_eq!(
+            (found["id"].as_str(), found["matched"].as_str()),
+            (Some("emulator-5554"), Some("exact"))
+        );
+        assert_eq!(
+            resolve_name(&devices, "  Pixel_9 ").unwrap()["id"],
+            "emulator-5554"
+        );
+        assert_eq!(
+            resolve_name(&devices, "iphone").unwrap()["matched"],
+            "case_insensitive"
+        );
         // Exact beats case-insensitive: two tablets differ only by case, and the exact one wins.
-        assert_eq!(resolve_name(&devices, "Pixel Tablet").unwrap()["id"], "emulator-5556");
+        assert_eq!(
+            resolve_name(&devices, "Pixel Tablet").unwrap()["id"],
+            "emulator-5556"
+        );
         let error = resolve_name(&devices, "PIXEL TABLET").unwrap_err();
         assert_eq!(error.code, "device_ambiguous");
-        assert_eq!(error.details.unwrap()["candidates"].as_array().unwrap().len(), 2);
-        assert_eq!(resolve_name(&devices, "Pixel").unwrap_err().code, "device_ambiguous");
-        assert_eq!(resolve_name(&devices, "Tablet").unwrap_err().code, "device_ambiguous");
+        assert_eq!(
+            error.details.unwrap()["candidates"]
+                .as_array()
+                .unwrap()
+                .len(),
+            2
+        );
+        assert_eq!(
+            resolve_name(&devices, "Pixel").unwrap_err().code,
+            "device_ambiguous"
+        );
+        assert_eq!(
+            resolve_name(&devices, "Tablet").unwrap_err().code,
+            "device_ambiguous"
+        );
         assert_eq!(resolve_name(&devices, "iPh").unwrap()["matched"], "partial");
-        assert_eq!(resolve_name(&devices, "Galaxy").unwrap_err().code, "device_not_found");
-        assert_eq!(resolve_name(&devices, "   ").unwrap_err().code, "invalid_argument");
-        assert_eq!(fold_name("  Ana\u{2019}s\u{00a0} \u{201c}Phone\u{201d} \u{2013} 2 "), "Ana's \"Phone\" - 2");
+        assert_eq!(
+            resolve_name(&devices, "Galaxy").unwrap_err().code,
+            "device_not_found"
+        );
+        assert_eq!(
+            resolve_name(&devices, "   ").unwrap_err().code,
+            "invalid_argument"
+        );
+        assert_eq!(
+            fold_name("  Ana\u{2019}s\u{00a0} \u{201c}Phone\u{201d} \u{2013} 2 "),
+            "Ana's \"Phone\" - 2"
+        );
     }
 
     #[test]

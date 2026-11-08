@@ -9,7 +9,7 @@
 
 <p align="center">
   <a href="LICENSE"><img src="https://img.shields.io/badge/license-GPL--2.0--or--later-6cb6ff" alt="License: GPL-2.0-or-later"></a>
-  <img src="https://img.shields.io/badge/version-1.4.1-7dffd0" alt="Version 1.4.1">
+  <img src="https://img.shields.io/badge/version-1.5.0-7dffd0" alt="Version 1.5.0">
   <img src="https://img.shields.io/badge/iOS_runtime-experimental-b58cff" alt="iOS runtime: experimental">
   <img src="https://img.shields.io/badge/made_for-Omarchy-b58cff" alt="Made for Omarchy">
 </p>
@@ -31,8 +31,9 @@ device, tap through the interface, inspect the result and try again.
 The agent and the **native Qt desktop** use the same **296 typed operations**
 through MCP or the `tomaccoctl` JSON CLI. You can watch the live device, take over
 with touch and gestures, and share the same builds, logs and debugging session.
-The desktop is translated into the languages of Omarchy's language registry; `i18n/COVERAGE.md` lists
-each language and how complete its translation is, and *System* follows the language chosen in Omarchy.
+The desktop has **50 complete translation catalogs plus English**, covering Omarchy's language
+registry. [Translation coverage](i18n/COVERAGE.md) lists the 1,898 marked interface texts and
+technical checks; this is not native-speaker review. *System* follows the language chosen in Omarchy.
 
 Tomacco is made for **Omarchy**, with panel and window-manager integration. It
 also works on other Linux desktops without those integrations. The virtual iOS
@@ -49,11 +50,12 @@ see [requirements and limits](#the-virtual-ios-device).
 | **iPhone over USB** | Build with xtool, sign, install and view through WebDriverAgent; physical-device execution not qualified | [iPhone guide](docs/iphone.md) |
 | **Mac over SSH** | Use Xcode builds, XCTest, the Simulator and App Store validation; not qualified | [Mac route](docs/iphone.md#the-mac-route) |
 
-New in 1.2: UI tests you record by tapping, a watch mode, performance budgets, store screenshots,
-SwiftUI apps built, deployed and checked on the virtual iPhone in one call, a virtual iPhone that
-starts without a 32 GiB disk copy, an update banner, a Docker image you build yourself, and
-`tomaccoctl verify`. Several of these were tested with stand-ins only; the
-[release notes](docs/RELEASE_NOTES.md) say which.
+New in **1.5.0**: adaptive phone layouts and scale-aware file choosers, ten coding-agent
+adapters, cooperative device reservations and durable action outcomes, compact screen trees,
+optional adaptive OCR and a bounded warm OCR engine for persistent MCP sessions. Demo Studio
+turns local recordings into perspective device videos, controlled by the desktop or an agent,
+with optional original sound. The [release notes](docs/RELEASE_NOTES.md) distinguish local
+qualification from pending physical Pixel, iPhone and AirPlay checks.
 
 <img src="assets/readme/desktop.png" alt="Tomacco's desktop on its Project page for an example xtool project called Tomatoes: the build set to iOS, Debug and IPA, Run on device with no device chosen, and No device in the status bar." width="100%">
 
@@ -164,8 +166,8 @@ image: `tomaccoctl` from the signed release package, a JDK, Gradle and the Andro
 iPhone. Building it accepts Google's Android SDK license:
 
 ```sh
-docker build --build-arg ACCEPT_ANDROID_SDK_LICENSE=1 -t tomacco-container:1.4.1 packaging/container
-claude mcp add --transport stdio --scope user tomacco -- docker run -i --rm -v tomacco-data:/data tomacco-container:1.4.1 mcp
+docker build --build-arg ACCEPT_ANDROID_SDK_LICENSE=1 -t tomacco-container:1.5.0 packaging/container
+claude mcp add --transport stdio --scope user tomacco -- docker run -i --rm -v tomacco-data:/data tomacco-container:1.5.0 mcp
 ```
 
 [Container image](docs/container.md) covers the emulator, KVM, USB phones and what was tested.
@@ -226,10 +228,11 @@ Every guest processor is emulated, so performance is far below a physical phone.
 
 ## Status and limits
 
-Tomacco 1.4.1 was developed and tested on one workstation: x86_64 Arch Linux with Omarchy,
-Qt 6.12 and Rust 1.99. The portable package passed its checks in clean Debian 12, Ubuntu 22.04,
-Ubuntu 24.04 and Fedora 44 containers but has not been run on a real desktop of those
-distributions. The 1.2.1 installer, `doctor` and an Android starter build ran in clean Debian 12
+Current development and offline qualification run on an x86_64 Arch Linux workstation with
+Omarchy, Qt 6.12 and Rust 1.99. This does not qualify every distribution or physical device.
+The earlier **1.4.1 portable package** passed checks in clean Debian 12, Ubuntu 22.04,
+Ubuntu 24.04 and Fedora 44 containers; these are historical checks, not qualification of a
+newly built 1.5.0 artifact or real desktops on those distributions. The 1.2.1 installer, `doctor` and an Android starter build ran in clean Debian 12
 and 13, Ubuntu 24.04, Fedora 44 and openSUSE Tumbleweed containers. Other machines have not been
 qualified; [Linux distributions and hardware](docs/linux-hosts.md) says what ran where, and what is
 known about NixOS, SteamOS and Fedora's atomic desktops.
@@ -238,12 +241,12 @@ known about NixOS, SteamOS and Fedora's atomic desktops.
 paths have contract tests, but execution on a real iPhone has not been verified.
 Physical ARM64 Android phones and live Play/App Store submission are also unqualified.
 
-**ARM64 Linux is experimental.** On an M1 MacBook Air with Arch Linux ARM, `tomaccoctl`
-builds, Rust tests pass and the desktop smoke test passes offscreen; the regular aarch64 package
-is built there over SSH and its C++ tests pass. The aarch64 portable package passed its checks in clean
-Debian 13, Ubuntu 24.04 and Fedora 44 `linux/arm64` containers under emulation and ran offscreen on that
-MacBook; it needs glibc 2.39, so not Debian 12 or Ubuntu 22.04. The virtual iOS device
-requires an x86_64 host.
+**ARM64 Linux is experimental.** Earlier builds on an M1 MacBook Air with Arch Linux ARM
+passed Rust tests and an offscreen desktop smoke test. Earlier aarch64 portable packages
+passed clean Debian 13, Ubuntu 24.04 and Fedora 44 `linux/arm64` container checks under
+emulation and ran offscreen on that MacBook. Those results do not qualify the new 1.5.0
+artifacts or installation on the Pixel running Omarchy Mobile. The aarch64 portable route
+needs glibc 2.39, so not Debian 12 or Ubuntu 22.04. The virtual iOS device needs an x86_64 host.
 
 | Virtual iOS area | Current state |
 | --- | --- |

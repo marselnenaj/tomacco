@@ -257,8 +257,21 @@ pub fn jpeg_size(data: &[u8]) -> Option<(u32, u32)> {
             continue;
         }
         let length = usize::from(u16::from_be_bytes([data[at + 2], data[at + 3]]));
-        if matches!(marker, 0xc0 | 0xc1 | 0xc2 | 0xc3 | 0xc5 | 0xc6 | 0xc7 | 0xc9 | 0xca | 0xcb | 0xcd | 0xce | 0xcf)
-        {
+        if matches!(
+            marker,
+            0xc0 | 0xc1
+                | 0xc2
+                | 0xc3
+                | 0xc5
+                | 0xc6
+                | 0xc7
+                | 0xc9
+                | 0xca
+                | 0xcb
+                | 0xcd
+                | 0xce
+                | 0xcf
+        ) {
             if length < 7 {
                 return None;
             }
@@ -397,9 +410,7 @@ impl Iphone {
     }
     /// A finger's W3C sequence from a trace of (x, y, t_ms) in 0..1.
     fn finger(&self, trace: &[(f64, f64, u64)]) -> Vec<Value> {
-        let at = |x: f64, y: f64| {
-            json!({"x":(x * (self.width - 1.0)).round(),"y":(y * (self.height - 1.0)).round()})
-        };
+        let at = |x: f64, y: f64| json!({"x":(x * (self.width - 1.0)).round(),"y":(y * (self.height - 1.0)).round()});
         let mut out = Vec::new();
         let first = at(trace[0].0, trace[0].1);
         out.push(json!({"type":"pointerMove","duration":0,"x":first["x"],"y":first["y"],"origin":"viewport"}));
@@ -467,8 +478,13 @@ impl field::FieldDriver for Iphone {
     fn active(&mut self) -> field::Step<Option<String>> {
         match self.call("GET", "/element/active", None).map_err(failure) {
             Ok(found) => match element_id(&found) {
-                Some(id) if identifier(id, "element ID", Some("[A-Za-z0-9-]+")).is_ok() => Ok(Some(id.to_string())),
-                Some(_) => Err(field::Failure::new(field::Fault::Refused, "WebDriverAgent answered an invalid element ID")),
+                Some(id) if identifier(id, "element ID", Some("[A-Za-z0-9-]+")).is_ok() => {
+                    Ok(Some(id.to_string()))
+                }
+                Some(_) => Err(field::Failure::new(
+                    field::Fault::Refused,
+                    "WebDriverAgent answered an invalid element ID",
+                )),
                 None => Ok(None),
             },
             Err(f) if f.fault == field::Fault::Missing => Ok(None),
@@ -524,9 +540,13 @@ impl field::FieldDriver for Iphone {
             .map_err(failure)
     }
     fn write(&mut self, id: &str, text: &str) -> field::Step<()> {
-        self.call("POST", &format!("/element/{id}/value"), Some(&json!({"value":[text]})))
-            .map(|_| ())
-            .map_err(failure)
+        self.call(
+            "POST",
+            &format!("/element/{id}/value"),
+            Some(&json!({"value":[text]})),
+        )
+        .map(|_| ())
+        .map_err(failure)
     }
     fn submit(&mut self) -> field::Step<()> {
         self.text("\n").map(|_| ()).map_err(failure)
@@ -814,14 +834,21 @@ impl Device for Iphone {
                 // (scale > 1) or together, in one atomic W3C request.
                 let (cx, cy) = (number(a, "x"), number(a, "y"));
                 let scale = number(a, "scale").clamp(0.05, 20.0);
-                let ms = (a["duration"].as_f64().unwrap_or(0.3).clamp(0.05, 5.0) * 1000.0).round() as u64;
+                let ms = (a["duration"].as_f64().unwrap_or(0.3).clamp(0.05, 5.0) * 1000.0).round()
+                    as u64;
                 let (from, to) = if scale >= 1.0 {
                     (0.08, (0.08 * scale).min(0.45))
                 } else {
                     (0.3, (0.3 * scale).max(0.02))
                 };
-                let left = vec![((cx - from).clamp(0.0, 1.0), cy, 0), ((cx - to).clamp(0.0, 1.0), cy, ms)];
-                let right = vec![((cx + from).clamp(0.0, 1.0), cy, 0), ((cx + to).clamp(0.0, 1.0), cy, ms)];
+                let left = vec![
+                    ((cx - from).clamp(0.0, 1.0), cy, 0),
+                    ((cx - to).clamp(0.0, 1.0), cy, ms),
+                ];
+                let right = vec![
+                    ((cx + from).clamp(0.0, 1.0), cy, 0),
+                    ((cx + to).clamp(0.0, 1.0), cy, ms),
+                ];
                 let (a1, a2) = (self.finger(&left), self.finger(&right));
                 self.pointer_sources(vec![("finger-1", json!(a1)), ("finger-2", json!(a2))])?;
                 Ok(json!({"delivered":true,"mode":"atomic_trace","contacts":2}))
@@ -838,9 +865,11 @@ impl Device for Iphone {
                 let count = sources.len();
                 let started = Instant::now();
                 self.pointer_sources(sources)?;
-                Ok(json!({"delivered":true,"mode":"atomic_trace","contacts":count,
+                Ok(
+                    json!({"delivered":true,"mode":"atomic_trace","contacts":count,
                     "elapsed_ms":started.elapsed().as_millis() as u64,
-                    "note":"The whole trace was submitted as one WebDriverAgent actions request; timing between contacts follows its tick model."}))
+                    "note":"The whole trace was submitted as one WebDriverAgent actions request; timing between contacts follows its tick model."}),
+                )
             }
             _ => Err(err(
                 "This input action is not supported by the physical iPhone transport",
@@ -861,18 +890,26 @@ impl Device for Iphone {
     }
     fn hierarchy(&mut self) -> Result {
         let value = self.call("GET", "/source", None)?;
-        Ok(json!({"xml":value,"transport":"usb/wda","format":"wda","point_width":self.width,"point_height":self.height}))
+        Ok(
+            json!({"xml":value,"transport":"usb/wda","format":"wda","point_width":self.width,"point_height":self.height}),
+        )
     }
     fn geometry(&mut self) -> Result {
         self.refresh_geometry(false)?;
         let h = self.shared_size();
         let (orientation, device_orientation, rotation) = orientation_facts(&self.orientation);
-        let scale = if self.width > 0.0 { f64::from(h.0) / self.width } else { 0.0 };
-        Ok(json!({"width":h.0,"height":h.1,"point_width":self.width,"point_height":self.height,
+        let scale = if self.width > 0.0 {
+            f64::from(h.0) / self.width
+        } else {
+            0.0
+        };
+        Ok(
+            json!({"width":h.0,"height":h.1,"point_width":self.width,"point_height":self.height,
             "scale":(scale * 100.0).round() / 100.0,"orientation":orientation,"device_orientation":device_orientation,
             "rotation":rotation,"geometry_epoch":self.seen_epoch,"size_requests":self.size_requests,
             "source":"wda /window/size and /orientation, cached until the MJPEG frame size changes",
-            "coordinate_space":super::coordinate_space()}))
+            "coordinate_space":super::coordinate_space()}),
+        )
     }
     fn context(&mut self) -> Result {
         let keyboard_query = json!({"using":"class chain","value":"**/XCUIElementTypeKeyboard"});
@@ -893,11 +930,15 @@ impl Device for Iphone {
                 json!({"available":!bundle.is_empty(),"bundle_id":bundle,"name":info["name"],"pid":info["pid"],
                     "home_screen":bundle == "com.apple.springboard","source":"wda /wda/activeAppInfo"})
             }
-            Err(error) => super::unavailable(&format!("wda /wda/activeAppInfo failed: {}", error.message)),
+            Err(error) => {
+                super::unavailable(&format!("wda /wda/activeAppInfo failed: {}", error.message))
+            }
         };
         let keyboard = match keyboard {
-            Ok(found) => json!({"available":true,"visible":found.as_array().is_some_and(|f| !f.is_empty()),
-                "source":"wda class chain **/XCUIElementTypeKeyboard"}),
+            Ok(found) => {
+                json!({"available":true,"visible":found.as_array().is_some_and(|f| !f.is_empty()),
+                "source":"wda class chain **/XCUIElementTypeKeyboard"})
+            }
             Err(error) => super::unavailable(&format!("wda /elements failed: {}", error.message)),
         };
         Ok(json!({"app":app,"keyboard":keyboard,"focus":Self::focused(focus)}))
@@ -1143,7 +1184,11 @@ mod tests {
         // The pinch is one request with two touch pointers that move apart.
         let pinch = actions
             .iter()
-            .find(|v| v["body"]["actions"].as_array().is_some_and(|a| a.len() == 2))
+            .find(|v| {
+                v["body"]["actions"]
+                    .as_array()
+                    .is_some_and(|a| a.len() == 2)
+            })
             .unwrap();
         let finger = |i: usize| pinch["body"]["actions"][i]["actions"].clone();
         assert!(finger(0)[0]["x"].as_f64().unwrap() > finger(0)[2]["x"].as_f64().unwrap());
@@ -1197,12 +1242,24 @@ mod tests {
     /// One WebDriverAgent answer, or None to drop the connection unanswered.
     fn answer(w: &mut Wda, method: &str, route: &str, body: &Value) -> Option<(u16, Value)> {
         let ok = |v: Value| Some((200, json!({"value":v})));
-        let fail = |status: u16, error: &str| Some((status, json!({"value":{"error":error,"message":format!("{error} (double)")}})));
-        let route = route.strip_prefix("/session/test").unwrap_or(route).to_string();
+        let fail = |status: u16, error: &str| {
+            Some((
+                status,
+                json!({"value":{"error":error,"message":format!("{error} (double)")}}),
+            ))
+        };
+        let route = route
+            .strip_prefix("/session/test")
+            .unwrap_or(route)
+            .to_string();
         let parts: Vec<&str> = route.trim_start_matches('/').split('/').collect();
         let shown = |e: &El| {
             if e.value.is_empty() {
-                if e.placeholder.is_empty() { Value::Null } else { json!(e.placeholder) }
+                if e.placeholder.is_empty() {
+                    Value::Null
+                } else {
+                    json!(e.placeholder)
+                }
             } else {
                 json!(e.value)
             }
@@ -1244,7 +1301,13 @@ mod tests {
                 ok(match *name {
                     "type" => json!(e.class),
                     "name" | "label" => json!(e.name),
-                    "placeholderValue" => if e.placeholder.is_empty() { Value::Null } else { json!(e.placeholder) },
+                    "placeholderValue" => {
+                        if e.placeholder.is_empty() {
+                            Value::Null
+                        } else {
+                            json!(e.placeholder)
+                        }
+                    }
                     "enabled" => json!(e.enabled),
                     "value" if e.class == field::SECURE => json!("\u{2022}\u{2022}\u{2022}"),
                     "value" => shown(e),
@@ -1252,7 +1315,9 @@ mod tests {
                 })
             }
             ("GET", ["element", id, "rect"]) => match w.elements.get(*id) {
-                Some(e) => ok(json!({"x":e.rect.0,"y":e.rect.1,"width":e.rect.2,"height":e.rect.3})),
+                Some(e) => {
+                    ok(json!({"x":e.rect.0,"y":e.rect.1,"width":e.rect.2,"height":e.rect.3}))
+                }
                 None => fail(404, "stale element reference"),
             },
             ("POST", ["element", id, "clear"]) => match w.elements.get_mut(*id) {
@@ -1268,7 +1333,11 @@ mod tests {
                 let Some(e) = w.elements.get_mut(*id) else {
                     return fail(404, "stale element reference");
                 };
-                e.value.push_str(&if mode == "autocorrect" { text.replace("teh", "the") } else { text });
+                e.value.push_str(&if mode == "autocorrect" {
+                    text.replace("teh", "the")
+                } else {
+                    text
+                });
                 match mode {
                     "lose_reply" => None,
                     "replace_after_write" => {
@@ -1285,7 +1354,14 @@ mod tests {
     }
     /// Runs a fill against the double; answers the result, every request in
     /// order and the values the double's fields hold afterwards.
-    fn fill_on(wda: Wda, a: Value) -> (Result, Vec<Value>, std::collections::BTreeMap<String, String>) {
+    fn fill_on(
+        wda: Wda,
+        a: Value,
+    ) -> (
+        Result,
+        Vec<Value>,
+        std::collections::BTreeMap<String, String>,
+    ) {
         let listener = TcpListener::bind((Ipv4Addr::LOCALHOST, 0)).unwrap();
         listener.set_nonblocking(true).unwrap();
         let port = listener.local_addr().unwrap().port();
@@ -1300,13 +1376,18 @@ mod tests {
                     continue;
                 };
                 socket.set_nonblocking(false).unwrap();
-                socket.set_read_timeout(Some(Duration::from_secs(2))).unwrap();
+                socket
+                    .set_read_timeout(Some(Duration::from_secs(2)))
+                    .unwrap();
                 let mut reader = BufReader::new(socket.try_clone().unwrap());
                 let mut line = String::new();
                 if reader.read_line(&mut line).unwrap_or(0) == 0 {
                     continue;
                 }
-                let words = line.split_whitespace().map(str::to_string).collect::<Vec<_>>();
+                let words = line
+                    .split_whitespace()
+                    .map(str::to_string)
+                    .collect::<Vec<_>>();
                 let mut length = 0;
                 loop {
                     line.clear();
@@ -1324,12 +1405,17 @@ mod tests {
                 reader.read_exact(&mut body).unwrap();
                 let body = serde_json::from_slice::<Value>(&body).unwrap_or(Value::Null);
                 let mut w = shared.lock().unwrap();
-                w.calls.push(json!({"method":words[0],"route":words[1],"body":body}));
+                w.calls
+                    .push(json!({"method":words[0],"route":words[1],"body":body}));
                 let reply = answer(&mut w, &words[0], &words[1], &body);
                 drop(w);
                 if let Some((status, value)) = reply {
                     let text = value.to_string();
-                    let _ = write!(socket, "HTTP/1.1 {status} OK\r\nContent-Type: application/json\r\nContent-Length: {}\r\nConnection: close\r\n\r\n{text}", text.len());
+                    let _ = write!(
+                        socket,
+                        "HTTP/1.1 {status} OK\r\nContent-Type: application/json\r\nContent-Length: {}\r\nConnection: close\r\n\r\n{text}",
+                        text.len()
+                    );
                 }
                 // None: the request was carried out and the answer is lost.
             }
@@ -1357,7 +1443,11 @@ mod tests {
         stop.store(true, Ordering::Relaxed);
         server.join().unwrap();
         let w = state.lock().unwrap();
-        let values = w.elements.iter().map(|(k, e)| (k.clone(), e.value.clone())).collect();
+        let values = w
+            .elements
+            .iter()
+            .map(|(k, e)| (k.clone(), e.value.clone()))
+            .collect();
         (result, w.calls.clone(), values)
     }
     fn requests(calls: &[Value], method: &str, suffix: &str) -> usize {
@@ -1368,7 +1458,10 @@ mod tests {
     }
     /// The clears and value writes the double received.
     fn writes(calls: &[Value]) -> (usize, usize) {
-        (requests(calls, "POST", "/clear"), requests(calls, "POST", "/value"))
+        (
+            requests(calls, "POST", "/clear"),
+            requests(calls, "POST", "/value"),
+        )
     }
     /// A screen with the intended field at the tap (0.5, 0.2 is 195, 169 in
     /// points) and another one below it.
@@ -1379,37 +1472,75 @@ mod tests {
             ..Default::default()
         };
         w.elements.insert("field-1".into(), field);
-        w.elements.insert("other-1".into(), el("XCUIElementTypeTextField", "other", "", "kept", 400.0));
+        w.elements.insert(
+            "other-1".into(),
+            el("XCUIElementTypeTextField", "other", "", "kept", 400.0),
+        );
         w
     }
     fn fill(text: &str) -> Value {
         json!({"action":"fill","x":0.5,"y":0.2,"text":text,"verify_value":true,"focus_timeout_ms":400})
     }
     fn code(result: &Result) -> String {
-        result.as_ref().err().map(|e| e.code.clone()).unwrap_or_default()
+        result
+            .as_ref()
+            .err()
+            .map(|e| e.code.clone())
+            .unwrap_or_default()
     }
     fn details(result: &Result) -> Value {
-        result.as_ref().err().and_then(|e| e.details.as_deref().cloned()).unwrap_or(Value::Null)
+        result
+            .as_ref()
+            .err()
+            .and_then(|e| e.details.as_deref().cloned())
+            .unwrap_or(Value::Null)
     }
     const FIELD: &str = "XCUIElementTypeTextField";
     const SEARCH: &str = "XCUIElementTypeSearchField";
 
     #[test]
     fn a_verified_fill_reads_the_exact_value_back_and_skips_a_matching_one() {
-        let (result, calls, values) = fill_on(screen(el(FIELD, "email", "Email", "old@example.com", 150.0)), fill("ana@example.com"));
+        let (result, calls, values) = fill_on(
+            screen(el(FIELD, "email", "Email", "old@example.com", 150.0)),
+            fill("ana@example.com"),
+        );
         let result = result.unwrap();
-        assert_eq!((result["verified"].clone(), result["field_status"].clone()), (json!(true), json!("verified")));
-        assert_eq!(result["writes"], json!([{"op":"clear","outcome":"answered"},{"op":"value","outcome":"answered"}]));
+        assert_eq!(
+            (result["verified"].clone(), result["field_status"].clone()),
+            (json!(true), json!("verified"))
+        );
+        assert_eq!(
+            result["writes"],
+            json!([{"op":"clear","outcome":"answered"},{"op":"value","outcome":"answered"}])
+        );
         assert_eq!(result["editor"]["element"], "field-1");
         assert_eq!(result["before"], json!({"state":"text","chars":15}));
         assert_eq!(writes(&calls), (1, 1));
         assert_eq!(values["field-1"], "ana@example.com");
         // Read before and after the write, on the same element ID.
-        assert_eq!(requests(&calls, "GET", "/element/field-1/attribute/value"), 2);
-        let order: Vec<&str> = calls.iter().map(|c| s(c, "route")).filter(|r| r.contains("field-1") && (r.ends_with("/value") || r.ends_with("/clear"))).collect();
-        assert_eq!(order, ["/session/test/element/field-1/attribute/value", "/session/test/element/field-1/clear", "/session/test/element/field-1/value", "/session/test/element/field-1/attribute/value"]);
+        assert_eq!(
+            requests(&calls, "GET", "/element/field-1/attribute/value"),
+            2
+        );
+        let order: Vec<&str> = calls
+            .iter()
+            .map(|c| s(c, "route"))
+            .filter(|r| r.contains("field-1") && (r.ends_with("/value") || r.ends_with("/clear")))
+            .collect();
+        assert_eq!(
+            order,
+            [
+                "/session/test/element/field-1/attribute/value",
+                "/session/test/element/field-1/clear",
+                "/session/test/element/field-1/value",
+                "/session/test/element/field-1/attribute/value"
+            ]
+        );
         // Already holding the text: verified with nothing written.
-        let (result, calls, _) = fill_on(screen(el(FIELD, "email", "Email", "ana@example.com", 150.0)), fill("ana@example.com"));
+        let (result, calls, _) = fill_on(
+            screen(el(FIELD, "email", "Email", "ana@example.com", 150.0)),
+            fill("ana@example.com"),
+        );
         let result = result.unwrap();
         assert_eq!(result["field_status"], "already_matching");
         assert_eq!(result["writes"], json!([]));
@@ -1421,17 +1552,27 @@ mod tests {
     fn a_placeholder_equal_to_the_text_is_never_taken_for_entered_text() {
         // Empty, showing "Search": not skipped, written once, and the read-back
         // "Search" cannot be told from the placeholder, so it is uncertain.
-        let (result, calls, values) = fill_on(screen(el(SEARCH, "query", "Search", "", 150.0)), fill("Search"));
+        let (result, calls, values) = fill_on(
+            screen(el(SEARCH, "query", "Search", "", 150.0)),
+            fill("Search"),
+        );
         assert_eq!(code(&result), "field_uncertain");
         assert_eq!(details(&result)["reason"], "value_matches_placeholder");
         assert_eq!(details(&result)["before"]["state"], "placeholder");
         assert_eq!(writes(&calls).1, 1, "typed exactly once, never again");
         assert_eq!(values["field-1"], "Search");
         // Clearing a field to its placeholder is verified: no entered text is left.
-        let (result, calls, values) = fill_on(screen(el(SEARCH, "query", "Search", "old query", 150.0)), fill(""));
+        let (result, calls, values) = fill_on(
+            screen(el(SEARCH, "query", "Search", "old query", 150.0)),
+            fill(""),
+        );
         let result = result.unwrap();
         assert_eq!(result["value"]["shows_placeholder"], true);
-        assert_eq!(writes(&calls), (1, 0), "an empty text clears and types nothing");
+        assert_eq!(
+            writes(&calls),
+            (1, 0),
+            "an empty text clears and types nothing"
+        );
         assert_eq!(values["field-1"], "");
     }
 
@@ -1467,7 +1608,11 @@ mod tests {
         let (result, _, _) = fill_on(screen(moved.clone()), a.clone());
         assert_eq!(result.unwrap()["field_status"], "verified");
         let (result, _, _) = fill_on(screen(moved), fill("tomacco"));
-        assert_eq!(code(&result), "field_wrong_target", "without a name, a field away from the tap is not trusted");
+        assert_eq!(
+            code(&result),
+            "field_wrong_target",
+            "without a name, a field away from the tap is not trusted"
+        );
     }
 
     #[test]
@@ -1500,12 +1645,22 @@ mod tests {
         let (result, calls, values) = fill_on(w, fill("Ada"));
         assert_eq!(code(&result), "field_uncertain");
         assert_eq!(details(&result)["reason"], "write_unknown");
-        assert_eq!(details(&result)["writes"], json!([{"op":"value","outcome":"lost_reply"}]));
+        assert_eq!(
+            details(&result)["writes"],
+            json!([{"op":"value","outcome":"lost_reply"}])
+        );
         assert_eq!(details(&result)["retried"], false);
         assert_eq!(writes(&calls), (0, 1));
         assert_eq!(values["field-1"], "Ada", "the double did type it");
-        let last = calls.iter().rev().find(|c| c["method"] != "DELETE").unwrap();
-        assert!(s(last, "route").ends_with("/element/field-1/value"), "nothing followed the lost write: {last}");
+        let last = calls
+            .iter()
+            .rev()
+            .find(|c| c["method"] != "DELETE")
+            .unwrap();
+        assert!(
+            s(last, "route").ends_with("/element/field-1/value"),
+            "nothing followed the lost write: {last}"
+        );
     }
 
     #[test]
@@ -1515,24 +1670,44 @@ mod tests {
         let result = result.unwrap();
         assert_eq!(result["value"]["chars"], text.chars().count());
         assert_eq!(values["field-1"], text);
-        let write = calls.iter().find(|c| s(c, "route").ends_with("/element/field-1/value")).unwrap();
+        let write = calls
+            .iter()
+            .find(|c| s(c, "route").ends_with("/element/field-1/value"))
+            .unwrap();
         assert_eq!(write["body"]["value"], json!([text]));
         // Precomposed and decomposed é are different texts: not verified.
-        let (result, calls, _) = fill_on(screen(el(FIELD, "name", "", "caf\u{e9}", 150.0)), fill("cafe\u{301}"));
+        let (result, calls, _) = fill_on(
+            screen(el(FIELD, "name", "", "caf\u{e9}", 150.0)),
+            fill("cafe\u{301}"),
+        );
         assert_eq!(result.unwrap()["field_status"], "verified");
-        assert_eq!(writes(&calls), (1, 1), "a canonically equal value is still rewritten, not skipped");
+        assert_eq!(
+            writes(&calls),
+            (1, 1),
+            "a canonically equal value is still rewritten, not skipped"
+        );
     }
 
     #[test]
     fn secure_and_unsupported_editors_are_refused_unread() {
-        let (result, calls, values) = fill_on(screen(el(field::SECURE, "password", "Password", "hunter2", 150.0)), fill("x"));
+        let (result, calls, values) = fill_on(
+            screen(el(field::SECURE, "password", "Password", "hunter2", 150.0)),
+            fill("x"),
+        );
         assert_eq!(code(&result), "field_unsupported");
         assert_eq!(details(&result)["reason"], "secure_field");
-        assert_eq!(requests(&calls, "GET", "/attribute/value"), 0, "a secure field's value is never requested");
+        assert_eq!(
+            requests(&calls, "GET", "/attribute/value"),
+            0,
+            "a secure field's value is never requested"
+        );
         assert_eq!(writes(&calls), (0, 0));
         assert_eq!(values["field-1"], "hunter2");
         assert!(!result.unwrap_err().value().to_string().contains("hunter2"));
-        let (result, calls, _) = fill_on(screen(el("XCUIElementTypeButton", "Go", "", "", 150.0)), fill("x"));
+        let (result, calls, _) = fill_on(
+            screen(el("XCUIElementTypeButton", "Go", "", "", 150.0)),
+            fill("x"),
+        );
         assert_eq!(code(&result), "field_unsupported");
         assert_eq!(details(&result)["reason"], "not_a_text_editor");
         assert_eq!(writes(&calls), (0, 0));
@@ -1547,14 +1722,24 @@ mod tests {
     fn submit_sends_one_return_only_after_the_value_is_verified() {
         let mut a = fill("tomacco");
         a["submit"] = json!(true);
-        let (result, calls, _) = fill_on(screen(el(SEARCH, "query", "Search", "", 150.0)), a.clone());
+        let (result, calls, _) =
+            fill_on(screen(el(SEARCH, "query", "Search", "", 150.0)), a.clone());
         let result = result.unwrap();
         assert_eq!(result["submitted"], true);
-        let keys: Vec<&Value> = calls.iter().filter(|c| s(c, "route").ends_with("/wda/keys")).collect();
+        let keys: Vec<&Value> = calls
+            .iter()
+            .filter(|c| s(c, "route").ends_with("/wda/keys"))
+            .collect();
         assert_eq!(keys.len(), 1);
         assert_eq!(keys[0]["body"]["value"], json!(["\n"]));
-        let value_at = calls.iter().position(|c| s(c, "route").ends_with("/element/field-1/value")).unwrap();
-        let keys_at = calls.iter().position(|c| s(c, "route").ends_with("/wda/keys")).unwrap();
+        let value_at = calls
+            .iter()
+            .position(|c| s(c, "route").ends_with("/element/field-1/value"))
+            .unwrap();
+        let keys_at = calls
+            .iter()
+            .position(|c| s(c, "route").ends_with("/wda/keys"))
+            .unwrap();
         assert!(keys_at > value_at);
         // A value that does not match is not submitted.
         let mut w = screen(el(SEARCH, "query", "Search", "", 150.0));
@@ -1565,7 +1750,10 @@ mod tests {
         assert_eq!(code(&result), "field_uncertain");
         assert_eq!(requests(&calls, "POST", "/wda/keys"), 0);
         // submit without verify_value is refused before anything is sent.
-        let (result, calls, _) = fill_on(screen(el(SEARCH, "query", "", "", 150.0)), json!({"action":"fill","x":0.5,"y":0.2,"text":"a","submit":true}));
+        let (result, calls, _) = fill_on(
+            screen(el(SEARCH, "query", "", "", 150.0)),
+            json!({"action":"fill","x":0.5,"y":0.2,"text":"a","submit":true}),
+        );
         assert_eq!(code(&result), "invalid_argument");
         assert!(calls.iter().all(|c| c["method"] == "DELETE"), "{calls:?}");
     }
@@ -1573,7 +1761,11 @@ mod tests {
     #[test]
     fn an_unreachable_agent_is_named_and_nothing_counts_as_typed() {
         // No double behind the port: the tap was never sent.
-        let port = TcpListener::bind((Ipv4Addr::LOCALHOST, 0)).unwrap().local_addr().unwrap().port();
+        let port = TcpListener::bind((Ipv4Addr::LOCALHOST, 0))
+            .unwrap()
+            .local_addr()
+            .unwrap()
+            .port();
         let mut device = Iphone {
             rt: tokio::runtime::Runtime::new().unwrap(),
             http: Http { port },
@@ -1605,7 +1797,10 @@ mod tests {
         assert_eq!(jpeg_size(&jpeg), Some((390, 844)));
         assert_eq!(jpeg_size(b"\xff\xd8\xff\xd9"), None);
         assert_eq!(jpeg_size(b"\x89PNG"), None);
-        assert_eq!(orientation_facts("UIA_DEVICE_ORIENTATION_LANDSCAPERIGHT"), ("landscape", "landscape_right", 3));
+        assert_eq!(
+            orientation_facts("UIA_DEVICE_ORIENTATION_LANDSCAPERIGHT"),
+            ("landscape", "landscape_right", 3)
+        );
     }
     #[test]
     fn fragmented_mjpeg_is_bounded_and_rejects_corrupt_frames() {

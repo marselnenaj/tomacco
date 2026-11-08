@@ -40,7 +40,10 @@ pub fn mask_device_ids(text: &str, table: &mut BTreeMap<String, String>) -> Stri
                 } else {
                     (String::new(), caps[0].to_string())
                 };
-                if id.starts_with("emulator-") || id.eq_ignore_ascii_case("airplay") || id.chars().all(|c| c.is_ascii_digit()) && id.len() < 8 {
+                if id.starts_with("emulator-")
+                    || id.eq_ignore_ascii_case("airplay")
+                    || id.chars().all(|c| c.is_ascii_digit()) && id.len() < 8
+                {
                     return format!("{prefix}{id}");
                 }
                 let next = table.len() + 1;
@@ -73,9 +76,17 @@ pub fn absolute_paths(text: &str) -> Vec<String> {
     found
 }
 
-fn scrub(text: &str, home: Option<&str>, table: &mut BTreeMap<String, String>, mask_devices: bool) -> (String, usize) {
+fn scrub(
+    text: &str,
+    home: Option<&str>,
+    table: &mut BTreeMap<String, String>,
+    mask_devices: bool,
+) -> (String, usize) {
     let masked = redact::text(text).into_owned();
-    let secrets = masked.matches(redact::MASK).count().saturating_sub(text.matches(redact::MASK).count());
+    let secrets = masked
+        .matches(redact::MASK)
+        .count()
+        .saturating_sub(text.matches(redact::MASK).count());
     let mut out = match home.filter(|h| h.len() > 1) {
         Some(home) => masked.replace(home, "~"),
         None => masked,
@@ -89,7 +100,10 @@ fn scrub(text: &str, home: Option<&str>, table: &mut BTreeMap<String, String>, m
 fn text_argument(a: &Value, key: &str, limit: usize) -> Result<String> {
     let value = s(a, key).trim().to_string();
     if value.chars().count() > limit {
-        return Err(Error::new("invalid_argument", format!("{key} is at most {limit} characters")));
+        return Err(Error::new(
+            "invalid_argument",
+            format!("{key} is at most {limit} characters"),
+        ));
     }
     Ok(value)
 }
@@ -101,7 +115,10 @@ fn fenced(text: &str) -> String {
 pub fn draft(a: &Value) -> Result {
     let title = text_argument(a, "title", 120)?;
     if title.is_empty() {
-        return Err(Error::new("invalid_argument", "title says what went wrong, in one line"));
+        return Err(Error::new(
+            "invalid_argument",
+            "title says what went wrong, in one line",
+        ));
     }
     let steps = text_argument(a, "steps", 4000)?;
     let expected = text_argument(a, "expected", 2000)?;
@@ -118,7 +135,10 @@ pub fn draft(a: &Value) -> Result {
     } else {
         let given = path(s(a, "directory"), false, false)?;
         if given.exists() && (!given.is_dir() || fs::read_dir(&given)?.next().is_some()) {
-            return Err(Error::new("path_exists", "Choose an empty or new directory for the draft"));
+            return Err(Error::new(
+                "path_exists",
+                "Choose an empty or new directory for the draft",
+            ));
         }
         given
     };
@@ -131,7 +151,9 @@ pub fn draft(a: &Value) -> Result {
     // The bundle, as diagnostics.bundle writes it, is the first attachment.
     let bundle = if a["bundle"].as_bool().unwrap_or(true) {
         let target = directory.join("attachments").join("tomacco-report.tar.gz");
-        match diagnostics::bundle(&json!({"path":target,"jobs":count,"log_kb":log_limit / 1024,"anonymize_home":anonymize})) {
+        match diagnostics::bundle(
+            &json!({"path":target,"jobs":count,"log_kb":log_limit / 1024,"anonymize_home":anonymize}),
+        ) {
             Ok(written) => Some(written),
             Err(error) => Some(json!({"error":error.value()})),
         }
@@ -151,11 +173,13 @@ pub fn draft(a: &Value) -> Result {
     // Ids are learnt over every text first, so one named with a prefix in
     // the steps is masked where it appears bare in a log.
     if mask_devices {
-        let mut probe = format!("{title}
+        let mut probe = format!(
+            "{title}
 {steps}
 {expected}
 {actual}
-");
+"
+        );
         for (job, tail) in &tails {
             probe.push_str(s(job, "label"));
             probe.push('\n');
@@ -171,11 +195,27 @@ pub fn draft(a: &Value) -> Result {
                 let id = s(&job, "id").to_string();
                 let (clean, n) = scrub(&tail, home.as_deref(), &mut table, mask_devices);
                 secrets_masked += n;
-                let last: Vec<&str> = clean.lines().rev().take(40).collect::<Vec<_>>().into_iter().rev().collect();
+                let last: Vec<&str> = clean
+                    .lines()
+                    .rev()
+                    .take(40)
+                    .collect::<Vec<_>>()
+                    .into_iter()
+                    .rev()
+                    .collect();
                 let (label, n) = scrub(s(&job, "label"), home.as_deref(), &mut table, mask_devices);
                 secrets_masked += n;
-                excerpts.push_str(&format!("### {} ({}, `{}`)\n\n{}\n", label, s(&job, "state"), &id[..8], fenced(&last.join("\n"))));
-                files.push((format!("attachments/job-{}.log", &id[..8]), clean.into_bytes()));
+                excerpts.push_str(&format!(
+                    "### {} ({}, `{}`)\n\n{}\n",
+                    label,
+                    s(&job, "state"),
+                    &id[..8],
+                    fenced(&last.join("\n"))
+                ));
+                files.push((
+                    format!("attachments/job-{}.log", &id[..8]),
+                    clean.into_bytes(),
+                ));
                 job_list.push(json!({"id":id,"label":label,"state":job["state"]}));
             }
         }
@@ -192,11 +232,23 @@ pub fn draft(a: &Value) -> Result {
         host["memory_bytes"].as_u64().map_or("unknown".to_string(), |b| format!("{} GiB", b / (1024 * 1024 * 1024))),
         host["kvm"], s(&host, "session"), s(&host, "desktop")));
     issue.push_str("## Steps\n\n");
-    issue.push_str(if steps_clean.is_empty() { "_(describe what you did)_\n" } else { &steps_clean });
+    issue.push_str(if steps_clean.is_empty() {
+        "_(describe what you did)_\n"
+    } else {
+        &steps_clean
+    });
     issue.push_str("\n\n## Expected\n\n");
-    issue.push_str(if expected_clean.is_empty() { "_(what should have happened)_\n" } else { &expected_clean });
+    issue.push_str(if expected_clean.is_empty() {
+        "_(what should have happened)_\n"
+    } else {
+        &expected_clean
+    });
     issue.push_str("\n\n## What happened\n\n");
-    issue.push_str(if actual_clean.is_empty() { "_(what happened instead)_\n" } else { &actual_clean });
+    issue.push_str(if actual_clean.is_empty() {
+        "_(what happened instead)_\n"
+    } else {
+        &actual_clean
+    });
     issue.push_str("\n\n");
     if !excerpts.is_empty() {
         issue.push_str("## Jobs that did not succeed\n\n");
@@ -215,7 +267,12 @@ pub fn draft(a: &Value) -> Result {
     }
     issue.push_str("## Attachments\n\n");
     for attachment in &attachments {
-        issue.push_str(&format!("- `{}` ({} bytes, sha256 {})\n", s(attachment, "name"), attachment["bytes"], s(attachment, "sha256")));
+        issue.push_str(&format!(
+            "- `{}` ({} bytes, sha256 {})\n",
+            s(attachment, "name"),
+            attachment["bytes"],
+            s(attachment, "sha256")
+        ));
     }
     if attachments.is_empty() {
         issue.push_str("- none\n");
@@ -273,18 +330,37 @@ mod tests {
         let mut table = BTreeMap::new();
         let text = "adb -s R5CT30ABCDE shell; udid 00008110-001A2B3C4D5E6F7A on emulator-5554; again R5CT30ABCDE and 0123456789abcdef0123456789abcdef01234567";
         let out = mask_device_ids(text, &mut table);
-        assert_eq!(out, "adb -s [device-3] shell; udid [device-1] on emulator-5554; again [device-3] and [device-2]");
+        assert_eq!(
+            out,
+            "adb -s [device-3] shell; udid [device-1] on emulator-5554; again [device-3] and [device-2]"
+        );
         assert_eq!(table.len(), 3);
-        assert_eq!(urlencode("Crash on sign-in: 50% fail"), "Crash%20on%20sign-in%3A%2050%25%20fail");
-        let paths = absolute_paths("saw /tmp/build/app.apk and ~/x and /opt/android-sdk/platform-tools (ok)");
-        assert_eq!(paths, vec!["/opt/android-sdk/platform-tools", "/tmp/build/app.apk"]);
+        assert_eq!(
+            urlencode("Crash on sign-in: 50% fail"),
+            "Crash%20on%20sign-in%3A%2050%25%20fail"
+        );
+        let paths = absolute_paths(
+            "saw /tmp/build/app.apk and ~/x and /opt/android-sdk/platform-tools (ok)",
+        );
+        assert_eq!(
+            paths,
+            vec!["/opt/android-sdk/platform-tools", "/tmp/build/app.apk"]
+        );
     }
     #[test]
     fn scrubbing_counts_secrets_and_replaces_the_home() {
         let mut table = BTreeMap::new();
-        let (out, secrets) = scrub("token ghp_0123456789abcdefABCDEF0123 in /home/ana/app with serial R5CT30ABCDE", Some("/home/ana"), &mut table, true);
+        let (out, secrets) = scrub(
+            "token ghp_0123456789abcdefABCDEF0123 in /home/ana/app with serial R5CT30ABCDE",
+            Some("/home/ana"),
+            &mut table,
+            true,
+        );
         assert_eq!(secrets, 1);
-        assert!(out.contains("[redacted]") && out.contains("~/app") && out.contains("[device-1]"), "{out}");
+        assert!(
+            out.contains("[redacted]") && out.contains("~/app") && out.contains("[device-1]"),
+            "{out}"
+        );
         let (kept, _) = scrub("serial R5CT30ABCDE", None, &mut BTreeMap::new(), false);
         assert!(kept.contains("R5CT30ABCDE"));
     }

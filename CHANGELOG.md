@@ -6,9 +6,15 @@ operations and their JSON results.
 
 ## Unreleased
 
+## 1.5.0 — 2026-11-08
+
 `tomaccoctl` now has one typed API of 296 operations.
 
 ### Added
+- **50 translation catalogs plus English.** All 1,898 marked interface texts have finished translations, with placeholder, plural, markup and stale-entry checks. This is technical coverage, not native-speaker approval.
+- **Adaptive phone workspace.** The same Qt app switches navigation, content and controls for narrow windows and interface scale. Physical Pixel deployment remains a separate qualification.
+- **Agent-controlled Demo Studio.** Compose local recordings in perspective-rendered generic device frames, preview stills and export checked MP4 files through revisioned scenes and durable jobs. This is a procedural QPainter renderer, not arbitrary 3D scene editing.
+- **Optional OCR policies.** `screen.ocr` adds opt-in `invert:adaptive`, compact `detail:matches`, actual engine-call counts and separate capture/read/total timings. The default `auto` still reads both polarities; OCR actions, finds, waits and absence checks retain it. Adaptive results can miss other words and duplicates.
 - **Original sound in Demo Studio.** Saved scenes can opt into the recording's first audio track. Exports trim and align AAC audio with the video, preserve gaps, and independently decode both streams. Old scenes and new defaults remain muted; PNG previews stay silent. The desktop and agent API share the same revisioned setting.
 - **One fresh look for agents.** `runtime.observe` answers a frame with its id, time and age, the
   geometry it was taken in, the foreground app, keyboard and focus where the transport reports them
@@ -140,6 +146,9 @@ operations and their JSON results.
   BlueZ serves no pointer for the session.
 
 ### Changed
+- **Bounded warm OCR in persistent MCP sessions.** A recognized system Tesseract 5 can reuse one isolated model worker for eligible images up to 9 MP. Cold CLI calls, custom binaries, PATH wrappers, larger images and busy workers use the existing subprocess route. Explicit OpenMP settings are preserved. Time/output/memory bounds, cancellation, recycling and idle reaping prevent unbounded retention; a failed dispatched recognition is never silently repeated. The full public 64 MP image limit remains available through CLI fallback.
+- **Measured local performance.** The pre-release integrated corpus measured a median matched new/old elapsed ratio of 0.313 for warm fresh-image MCP reads and 0.860 for the explicit-system CLI route. Full non-timing outputs matched across 360 comparisons. The warm model raises resident memory until cleanup; these are offline, route-specific results, not hardware or competitor rankings. See `docs/performance-final-qualification.json` for the exact measured binary and source boundary.
+- **Fresh iPhone context in parallel.** Independent app, keyboard and focus reads share one WDA session and await all outcomes, preserving per-field errors and ordered input. Delayed loopback measurements are not physical-iPhone latency.
 - A USB iPhone's point size is cached and refreshed only after a rotation or when its MJPEG frames
   change size, instead of one `/window/size` request before every tap. An unchanged frame is not
   read by Tesseract again within one process (`cached: true` in `screen.ocr`).

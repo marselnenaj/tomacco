@@ -137,8 +137,14 @@ fn xml_escape(text: &str) -> String {
 pub fn wda_to_uiautomator(xml: &str, scale: f64, rotation: u64) -> Result<String> {
     let document = roxmltree::Document::parse(xml)
         .map_err(|e| Error::new("invalid_hierarchy", e.to_string()))?;
-    let scale = if scale.is_finite() && scale > 0.0 { scale } else { 1.0 };
-    let mut out = format!("<?xml version='1.0' encoding='UTF-8'?><hierarchy rotation=\"{rotation}\" source=\"wda\">");
+    let scale = if scale.is_finite() && scale > 0.0 {
+        scale
+    } else {
+        1.0
+    };
+    let mut out = format!(
+        "<?xml version='1.0' encoding='UTF-8'?><hierarchy rotation=\"{rotation}\" source=\"wda\">"
+    );
     fn walk(element: roxmltree::Node, scale: f64, out: &mut String) {
         for child in element.children().filter(|c| c.is_element()) {
             let kind = child.tag_name().name();
@@ -149,7 +155,8 @@ pub fn wda_to_uiautomator(xml: &str, scale: f64, rotation: u64) -> Result<String
             let attribute = |name: &str| child.attribute(name).unwrap_or("");
             let short = kind.trim_start_matches("XCUIElementType");
             let visible = attribute("visible") != "false";
-            let px = |name: &str| (attribute(name).parse::<f64>().unwrap_or(0.0) * scale).round() as i64;
+            let px =
+                |name: &str| (attribute(name).parse::<f64>().unwrap_or(0.0) * scale).round() as i64;
             let (l, t, w, h) = (px("x"), px("y"), px("width"), px("height"));
             let bounds = if visible && w > 0 && h > 0 {
                 format!("[{l},{t}][{},{}]", l + w, t + h)
@@ -159,19 +166,52 @@ pub fn wda_to_uiautomator(xml: &str, scale: f64, rotation: u64) -> Result<String
             let value = attribute("value");
             let label = attribute("label");
             let name = attribute("name");
-            let editable = matches!(short, "TextField" | "SecureTextField" | "TextView" | "SearchField");
+            let editable = matches!(
+                short,
+                "TextField" | "SecureTextField" | "TextView" | "SearchField"
+            );
             let checkable = matches!(short, "Switch" | "Toggle");
             let clickable = matches!(
                 short,
-                "Button" | "Cell" | "Link" | "Switch" | "Toggle" | "SegmentedControl" | "Tab" | "MenuItem" | "Key"
-                    | "PageIndicator" | "Stepper" | "Slider" | "Picker" | "PickerWheel" | "Image" | "Icon"
-                    | "CollectionView" | "TabBar" | "NavigationBar"
-            ) && !matches!(short, "CollectionView" | "TabBar" | "NavigationBar" | "Image" | "Icon")
-                || (matches!(short, "Image" | "Icon") && !name.is_empty() && attribute("accessible") == "true");
+                "Button"
+                    | "Cell"
+                    | "Link"
+                    | "Switch"
+                    | "Toggle"
+                    | "SegmentedControl"
+                    | "Tab"
+                    | "MenuItem"
+                    | "Key"
+                    | "PageIndicator"
+                    | "Stepper"
+                    | "Slider"
+                    | "Picker"
+                    | "PickerWheel"
+                    | "Image"
+                    | "Icon"
+                    | "CollectionView"
+                    | "TabBar"
+                    | "NavigationBar"
+            ) && !matches!(
+                short,
+                "CollectionView" | "TabBar" | "NavigationBar" | "Image" | "Icon"
+            ) || (matches!(short, "Image" | "Icon")
+                && !name.is_empty()
+                && attribute("accessible") == "true");
             let scrollable = matches!(short, "ScrollView" | "Table" | "CollectionView" | "WebView");
             // UIAutomator's text is what is shown; the description is the accessibility label.
-            let text = if checkable || (!editable && value.is_empty()) { label } else { value };
-            let description = if label != text { label } else if name != text { name } else { "" };
+            let text = if checkable || (!editable && value.is_empty()) {
+                label
+            } else {
+                value
+            };
+            let description = if label != text {
+                label
+            } else if name != text {
+                name
+            } else {
+                ""
+            };
             let checked = checkable && (value == "1" || value == "true" || value == "on");
             out.push_str(&format!(
                 "<node class=\"{}\" text=\"{}\" content-desc=\"{}\" resource-id=\"{}\" package=\"\" bounds=\"{}\" clickable=\"{}\" long-clickable=\"false\" checkable=\"{}\" checked=\"{}\" enabled=\"{}\" focused=\"{}\" focusable=\"{}\" scrollable=\"{}\" selected=\"{}\" password=\"{}\">",
@@ -512,9 +552,15 @@ pub fn numbering(nodes: &[Node], limit: usize) -> Vec<Option<usize>> {
 /// Classes that hold repeated items.
 fn collection(n: &Node) -> bool {
     let class = n.short_class();
-    ["RecyclerView", "ListView", "GridView", "XCUIElementTypeTable", "XCUIElementTypeCollectionView"]
-        .iter()
-        .any(|c| class.ends_with(c))
+    [
+        "RecyclerView",
+        "ListView",
+        "GridView",
+        "XCUIElementTypeTable",
+        "XCUIElementTypeCollectionView",
+    ]
+    .iter()
+    .any(|c| class.ends_with(c))
 }
 
 fn container(n: &Node) -> bool {
@@ -530,7 +576,11 @@ fn inside(inner: Rect, outer: Rect) -> bool {
 fn viewport(nodes: &[Node]) -> (i64, i64) {
     let windows = nodes.iter().filter(|n| n.parent.is_none() && n.has_area());
     let (w, h) = windows.fold((0, 0), |(w, h), n| (w.max(n.rect.2), h.max(n.rect.3)));
-    if w > 0 && h > 0 { (w, h) } else { screen_size(nodes) }
+    if w > 0 && h > 0 {
+        (w, h)
+    } else {
+        screen_size(nodes)
+    }
 }
 
 /// Whether a node lies wholly outside the screen.
@@ -562,7 +612,12 @@ pub fn folding(nodes: &[Node]) -> Vec<Option<usize>> {
     let mut into = vec![None; count];
     let mut groups: std::collections::BTreeMap<usize, Vec<usize>> = Default::default();
     for (i, n) in nodes.iter().enumerate() {
-        let leaf = shown(n) && has_text(n) && !n.interactive() && !container(n) && !n.password && !shown_below[i];
+        let leaf = shown(n)
+            && has_text(n)
+            && !n.interactive()
+            && !container(n)
+            && !n.password
+            && !shown_below[i];
         if !leaf {
             continue;
         }
@@ -664,11 +719,18 @@ pub fn compact(
     let into = folding(nodes);
     let hidden = nodes
         .iter()
-        .filter(|n| !n.has_area() && (n.interactive() || !n.text.trim().is_empty() || !n.description.trim().is_empty()))
+        .filter(|n| {
+            !n.has_area()
+                && (n.interactive()
+                    || !n.text.trim().is_empty()
+                    || !n.description.trim().is_empty())
+        })
         .count();
     let wanted = |i: usize| {
         let n = &nodes[i];
-        shown(n) && into[i].is_none() && (!only_interactive || n.interactive() || numbers[i].is_some() || container(n))
+        shown(n)
+            && into[i].is_none()
+            && (!only_interactive || n.interactive() || numbers[i].is_some() || container(n))
     };
     let records: Vec<usize> = (0..nodes.len()).filter(|i| wanted(*i)).collect();
     let is_record = {
@@ -733,7 +795,9 @@ pub fn compact(
     let mut repeated = vec![false; nodes.len()];
     let mut seen: std::collections::BTreeMap<(Option<usize>, &str), usize> = Default::default();
     for i in &records {
-        let count = seen.entry((nodes[*i].parent, nodes[*i].short_class())).or_default();
+        let count = seen
+            .entry((nodes[*i].parent, nodes[*i].short_class()))
+            .or_default();
         repeated[*i] = *count >= 3;
         *count += 1;
     }
@@ -767,7 +831,8 @@ pub fn compact(
         } else if !n.text.trim().is_empty() {
             line.push_str(&format!(" \"{}\"", quote(&n.text)));
         }
-        let description_shown = n.description.trim().is_empty() || (!n.password && n.text == n.description);
+        let description_shown =
+            n.description.trim().is_empty() || (!n.password && n.text == n.description);
         if !description_shown {
             if n.text.trim().is_empty() || n.password {
                 line.push_str(&format!(" \"{}\"", quote(&n.description)));
@@ -786,7 +851,10 @@ pub fn compact(
         if let Some(number) = numbers[i] {
             line.push_str(&format!(" #{number}"));
         }
-        line.push_str(&format!(" ({},{},{},{})", n.rect.0, n.rect.1, n.rect.2, n.rect.3));
+        line.push_str(&format!(
+            " ({},{},{},{})",
+            n.rect.0, n.rect.1, n.rect.2, n.rect.3
+        ));
         let off = offscreen(n, width, height);
         for (flag, name) in [
             (n.checkable && n.checked, "checked"),
@@ -822,7 +890,8 @@ pub fn compact(
         } else {
             2
         };
-        let centre = ((n.rect.1.max(0) + n.rect.3.min(height.max(1))) / 2).clamp(0, height.max(1) - 1);
+        let centre =
+            ((n.rect.1.max(0) + n.rect.3.min(height.max(1))) / 2).clamp(0, height.max(1) - 1);
         band[i] = ((centre * 4) / height.max(1)).clamp(0, 3) as usize;
         lines[i] = line;
     }
@@ -847,8 +916,14 @@ pub fn compact(
         "screen {width}x{height} package {} mode compact digest {digest}\n",
         shorten(&package, 100)
     );
-    let footer = |omitted: usize, controls: usize, offscreen: usize, folded: usize, hidden: usize| {
-        format!("… {omitted} records not shown ({controls} controls, {offscreen} offscreen); {folded} texts folded into their controls; {hidden} hidden; mode detail with refs shows any record\n")
+    let footer = |omitted: usize,
+                  controls: usize,
+                  offscreen: usize,
+                  folded: usize,
+                  hidden: usize| {
+        format!(
+            "… {omitted} records not shown ({controls} controls, {offscreen} offscreen); {folded} texts folded into their controls; {hidden} hidden; mode detail with refs shows any record\n"
+        )
     };
     let most = nodes.len().max(1);
     let reserve = footer(most, most, most, most, most).chars().count();
@@ -874,9 +949,14 @@ pub fn compact(
     let selected: Vec<usize> = records.iter().copied().filter(|i| chosen[*i]).collect();
     let mut omitted: Vec<usize> = records.iter().copied().filter(|i| !chosen[*i]).collect();
     omitted.sort_by_key(|i| (tier[*i] > 1, *i));
-    let mut by = json!({"interactive":0,"editable":0,"stateful":0,"scroll":0,"text":0,"offscreen":0});
+    let mut by =
+        json!({"interactive":0,"editable":0,"stateful":0,"scroll":0,"text":0,"offscreen":0});
     for i in &omitted {
-        let k = if tier[*i] == 3 { "offscreen" } else { kind(&nodes[*i]) };
+        let k = if tier[*i] == 3 {
+            "offscreen"
+        } else {
+            kind(&nodes[*i])
+        };
         by[k] = json!(by[k].as_u64().unwrap_or(0) + 1);
     }
     let mut text = header;
@@ -916,7 +996,11 @@ pub fn reference(nodes: &[Node], text: &str) -> Result<usize> {
         .ok_or_else(|| {
             Error::new(
                 "invalid_argument",
-                format!("{text:?} is not a node of this hierarchy ({} nodes, n0 to n{})", nodes.len(), nodes.len().saturating_sub(1)),
+                format!(
+                    "{text:?} is not a node of this hierarchy ({} nodes, n0 to n{})",
+                    nodes.len(),
+                    nodes.len().saturating_sub(1)
+                ),
             )
         })
 }
@@ -935,7 +1019,9 @@ pub fn detail(nodes: &[Node], numbers: &[Option<usize>], at: usize) -> Value {
             json!(text.chars().take(DETAIL_CHARS).collect::<String>())
         }
     };
-    let children: Vec<usize> = (at + 1..nodes.len()).filter(|i| nodes[*i].parent == Some(at)).collect();
+    let children: Vec<usize> = (at + 1..nodes.len())
+        .filter(|i| nodes[*i].parent == Some(at))
+        .collect();
     let sources: Vec<String> = into
         .iter()
         .enumerate()
@@ -959,7 +1045,11 @@ pub fn detail(nodes: &[Node], numbers: &[Option<usize>], at: usize) -> Value {
         record["text_withheld"] = json!("password");
     }
     for key in ["text", "description"] {
-        let original = if key == "text" { &n.text } else { &n.description };
+        let original = if key == "text" {
+            &n.text
+        } else {
+            &n.description
+        };
         if original.chars().count() > DETAIL_CHARS && !(key == "text" && n.password) {
             record[format!("{key}_cut")] = json!(true);
             record[format!("{key}_chars")] = json!(original.chars().count());
@@ -1153,13 +1243,18 @@ mod wda_tests {
     #[test]
     fn webdriveragent_source_becomes_a_hierarchy_in_screenshot_pixels() {
         assert!(is_wda(SOURCE));
-        assert!(!is_wda("<hierarchy rotation=\"0\"><node class=\"a\"/></hierarchy>"));
+        assert!(!is_wda(
+            "<hierarchy rotation=\"0\"><node class=\"a\"/></hierarchy>"
+        ));
         let converted = wda_to_uiautomator(SOURCE, 3.0, 0).unwrap();
         let nodes = parse(&converted).unwrap();
         assert_eq!(screen_size(&nodes), (1170, 2532));
         let field = nodes.iter().find(|n| n.id == "email").unwrap();
         assert!(field.editable() && field.focused);
-        assert_eq!((field.text.as_str(), field.description.as_str()), ("ana@example.com", "Email"));
+        assert_eq!(
+            (field.text.as_str(), field.description.as_str()),
+            ("ana@example.com", "Email")
+        );
         assert_eq!(field.rect, (60, 300, 1110, 432));
         let (marks, _) = marks(&nodes, 50);
         let labels: Vec<&str> = marks.iter().map(|m| m["label"].as_str().unwrap()).collect();
@@ -1363,19 +1458,29 @@ mod compact_tests {
     use super::*;
 
     fn node(class: &str, attributes: &str, children: &[String]) -> String {
-        let enabled = if attributes.contains("enabled=") { "" } else { "enabled=\"true\" " };
+        let enabled = if attributes.contains("enabled=") {
+            ""
+        } else {
+            "enabled=\"true\" "
+        };
         format!(
             "<node class=\"{class}\" package=\"dev.example.shop\" {enabled}{attributes}>{}</node>",
             children.concat()
         )
     }
     fn text(words: &str, bounds: &str) -> String {
-        node("android.widget.TextView", &format!("text=\"{words}\" bounds=\"{bounds}\""), &[])
+        node(
+            "android.widget.TextView",
+            &format!("text=\"{words}\" bounds=\"{bounds}\""),
+            &[],
+        )
     }
     fn button(words: &str, id: &str, bounds: &str, extra: &str) -> String {
         node(
             "android.widget.Button",
-            &format!("text=\"{words}\" resource-id=\"dev.example.shop:id/{id}\" bounds=\"{bounds}\" clickable=\"true\" {extra}"),
+            &format!(
+                "text=\"{words}\" resource-id=\"dev.example.shop:id/{id}\" bounds=\"{bounds}\" clickable=\"true\" {extra}"
+            ),
             &[],
         )
     }
@@ -1394,9 +1499,18 @@ mod compact_tests {
         }
         for i in 0..24 {
             let top = 820 + i * 32;
-            header.push(button(&format!("Category {i}"), &format!("category_{i}"), &format!("[20,{top}][1060,{}]", top + 30), ""));
+            header.push(button(
+                &format!("Category {i}"),
+                &format!("category_{i}"),
+                &format!("[20,{top}][1060,{}]", top + 30),
+                "",
+            ));
         }
-        let header = node("android.widget.LinearLayout", "bounds=\"[0,0][1080,1600]\"", &header);
+        let header = node(
+            "android.widget.LinearLayout",
+            "bounds=\"[0,0][1080,1600]\"",
+            &header,
+        );
         let search = node(
             "android.widget.EditText",
             "text=\"Search products\" resource-id=\"dev.example.shop:id/search\" bounds=\"[40,1650][1040,1750]\" clickable=\"true\" focusable=\"true\"",
@@ -1405,8 +1519,15 @@ mod compact_tests {
         let row = |name: &str, top: i64, inner: Vec<String>| {
             node(
                 "android.widget.LinearLayout",
-                &format!("bounds=\"[0,{top}][1080,{}]\" clickable=\"true\"", top + 120),
-                &[vec![text(name, &format!("[40,{}][500,{}]", top + 20, top + 100))], inner].concat(),
+                &format!(
+                    "bounds=\"[0,{top}][1080,{}]\" clickable=\"true\"",
+                    top + 120
+                ),
+                &[
+                    vec![text(name, &format!("[40,{}][500,{}]", top + 20, top + 100))],
+                    inner,
+                ]
+                .concat(),
             )
         };
         let cart = node(
@@ -1414,8 +1535,16 @@ mod compact_tests {
             "resource-id=\"dev.example.shop:id/cart_list\" bounds=\"[0,1760][1080,2150]\" scrollable=\"true\"",
             &[
                 row("Apple", 1760, vec![text("€1.20", "[600,1780][1040,1860]")]),
-                row("Pear", 1880, vec![button("Delete", "delete", "[800,1900][1040,1980]", "")]),
-                row("Plum", 2000, vec![button("Delete", "delete", "[800,2020][1040,2100]", "")]),
+                row(
+                    "Pear",
+                    1880,
+                    vec![button("Delete", "delete", "[800,1900][1040,1980]", "")],
+                ),
+                row(
+                    "Plum",
+                    2000,
+                    vec![button("Delete", "delete", "[800,2020][1040,2100]", "")],
+                ),
             ],
         );
         let gift = node(
@@ -1423,7 +1552,12 @@ mod compact_tests {
             "text=\"Gift wrap\" resource-id=\"dev.example.shop:id/gift\" bounds=\"[40,2160][500,2210]\" checkable=\"true\" checked=\"false\" clickable=\"true\"",
             &[],
         );
-        let coupon = button("Coupon", "coupon", "[540,2160][1040,2210]", "enabled=\"false\"");
+        let coupon = button(
+            "Coupon",
+            "coupon",
+            "[540,2160][1040,2210]",
+            "enabled=\"false\"",
+        );
         let pay = button("Pay now", "pay", "[40,2220][1040,2340]", "");
         let hidden = text("Hidden promo", "[0,0][0,0]");
         let below = button("Below fold", "below", "[40,2500][1040,2600]", "");
@@ -1437,7 +1571,9 @@ mod compact_tests {
             node(
                 "android.widget.FrameLayout",
                 "bounds=\"[0,0][1080,2400]\"",
-                &[header, search, cart, gift, coupon, pay, hidden, below, greeting]
+                &[
+                    header, search, cart, gift, coupon, pay, hidden, below, greeting
+                ]
             )
         )
     }
@@ -1458,15 +1594,28 @@ mod compact_tests {
         let nodes = parse(&shop()).unwrap();
         let numbers = numbering(&nodes, 200);
         let old = tree(&nodes, &numbers, 2000, false);
-        assert!(old.truncated && !old.text.contains("Pay now"), "the document-order prefix loses it");
+        assert!(
+            old.truncated && !old.text.contains("Pay now"),
+            "the document-order prefix loses it"
+        );
         let c = compact(&nodes, &numbers, 2000, "", false, "0123456789abcdef");
         assert!(c.text.chars().count() <= 2000, "{}", c.text.chars().count());
         assert!(c.truncated);
         let pay = index(&nodes, "Pay now");
         let line = find(&c.text, "Pay now").expect(&c.text);
         // The raw identity is kept: reference, class, id, mark and bounds.
-        assert!(line.contains(&format!("n{pay} Button \"Pay now\" id=pay #{} (40,2220,1040,2340)", numbers[pay].unwrap())), "{line}");
-        assert!(find(&c.text, "Search products").unwrap().ends_with("editable"));
+        assert!(
+            line.contains(&format!(
+                "n{pay} Button \"Pay now\" id=pay #{} (40,2220,1040,2340)",
+                numbers[pay].unwrap()
+            )),
+            "{line}"
+        );
+        assert!(
+            find(&c.text, "Search products")
+                .unwrap()
+                .ends_with("editable")
+        );
         assert!(find(&c.text, "Gift wrap").unwrap().contains("unchecked"));
         assert!(find(&c.text, "cart_list").unwrap().contains("scrollable"));
         // A disabled control waits behind the enabled ones, and keeps its state.
@@ -1491,12 +1640,22 @@ mod compact_tests {
         let every: std::collections::BTreeSet<&str> = lines(&all.text).into_iter().collect();
         for budget in [500, 777, 1200, 2000, 3500, 6000] {
             let c = compact(&nodes, &numbers, budget, "", false, "0123456789abcdef");
-            assert!(c.text.chars().count() <= budget, "{budget}: {}", c.text.chars().count());
+            assert!(
+                c.text.chars().count() <= budget,
+                "{budget}: {}",
+                c.text.chars().count()
+            );
             for line in lines(&c.text) {
-                assert!(every.contains(line), "{budget}: a record that is not whole: {line}");
+                assert!(
+                    every.contains(line),
+                    "{budget}: a record that is not whole: {line}"
+                );
             }
             // Deterministic: the same input gives the same text.
-            assert_eq!(c.text, compact(&nodes, &numbers, budget, "", false, "0123456789abcdef").text);
+            assert_eq!(
+                c.text,
+                compact(&nodes, &numbers, budget, "", false, "0123456789abcdef").text
+            );
             // Selected records come out in document order.
             let mut sorted = c.selected.clone();
             sorted.sort();
@@ -1516,13 +1675,27 @@ mod compact_tests {
         let (apple, price) = (index(&nodes, "Apple"), index(&nodes, "€1.20"));
         let row = nodes[apple].parent.unwrap();
         let line = find(&c.text, "label=\"Apple | €1.20\"").expect(&c.text);
-        assert!(line.contains(&format!("n{row} LinearLayout label=\"Apple | €1.20\" from=n{apple},n{price}")), "{line}");
-        assert!(!lines(&c.text).iter().any(|l| l.contains("\"Apple\"")), "the folded leaf is no record of its own");
+        assert!(
+            line.contains(&format!(
+                "n{row} LinearLayout label=\"Apple | €1.20\" from=n{apple},n{price}"
+            )),
+            "{line}"
+        );
+        assert!(
+            !lines(&c.text).iter().any(|l| l.contains("\"Apple\"")),
+            "the folded leaf is no record of its own"
+        );
         // The control's own text stays empty: a selector on it is unchanged.
         assert_eq!(nodes[row].text, "");
         let d = detail(&nodes, &numbers, row);
-        assert_eq!(d["label_sources"], json!([format!("n{apple}"), format!("n{price}")]));
-        assert_eq!(detail(&nodes, &numbers, apple)["folded_into"], format!("n{row}"));
+        assert_eq!(
+            d["label_sources"],
+            json!([format!("n{apple}"), format!("n{price}")])
+        );
+        assert_eq!(
+            detail(&nodes, &numbers, apple)["folded_into"],
+            format!("n{row}")
+        );
         // A row that also holds a button is ambiguous: its text stays a record.
         let pear = index(&nodes, "Pear");
         assert!(find(&c.text, &format!("n{pear} TextView \"Pear\"")).is_some());
@@ -1536,10 +1709,21 @@ mod compact_tests {
         let nodes = parse(&shop()).unwrap();
         let numbers = numbering(&nodes, 200);
         let c = compact(&nodes, &numbers, 100_000, "", false, "0123456789abcdef");
-        let deletes: Vec<&str> = lines(&c.text).into_iter().filter(|l| l.contains("\"Delete\"")).collect();
+        let deletes: Vec<&str> = lines(&c.text)
+            .into_iter()
+            .filter(|l| l.contains("\"Delete\""))
+            .collect();
         assert_eq!(deletes.len(), 2);
-        assert!(deletes[0].contains("in=") && deletes[0].contains("Pear"), "{}", deletes[0]);
-        assert!(deletes[1].contains("in=") && deletes[1].contains("Plum"), "{}", deletes[1]);
+        assert!(
+            deletes[0].contains("in=") && deletes[0].contains("Pear"),
+            "{}",
+            deletes[0]
+        );
+        assert!(
+            deletes[1].contains("in=") && deletes[1].contains("Plum"),
+            "{}",
+            deletes[1]
+        );
         assert_ne!(deletes[0], deletes[1]);
         // Both keep the same raw resource id; only the reference and bounds differ.
         assert!(deletes.iter().all(|l| l.contains(" id=delete ")));
@@ -1554,18 +1738,30 @@ mod compact_tests {
         let plain = compact(&nodes, &numbers, 500, "", false, "0123456789abcdef");
         let asked = compact(&nodes, &numbers, 500, "coupon", false, "0123456789abcdef");
         assert!(asked.text.contains("\"Coupon\""), "{}", asked.text);
-        assert!(!plain.text.contains("\"Coupon\""), "without the query the disabled button waits for room");
+        assert!(
+            !plain.text.contains("\"Coupon\""),
+            "without the query the disabled button waits for room"
+        );
         // Off-screen nodes come last, and say so when there is room.
         let all = compact(&nodes, &numbers, 100_000, "", false, "0123456789abcdef");
         assert!(find(&all.text, "Below fold").unwrap().contains("offscreen"));
         let some = compact(&nodes, &numbers, 3000, "", false, "0123456789abcdef");
-        assert!(find(&some.text, "Below fold").is_none(), "on-screen controls came first");
+        assert!(
+            find(&some.text, "Below fold").is_none(),
+            "on-screen controls came first"
+        );
         assert!(some.omitted_by["offscreen"].as_u64().unwrap() >= 1);
         // A long text is cut in the record, marked so, and whole in detail.
         let line = find(&all.text, "Headline 0:").unwrap();
         assert!(line.ends_with(" cut") && line.contains('…'), "{line}");
-        let headline = nodes.iter().position(|n| n.text.starts_with("Headline 0:")).unwrap();
-        assert_eq!(detail(&nodes, &numbers, headline)["text"], nodes[headline].text);
+        let headline = nodes
+            .iter()
+            .position(|n| n.text.starts_with("Headline 0:"))
+            .unwrap();
+        assert_eq!(
+            detail(&nodes, &numbers, headline)["text"],
+            nodes[headline].text
+        );
     }
 
     #[test]
@@ -1578,7 +1774,10 @@ mod compact_tests {
             assert!(c.text.chars().count() <= budget);
             let line = find(&c.text, "greeting").expect(&c.text);
             assert!(line.contains(&format!("label=\"{greeting}\"")), "{line}");
-            assert!(c.text.len() > c.text.chars().count(), "bytes are not the budget");
+            assert!(
+                c.text.len() > c.text.chars().count(),
+                "bytes are not the budget"
+            );
         }
     }
 
@@ -1586,16 +1785,34 @@ mod compact_tests {
     fn nested_scroll_regions_editors_and_password_fields_stay_distinct() {
         let xml = format!(
             "<hierarchy rotation=\"0\">{}</hierarchy>",
-            node("android.widget.ScrollView", "resource-id=\"app:id/outer\" bounds=\"[0,0][1080,2000]\" scrollable=\"true\"", &[
-                node("android.widget.LinearLayout", "resource-id=\"app:id/card\" bounds=\"[0,0][1080,600]\" clickable=\"true\"", &[
-                    text("Note", "[20,20][300,80]"),
-                    node("android.widget.EditText", "resource-id=\"app:id/note\" text=\"Your note\" bounds=\"[20,100][1060,200]\" clickable=\"true\"", &[]),
-                ]),
-                node("androidx.recyclerview.widget.RecyclerView", "resource-id=\"app:id/inner\" bounds=\"[0,600][1080,1400]\" scrollable=\"true\"", &[
-                    text("Loose text", "[20,620][800,700]"),
-                ]),
-                node("android.widget.EditText", "resource-id=\"app:id/pin\" text=\"••••\" password=\"true\" bounds=\"[20,1500][1060,1600]\" clickable=\"true\"", &[]),
-            ])
+            node(
+                "android.widget.ScrollView",
+                "resource-id=\"app:id/outer\" bounds=\"[0,0][1080,2000]\" scrollable=\"true\"",
+                &[
+                    node(
+                        "android.widget.LinearLayout",
+                        "resource-id=\"app:id/card\" bounds=\"[0,0][1080,600]\" clickable=\"true\"",
+                        &[
+                            text("Note", "[20,20][300,80]"),
+                            node(
+                                "android.widget.EditText",
+                                "resource-id=\"app:id/note\" text=\"Your note\" bounds=\"[20,100][1060,200]\" clickable=\"true\"",
+                                &[]
+                            ),
+                        ]
+                    ),
+                    node(
+                        "androidx.recyclerview.widget.RecyclerView",
+                        "resource-id=\"app:id/inner\" bounds=\"[0,600][1080,1400]\" scrollable=\"true\"",
+                        &[text("Loose text", "[20,620][800,700]"),]
+                    ),
+                    node(
+                        "android.widget.EditText",
+                        "resource-id=\"app:id/pin\" text=\"••••\" password=\"true\" bounds=\"[20,1500][1060,1600]\" clickable=\"true\"",
+                        &[]
+                    ),
+                ]
+            )
         );
         let nodes = parse(&xml).unwrap();
         let numbers = numbering(&nodes, 200);
@@ -1628,26 +1845,36 @@ mod compact_tests {
         let nodes = parse(&shop()).unwrap();
         let numbers = numbering(&nodes, 200);
         let (_, height) = viewport(&nodes);
-        let on_screen: Vec<usize> = (0..nodes.len()).filter(|i| numbers[*i].is_some() && nodes[*i].rect.1 < height).collect();
+        let on_screen: Vec<usize> = (0..nodes.len())
+            .filter(|i| numbers[*i].is_some() && nodes[*i].rect.1 < height)
+            .collect();
         let off_screen = numbers.iter().flatten().count() - on_screen.len();
         let kept = |text: &str, wanted: &[usize]| {
             wanted
                 .iter()
-                .filter(|i| text.split(char::is_whitespace).any(|w| w == format!("#{}", numbers[**i].unwrap())))
+                .filter(|i| {
+                    text.split(char::is_whitespace)
+                        .any(|w| w == format!("#{}", numbers[**i].unwrap()))
+                })
                 .count()
         };
         let full_tree = tree(&nodes, &numbers, 100_000, false).text;
         let full_compact = compact(&nodes, &numbers, 100_000, "", false, "0123456789abcdef").text;
         let mut rows = vec![format!(
             "unbudgeted: tree {} chars, compact {} chars; {} marks on the window, {off_screen} below it",
-            full_tree.chars().count(), full_compact.chars().count(), on_screen.len()
+            full_tree.chars().count(),
+            full_compact.chars().count(),
+            on_screen.len()
         )];
         for budget in [1500, 3000, 6000] {
             let t = tree(&nodes, &numbers, budget, false);
             let c = compact(&nodes, &numbers, budget, "", false, "0123456789abcdef");
             let all: Vec<usize> = (0..nodes.len()).filter(|i| numbers[*i].is_some()).collect();
             let (t_on, c_on) = (kept(&t.text, &on_screen), kept(&c.text, &on_screen));
-            assert!(c_on >= t_on, "{budget}: compact keeps {c_on} on-screen marks, tree {t_on}");
+            assert!(
+                c_on >= t_on,
+                "{budget}: compact keeps {c_on} on-screen marks, tree {t_on}"
+            );
             assert!(c.text.contains("Pay now"), "{budget}");
             rows.push(format!(
                 "budget {budget}: tree {} chars {} bytes, marks {}/{} (on window {t_on}/{}), pay_now={}; compact {} chars {} bytes, marks {}/{} (on window {c_on}/{}), pay_now=true, omitted {}",

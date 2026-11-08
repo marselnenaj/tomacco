@@ -23,7 +23,14 @@ use std::{
     time::{Duration, Instant},
 };
 
-pub const KINDS: [&str; 6] = ["biometric", "passcode", "sign_in", "purchase", "permission", "other"];
+pub const KINDS: [&str; 6] = [
+    "biometric",
+    "passcode",
+    "sign_in",
+    "purchase",
+    "permission",
+    "other",
+];
 const STATES: [&str; 4] = ["waiting", "completed", "cancelled", "expired"];
 const DEFAULT_TIMEOUT: u64 = 15 * 60;
 
@@ -132,7 +139,10 @@ pub fn request(a: &Value) -> Result {
     if !job.is_empty() {
         identifier(job, "job ID", Some("[0-9a-f]{32}"))?;
     }
-    let timeout = a["timeout_seconds"].as_u64().unwrap_or(DEFAULT_TIMEOUT).clamp(60, 86_400);
+    let timeout = a["timeout_seconds"]
+        .as_u64()
+        .unwrap_or(DEFAULT_TIMEOUT)
+        .clamp(60, 86_400);
     let caller = crate::guard::current();
     let id = uuid::Uuid::new_v4().simple().to_string();
     let created = now();
@@ -143,8 +153,12 @@ pub fn request(a: &Value) -> Result {
     atomic_json(&record_path(&id)?, &record)?;
     let mut answer = record;
     answer["wait_with"] = json!("handoff.wait");
-    answer["person_completes_with"] = json!("the Done button on the Tomacco desktop, or: tomaccoctl call handoff.complete '{\"id\":\"ID\"}'");
-    answer["note"] = json!("Do not type the person's passcode, password or code into any field, and do not try to get past the prompt: wait for the person, then observe the screen again.");
+    answer["person_completes_with"] = json!(
+        "the Done button on the Tomacco desktop, or: tomaccoctl call handoff.complete '{\"id\":\"ID\"}'"
+    );
+    answer["note"] = json!(
+        "Do not type the person's passcode, password or code into any field, and do not try to get past the prompt: wait for the person, then observe the screen again."
+    );
     Ok(answer)
 }
 
@@ -213,7 +227,9 @@ pub fn wait(a: &Value) -> Result {
             }
         }
     } else if s(&record, "state") == "waiting" {
-        answer["note"] = json!("Still waiting for the person; call handoff.wait again. Do not act on the device meanwhile.");
+        answer["note"] = json!(
+            "Still waiting for the person; call handoff.wait again. Do not act on the device meanwhile."
+        );
     }
     Ok(answer)
 }
@@ -255,7 +271,8 @@ pub fn cancel(a: &Value) -> Result {
         "waiting" => {
             record["state"] = json!("cancelled");
             record["updated"] = json!(now());
-            record["cancelled"] = json!({"at":now(),"reason":reason,"by":crate::guard::current().client});
+            record["cancelled"] =
+                json!({"at":now(),"reason":reason,"by":crate::guard::current().client});
             atomic_json(&record_path(id)?, &record)?;
             Ok(json!({"handoff":record,"already":false}))
         }
@@ -311,29 +328,55 @@ mod tests {
         assert!(after.get("observation").is_none(), "no session was named");
         assert_eq!(list(&json!({"state":"waiting"})).unwrap()["count"], 0);
         assert_eq!(list(&json!({"state":"all"})).unwrap()["count"], 1);
-        assert_eq!(cancel(&json!({"id":id})).unwrap_err().code, "handoff_not_waiting");
+        assert_eq!(
+            cancel(&json!({"id":id})).unwrap_err().code,
+            "handoff_not_waiting"
+        );
     }
 
     #[test]
     fn cancellation_expiry_and_bad_requests() {
         let _dir = scratch();
-        assert_eq!(request(&json!({"reason":""})).unwrap_err().code, "invalid_argument");
-        assert_eq!(request(&json!({"reason":"x","kind":"dance"})).unwrap_err().code, "invalid_argument");
-        assert_eq!(request(&json!({"reason":"x","session":"nope"})).unwrap_err().code, "invalid_argument");
+        assert_eq!(
+            request(&json!({"reason":""})).unwrap_err().code,
+            "invalid_argument"
+        );
+        assert_eq!(
+            request(&json!({"reason":"x","kind":"dance"}))
+                .unwrap_err()
+                .code,
+            "invalid_argument"
+        );
+        assert_eq!(
+            request(&json!({"reason":"x","session":"nope"}))
+                .unwrap_err()
+                .code,
+            "invalid_argument"
+        );
         let made = request(&json!({"reason":"Unlock the phone","kind":"passcode"})).unwrap();
         let id = s(&made, "id").to_string();
         let gone = cancel(&json!({"id":id,"reason":"not needed"})).unwrap();
         assert_eq!(gone["handoff"]["state"], "cancelled");
-        assert_eq!(complete(&json!({"id":id})).unwrap_err().code, "handoff_not_waiting");
-        assert_eq!(get(&json!({"id":"0".repeat(32)})).unwrap_err().code, "handoff_not_found");
+        assert_eq!(
+            complete(&json!({"id":id})).unwrap_err().code,
+            "handoff_not_waiting"
+        );
+        assert_eq!(
+            get(&json!({"id":"0".repeat(32)})).unwrap_err().code,
+            "handoff_not_found"
+        );
         // A request past its time expires when it is next read.
-        let late = request(&json!({"reason":"Sign in","kind":"sign_in","timeout_seconds":60})).unwrap();
+        let late =
+            request(&json!({"reason":"Sign in","kind":"sign_in","timeout_seconds":60})).unwrap();
         let late_id = s(&late, "id").to_string();
         let path = record_path(&late_id).unwrap();
         let mut record = read_json(&path, None).unwrap();
         record["expires_at"] = json!(now() - 1.0);
         atomic_json(&path, &record).unwrap();
         assert_eq!(get(&json!({"id":late_id})).unwrap()["state"], "expired");
-        assert_eq!(complete(&json!({"id":late_id})).unwrap_err().code, "handoff_not_waiting");
+        assert_eq!(
+            complete(&json!({"id":late_id})).unwrap_err().code,
+            "handoff_not_waiting"
+        );
     }
 }

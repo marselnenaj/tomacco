@@ -190,16 +190,20 @@ pub trait Device: Send {
     /// where the numbers come from. A transport that cannot tell answers
     /// `available: false` with the reason, never a guess.
     fn geometry(&mut self) -> Result {
-        Ok(json!({"available":false,"reason":"This transport does not report its screen geometry",
-            "coordinate_space":coordinate_space()}))
+        Ok(
+            json!({"available":false,"reason":"This transport does not report its screen geometry",
+            "coordinate_space":coordinate_space()}),
+        )
     }
     /// The foreground app, the keyboard and the input focus, each
     /// `available: true` with what was observed or `available: false` with
     /// the reason. Nothing here is inferred from a screenshot.
     fn context(&mut self) -> Result {
-        Ok(json!({"app":unavailable("This transport does not report the foreground app"),
+        Ok(
+            json!({"app":unavailable("This transport does not report the foreground app"),
             "keyboard":unavailable("This transport does not report the keyboard"),
-            "focus":unavailable("This transport does not report the input focus")}))
+            "focus":unavailable("This transport does not report the input focus")}),
+        )
     }
     /// What input this transport can deliver, as `runtime.state` reports it
     /// under `input_capabilities`: whether touch streams live or is sent as
@@ -271,8 +275,12 @@ fn observe(device: &mut dyn Device, a: &Value, state: &Value, default_path: &Pat
         geometry["frame_width"] = json!(width);
         geometry["frame_height"] = json!(height);
     }
-    let mismatch = geometry["width"].as_u64().is_some_and(|w| w != u64::from(width))
-        || geometry["height"].as_u64().is_some_and(|h| h != u64::from(height));
+    let mismatch = geometry["width"]
+        .as_u64()
+        .is_some_and(|w| w != u64::from(width))
+        || geometry["height"]
+            .as_u64()
+            .is_some_and(|h| h != u64::from(height));
     let context = if a["context"] == json!(false) {
         let skipped = json!({"available":false,"reason":"not read: context was false"});
         json!({"app":skipped,"keyboard":skipped,"focus":skipped})
@@ -291,11 +299,7 @@ fn observe(device: &mut dyn Device, a: &Value, state: &Value, default_path: &Pat
             if app["home_screen"] == true {
                 "Home Screen".to_string()
             } else {
-                format!(
-                    "{} ({})",
-                    s(app, "name"),
-                    s(app, "bundle_id")
-                )
+                format!("{} ({})", s(app, "name"), s(app, "bundle_id"))
             }
         } else {
             "app unknown".to_string()
@@ -881,13 +885,16 @@ pub fn worker(id: &str) -> Result<()> {
         } else {
             Box::new(iphone::connect(&spec, shared.clone(), &dir)?)
         };
-        shared
-            .lock()
-            .unwrap()
-            .update(json!({"status":"connected","input_capabilities":advertised(device.as_ref())}))?;
+        shared.lock().unwrap().update(
+            json!({"status":"connected","input_capabilities":advertised(device.as_ref())}),
+        )?;
         // The device this session shows, as reservations and the request
         // ledger name it, and this worker as the instance that executes.
-        let mut target = crate::coordination::Target::new(s(&spec, "platform"), s(&spec, "remote"), s(&spec, "device"));
+        let mut target = crate::coordination::Target::new(
+            s(&spec, "platform"),
+            s(&spec, "remote"),
+            s(&spec, "device"),
+        );
         target.session = Some(id.to_string());
         let transport = s(&shared.lock().unwrap().state, "transport").to_string();
         let instance = format!("session:{id}:{}", crate::coordination::ledger::instance());
@@ -904,22 +911,31 @@ pub fn worker(id: &str) -> Result<()> {
                 let answer = match command.op.as_str() {
                     "input" => api::arguments("runtime.input", &command.args).and_then(|a| {
                         let kind = crate::coordination::Kind::of_input(&a);
-                        crate::coordination::worker_input(&target, &transport, &instance, "runtime.input", &a, &command.coordination, kind, || {
-                        let step = recording.as_mut().and_then(|live| {
-                            live.before(&a, || {
-                                device
-                                    .hierarchy()
-                                    .ok()
-                                    .map(|value| s(&value, "xml").to_string())
-                                    .filter(|xml| !xml.is_empty())
-                            })
-                        });
-                        let result = deliver(device.as_mut(), &a)?;
-                        if let Some(live) = &recording {
-                            live.after(step);
-                        }
-                        Ok(result)
-                        })
+                        crate::coordination::worker_input(
+                            &target,
+                            &transport,
+                            &instance,
+                            "runtime.input",
+                            &a,
+                            &command.coordination,
+                            kind,
+                            || {
+                                let step = recording.as_mut().and_then(|live| {
+                                    live.before(&a, || {
+                                        device
+                                            .hierarchy()
+                                            .ok()
+                                            .map(|value| s(&value, "xml").to_string())
+                                            .filter(|xml| !xml.is_empty())
+                                    })
+                                });
+                                let result = deliver(device.as_mut(), &a)?;
+                                if let Some(live) = &recording {
+                                    live.after(step);
+                                }
+                                Ok(result)
+                            },
+                        )
                     }),
                     "capture" => api::arguments("runtime.capture", &command.args)
                         .and_then(|a| device.capture(&output_path(s(&a, "path"))?)),
@@ -933,8 +949,16 @@ pub fn worker(id: &str) -> Result<()> {
                     "gesture" => api::arguments("runtime.gesture", &command.args)
                         .and_then(|a| check_gesture(&a).map(|_| a))
                         .and_then(|a| {
-                            crate::coordination::worker_input(&target, &transport, &instance, "runtime.gesture", &a, &command.coordination,
-                                crate::coordination::Kind::Action, || device.input(&gesture_input(&a)))
+                            crate::coordination::worker_input(
+                                &target,
+                                &transport,
+                                &instance,
+                                "runtime.gesture",
+                                &a,
+                                &command.coordination,
+                                crate::coordination::Kind::Action,
+                                || device.input(&gesture_input(&a)),
+                            )
                         }),
                     _ => Err(Error::new("operation_not_found", command.op)),
                 };

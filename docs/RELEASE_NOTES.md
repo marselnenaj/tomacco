@@ -1,85 +1,87 @@
-# Tomacco 1.4.1
+# Tomacco 1.5.0
 
-This maintenance release fixes blank AirPlay views when joining a running mirror and
-reading large Android Baseline Profiles. It follows [Tomacco 1.4.0](https://github.com/marselnenaj/tomacco/releases/tag/v1.4.0).
+Tomacco 1.5.0 brings the desktop, phone layout and coding agents onto the same
+296-operation workflow. It follows [1.4.1](RELEASE_NOTES_1.4.1.md).
 
-## Highlights
+## Desktop, phone and languages
 
-- Enlarge or reduce Tomacco's interface from 75% to 200%, with a saved preference and keyboard shortcuts. Device zoom and screenshot dimensions stay independent.
-- Open an additional AirPlay view without losing the cached video start; waiting and receiver controls explain when a fresh keyframe is needed.
-- Read generated Android Baseline Profiles up to 64 MiB and report actual file errors.
-- Use consistent device IDs and private socket addresses across libimobiledevice and go-ios tools.
+- All 50 Omarchy translation catalogs plus English cover 1,898 marked interface texts.
+  Placeholder, plural, markup and stale-entry checks pass; this is not native-speaker review.
+- Narrow windows switch to phone navigation and layouts, respecting the saved 75–200%
+  interface size. The same app and control plane are used; physical Pixel deployment is pending.
+- File and folder choosers follow interface scale, language and phone layout, preserve full
+  names and paths, confirm replacements, and start nothing on Cancel or Esc.
 
-## Interface size
+## Agents and device coordination
 
-Settings → Appearance → Interface size changes text, controls and spacing immediately.
-The preference is saved between launches. Choose 150% or 200% when the interface is
-too small on a high-resolution display, or reset it to 100%.
+Ten setup adapters cover Claude Code, Codex, Gemini CLI, Cursor, VS Code, Zed,
+OpenCode, Grok CLI, Hermes Agent and omp. Setup, status and removal preserve other
+clients' settings and disabled entries. See [agent clients](agent-clients.md).
 
-Ctrl+Alt+plus and Ctrl+Alt+minus change the interface in 25-percentage-point steps;
-Ctrl+Alt+0 resets it. These also work from a detached device window. The device's
-own zoom shortcuts, touch coordinates, web viewport and raw screenshot dimensions
-keep their existing meaning. Tomacco does not change the monitor's scale.
+PhoneUse-informed improvements add cooperative device reservations, durable request
+identities, verified readable-field input and compact query-aware screen trees.
+Unknown action outcomes are reported instead of blindly replayed; physical execution
+is not guaranteed exactly once. Raw adb, SSH and flashing tools do not participate in
+Tomacco reservations. [Agent workflows](agents.md) describe transport support and limits.
 
-## AirPlay
+Fresh observations carry frame geometry, age and available app/keyboard/focus context.
+Ordered action batches, human handoffs, named QA environments and GPX emulator routes
+share the desktop's contracts. Unsupported transports report their actual capabilities.
 
-- Opening another preview preserves an unchanged video configuration and the full cached
-  start picture, including multi-slice keyframes. Replaying a longer cached sequence no
-  longer silently drops its tail when the live queue fills.
-- The video cache stays bounded. If no usable start picture is available, the desktop
-  explains that it is waiting and offers receiver controls. Reconnect Screen Mirroring
-  on the iPhone to send a fresh start picture.
-- The device picker includes the Wi-Fi receiver. Start and restart show their progress;
-  restarting waits for the previous receiver to stop before opening the ports again.
-- Auxiliary connection closes no longer imply that the video mirror stopped. Receiver
-  failures preserve the actual UxPlay/GStreamer error, including mixed-case error messages.
+## OCR and local performance
 
-AirPlay still needs UxPlay 1.73 or newer and the [documented network setup](iphone.md#over-wi-fi).
-Bluetooth input needs pairing and AssistiveTouch. These fixes do not make a disconnected
-phone reconnect by itself, and a stream without a new keyframe can still require a
-Screen Mirroring reconnect on the phone.
+`screen.ocr` adds opt-in `invert:adaptive` and compact `detail:matches`, with actual
+engine-call counts and separate capture/read/total timings. `auto` stays the default
+with both polarities, including OCR actions, finds, waits and absence checks. Adaptive
+results can miss additional words or duplicate targets; OCR does not prove absence.
 
-## Baseline Profiles
+Persistent MCP sessions can reuse one bounded, isolated Tesseract 5 worker. Cold CLI,
+custom binaries, large images and a busy worker keep the subprocess route. Explicit
+OpenMP settings are preserved. Cancellation, time/output/memory limits, recycling and
+55-second idle cleanup bound retention; a dispatched failure is not silently retried.
+The warm model uses more resident RAM until cleanup.
 
-A generated profile can be larger than a Gradle build script. Profile summary, discovery
-and installation now share a separate bounded reader of up to 64 MiB. Gradle build files
-retain their existing 1 MiB limit. Invalid text, read errors and oversized profiles are
-reported directly instead of being described as a missing profile.
+The integrated pre-release benchmark measured a median matched new/old elapsed ratio
+of **0.313** for warm fresh-image MCP reads (about 3.20× old/new) and **0.860** for the
+explicit-system CLI route. Across 540 corpus calls, 360 non-timing output comparisons
+matched. These are local PNG measurements, not device, GPU or competitor rankings.
+[Exact benchmark boundaries](performance-final-qualification.json) retain the measured
+20aba4 binary. The later source pin `2fea917` and catalogue-complete CLI `8614c90`
+are separate pre-release identities; a version change is not a new timing measurement.
 
-The corrected CLI read the retained real Gradle artifact of **1,449,946 bytes and 14,009
-rules** (10,795 methods and 3,214 classes). This verifies the reader against that artifact;
-it is not a new end-to-end Gradle generation run or a measured startup-speed improvement.
+Fresh app, keyboard and focus reads now run together on one WDA session, preserving
+individual errors and ordered input. Delayed loopback results do not establish latency
+on a physical iPhone. The release build uses Release mode; CMake's default is unchanged.
 
-## Private USB tools
+## Demo Studio
 
-The virtual bridge now reports the same canonical device ID to libimobiledevice and go-ios,
-while retaining compatible pair-record aliases. Tomacco adapts the private socket address
-only in go-ios child processes, including jobs, WDA, syslog and startup measurement. Other
-tools retain their existing environment and the guest's actual USB descriptor is unchanged.
+Compose an existing local recording inside a perspective-rendered generic device frame.
+The desktop, CLI and MCP share revisioned scenes, preview frames and durable export jobs.
+Each job freezes its scene and source; stale edits and conflicting request identities
+are rejected, and existing outputs are preserved. This is a procedural QPainter
+renderer, not arbitrary 3D scene editing. See [Demo Studio](demo-studio.md).
 
-Normal-boot enumeration and `ios.apps` were checked over a private socket with both tool
-families agreeing on the device ID. Socket paths with literal spaces, `%`, `#` and `?` were
-also checked with the installed go-ios parser. See [private USB usage](virtual-ios/usage.md#standard-tools-over-the-private-usb-bridge).
+Original sound is optional: source mode trims and aligns the first audio track, preserves
+initial gaps and fills a short tail with silence, then exports independently checked AAC
+and video. Old scenes and new defaults stay muted; PNG previews stay silent. Audio mixing,
+multiple clips and arbitrary 3D scenes remain future work.
 
-## Validation and limits
+## AirPlay and qualification limits
 
-Regression tests cover repeated codec configuration, multi-slice keyframes, long video
-replay, receiver errors, desktop restart sequencing and large/invalid profile files.
-A synthetic H.264 stream with multi-slice keyframes reproduced the failure in the released
-1.4.0 CLI: a late viewer decoded no frames. The corrected CLI replayed and decoded all
-180 frames without decoder errors. This is a socket/decoder regression check, not a
-recording of a physical iPhone.
+AirPlay audio backlog is bounded and Bluetooth pointer state is reset after reconnects.
+Local fixtures cover queue and input behavior; physical sound synchronization, mouse
+swipes and verified iPhone input remain unqualified. AirPlay still needs the documented
+UxPlay, network, Bluetooth pairing and AssistiveTouch prerequisites.
 
-The [1.4.0 requirements and remaining limits](https://github.com/marselnenaj/tomacco/blob/v1.4.0/docs/RELEASE_NOTES.md#requirements-and-limits)
-still apply, with one additional USB qualification: the normal-boot private bridge was
-checked with standard enumeration, existing pairing, a paired disk-information query and
-installation of one owned HelloVirtual test app through xtool. The installer automatically
-re-signed and provisioned it with the configured Apple development identity; this was not
-an offline-signing test. Standard USB debugserver launch remains unqualified after
-`DebugserverClient.Error.unknown`. This does not qualify arbitrary applications or live
-store submission. A new physical iPhone recording remains a separate hardware check.
+Pixel/Omarchy Mobile installation and physical parity are pending. Prior ARM/container
+artifacts do not qualify the new 1.5.0 package. The experimental virtual iPhone still
+needs an x86_64 Linux host, your own Apple images and the documented resources; it is
+not an Apple Simulator replacement. [Runtime limits](virtual-ios/README.md#honest-limits)
+and [host requirements](linux-hosts.md) continue to apply.
 
 ## Install and upgrade
 
-Existing installations offer the update in Settings. You can also run `tomaccoctl update`.
-Every replaced file is backed up; `update.rollback` restores the previous installation.
+Once 1.5.0 is published, use Settings → Updates or `tomaccoctl update`. Fresh installs
+use the [installation guide](getting-started.md#1-install). Package checksums, signatures,
+SBOM and provenance apply to the actual release artifacts, separately from source and
+fixture qualification. Updates preserve rollback through `update.rollback`.

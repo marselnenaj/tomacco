@@ -558,10 +558,15 @@ fn adaptive_fallback(
         }
         // A query asks about its target, not unrelated text. Check every word
         // inside a matched box, rather than trusting the phrase's average.
-        if matches.iter().any(|m| reading.words.iter().any(|w| {
-            w.left < m.right && w.right() > m.left && w.top < m.bottom && w.bottom() > m.top
-                && w.confidence < 80.0
-        })) {
+        if matches.iter().any(|m| {
+            reading.words.iter().any(|w| {
+                w.left < m.right
+                    && w.right() > m.left
+                    && w.top < m.bottom
+                    && w.bottom() > m.top
+                    && w.confidence < 80.0
+            })
+        }) {
             return Some("low_confidence");
         }
     } else if reading.words.iter().any(|w| w.confidence < 80.0) {
@@ -692,7 +697,12 @@ pub fn read_selected(
     if invert == "auto" || reason.is_some() {
         let second = pass(true)?;
         reading.raw_words = merge(reading.raw_words, second.raw_words);
-        reading.words = reading.raw_words.iter().filter(|w| w.confidence >= min_confidence).cloned().collect();
+        reading.words = reading
+            .raw_words
+            .iter()
+            .filter(|w| w.confidence >= min_confidence)
+            .cloned()
+            .collect();
         reading.words.sort_by_key(|w| (w.top, w.left));
         reading.lines = lines(&reading.words);
         reading.passes = 2;
@@ -868,13 +878,36 @@ mod tests {
         assert!(again.cached && engine.0 == 1);
         assert_eq!(again.lines[0].text(), "Hello");
         // Other pixels, another language or another region are read anew.
-        assert!(!read(&mut engine, &grey, "eng", "never", 40.0, None).unwrap().cached);
-        assert!(!read(&mut engine, &white, "deu", "never", 40.0, None).unwrap().cached);
-        assert!(!read(&mut engine, &white, "eng", "never", 40.0, Some((0, 0, 50, 40))).unwrap().cached);
+        assert!(
+            !read(&mut engine, &grey, "eng", "never", 40.0, None)
+                .unwrap()
+                .cached
+        );
+        assert!(
+            !read(&mut engine, &white, "deu", "never", 40.0, None)
+                .unwrap()
+                .cached
+        );
+        assert!(
+            !read(
+                &mut engine,
+                &white,
+                "eng",
+                "never",
+                40.0,
+                Some((0, 0, 50, 40))
+            )
+            .unwrap()
+            .cached
+        );
         assert_eq!(engine.0, 4);
         // A scripted recogniser is never answered from the cache.
         let mut scripted = Fake(vec![tsv(&[(10, 10, 80, 20, 91.0, "Hello")]); 2]);
-        assert!(!read(&mut scripted, &white, "eng", "never", 40.0, None).unwrap().cached);
+        assert!(
+            !read(&mut scripted, &white, "eng", "never", 40.0, None)
+                .unwrap()
+                .cached
+        );
     }
     impl Recognizer for Fake {
         fn cacheable(&self) -> bool {
@@ -977,14 +1010,46 @@ mod tests {
 
     #[test]
     fn a_target_query_checks_its_own_word_confidences_instead_of_unrelated_noise() {
-        let dir=tempfile::tempdir().unwrap();let image=png(dir.path(),27);
-        let selector=json!({"text":"Save changes"});
-        let mut fast=Fake(vec![tsv(&[(0,0,5,2,95.0,"Save"),(6,0,5,2,95.0,"changes"),(0,5,5,2,41.0,"noise")])]);
-        assert_eq!(read_selected(&mut fast,&image,"eng","adaptive",40.0,None,Some(&selector),false).unwrap().passes,1);
-        let mut unsure=Fake(vec![tsv(&[(0,0,5,2,99.0,"Save"),(6,0,5,2,70.0,"changes")]),tsv(&[])]);
-        let reading=read_selected(&mut unsure,&image,"eng","adaptive",40.0,None,Some(&selector),false).unwrap();
-        assert_eq!(reading.passes,2);
-        assert_eq!(reading.fallback_reason,Some("low_confidence"));
+        let dir = tempfile::tempdir().unwrap();
+        let image = png(dir.path(), 27);
+        let selector = json!({"text":"Save changes"});
+        let mut fast = Fake(vec![tsv(&[
+            (0, 0, 5, 2, 95.0, "Save"),
+            (6, 0, 5, 2, 95.0, "changes"),
+            (0, 5, 5, 2, 41.0, "noise"),
+        ])]);
+        assert_eq!(
+            read_selected(
+                &mut fast,
+                &image,
+                "eng",
+                "adaptive",
+                40.0,
+                None,
+                Some(&selector),
+                false
+            )
+            .unwrap()
+            .passes,
+            1
+        );
+        let mut unsure = Fake(vec![
+            tsv(&[(0, 0, 5, 2, 99.0, "Save"), (6, 0, 5, 2, 70.0, "changes")]),
+            tsv(&[]),
+        ]);
+        let reading = read_selected(
+            &mut unsure,
+            &image,
+            "eng",
+            "adaptive",
+            40.0,
+            None,
+            Some(&selector),
+            false,
+        )
+        .unwrap();
+        assert_eq!(reading.passes, 2);
+        assert_eq!(reading.fallback_reason, Some("low_confidence"));
     }
 
     #[test]
@@ -1109,26 +1174,43 @@ mod tests {
     fn auto_merges_before_filtering_as_before_even_with_overlapping_low_confidence_words() {
         let dir = tempfile::tempdir().unwrap();
         let image = png(dir.path(), 25);
-        let first = tsv(&[(0,0,10,10,10.0,"noise"),(8,0,10,10,95.0,"High")]);
-        let second = tsv(&[(4,0,10,10,90.0,"Other")]);
-        let mut expected = merge(parse_tsv(&first),parse_tsv(&second));
-        expected.retain(|w|w.confidence>=40.0);
-        expected.sort_by_key(|w|(w.top,w.left));
-        let mut fake = Fake(vec![first,second]);
-        assert_eq!(read(&mut fake,&image,"eng","auto",40.0,None).unwrap().words,expected);
+        let first = tsv(&[(0, 0, 10, 10, 10.0, "noise"), (8, 0, 10, 10, 95.0, "High")]);
+        let second = tsv(&[(4, 0, 10, 10, 90.0, "Other")]);
+        let mut expected = merge(parse_tsv(&first), parse_tsv(&second));
+        expected.retain(|w| w.confidence >= 40.0);
+        expected.sort_by_key(|w| (w.top, w.left));
+        let mut fake = Fake(vec![first, second]);
+        assert_eq!(
+            read(&mut fake, &image, "eng", "auto", 40.0, None)
+                .unwrap()
+                .words,
+            expected
+        );
     }
 
     #[test]
     fn a_failed_fallback_is_reported_instead_of_returning_an_incomplete_success() {
-        let dir=tempfile::tempdir().unwrap();let image=png(dir.path(),26);
+        let dir = tempfile::tempdir().unwrap();
+        let image = png(dir.path(), 26);
         struct Failing;
         impl Recognizer for Failing {
-            fn cacheable(&self)->bool{false}
-            fn tsv(&mut self,image:&Path,_:&str)->Result<String>{
-                if image.file_name().unwrap()=="inverted.png" {Err(Error::new("ocr_failed","inversion failed"))} else {Ok(tsv(&[]))}
+            fn cacheable(&self) -> bool {
+                false
+            }
+            fn tsv(&mut self, image: &Path, _: &str) -> Result<String> {
+                if image.file_name().unwrap() == "inverted.png" {
+                    Err(Error::new("ocr_failed", "inversion failed"))
+                } else {
+                    Ok(tsv(&[]))
+                }
             }
         }
-        assert_eq!(read(&mut Failing,&image,"eng","adaptive",40.0,None).unwrap_err().code,"ocr_failed");
+        assert_eq!(
+            read(&mut Failing, &image, "eng", "adaptive", 40.0, None)
+                .unwrap_err()
+                .code,
+            "ocr_failed"
+        );
     }
 
     #[test]

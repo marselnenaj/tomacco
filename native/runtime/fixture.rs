@@ -76,7 +76,11 @@ fn err(message: impl Into<String>) -> Error {
 
 pub fn validate(a: &Value) -> Result<()> {
     let name = s(a, "device").trim_start_matches(PREFIX);
-    identifier(name, "fixture name", Some("[A-Za-z0-9][A-Za-z0-9_.-]{0,80}"))?;
+    identifier(
+        name,
+        "fixture name",
+        Some("[A-Za-z0-9][A-Za-z0-9_.-]{0,80}"),
+    )?;
     let root = root().ok_or_else(|| {
         err("The fixture runtime is off: TOMACCO_FIXTURE_RUNTIME names no scenario directory")
     })?;
@@ -153,8 +157,10 @@ pub fn connect(a: &Value, shared: Shared, _dir: &Path) -> Result<Fixture> {
     };
     fixture.enter();
     let (width, height) = fixture.size()?;
-    shared.lock().unwrap().update(json!({"name":format!("Fixture {name}"),"width":width,"height":height,
-        "codec":"none","transport":"fixture","evidence":"fixture","fixture":name}))?;
+    shared.lock().unwrap().update(
+        json!({"name":format!("Fixture {name}"),"width":width,"height":height,
+        "codec":"none","transport":"fixture","evidence":"fixture","fixture":name}),
+    )?;
     Ok(fixture)
 }
 
@@ -189,21 +195,25 @@ impl Fixture {
             self.entered = Instant::now();
             self.enter();
         } else {
-            self.pending = Some((to.to_string(), Instant::now() + Duration::from_millis(after_ms)));
+            self.pending = Some((
+                to.to_string(),
+                Instant::now() + Duration::from_millis(after_ms),
+            ));
         }
         Ok(())
     }
     fn frame_name(&self) -> String {
         let state = self.current();
-        if let Some(frames) = state["animated"]["frames"].as_array().filter(|f| !f.is_empty()) {
+        if let Some(frames) = state["animated"]["frames"]
+            .as_array()
+            .filter(|f| !f.is_empty())
+        {
             // interval_ms 0 advances on every capture, so a poller always
             // sees a change; otherwise the frame follows the clock.
             let interval = state["animated"]["interval_ms"].as_u64().unwrap_or(100);
-            let tick = if interval == 0 {
-                self.captures
-            } else {
-                self.entered.elapsed().as_millis() as u64 / interval
-            };
+            let tick = (self.entered.elapsed().as_millis() as u64)
+                .checked_div(interval)
+                .unwrap_or(self.captures);
             let index = tick as usize % frames.len();
             return frames[index].as_str().unwrap_or("").to_string();
         }
@@ -212,8 +222,8 @@ impl Fixture {
     fn frame(&mut self, name: &str) -> Result<&Frame> {
         if !self.frames.contains_key(name) {
             let file = self.directory.join(name);
-            let bytes = fs::read(&file)
-                .map_err(|e| err(format!("The frame {name} is unreadable: {e}")))?;
+            let bytes =
+                fs::read(&file).map_err(|e| err(format!("The frame {name} is unreadable: {e}")))?;
             let (width, height) = crate::screen::png_size(&file)?;
             self.frames.insert(
                 name.to_string(),
@@ -240,7 +250,10 @@ impl Fixture {
     }
     fn tap_at(&mut self, a: &Value) -> Result<()> {
         let (x, y) = self.pixel(a)?;
-        let targets = self.current()["taps"].as_array().cloned().unwrap_or_default();
+        let targets = self.current()["taps"]
+            .as_array()
+            .cloned()
+            .unwrap_or_default();
         for target in targets {
             let inside = x >= n(&target, "left") as i64
                 && x < n(&target, "right") as i64
@@ -280,7 +293,10 @@ impl Fixture {
     /// A field's element ID: a new one once a `replace` field was written.
     fn element_of(&self, field: &Value) -> String {
         let id = s(field, "element");
-        self.replaced.get(id).cloned().unwrap_or_else(|| id.to_string())
+        self.replaced
+            .get(id)
+            .cloned()
+            .unwrap_or_else(|| id.to_string())
     }
     fn stored(&self, field: &Value) -> String {
         self.field_values
@@ -296,7 +312,10 @@ impl Fixture {
     fn scripted(&mut self, id: &str) -> field::Step<Value> {
         self.settle();
         self.field(id).ok_or_else(|| {
-            field::Failure::new(field::Fault::Stale, "stale element reference: the fixture has no such field now")
+            field::Failure::new(
+                field::Fault::Stale,
+                "stale element reference: the fixture has no such field now",
+            )
         })
     }
 }
@@ -313,14 +332,18 @@ impl field::FieldDriver for Fixture {
         let (x, y) = self
             .pixel(a)
             .map_err(|e| field::Failure::new(field::Fault::NotSent, e.message))?;
-        let fields = self.current()["fields"].as_array().cloned().unwrap_or_default();
+        let fields = self.current()["fields"]
+            .as_array()
+            .cloned()
+            .unwrap_or_default();
         for f in &fields {
             let inside = x >= n(f, "left") as i64
                 && x < n(f, "right") as i64
                 && y >= n(f, "top") as i64
                 && y < n(f, "bottom") as i64;
             if inside {
-                let due = Instant::now() + Duration::from_millis(n(f, "focus_after_ms").min(10_000));
+                let due =
+                    Instant::now() + Duration::from_millis(n(f, "focus_after_ms").min(10_000));
                 self.field_focus = Some((self.element_of(f), due));
             }
         }
@@ -376,7 +399,10 @@ impl field::FieldDriver for Fixture {
         let mut value = self.stored(&f);
         match s(&f, "write") {
             "refuse" => {
-                return Err(field::Failure::new(field::Fault::Refused, "the fixture field refuses text"));
+                return Err(field::Failure::new(
+                    field::Fault::Refused,
+                    "the fixture field refuses text",
+                ));
             }
             "drop_last" => {
                 let mut chars: Vec<char> = text.chars().collect();
@@ -387,7 +413,10 @@ impl field::FieldDriver for Fixture {
         }
         self.field_values.insert(key.clone(), value);
         match s(&f, "write") {
-            "lose_reply" => Err(field::Failure::new(field::Fault::Lost, "the fixture dropped the answer")),
+            "lose_reply" => Err(field::Failure::new(
+                field::Fault::Lost,
+                "the fixture dropped the answer",
+            )),
             "replace" => {
                 let rebuilt = format!("{key}-rebuilt");
                 self.replaced.insert(key, rebuilt.clone());
@@ -463,85 +492,87 @@ impl Device for Fixture {
     }
     fn input(&mut self, a: &Value) -> Result {
         let result = (|| -> Result {
-        thread::sleep(self.latency);
-        self.settle();
-        self.inputs += 1;
-        match s(a, "action") {
-            "tap" => {
-                require(a, &["x", "y"])?;
-                self.tap_at(a)?;
-            }
-            "touch" => {
-                require(a, &["x", "y", "phase"])?;
-                if s(a, "phase") == "up" {
+            thread::sleep(self.latency);
+            self.settle();
+            self.inputs += 1;
+            match s(a, "action") {
+                "tap" => {
+                    require(a, &["x", "y"])?;
                     self.tap_at(a)?;
                 }
-            }
-            "swipe" => {
-                require(a, &["x", "y", "x2", "y2"])?;
-                if number(a, "x") == number(a, "x2") && number(a, "y") == number(a, "y2") {
-                    // A press held in place is a long press, as the screen operations send one.
-                    self.tap_at(a)?;
-                } else {
-                    self.follow("swipe_to")?;
+                "touch" => {
+                    require(a, &["x", "y", "phase"])?;
+                    if s(a, "phase") == "up" {
+                        self.tap_at(a)?;
+                    }
                 }
-            }
-            "text" | "fill" => {
-                require(a, &["text"])?;
-                if b(self.current(), "focused") || s(a, "action") == "fill" {
-                    self.follow("text_to")?;
-                } else {
-                    self.lost_characters += s(a, "text").chars().count() as u64;
+                "swipe" => {
+                    require(a, &["x", "y", "x2", "y2"])?;
+                    if number(a, "x") == number(a, "x2") && number(a, "y") == number(a, "y2") {
+                        // A press held in place is a long press, as the screen operations send one.
+                        self.tap_at(a)?;
+                    } else {
+                        self.follow("swipe_to")?;
+                    }
                 }
-            }
-            "key" => {
-                require(a, &["key"])?;
-                let to = s(&self.current()["key_to"], s(a, "key")).to_string();
-                if !to.is_empty() {
+                "text" | "fill" => {
+                    require(a, &["text"])?;
+                    if b(self.current(), "focused") || s(a, "action") == "fill" {
+                        self.follow("text_to")?;
+                    } else {
+                        self.lost_characters += s(a, "text").chars().count() as u64;
+                    }
+                }
+                "key" => {
+                    require(a, &["key"])?;
+                    let to = s(&self.current()["key_to"], s(a, "key")).to_string();
+                    if !to.is_empty() {
+                        self.go(&to, 0)?;
+                    }
+                }
+                "rotate" => {
+                    let to = s(&self.current()["rotate_to"], s(a, "orientation")).to_string();
+                    if to.is_empty() {
+                        return Err(Error::new(
+                            "unsupported_input",
+                            "This fixture state has no rotation",
+                        ));
+                    }
                     self.go(&to, 0)?;
+                    let (width, height) = self.size()?;
+                    self.shared
+                        .lock()
+                        .unwrap()
+                        .update(json!({"width":width,"height":height}))?;
                 }
-            }
-            "rotate" => {
-                let to = s(&self.current()["rotate_to"], s(a, "orientation")).to_string();
-                if to.is_empty() {
+                "pinch" => {
+                    require(a, &["x", "y", "scale"])?;
+                    self.follow("pinch_to")?;
+                }
+                "gesture" => {
+                    // Replayed with the trace's own timing, as a live transport would.
+                    let contacts = super::check_gesture(a)?;
+                    let longest = contacts
+                        .iter()
+                        .filter_map(|trace| trace.last().map(|p| p.2))
+                        .max()
+                        .unwrap_or(0);
+                    let started = Instant::now();
+                    thread::sleep(Duration::from_millis(longest));
+                    self.follow("swipe_to")?;
+                    return Ok(
+                        json!({"delivered":true,"mode":"live","contacts":contacts.len(),
+                    "elapsed_ms":started.elapsed().as_millis() as u64,"fixture":self.evidence()}),
+                    );
+                }
+                _ => {
                     return Err(Error::new(
                         "unsupported_input",
-                        "This fixture state has no rotation",
+                        "This action is not supported by the fixture runtime",
                     ));
                 }
-                self.go(&to, 0)?;
-                let (width, height) = self.size()?;
-                self.shared
-                    .lock()
-                    .unwrap()
-                    .update(json!({"width":width,"height":height}))?;
             }
-            "pinch" => {
-                require(a, &["x", "y", "scale"])?;
-                self.follow("pinch_to")?;
-            }
-            "gesture" => {
-                // Replayed with the trace's own timing, as a live transport would.
-                let contacts = super::check_gesture(a)?;
-                let longest = contacts
-                    .iter()
-                    .filter_map(|trace| trace.last().map(|p| p.2))
-                    .max()
-                    .unwrap_or(0);
-                let started = Instant::now();
-                thread::sleep(Duration::from_millis(longest));
-                self.follow("swipe_to")?;
-                return Ok(json!({"delivered":true,"mode":"live","contacts":contacts.len(),
-                    "elapsed_ms":started.elapsed().as_millis() as u64,"fixture":self.evidence()}));
-            }
-            _ => {
-                return Err(Error::new(
-                    "unsupported_input",
-                    "This action is not supported by the fixture runtime",
-                ));
-            }
-        }
-        Ok(json!({"delivered":true,"fixture":self.evidence()}))
+            Ok(json!({"delivered":true,"fixture":self.evidence()}))
         })();
         if result.is_ok() {
             self.accepted(a)?;
@@ -576,23 +607,31 @@ impl Device for Fixture {
             .as_str()
             .map(String::from)
             .unwrap_or_else(|| derived_orientation(width, height).to_string());
-        Ok(json!({"width":width,"height":height,"orientation":orientation,"rotation":Value::Null,
-            "scale":1.0,"source":"fixture scenario","coordinate_space":coordinate_space()}))
+        Ok(
+            json!({"width":width,"height":height,"orientation":orientation,"rotation":Value::Null,
+            "scale":1.0,"source":"fixture scenario","coordinate_space":coordinate_space()}),
+        )
     }
     fn context(&mut self) -> Result {
         self.settle();
         let state = self.current().clone();
         let app = match state.get("app") {
-            Some(app) if app.is_object() => json!({"available":true,"bundle_id":app["bundle_id"],"name":app["name"],
-                "home_screen":app.get("home_screen").cloned().unwrap_or(Value::Null),"source":"fixture scenario"}),
+            Some(app) if app.is_object() => {
+                json!({"available":true,"bundle_id":app["bundle_id"],"name":app["name"],
+                "home_screen":app.get("home_screen").cloned().unwrap_or(Value::Null),"source":"fixture scenario"})
+            }
             _ => unavailable("This fixture state names no app"),
         };
         let keyboard = match state.get("keyboard").and_then(Value::as_bool) {
-            Some(visible) => json!({"available":true,"visible":visible,"source":"fixture scenario"}),
+            Some(visible) => {
+                json!({"available":true,"visible":visible,"source":"fixture scenario"})
+            }
             None => unavailable("This fixture state says nothing about the keyboard"),
         };
         let focus = match state.get("focused").and_then(Value::as_bool) {
-            Some(focused) => json!({"available":true,"focused":focused,"source":"fixture scenario"}),
+            Some(focused) => {
+                json!({"available":true,"focused":focused,"source":"fixture scenario"})
+            }
             None => unavailable("This fixture state says nothing about focus"),
         };
         Ok(json!({"app":app,"keyboard":keyboard,"focus":focus,"fixture":self.evidence()}))
@@ -704,18 +743,14 @@ mod tests {
             .input(&json!({"action":"tap","x":0.5,"y":0.5}))
             .unwrap();
         // Typed at once: the field is not focused yet, so the characters are lost.
-        let reply = device
-            .input(&json!({"action":"text","text":"ab"}))
-            .unwrap();
+        let reply = device.input(&json!({"action":"text","text":"ab"})).unwrap();
         assert_eq!(reply["fixture"]["lost_characters"], 2);
         thread::sleep(Duration::from_millis(100));
         let context = device.context().unwrap();
         assert_eq!(context["focus"]["focused"], true);
         assert_eq!(context["keyboard"]["visible"], true);
         assert_eq!(context["app"]["bundle_id"], "com.example.app");
-        device
-            .input(&json!({"action":"text","text":"cd"}))
-            .unwrap();
+        device.input(&json!({"action":"text","text":"cd"})).unwrap();
         assert_eq!(device.context().unwrap()["fixture"]["state"], "typed");
     }
 
@@ -725,12 +760,18 @@ mod tests {
         scenario(root.path());
         let mut device = fixture(root.path());
         let before = device.geometry().unwrap();
-        assert_eq!((before["width"].as_u64(), before["orientation"].as_str()), (Some(360), Some("portrait")));
+        assert_eq!(
+            (before["width"].as_u64(), before["orientation"].as_str()),
+            (Some(360), Some("portrait"))
+        );
         device
             .input(&json!({"action":"rotate","orientation":"landscape_left"}))
             .unwrap();
         let after = device.geometry().unwrap();
-        assert_eq!((after["width"].as_u64(), after["orientation"].as_str()), (Some(640), Some("landscape")));
+        assert_eq!(
+            (after["width"].as_u64(), after["orientation"].as_str()),
+            (Some(640), Some("landscape"))
+        );
         let out = root.path().join("frame.png");
         device.capture(&out).unwrap();
         assert_eq!(crate::screen::png_size(&out).unwrap(), (640, 360));
