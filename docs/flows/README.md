@@ -37,7 +37,7 @@ Desktop and phone use the same control program. CLI `preview` differs from the p
 
 ## Qualification limits
 
-The earlier ARM package from core `4584d6b` is container verified and staged on an Omarchy Linux ARM MacBook. The new source-audio package from `578819b` has been built; its new container verification is still running. Pixel installation awaits readiness after other mobile/flash work. Neither a source classification nor an ARM container run is a physical Pixel test. That MacBook is not macOS/Xcode and cannot host the x86_64-only experimental virtual iPhone.
+The current source-audio ARM package from `578819b` is container verified and staged on the Omarchy Linux ARM MacBook. Its SHA-256 is `dbe4d4be0a88a64bd7150a732188551405a33efe22dda1315b2d0c3aec999ae5`; verification and staging receipts are linked from `provenance-current.json`. Pixel installation awaits readiness after other mobile/flash work. Neither a source classification nor an ARM container run is a physical Pixel test. That MacBook is not macOS/Xcode and cannot host the x86_64-only experimental virtual iPhone.
 
 Physical iPhone AirPlay audio synchrony, mouse swipes and verified fill remain unqualified here. The virtual iPhone is an experimental research runtime; command acceptance, a process observation and a visible scene are different evidence. Demo Studio's implemented QPainter perspective renderer is distinct from future arbitrary 3D scene work.
 

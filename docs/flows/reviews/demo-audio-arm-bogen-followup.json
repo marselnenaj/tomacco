@@ -1,0 +1,44 @@
+{
+  "checked_at": "2026-11-08T09:01:36.845Z",
+  "checkpoint": {
+    "id": "mw7lront-a8f559a8",
+    "name": "Tomacco · ARM Originalton578819b geprüft und bereitgelegt · Pixel unverändert"
+  },
+  "s1_paragraph": "2mjv3mi5wi",
+  "s1_body": "5dnw9ci2wn",
+  "s1_artboard": "e96psisvff",
+  "computed": {
+    "box": {
+      "x": 0,
+      "y": 0,
+      "width": 1680,
+      "height": 1486.25
+    },
+    "style": {
+      "left": "3680px",
+      "top": "0px",
+      "width": "1680px",
+      "height": "1486.25px"
+    }
+  },
+  "lint": {
+    "contrast": 0,
+    "overflow": 0,
+    "token": 31,
+    "grid": 0,
+    "alt": 0,
+    "small-text": 0,
+    "target": 0,
+    "repeated": 2,
+    "spacing": 0,
+    "hierarchy": 0,
+    "copy": 0
+  },
+  "critical_lint": 0,
+  "prototype_links": 382,
+  "prototype_start": "eivfth6g13",
+  "visual_review": "S1 actual screenshot inspected: updated current578819b container verification and staged package; Pixel unchanged. No clipping or duplicate sections. Current IDs and navigation preserved.",
+  "acceptance_flags_changed": false,
+  "prototype_layers_sha256": "ec203019cfd222a5b8039af6c182bbd64c80a60d250b850c5311c26abde8932c",
+  "prototype_identical_to": "prototype-validation.json"
+}

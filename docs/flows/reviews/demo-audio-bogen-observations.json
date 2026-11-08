@@ -7347,5 +7347,10 @@
         "format": "png"
       }
     }
-  ]
+  ],
+  "arm_status_followup": "reviews/demo-audio-arm-bogen-followup.json",
+  "latest_checkpoint": {
+    "id": "mw7lront-a8f559a8",
+    "name": "Tomacco · ARM Originalton578819b geprüft und bereitgelegt · Pixel unverändert"
+  }
 }

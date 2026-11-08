@@ -7,12 +7,18 @@
   "i18n_digest": "47ea5c3a1e0f",
   "translations_complete": 50,
   "audio_delta": "demo-audio-20261108",
-  "arm_source_baseline": "4584d6bca3a07840e81683d99cd0adb386aeff35",
-  "arm_status": "older_package_container_verified_and_staged",
+  "arm_source_baseline": "578819be350cc430196fef59a8d07ea91b3c34e4",
+  "arm_status": "verified_package_staged_waiting_for_pixel_owner",
   "pixel_installed": false,
   "physical_airplay_qualified": false,
   "runtime_code_commit": "578819be350cc430196fef59a8d07ea91b3c34e4",
   "doc_generator_fix_commit": "1713806db7ef00eda9754bb5bea23cd803179aa0",
   "qualification_receipt_sha256": "657b4abbd269d534efc77346c71791b2a5589c9124722c2edd6364e904f8160a",
-  "installed_gate_checked_at": "2026-11-08T08:47:50.479889+00:00"
+  "installed_gate_checked_at": "2026-11-08T08:47:50.479889+00:00",
+  "arm_status_text": "im ARM-Container geprüft und am Omarchy Linux-MacBook bereitgelegt",
+  "arm_artifact_sha256": "dbe4d4be0a88a64bd7150a732188551405a33efe22dda1315b2d0c3aec999ae5",
+  "arm_artifact_bytes": 181332459,
+  "arm_verification_receipt": "reviews/demo-audio-arm-verification.json",
+  "arm_staging_receipt": "reviews/demo-audio-macbook-artifact-staging.json",
+  "arm_staging_receipt_sha256": "6818e59fbe0de58f50a0810522f51d31ca076ca9c7d35471782dae06d3da6aa0"
 }

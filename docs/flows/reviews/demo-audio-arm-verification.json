@@ -1,0 +1,47 @@
+{
+  "state": "succeeded",
+  "source_commit": "578819be350cc430196fef59a8d07ea91b3c34e4",
+  "physical_device_access": false,
+  "phone_contacted": false,
+  "started_at": "2026-11-08T08:26:27.390832+00:00",
+  "stages": [
+    {
+      "label": "arm-build",
+      "state": "passed",
+      "command": [
+        "python3",
+        "-u",
+        "tools/build_portable.py",
+        "build",
+        "--arch",
+        "aarch64",
+        "--output",
+        "/home/maslos/Work/tomacco-demo-audio-qualification-20261108/arm64-package"
+      ],
+      "exit_code": 0,
+      "seconds": 1416.0
+    },
+    {
+      "label": "arm-container-verify",
+      "state": "passed",
+      "command": [
+        "python3",
+        "-u",
+        "tools/build_portable.py",
+        "verify",
+        "/home/maslos/Work/tomacco-demo-audio-qualification-20261108/arm64-package/tomacco-1.4.1-Linux-aarch64-portable.tar.gz",
+        "--image",
+        "ubuntu:24.04@sha256:fe81560990fae86dc4743202b2cb4d3df98d0bcf949173cecef15ce1127ef852"
+      ],
+      "exit_code": 0,
+      "seconds": 531.9
+    }
+  ],
+  "artifact": {
+    "path": "/home/maslos/Work/tomacco-demo-audio-qualification-20261108/arm64-package/tomacco-1.4.1-Linux-aarch64-portable.tar.gz",
+    "sha256": "dbe4d4be0a88a64bd7150a732188551405a33efe22dda1315b2d0c3aec999ae5",
+    "bytes": 181332459,
+    "source_commit": "578819be350cc430196fef59a8d07ea91b3c34e4"
+  },
+  "finished_at": "2026-11-08T08:58:55.455083+00:00"
+}
