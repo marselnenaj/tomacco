@@ -24,6 +24,12 @@ if(CARGO_EXECUTABLE MATCHES "/.tooling/cargo/bin/cargo$")
     list(APPEND TOMACCO_RUST_ENV "CARGO_HOME=${CMAKE_CURRENT_SOURCE_DIR}/.tooling/cargo" "RUSTUP_HOME=${CMAKE_CURRENT_SOURCE_DIR}/.tooling/rustup")
 endif()
 file(GLOB_RECURSE TOMACCO_RUST_SOURCES CONFIGURE_DEPENDS native/*.rs assets/templates/*)
+# These are compiled into the CLI with include_str!, including MCP resources.
+# Cargo tracks them after it runs; Ninja must also know when to invoke Cargo.
+set(TOMACCO_RUST_DOCUMENTS
+    docs/tomaccoctl.1 docs/agents.md docs/recipes.md docs/getting-started.md
+    docs/demo-studio.md docs/android.md docs/iphone.md docs/virtual-ios/usage.md
+    docs/troubleshooting.md docs/faq.md)
 set(TOMACCO_CARGO_TARGET "${CMAKE_CURRENT_BINARY_DIR}/cargo")
 # Keep this machine's paths out of the released binaries: panic locations and
 # debug information name /tomacco, /tomacco-build and /cargo
@@ -53,7 +59,7 @@ endif()
 add_custom_command(OUTPUT "${CMAKE_CURRENT_BINARY_DIR}/tomaccoctl"
     COMMAND ${CMAKE_COMMAND} -E env ${TOMACCO_RUST_BUILD_ENV} "CARGO_TARGET_DIR=${TOMACCO_CARGO_TARGET}" ${CARGO_EXECUTABLE} build --release --locked --manifest-path "${CMAKE_CURRENT_SOURCE_DIR}/Cargo.toml"
     COMMAND ${CMAKE_COMMAND} -E copy_if_different "${TOMACCO_CARGO_TARGET}/release/tomaccoctl" "${CMAKE_CURRENT_BINARY_DIR}/tomaccoctl"
-    DEPENDS ${TOMACCO_RUST_SOURCES} Cargo.toml Cargo.lock build.rs native/protocol/idb.proto assets/models.json assets/device-profile.schema.json assets/operations.json assets/errors.json assets/layout-audit.js
+    DEPENDS ${TOMACCO_RUST_SOURCES} ${TOMACCO_RUST_DOCUMENTS} Cargo.toml Cargo.lock build.rs native/protocol/idb.proto assets/models.json assets/device-profile.schema.json assets/operations.json assets/errors.json assets/layout-audit.js
     WORKING_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}" VERBATIM)
 add_custom_target(tomacco-core ALL DEPENDS "${CMAKE_CURRENT_BINARY_DIR}/tomaccoctl")
 # Offline scene rendering shares no runtime/device state with the desktop.
