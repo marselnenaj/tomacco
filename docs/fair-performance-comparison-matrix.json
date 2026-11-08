@@ -111,7 +111,7 @@
       "name": "Tomacco",
       "native_adapter": "persistent MCP plus direct CLI; local NativeView stream harness is a separate component test",
       "measurements": "offline_components_only",
-      "release_to_pin": "Final integrated8614c90fb23114d4163faeb00975b6eef9b2b7462cd960216a8cf7a69fd7c13e independently qualified_offline at product/runtime2fea9175e86a79c3fb99577a1177295cad99debb; hardware/competitor rows remain unmeasured",
+      "release_to_pin": "Final integratedcfad72cd172158d4a6711611d1270bcd5abe01ad3cb5e691c1f425eeeb6ab960 independently qualified_offline at product/runtimec2e2326f66879a595d27f476bf7964b49faf8c33; hardware/competitor rows remain unmeasured",
       "cohorts_to_attempt": [
         "offline-image",
         "android-linux-usb",
@@ -1306,9 +1306,9 @@
     },
     {
       "record": "docs/performance-final-qualification.json",
-      "status": "Exact final8614c90f CLI qualified_offline:417 matrix records,90 live-paired changed-pixel reads,540 corpus calls and360 identical non-timing output comparisons",
+      "status": "Exact finalcfad72cd CLI qualified_offline:417 matrix records,90 live-paired changed-pixel reads,540 corpus calls and360 identical non-timing output comparisons",
       "scope": "Same frozen ELF; no new device/UI/GPU/competitor evidence",
-      "memory_tradeoff": "Warm standard-worker resident footprint 83.7MiB versus old 11.3MiB; keeping the model ready raises steady/cache-hit memory. Fresh sampled peak 86.1MiB vs old 100.8MiB. Report both; not a general memory reduction."
+      "memory_tradeoff": "Warm standard-worker resident footprint 82.9MiB versus old 11.1MiB; keeping the model ready raises steady/cache-hit memory. Fresh sampled peak 85.5MiB vs old 100.9MiB. Report both; not a general memory reduction."
     }
   ],
   "execution_state": {
