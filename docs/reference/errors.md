@@ -2,7 +2,7 @@
 
 # Error codes
 
-Every error code `tomaccoctl` returns, 544 codes, generated from `assets/errors.json`. A failure is `{"ok":false,"error":{"code":...,"message":...,"remedy":...}}`, and over MCP the same object under `structuredContent.error`. Branch on `code`. The message says what happened this time; when the place that failed has no remedy of its own, `remedy` is the general one below. In the middle column, … stands for a value the message fills in. [All operations](README.md).
+Every error code `tomaccoctl` returns, 548 codes, generated from `assets/errors.json`. A failure is `{"ok":false,"error":{"code":...,"message":...,"remedy":...}}`, and over MCP the same object under `structuredContent.error`. Branch on `code`. The message says what happened this time; when the place that failed has no remedy of its own, `remedy` is the general one below. In the middle column, … stands for a value the message fills in. [All operations](README.md).
 
 | Code | What it means | What to do |
 | --- | --- | --- |
@@ -352,6 +352,10 @@ Every error code `tomaccoctl` returns, 544 codes, generated from `assets/errors.
 | `ocr_failed` | tesseract could not read the screenshot. | Read the message and details.stderr; check that the image is a valid PNG, and try again or read a smaller region. |
 | `ocr_language_missing` | tesseract has no data for the language asked for. | Install the language's data (tesseract --list-langs lists what is installed) or use language eng. |
 | `ocr_unavailable` | Reading text off a screenshot needs tesseract, and it is not installed. | Install tesseract and its English data (Arch: pacman -S tesseract tesseract-data-eng; Debian and Ubuntu: apt install tesseract-ocr), or set TOMACCO_TESSERACT to the executable; capabilities.ocr says whether it is found. |
+| `ocr_worker_closed` | The isolated OCR process closed its private pipe before completing initialization or its reply. This is an internal classification; recognition failures are reported as ocr_failed. | Observe a fresh screen before retrying. Initialization failure can use the existing Tesseract CLI; a worker failure after dispatch reports the current request as failed instead of silently recognizing it twice. |
+| `ocr_worker_memory` | The isolated OCR process exceeded its resident-memory bound. This is an internal classification translated to ocr_failed after a recognition was dispatched. | Retry with a smaller screen region or use an explicitly configured TOMACCO_TESSERACT executable. Tomacco terminates the failed worker and uses the existing CLI for subsequent requests in this MCP process. |
+| `ocr_worker_protocol` | The isolated OCR process returned an invalid or oversized private protocol frame. This is an internal classification; dispatched recognition is reported as ocr_failed. | Observe the screen again and retry the failed read. Tomacco disables the incompatible worker for this MCP process and uses the existing CLI on subsequent requests; it does not silently repeat a dispatched recognition. |
+| `ocr_worker_unavailable` | The isolated OCR spawn owner was unavailable, busy or exited before handing over a child. This is an internal classification before recognition is dispatched. | Tomacco uses the existing Tesseract CLI when worker initialization is unavailable. If that read also fails, check the Tesseract executable and requested language data named in the reported OCR error. |
 | `off_screen` | (…, …) lies outside the …x… screen. | Use coordinates inside the screen size the message gives. |
 | `offline` | The Maven repositories cannot be reached: … did not resolve. | Connect to the network, or try again later. |
 | `omarchy_repair_unavailable` | tomaccoctl omarchy repair needs the panel's sources, which the installation keeps beside the program, and found none: this installation is from before they were kept. | Run the installer of a release package with --omarchy once; later repairs need no package. |

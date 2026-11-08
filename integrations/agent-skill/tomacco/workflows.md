@@ -219,7 +219,7 @@ change it.
 Keep the same MCP server connected when reading successive screenshots. Standard system Tesseract 5 can reuse a
 model in a bounded private process; cached pixels and a reused model are different: only an unchanged content-cache
 hit reports `engine_runs:0`. Custom `TOMACCO_TESSERACT` executables keep the subprocess path. Warm models retain RAM
-until idle cleanup. `auto` still reads both polarities; use `adaptive` only for a best-effort target observation,
+until idle cleanup. `invert:auto` still reads both polarities; use `invert:adaptive` only for a best-effort target observation,
 never as proof of absence or uniqueness. Keep fresh-frame, request/reservation and input-verification steps.
 
 Source-checkout benchmarks under `tools/benchmark_performance.py`, `tools/benchmark_iphone_observe.py` and the

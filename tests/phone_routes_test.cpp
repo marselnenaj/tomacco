@@ -17,6 +17,7 @@
 #include <QQmlContext>
 #include <QQuickItem>
 #include <QQuickWindow>
+#include <QtQuickTest/quicktest.h>
 #include <QSettings>
 #include <QTemporaryDir>
 #include <QWheelEvent>
@@ -60,6 +61,8 @@ class PhoneRoutesTest : public QObject {
     // Scroll with the wheel until the item is inside every scrolling area around it.
     void reveal(QQuickItem *target) {
         QPointer<QQuickItem> item(target);
+        QVERIFY(QQuickTest::qWaitForPolish(window));
+        if(!item)return;
         for(QPointer<QQuickItem> f=flickableAbove(item);item && f;f=item && f?flickableAbove(f):nullptr) {
             for(int i=0;i<80;++i) {
                 const auto r=item->mapRectToItem(f,QRectF(0,0,item->width(),item->height()));
@@ -79,6 +82,11 @@ class PhoneRoutesTest : public QObject {
     void tap(QQuickItem *target) {
         QVERIFY2(target,"no item to tap");
         QPointer<QQuickItem> item(target);const QString name=target->objectName();
+        // Injecting a new list rebuilds delegates before their layout is polished.
+        // Let the actual row settle before deciding whether it needs scrolling.
+        QVERIFY(QQuickTest::qWaitForPolish(window));
+        if(!item && !name.isEmpty())item=shown(name);
+        QVERIFY2(item,qPrintable(name+" went away"));
         reveal(item);
         if(!item && !name.isEmpty())item=shown(name);
         QVERIFY2(item,qPrintable(name+" went away"));

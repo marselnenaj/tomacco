@@ -1383,6 +1383,22 @@
     "cause": "Reading text off a screenshot needs tesseract, and it is not installed.",
     "remedy": "Install tesseract and its English data (Arch: pacman -S tesseract tesseract-data-eng; Debian and Ubuntu: apt install tesseract-ocr), or set TOMACCO_TESSERACT to the executable; capabilities.ocr says whether it is found."
   },
+  "ocr_worker_closed": {
+    "cause": "The isolated OCR process closed its private pipe before completing initialization or its reply. This is an internal classification; recognition failures are reported as ocr_failed.",
+    "remedy": "Observe a fresh screen before retrying. Initialization failure can use the existing Tesseract CLI; a worker failure after dispatch reports the current request as failed instead of silently recognizing it twice."
+  },
+  "ocr_worker_memory": {
+    "cause": "The isolated OCR process exceeded its resident-memory bound. This is an internal classification translated to ocr_failed after a recognition was dispatched.",
+    "remedy": "Retry with a smaller screen region or use an explicitly configured TOMACCO_TESSERACT executable. Tomacco terminates the failed worker and uses the existing CLI for subsequent requests in this MCP process."
+  },
+  "ocr_worker_protocol": {
+    "cause": "The isolated OCR process returned an invalid or oversized private protocol frame. This is an internal classification; dispatched recognition is reported as ocr_failed.",
+    "remedy": "Observe the screen again and retry the failed read. Tomacco disables the incompatible worker for this MCP process and uses the existing CLI on subsequent requests; it does not silently repeat a dispatched recognition."
+  },
+  "ocr_worker_unavailable": {
+    "cause": "The isolated OCR spawn owner was unavailable, busy or exited before handing over a child. This is an internal classification before recognition is dispatched.",
+    "remedy": "Tomacco uses the existing Tesseract CLI when worker initialization is unavailable. If that read also fails, check the Tesseract executable and requested language data named in the reported OCR error."
+  },
   "off_screen": {
     "cause": "(…, …) lies outside the …x… screen.",
     "remedy": "Use coordinates inside the screen size the message gives."

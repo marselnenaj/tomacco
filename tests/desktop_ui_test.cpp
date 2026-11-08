@@ -13,6 +13,8 @@
 #include <QQmlProperty>
 #include <QQuickItem>
 #include <QQuickWindow>
+#include <QPointer>
+#include <QtQuickTest/quicktest.h>
 #include <QScopeGuard>
 #include <QSettings>
 #include <QSignalSpy>
@@ -248,8 +250,12 @@ class DesktopUiTest : public QObject {
         return chooserPart(QString("Folder-%1").arg(index));
     }
     void clickOn(QQuickItem *target) {
-        QVERIFY(target);QTRY_VERIFY(target->isVisible() && target->width()>0);
-        QTest::mouseClick(window,Qt::LeftButton,Qt::NoModifier,target->mapToScene(QPointF(target->width()/2,target->height()/2)).toPoint());
+        QVERIFY(target);QPointer<QQuickItem> item(target);const QString name=target->objectName();
+        QTRY_VERIFY(item && item->isVisible() && item->width()>0);
+        QVERIFY(QQuickTest::qWaitForPolish(window,patient(5000)));
+        if(!item && !name.isEmpty())item=visualItem(window->contentItem(),name);
+        QVERIFY2(item,qPrintable(name+" went away"));
+        QTest::mouseClick(window,Qt::LeftButton,Qt::NoModifier,item->mapToScene(QPointF(item->width()/2,item->height()/2)).toPoint());
     }
     // Ctrl+L, a typed (or pasted) path and Enter: the chooser shows that folder.
     void chooserGo(const QString &path) {
@@ -416,6 +422,9 @@ class DesktopUiTest : public QObject {
     // the interface size, touch targets on a phone sheet, and no separate window of Qt's fallback.
     void checkFileChooserLayout(QObject *dialog,int percent,const QString &context) {
         QTRY_VERIFY2(dialog->property("opened").toBool(),qPrintable(context));
+        // opened and a changed listing precede Qt Quick's deferred layout pass.
+        // Measure the rendered layout, including wrapped paths and the footer.
+        QVERIFY2(QQuickTest::qWaitForPolish(window,patient(5000)),qPrintable(context));
         for(auto *other:QGuiApplication::topLevelWindows())
             QVERIFY2(other==window || !other->isVisible() || other->title()!=dialog->property("title").toString(),qPrintable(context+": a separate chooser window "+other->title()));
         const auto scene=[](QQuickItem *i){return i->mapRectToScene(QRectF(0,0,i->width(),i->height()));};
