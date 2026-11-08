@@ -1,6 +1,6 @@
-"""The website documentation generator renders every document, and its output is sound.
+"""The website documentation generator renders every public guide, and its output is sound.
 
-Every page of docs/ is rendered; every link to another page or anchor in the output
+Every public guide is rendered; every link to another page or anchor in the output
 resolves; no page contains a script, an inline event handler or a javascript: link;
 and the Markdown reader handles the constructs the documents use."""
 import re
@@ -38,10 +38,16 @@ class RendersEveryDocument(unittest.TestCase):
         cls.directory.cleanup()
 
     def test_every_markdown_document_has_a_page(self):
-        documents = {p.relative_to(ROOT / "docs").with_suffix("").as_posix() for p in (ROOT / "docs").rglob("*.md")}
+        documents = {p.relative_to(ROOT / "docs").with_suffix("").as_posix() for p in (ROOT / "docs").rglob("*.md")
+                     if not p.is_relative_to(ROOT / "docs" / "flows")}
         self.assertEqual(documents, set(self.pages))
         for page in self.pages.values():
             self.assertTrue((self.out / page.out).is_file(), page.out)
+
+    def test_bogen_atlas_and_qualification_history_stay_in_the_repository(self):
+        self.assertTrue((ROOT / "docs" / "flows" / "README.md").is_file())
+        self.assertFalse(any(key.startswith("flows/") for key in self.pages))
+        self.assertFalse((self.out / "flows").exists())
 
     def target(self, url):
         path = url.removeprefix(site.URL_BASE).strip("/")

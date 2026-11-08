@@ -717,6 +717,10 @@ def discover():
     pages = {}
     docs = ROOT / "docs"
     for path in sorted(docs.rglob("*.md")):
+        # The editable Bogen atlas includes workstation qualification records
+        # and historical snapshots, rather than public user-guide pages.
+        if path.relative_to(docs).parts[0] == "flows":
+            continue
         key = path.relative_to(docs).with_suffix("").as_posix()
         pages[key] = Page(key, path)
     return pages
