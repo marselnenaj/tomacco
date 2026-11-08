@@ -1,8 +1,8 @@
 {
-  "phase": "ready_for_root_final_qa",
-  "root_owner": false,
+  "phase": "complete",
+  "root_owner": true,
   "all_new_boards_complete": true,
-  "final_ready": false,
+  "final_ready": true,
   "product_source": "a2f3ad8bdf731fd7337f6fcfd6bfd4b40f3d2c59",
   "runtime_code_commit": "07d5586310f3f10f0fd1a6382e795f6b1ba19d8a",
   "file_id": "u8uvnj33hx",
@@ -256,5 +256,6 @@
       "footer": "07mp9afi9a",
       "spec_sha256": "014bbe7e9b9a39f97ff20ba163b4cae1c214991864d54eb8d56895ab4fb13b81"
     }
-  }
+  },
+  "root_review": "root-final-review.json"
 }

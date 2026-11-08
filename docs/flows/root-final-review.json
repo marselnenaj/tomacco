@@ -1,5 +1,50 @@
 {
-  "state": "pending",
+  "checked_at": "2026-11-08T14:26:56.752699+00:00",
+  "reviewer": "root Codex independent final review",
   "product_source": "a2f3ad8bdf731fd7337f6fcfd6bfd4b40f3d2c59",
-  "historical_review": "history/private-1.5-c2e2326/root-final-review.json"
+  "runtime_code_commit": "07d5586310f3f10f0fd1a6382e795f6b1ba19d8a",
+  "actual_screenshots_reviewed": [
+    "00",
+    "S1",
+    "D09",
+    "D12",
+    "D12-worker-budget-note"
+  ],
+  "source_spec_hashes_verified": 33,
+  "registry_operations_verified": 296,
+  "actual_node_mappings_independently_read": 1023,
+  "prototype_links_verified": 382,
+  "prototype_targets_independently_read": 56,
+  "prototype_links_compared_to_live_readback": true,
+  "png_sha256_and_full_decode_verified": 36,
+  "regenerated_exports": 36,
+  "artboard_overlap": 0,
+  "label_overlap": 0,
+  "live_design": {
+    "critical_lint": 0,
+    "brand_score": 96,
+    "brand_hard": 0,
+    "brand_soft": 0,
+    "waived": 0,
+    "advisory_counts": {
+      "contrast": 0,
+      "overflow": 0,
+      "token": 2999,
+      "grid": 688,
+      "alt": 0,
+      "small-text": 0,
+      "target": 0,
+      "repeated": 36,
+      "spacing": 0,
+      "hierarchy": 31,
+      "copy": 169
+    }
+  },
+  "D28_visual_diagnostic": "Initial visual impression corrected by exact old/current label RGB equality (450 bright pixels) and readable glyph mask; no missing label or PNG mutation",
+  "D28_label_region_sha256": "4d66155b83a0c3a07c4dca458d05d0a3b5fddf623ae3ef8cb665b4b21f79e845",
+  "hardware_access": false,
+  "final_ready": true,
+  "public_release_at_review": "1.5.0 published stable; release/sourcea2f, installedE2, experimentalARMnativeGUI13/mockcontrol+actualCLIoffline, no physicalPixel/three-native-distro claim",
+  "live_readback": "reviews/public-1.5-root-readback.json",
+  "live_readback_sha256": "b7e7009d208e286a7c7f4b79c0337c17c8ddd4a27c6b04ec9369e16bebd5e8f2"
 }

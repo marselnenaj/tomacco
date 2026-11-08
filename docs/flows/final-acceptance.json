@@ -1,7 +1,7 @@
 {
   "schema": "tomacco-flow-atlas-acceptance/1",
-  "checked_at": "2026-11-08T14:17:53.875Z",
-  "final_ready": false,
+  "checked_at": "2026-11-08T14:26:56.752699+00:00",
+  "final_ready": true,
   "file_id": "u8uvnj33hx",
   "page_id": "f5zgae58fy",
   "entry_artboard": "bxx82h1gcm",
@@ -42,7 +42,7 @@
     "prototype_missing_targets": 0,
     "prototype_interaction_mismatches": 0,
     "review_resolutions": 37,
-    "root_final_review_passed": false
+    "root_final_review_passed": true
   },
   "evidence": [
     "atlas-map.json",
@@ -85,7 +85,10 @@
     "reviews/public-1.5-desktop-update-receipt.json",
     "reviews/public-1.5-source-identity-bridge.json",
     "reviews/public-1.5-arm-public-verification.json",
-    "reviews/public-1.5-arm-native-gui-strict.json"
+    "reviews/public-1.5-arm-native-gui-strict.json",
+    "root-final-review.json",
+    "reviews/public-1.5-root-readback.json",
+    "reviews/public-1.5-D28-label-diagnostic.json"
   ],
   "qualification_limits": [
     "No Pixel installation or physical qualification",
@@ -103,18 +106,17 @@
   "no_publication": true,
   "advisories": "Diagram geometry intentionally uses measured node/connector pixels; grid/token/copy-arrow/repeated/header hierarchy suggestions remain advisory, not waived critical findings.",
   "implementation_ready": true,
-  "ready_for_root_final_qa": true,
+  "ready_for_root_final_qa": false,
   "runtime_code_commit": "07d5586310f3f10f0fd1a6382e795f6b1ba19d8a",
   "core_source_baseline": "4584d6bca3a07840e81683d99cd0adb386aeff35",
   "historical_acceptance": "history/private-1.5-c2e2326/final-acceptance.json",
-  "pending": [
-    "Root final review of publication-only atlas metadata"
-  ],
+  "pending": [],
   "candidate_version": "1.5.0",
   "candidate_visibility": "published",
   "public_release_version": "1.5.0",
   "public_release_tag": "v1.5.0",
   "public_release_commit": "a2f3ad8bdf731fd7337f6fcfd6bfd4b40f3d2c59",
   "publication_receipt": "reviews/public-1.5-publication-receipt.json",
-  "documentation_source_commit": "a2f3ad8bdf731fd7337f6fcfd6bfd4b40f3d2c59"
+  "documentation_source_commit": "a2f3ad8bdf731fd7337f6fcfd6bfd4b40f3d2c59",
+  "root_review": "root-final-review.json"
 }

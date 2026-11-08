@@ -2,5 +2,7 @@
   "source_epoch": "a2f3ad8bdf731fd7337f6fcfd6bfd4b40f3d2c59",
   "historical_root_review": "history/private-1.5-c2e2326/root-final-review.json",
   "current_evidence": "public-1.5-delta-acceptance.json",
-  "root_final_acceptance_pending": true
+  "root_final_acceptance_pending": false,
+  "root_review": "root-final-review.json",
+  "final_ready": true
 }

@@ -1,6 +1,6 @@
 {
   "schema": "tomacco-publication-atlas-delta/1",
-  "state": "ready_for_root_final_qa",
+  "state": "accepted",
   "product_source": "a2f3ad8bdf731fd7337f6fcfd6bfd4b40f3d2c59",
   "runtime_code_commit": "07d5586310f3f10f0fd1a6382e795f6b1ba19d8a",
   "public_release": "1.5.0",
@@ -24,5 +24,7 @@
   "logical_node_ids_preserved": true,
   "prototype_ids_preserved": true,
   "all_pngs_regenerated": true,
-  "root_final_review_pending": true
+  "root_final_review_pending": true,
+  "root_final_review": "root-final-review.json",
+  "updated_at": "2026-11-08T14:26:56.752699+00:00"
 }

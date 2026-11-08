@@ -46,7 +46,16 @@
       "D09",
       "D12"
     ],
-    "root_final_review_pending": true
+    "root_final_review_pending": false,
+    "root_final_review": "root-final-review.json",
+    "root_reviewed_boards": [
+      "00",
+      "S1",
+      "D09",
+      "D12",
+      "D12-worker-budget-note"
+    ],
+    "D28_label_pixel_check": "passed"
   },
   "changed_content": "Nine text layers in00/S1/D09/D12 updated in place; all36 PNGs regenerated. All artboard, logical-node and prototype IDs preserved. Fixed-canvas token/grid/copy and narrow responsive suggestions remain advisory. No critical finding waived."
 }
