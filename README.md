@@ -57,6 +57,13 @@ turns local recordings into perspective device videos, controlled by the desktop
 with optional original sound. The [release notes](docs/RELEASE_NOTES.md) distinguish local
 qualification from pending physical Pixel, iPhone and AirPlay checks.
 
+The final release CLI read fresh images about **3.3× faster than 1.4.1** in 36
+matched warm MCP pairs across three recorded app crops using the English OCR model.
+Recognized words and rectangles matched, including existing misses. Keeping the
+model warm uses more RAM; this is an image-read test, not end-to-end device latency.
+See the [signed release qualification](https://github.com/marselnenaj/tomacco/releases/download/v1.5.0/tomacco-1.5.0-release-qualification.json)
+and [raw data, corpus and verifier](https://github.com/marselnenaj/tomacco/releases/download/v1.5.0/tomacco-1.5.0-performance-evidence.tar.gz).
+
 <img src="assets/readme/desktop.png" alt="Tomacco's desktop on its Project page for an example xtool project called Tomatoes: the build set to iOS, Debug and IPA, Run on device with no device chosen, and No device in the status bar." width="100%">
 
 <p align="center"><sub>The Project page of the 1.2.1 desktop. A real capture, taken offscreen with no device connected.</sub></p>
@@ -231,23 +238,30 @@ Every guest processor is emulated, so performance is far below a physical phone.
 Tomacco 1.5.0 was developed and tested on one workstation: x86_64 Arch Linux with
 Omarchy, Qt 6.12 and Rust 1.99. These local and offline checks do not qualify every
 distribution or physical device.
-The earlier **1.4.1 portable package** passed checks in clean Debian 12, Ubuntu 22.04,
-Ubuntu 24.04 and Fedora 44 containers; these are historical checks, not qualification of a
-newly built 1.5.0 artifact or real desktops on those distributions. The 1.2.1 installer, `doctor` and an Android starter build ran in clean Debian 12
-and 13, Ubuntu 24.04, Fedora 44 and openSUSE Tumbleweed containers. Other machines have not been
-qualified; [Linux distributions and hardware](docs/linux-hosts.md) says what ran where, and what is
-known about NixOS, SteamOS and Fedora's atomic desktops.
+The published **1.5.0 x86_64 portable package** passed dependency, CLI, installation
+and removal checks in clean Debian 12, Ubuntu 22.04, Ubuntu 24.04 and Fedora 44
+containers. All 13 expected GUI/browser checks passed in each of three smoke modes
+per distribution: 12 reports and 156 successful checks, with the browser sandbox
+enabled. These container checks do not qualify every real desktop or physical device.
+The [signed release qualification](https://github.com/marselnenaj/tomacco/releases/download/v1.5.0/tomacco-1.5.0-release-qualification.json)
+identifies the exact packages and test boundaries. Earlier installer and Android starter
+checks remain historical; [Linux distributions and hardware](docs/linux-hosts.md)
+records those runs and the limits for NixOS, SteamOS and Fedora's atomic desktops.
 
 **Physical iPhone execution is not qualified.** Build, signing, pairing and runner
 paths have contract tests, but execution on a real iPhone has not been verified.
 Physical ARM64 Android phones and live Play/App Store submission are also unqualified.
 
-**ARM64 Linux is experimental.** Earlier builds on an M1 MacBook Air with Arch Linux ARM
-passed Rust tests and an offscreen desktop smoke test. Earlier aarch64 portable packages
-passed clean Debian 13, Ubuntu 24.04 and Fedora 44 `linux/arm64` container checks under
-emulation and ran offscreen on that MacBook. Those results do not qualify the new 1.5.0
-artifacts or installation on the Pixel running Omarchy Mobile. The aarch64 portable route
-needs glibc 2.39, so not Debian 12 or Ubuntu 22.04. The virtual iOS device needs an x86_64 host.
+**ARM64 Linux is experimental.** The published 1.5.0 GUI and bundled QtWebEngine
+passed all 13 expected checks natively on the Linux ARM MacBook, offscreen with a
+mocked control plane and the browser sandbox enabled. The real ARM CLI passed
+separate offline MCP checks under emulation. Dependency, CLI and installation checks
+also ran in Debian 13, Ubuntu 24.04 and Fedora 44 ARM containers under emulation;
+their incomplete browser reports were rejected. There is no native three-distribution
+or physical Pixel qualification. The package is staged on the MacBook; the Pixel
+running Omarchy Mobile was neither contacted nor installed.
+The aarch64 portable route needs glibc 2.39, so not Debian 12 or Ubuntu 22.04.
+The virtual iOS device needs an x86_64 host.
 
 | Virtual iOS area | Current state |
 | --- | --- |
