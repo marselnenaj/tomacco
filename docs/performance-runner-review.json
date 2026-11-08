@@ -1,0 +1,85 @@
+{
+  "reviewed_commit": "337489885c4be82b182aa5b14730e4885b269d32",
+  "reviewed_tree_head": "a6a9fffb9d2dbe30c7a7039b6cc5b6089515963a",
+  "scope": "Read-only independent correctness review of CompletionWait, run_with_env, stop and Android screencap wait change",
+  "source_sha256": {
+    "native/toolchain.rs": "1728b90b81645714a684df2b141a0699115928d6130de514fa6d55b5a759cc83",
+    "native/runtime/android.rs": "5cb0d8ec1c4a7066837e11deffe47d324d21b5791f1c9b705a5ae699265d578b"
+  },
+  "status": "complete",
+  "open_findings": [],
+  "source_checks": [
+    {
+      "anchor": "native/toolchain.rs:417",
+      "conclusion": "pidfd_open failure leaves no descriptor and uses the timed-sleep path; successful descriptors are OwnedFd, kernel-created close-on-exec handles."
+    },
+    {
+      "anchor": "native/toolchain.rs:430",
+      "conclusion": "Each pause recomputes remaining time and bounds it by the original interval; a readable child handle wakes completion, while invalid/error events fall back to sleep and EINTR returns to caller checks. No new unbounded ready-fd loop found."
+    },
+    {
+      "anchor": "native/toolchain.rs:448",
+      "conclusion": "Existing TERM grace, group SIGKILL, child wait and group-scoped descendant reaping remain present. A leader already reaped is still followed by group cleanup."
+    },
+    {
+      "anchor": "native/toolchain.rs:597",
+      "conclusion": "Overrides are added to Command after managed environment and before the existing child-specific USBMUX adaptation. No process-global environment write, env clearing, or unrelated host access restriction introduced."
+    },
+    {
+      "anchor": "native/toolchain.rs:619",
+      "conclusion": "run still checks completion before deadline/cancellation, preserves per-child process groups and parent-death binding, stops timed-out/cancelled children, kills pipe-holding group descendants before joining readers, and retains output/status/error contracts."
+    },
+    {
+      "anchor": "native/runtime/android.rs:703",
+      "conclusion": "CompletionWait borrows the ManagedProcess child; all returns retain automatic group stop/reaping. Temporary screenshot, bounded wait, exit-status failure and validated atomic PNG publication paths are unchanged."
+    }
+  ],
+  "independent_execution": {
+    "method": "Temporary Rust harness compiled with rustc, embedding the exact reviewed CompletionWait, stop, parent_bound, capture, run/run_with_env and core cancellation source blocks. No product source writes or cargo rebuild.",
+    "harness_path": "/tmp/tomacco-runner-independent-review/harness.rs",
+    "harness_sha256": "61f055dd4d20f3da5c03a31f64229a7b3793cf76db0996420e59f27605eff389",
+    "result": {
+      "pidfd_cycles": 200,
+      "pipe_run_cycles": 100,
+      "fd_count_before": 4,
+      "fd_count_after": 4,
+      "cpu_wait_ms": 0.136784,
+      "term_ignored_stop_ms": 2000.3311350000001,
+      "cancel_ms": 50.840292000000005,
+      "checks": [
+        "CLOEXEC",
+        "fallback",
+        "idle CPU",
+        "SIGKILL after grace",
+        "reaped descendants",
+        "leader already reaped",
+        "timeout",
+        "cancellation",
+        "parallel local env",
+        "stdout/stderr/status"
+      ]
+    },
+    "passed": 1,
+    "failed": 0,
+    "limitations": [
+      "Harness stubs settings-derived environment() to an empty override map and USBMUX adaptation to a no-op; it validates the exact process/wait/env-application code, not configuration integration.",
+      "The subreaper setting was enabled only inside the disposable harness process, never the shared agent host."
+    ]
+  },
+  "existing_runner_tests": {
+    "binary": "/home/maslos/Work/tomacco-perf-core-20261108/build/cargo/debug/deps/tomaccoctl-aecfe2b3c182a719",
+    "binary_sha256": "0fd0dd6082756196d2dcd9548efed430107696eef8dc95b479be228527bcc4a3",
+    "command": "<provided native test binary> toolchain::doctor_tests --test-threads=1 --nocapture",
+    "passed": 5,
+    "failed": 0,
+    "ignored": 1,
+    "note": "Reran the supplied compiled test binary; did not independently rebuild the complete application. The intentionally panicking parallel-check fixture is caught and its test passes."
+  },
+  "limits": [
+    "No hardware, device discovery, installed application, UI, Bogen or global state changes.",
+    "No new Android cancellation guarantee: screencap already waits for child exit or its 10-second timeout and has no request-token check in this loop. This patch does not change that behavior.",
+    "Fallback and error handling were source-reviewed; forced fd=None fallback was exercised, not an older kernel or denied pidfd syscall environment.",
+    "EINTR source handling was reviewed but a signal-storm scenario was not executed.",
+    "No FPS, competitor, physical capture or real-device performance claim."
+  ]
+}
