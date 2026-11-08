@@ -110,5 +110,32 @@
     "This double is not an iOS emulator and its MJPEG stand-in does not validate video decoding.",
     "No physical-device, frame-rate, competitor, or cancellation-latency claim.",
     "Cancellation/reservation/ledger code paths were left intact; no new cancellation guarantee is asserted."
-  ]
+  ],
+  "packaging_followup": {
+    "change": "Load checkout-only fixture/client helpers after argparse, allow --source-root (default: source directory containing the script), and explain when a checkout is required. Installed --help no longer imports test-only modules.",
+    "script_sha256_after": "e62d5e4d573f34ed134523057e194279bfcd1940b537097df24292efe6c81ae4",
+    "historical_evidence": "Original measurement reports and source_sha256 values above describe fd0dd318 and are retained unchanged. This follow-up changes only benchmark startup/checkout selection; no runtime code or measurement protocol/result keys changed.",
+    "standalone_copy_checks": {
+      "standalone_help_exit": 0,
+      "missing_helpers_exit": 2,
+      "missing_helpers_message": "benchmark_iphone_observe.py: error: This benchmark requires a Tomacco source checkout with offline test helpers; pass --source-root /path/to/tomacco."
+    },
+    "smoke": {
+      "binary_sha256": "fa7e83b0a3718ac91be7f45b5184397cd41f91e98f601e5ee6f4da4c97d9c7e5",
+      "modes": [
+        "default source checkout",
+        "standalone installed-style script with explicit --source-root from /tmp"
+      ],
+      "trials_per_mode": 3,
+      "delay_ms": 40,
+      "screenshots_per_mode": 3,
+      "context_reads_per_mode": 9,
+      "fresh_revisions_per_mode": 3,
+      "peak_context_requests_in_flight": 3,
+      "unexpected_helper_calls": 0,
+      "result_keys_and_fixed_protocol_fields_match_original": true
+    },
+    "python_compile": "passed",
+    "scope": "Only benchmark script and this appended documentation note; test-only helpers remain in the source checkout and are not bundled."
+  }
 }

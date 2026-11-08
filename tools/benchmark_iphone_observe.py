@@ -13,9 +13,6 @@ import sys
 import time
 
 ROOT = Path(__file__).resolve().parents[1]
-sys.path[:0] = [str(ROOT / "tests/python"), str(ROOT / "tests")]
-from iphone_observe_fixture import CONTEXT, ObserveDouble
-from native_client import binary
 
 
 def main():
@@ -23,9 +20,21 @@ def main():
     parser.add_argument("--trials", type=int, default=20)
     parser.add_argument("--delay-ms", type=int, default=40)
     parser.add_argument("--output", type=Path, required=True)
+    parser.add_argument("--source-root", type=Path, default=ROOT,
+                        help="Tomacco source checkout containing the offline test helpers")
     args = parser.parse_args()
     if not 1 <= args.trials <= 100 or not 0 <= args.delay_ms <= 1000:
         parser.error("trials must be 1..100 and delay-ms 0..1000")
+    source = args.source_root.expanduser().resolve()
+    helpers = ("tests/python/iphone_observe_fixture.py", "tests/python/agent_fixture.py",
+               "tests/native_client.py", "tests/host_patience.py", "tests/fixtures/iphone_observe.py")
+    if any(not (source / helper).is_file() for helper in helpers):
+        parser.error("This benchmark requires a Tomacco source checkout with offline test helpers; "
+                     "pass --source-root /path/to/tomacco.")
+    sys.path[:0] = [str(source / "tests/python"), str(source / "tests")]
+    from iphone_observe_fixture import CONTEXT, ObserveDouble
+    from native_client import binary
+
     double = ObserveDouble()
     samples = []
     try:
