@@ -228,8 +228,9 @@ Every guest processor is emulated, so performance is far below a physical phone.
 
 ## Status and limits
 
-Current development and offline qualification run on an x86_64 Arch Linux workstation with
-Omarchy, Qt 6.12 and Rust 1.99. This does not qualify every distribution or physical device.
+Tomacco 1.5.0 was developed and tested on one workstation: x86_64 Arch Linux with
+Omarchy, Qt 6.12 and Rust 1.99. These local and offline checks do not qualify every
+distribution or physical device.
 The earlier **1.4.1 portable package** passed checks in clean Debian 12, Ubuntu 22.04,
 Ubuntu 24.04 and Fedora 44 containers; these are historical checks, not qualification of a
 newly built 1.5.0 artifact or real desktops on those distributions. The 1.2.1 installer, `doctor` and an Android starter build ran in clean Debian 12
