@@ -40,7 +40,7 @@ GROUPS = [
                             "virtual-ios/troubleshooting", "virtual-ios/how-it-works"]),
     ("Reference", ["reference/README", "reference/errors"]),
     ("Help", ["troubleshooting", "faq"]),
-    ("Project", ["architecture", "building", "research-engines", "mobile-parity", "agent-platform-ui-contract", "design/README", "legal", "privacy", "RELEASE_NOTES"]),
+    ("Project", ["architecture", "building", "research-engines", "mobile-parity", "agent-platform-ui-contract", "design/README", "legal", "privacy", "RELEASE_NOTES", "RELEASE_NOTES_1.4.1"]),
 ]
 SHORT_TITLES = {
     "README": "Overview",
@@ -57,6 +57,7 @@ SHORT_TITLES = {
     "tutorial-android": "First Android app",
     "tutorial-virtual-iphone": "First SwiftUI app",
     "RELEASE_NOTES": "Release notes",
+    "RELEASE_NOTES_1.4.1": "Historical 1.4.1 release notes",
     "agent-clients": "Agent clients",
     "mobile-native": "On the phone",
     "demo-studio": "Demo Studio",
