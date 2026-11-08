@@ -406,6 +406,45 @@ pub fn find(name: &str) -> Result<String> {
         )
     })
 }
+/// Wait for one owned child without quantizing every short command to a
+/// polling interval. Linux pidfds become readable on exit; older kernels and
+/// restrictive sandboxes keep the existing timed-poll fallback.
+pub(crate) struct CompletionWait {
+    #[cfg(target_os = "linux")]
+    fd: Option<std::os::fd::OwnedFd>,
+}
+impl CompletionWait {
+    pub(crate) fn new(child: &Child) -> Self {
+        #[cfg(target_os = "linux")]
+        {
+            use std::os::fd::FromRawFd;
+            let fd = unsafe { libc::syscall(libc::SYS_pidfd_open, child.id() as libc::pid_t, 0) };
+            Self { fd: (fd >= 0).then(|| unsafe { std::os::fd::OwnedFd::from_raw_fd(fd as i32) }) }
+        }
+        #[cfg(not(target_os = "linux"))]
+        { let _ = child; Self {} }
+    }
+
+    /// The deadline and check interval still bound timeout/cancellation
+    /// checks, but successful completion wakes immediately.
+    pub(crate) fn pause(&self, deadline: Instant, interval: Duration) {
+        let remaining = deadline.saturating_duration_since(Instant::now()).min(interval);
+        if remaining.is_zero() { return; }
+        #[cfg(target_os = "linux")]
+        if let Some(fd) = &self.fd {
+            use std::os::fd::AsRawFd;
+            let timeout = remaining.as_millis().saturating_add(u128::from(remaining.subsec_nanos() % 1_000_000 != 0)).min(i32::MAX as u128) as i32;
+            let mut event = libc::pollfd { fd: fd.as_raw_fd(), events: libc::POLLIN, revents: 0 };
+            let polled = unsafe { libc::poll(&mut event, 1, timeout) };
+            if polled == 0 || (polled > 0 && event.revents & libc::POLLIN != 0)
+                || (polled < 0 && std::io::Error::last_os_error().kind() == std::io::ErrorKind::Interrupted) {
+                return;
+            }
+        }
+        thread::sleep(remaining);
+    }
+}
+
 pub fn stop(child: &mut Child) {
     // Each managed command has its own process group; never signal caller's group.
     let pid = child.id() as i32;
@@ -413,11 +452,12 @@ pub fn stop(child: &mut Child) {
         libc::kill(-pid, libc::SIGTERM);
     }
     let deadline = Instant::now() + Duration::from_secs(2);
+    let completion = CompletionWait::new(child);
     while Instant::now() < deadline {
         if child.try_wait().ok().flatten().is_some() {
             break;
         }
-        thread::sleep(Duration::from_millis(20));
+        completion.pause(deadline, Duration::from_millis(20));
     }
     // Descendants may survive their group leader. Kill the entire group even then.
     unsafe {
@@ -550,6 +590,11 @@ pub(crate) fn adapt_go_ios_usbmux(command: &mut Command) -> Result<()> {
 }
 
 pub fn run(args: &[String], timeout: u64, cwd: Option<&Path>, check: bool) -> Result {
+    run_with_env(args, timeout, cwd, check, &[])
+}
+
+/// Environment overrides belong to this child, never the multithreaded host.
+pub fn run_with_env(args: &[String], timeout: u64, cwd: Option<&Path>, check: bool, overrides: &[(&str, &str)]) -> Result {
     check_cancelled()?;
     if args.is_empty() {
         return Err(Error::new("invalid_command", "Missing command"));
@@ -558,6 +603,7 @@ pub fn run(args: &[String], timeout: u64, cwd: Option<&Path>, check: bool) -> Re
     command
         .args(&args[1..])
         .envs(environment()?)
+        .envs(overrides.iter().copied())
         .stdin(Stdio::null())
         .stdout(Stdio::piped())
         .stderr(Stdio::piped())
@@ -570,6 +616,7 @@ pub fn run(args: &[String], timeout: u64, cwd: Option<&Path>, check: bool) -> Re
     let mut child = command
         .spawn()
         .map_err(|e| Error::new("tool_start_failed", e.to_string()))?;
+    let completion = CompletionWait::new(&child);
     let output = capture(child.stdout.take().unwrap());
     let error = capture(child.stderr.take().unwrap());
     let deadline = Instant::now() + Duration::from_secs(timeout);
@@ -581,7 +628,7 @@ pub fn run(args: &[String], timeout: u64, cwd: Option<&Path>, check: bool) -> Re
             stop(&mut child);
             break None;
         }
-        thread::sleep(Duration::from_millis(10));
+        completion.pause(deadline, Duration::from_millis(10));
     };
     // Close pipes held by orphan subprocesses before joining readers.
     unsafe {
@@ -712,6 +759,45 @@ pub fn doctor() -> Result {
 mod doctor_tests {
     use super::*;
     use std::time::{Duration, Instant};
+
+    #[test]
+    fn child_environment_overrides_are_local_and_exit_status_is_preserved() {
+        let name = "TOMACCO_TEST_CHILD_ONLY_PERF_VALUE";
+        let before = std::env::var_os(name);
+        let result = run_with_env(&argv(&["/bin/sh", "-c", "printf '%s' \"$TOMACCO_TEST_CHILD_ONLY_PERF_VALUE\"; printf err >&2; exit 7"]), 2, None, false, &[(name, "isolated")]).unwrap();
+        assert_eq!(result["stdout"], "isolated");
+        assert_eq!(result["stderr"], "err");
+        assert_eq!(result["exit_code"], 7);
+        assert_eq!(std::env::var_os(name), before);
+    }
+
+    #[test]
+    fn completion_wait_unsupported_fallback_and_timeout_keep_their_bounds() {
+        let fallback = CompletionWait {
+            #[cfg(target_os = "linux")] fd: None,
+        };
+        let started = Instant::now();
+        fallback.pause(started + Duration::from_millis(10), Duration::from_secs(1));
+        assert!(started.elapsed() >= Duration::from_millis(8));
+        let error = run(&argv(&["/bin/sh", "-c", "sleep 30"]), 0, None, true).unwrap_err();
+        assert_eq!(error.code, "tool_timeout");
+    }
+
+    /// Reproducible subprocess microbenchmark; not a device latency claim.
+    #[test]
+    #[ignore = "manual command-completion latency benchmark"]
+    fn benchmark_short_command_completion() {
+        let mut samples = Vec::new();
+        for _ in 0..110 {
+            let started = Instant::now();
+            let result = run(&argv(&["/usr/bin/true"]), 2, None, true).unwrap();
+            assert_eq!(result["exit_code"], 0);
+            samples.push(started.elapsed().as_secs_f64() * 1000.0);
+        }
+        let mut kept = samples[10..].to_vec();
+        kept.sort_by(f64::total_cmp);
+        println!("RUNNER_MICROBENCH {}",json!({"samples_ms":samples,"warmups":10,"p50_ms":kept[49],"p95_ms":kept[94]}));
+    }
 
     #[test]
     fn private_usbmux_socket_is_adapted_only_for_the_go_ios_child() {

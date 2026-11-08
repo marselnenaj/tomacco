@@ -700,6 +700,7 @@ pub fn screencap(device: &str, target: &Path) -> Result<()> {
         .process_group(0);
     tc::parent_bound(&mut command);
     let mut child = ManagedProcess(command.spawn()?);
+    let completion = tc::CompletionWait::new(&child.0);
     let deadline = Instant::now() + Duration::from_secs(10);
     loop {
         if let Some(status) = child.0.try_wait()? {
@@ -711,7 +712,7 @@ pub fn screencap(device: &str, target: &Path) -> Result<()> {
         if Instant::now() > deadline {
             return Err(Error::new("capture_timeout", "ADB screenshot timed out"));
         }
-        thread::sleep(Duration::from_millis(20));
+        completion.pause(deadline, Duration::from_millis(20));
     }
     let bytes = fs::read(temp.path())?;
     publish_png(target, &bytes)
