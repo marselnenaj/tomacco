@@ -327,13 +327,14 @@ impl Drop for Iphone {
     }
 }
 impl Iphone {
-    fn call(&self, method: &str, route: &str, body: Option<&Value>) -> Result {
-        self.rt
-            .block_on(
-                self.http
-                    .json(method, &format!("/session/{}{route}", self.session), body),
-            )
+    async fn query(&self, method: &str, route: &str, body: Option<&Value>) -> Result {
+        self.http
+            .json(method, &format!("/session/{}{route}", self.session), body)
+            .await
             .map(|v| v["value"].clone())
+    }
+    fn call(&self, method: &str, route: &str, body: Option<&Value>) -> Result {
+        self.rt.block_on(self.query(method, route, body))
     }
     /// The point size and orientation, requested from the phone only when
     /// unknown, forced, or after the video frames changed size: a roundtrip
@@ -414,8 +415,8 @@ impl Iphone {
     }
     /// Whether a field has the keyboard focus: WebDriverAgent's active
     /// element, which answers `no such element` when nothing has focus.
-    fn focused(&self) -> Value {
-        match self.call("GET", "/element/active", None) {
+    fn focused(result: Result) -> Value {
+        match result {
             Ok(_) => json!({"available":true,"focused":true,"source":"wda /element/active"}),
             Err(error) => {
                 let text = format!("{} {:?}", error.message, error.details).to_lowercase();
@@ -874,7 +875,19 @@ impl Device for Iphone {
             "coordinate_space":super::coordinate_space()}))
     }
     fn context(&mut self) -> Result {
-        let app = match self.call("GET", "/wda/activeAppInfo", None) {
+        let keyboard_query = json!({"using":"class chain","value":"**/XCUIElementTypeKeyboard"});
+        // These are independent reads on the same WDA session. Await all three
+        // (including failures) before returning to the worker's command queue;
+        // input stays serialized and every observation still reads fresh state.
+        // No context cache: a person may change the phone between observations.
+        let (app, keyboard, focus) = self.rt.block_on(async {
+            tokio::join!(
+                self.query("GET", "/wda/activeAppInfo", None),
+                self.query("POST", "/elements", Some(&keyboard_query)),
+                self.query("GET", "/element/active", None),
+            )
+        });
+        let app = match app {
             Ok(info) => {
                 let bundle = s(&info, "bundleId").to_string();
                 json!({"available":!bundle.is_empty(),"bundle_id":bundle,"name":info["name"],"pid":info["pid"],
@@ -882,16 +895,12 @@ impl Device for Iphone {
             }
             Err(error) => super::unavailable(&format!("wda /wda/activeAppInfo failed: {}", error.message)),
         };
-        let keyboard = match self.call(
-            "POST",
-            "/elements",
-            Some(&json!({"using":"class chain","value":"**/XCUIElementTypeKeyboard"})),
-        ) {
+        let keyboard = match keyboard {
             Ok(found) => json!({"available":true,"visible":found.as_array().is_some_and(|f| !f.is_empty()),
                 "source":"wda class chain **/XCUIElementTypeKeyboard"}),
             Err(error) => super::unavailable(&format!("wda /elements failed: {}", error.message)),
         };
-        Ok(json!({"app":app,"keyboard":keyboard,"focus":self.focused()}))
+        Ok(json!({"app":app,"keyboard":keyboard,"focus":Self::focused(focus)}))
     }
     fn capabilities(&self) -> Value {
         json!({"transport":"usb/wda","evidence":"device","capture":true,"hierarchy":"wda xml (converted for screen.*)",

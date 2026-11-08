@@ -1,0 +1,114 @@
+{
+  "scope": "Agent observe context roundtrips; isolated loopback WDA and offline scripted agent fixture only",
+  "base_commit": "d97f0eab5a9be35ba9d71ddab3216aa7ff938ee5",
+  "source_sha256": {
+    "native/runtime/iphone.rs": "76205f693525ad303db4b3cff0d4f83ebb78ec3e02907cf43a6632bbc5c72016",
+    "tests/fixtures/iphone_observe.py": "aa0c239a4e994d050eeaff52dbae8ba753876539d50bf5403d6ceab4aae78980",
+    "tests/python/iphone_observe_fixture.py": "bbda283ac0fb44a499f55fa76d1d76d87ffabf0a3054db0957f6d29f6960787d",
+    "tests/python/test_iphone_observe.py": "055ed92dec99fdbd600ca1e2cb8429572ce44eeb99ee73c69800370118d71db6",
+    "tools/benchmark_iphone_observe.py": "078233a5b5fb6862ad4174f3a5113920892d550fd5dcc96519305edf98d16f55"
+  },
+  "baseline_product_source_sha256": "662e953d814813ad3b4fdacb5da575312f9aefbb45618d3980be59a524cabe1f",
+  "product_change": {
+    "files": [
+      "native/runtime/iphone.rs"
+    ],
+    "behavior": "Start three independent context reads on the same WDA session together and await all outcomes before leaving the serialized device worker. App, keyboard and focus retain their individual success/error interpretations.",
+    "unchanged": [
+      "Fresh screenshot per runtime.observe",
+      "Fresh context reads per runtime.observe, no result cache",
+      "context:false skips all three context endpoints",
+      "Session selection and loopback-only WDA client endpoint",
+      "Per-request connect/response size/time bounds",
+      "Input ordering in device command worker",
+      "Reservation and request-ledger paths",
+      "Mutating input and verified-fill request sequencing",
+      "Capture, OCR and PNG implementations",
+      "MCP transport and response schemas"
+    ]
+  },
+  "selection_evidence": {
+    "generic_mcp_fixture": "Exact baseline observe p50 0.89 ms and input acknowledgement 1.00 ms; no broad MCP rewrite justified. Marks include capture/drawing; requested 200 ms gestures retain their intentional timing.",
+    "roundtrip_cost": "Three serial context reads each wait for one independent remote response, demonstrated by one request in flight and ~129 ms with 40 ms per endpoint."
+  },
+  "delayed_loopback": {
+    "baseline": "qa/perf-loop/iphone-baseline.json",
+    "candidate": "qa/perf-loop/iphone-candidate.json",
+    "trials_per_binary": 20,
+    "delay_per_context_endpoint_ms": 40,
+    "p50_ms_before": 128.5571145,
+    "p50_ms_after": 47.47365,
+    "p95_ms_before": 130.506482,
+    "p95_ms_after": 47.970469,
+    "p50_reduction_percent": 63.07,
+    "requests_per_binary": {
+      "screenshots": 20,
+      "context": 60
+    },
+    "peak_context_requests_in_flight_before": 1,
+    "peak_context_requests_in_flight_after": 3,
+    "fresh_revision_checks_per_binary": 20
+  },
+  "zero_delay_loopback": {
+    "baseline": "qa/perf-loop/iphone-zero-delay-baseline.json",
+    "candidate": "qa/perf-loop/iphone-zero-delay-candidate.json",
+    "trials_per_binary": 20
+  },
+  "validation": {
+    "release_build": "cargo build --offline --locked --release --bin tomaccoctl passed for exact baseline and candidate in separate private target directories",
+    "new_integration_tests": {
+      "command": "TOMACCOCTL=<candidate> python3 -m unittest discover -s tests/python -p test_iphone_observe.py -v",
+      "passed": 5,
+      "failed": 0,
+      "checks": [
+        "Observe starts independent reads before responses finish and captures once per observation",
+        "Context revision and keyboard changes are freshly read on consecutive observations",
+        "context:false requests only a fresh screenshot after warmed geometry",
+        "Partial app/keyboard failures and missing/refused focus preserve separate availability results and recover on the next observation",
+        "Unanswered keyboard read leaves app/focus successful",
+        "Queued input starts only after all three context requests finish"
+      ],
+      "raw_log": "qa/perf-loop/iphone-observe-tests.txt"
+    },
+    "red_test": "Before product edit, overlap assertions failed on both revision subcases; the other three original test methods passed. The queued-input test was added afterwards and passes on the candidate.",
+    "existing_mcp_matrix": {
+      "baseline": "qa/perf-loop/exact-baseline.json",
+      "candidate": "qa/perf-loop/candidate.json",
+      "trials_per_case_per_binary": 20,
+      "cases": [
+        "labeled_control",
+        "deterministic_drag",
+        "rotation_target",
+        "stale_frame_rejection"
+      ],
+      "failed_trials": 0,
+      "unexpected_helper_calls": 0,
+      "interpretation": "Regression/contract coverage only. Small timing variations on an otherwise unchanged fixture path are not treated as a speedup or slowdown."
+    },
+    "python_compile": "Four new Python files passed py_compile",
+    "diff_check": "git diff --check passed",
+    "rustfmt_note": "The existing iphone.rs file already has formatting differences under the local rustfmt; no unrelated formatting rewrite was performed.",
+    "native_iphone_tests": {
+      "command": "CARGO_TARGET_DIR=<private candidate target> cargo test --offline --locked --release --bin tomaccoctl runtime::iphone::tests -- --test-threads=1",
+      "passed": 13,
+      "failed": 0,
+      "ignored": 0,
+      "filtered_out": 730,
+      "scope": "Existing loopback physical-protocol, verified-fill, MJPEG-parser and profile contracts; no hardware",
+      "raw_log": "qa/perf-loop/native-iphone-tests.txt"
+    }
+  },
+  "safety": {
+    "network": "Ephemeral loopback HTTP listeners owned by the test double only",
+    "environment": "Private HOME/XDG/TOMACCO_HOME/TMPDIR; device helpers trapped, only iproxy replaced by loopback double and ideviceinfo replaced by an empty stub",
+    "hardware_calls": 0,
+    "installed_or_user_state_changes": 0,
+    "unexpected_helper_traps": 0
+  },
+  "limitations": [
+    "Real WebDriverAgent may serialize XCTest work, so actual hardware speedup remains unmeasured.",
+    "This double is not an iOS emulator and its MJPEG stand-in does not validate video decoding.",
+    "No physical-device, frame-rate, competitor, or cancellation-latency claim.",
+    "Cancellation/reservation/ledger code paths were left intact; no new cancellation guarantee is asserted."
+  ]
+}

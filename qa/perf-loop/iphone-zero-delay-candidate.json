@@ -1,0 +1,41 @@
+{
+  "scope": "loopback WDA double; no physical iPhone or USB",
+  "boundary": "fresh runtime.observe CLI request through result, including process startup, screenshot and context",
+  "binary": "/home/maslos/Work/tomacco-perf-loop-20261108/build-candidate-cargo/release/tomaccoctl",
+  "binary_sha256": "fa7e83b0a3718ac91be7f45b5184397cd41f91e98f601e5ee6f4da4c97d9c7e5",
+  "trials": 20,
+  "context_endpoint_delay_ms": 0,
+  "samples_ms": [
+    6.909138,
+    6.529104,
+    6.283223,
+    6.099203,
+    6.39989,
+    6.502006,
+    6.362665,
+    6.1621,
+    5.856521,
+    6.055492,
+    5.482806,
+    5.549069,
+    6.094584,
+    5.616285,
+    5.953634,
+    5.326478,
+    5.756434,
+    6.076104,
+    6.187785,
+    6.514141
+  ],
+  "p50_ms": 6.0968935,
+  "p95_ms": 6.529104,
+  "peak_context_requests_in_flight": 3,
+  "screenshots": 20,
+  "context_requests": 60,
+  "fresh_revisions_verified": 20,
+  "unexpected_helper_calls": "",
+  "limitations": [
+    "The double handles HTTP requests concurrently; actual WDA may serialize XCTest work.",
+    "No hardware performance, cancellation latency, or competitor claim."
+  ]
+}

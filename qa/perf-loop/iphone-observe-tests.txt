@@ -1,0 +1,10 @@
+test_context_failures_remain_independent_and_do_not_poison_next_read (test_iphone_observe.IphoneObserveTests.test_context_failures_remain_independent_and_do_not_poison_next_read) ... ok
+test_context_false_skips_all_context_reads_but_captures_again (test_iphone_observe.IphoneObserveTests.test_context_false_skips_all_context_reads_but_captures_again) ... ok
+test_overlaps_only_independent_reads_and_refreshes_each_observation (test_iphone_observe.IphoneObserveTests.test_overlaps_only_independent_reads_and_refreshes_each_observation) ... ok
+test_unanswered_context_read_is_unavailable_while_siblings_succeed (test_iphone_observe.IphoneObserveTests.test_unanswered_context_read_is_unavailable_while_siblings_succeed) ... ok
+test_worker_waits_for_context_before_executing_the_next_input (test_iphone_observe.IphoneObserveTests.test_worker_waits_for_context_before_executing_the_next_input) ... ok
+
+----------------------------------------------------------------------
+Ran 5 tests in 3.658s
+
+OK

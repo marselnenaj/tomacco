@@ -1,0 +1,20 @@
+   Compiling tomacco-core v1.4.1 (/home/maslos/Work/tomacco-perf-loop-20261108)
+    Finished `release` profile [optimized] target(s) in 2m 07s
+     Running unittests native/main.rs (build-candidate-cargo/release/deps/tomaccoctl-4e3fcfeb42a93e4f)
+
+running 13 tests
+test runtime::iphone::tests::a_placeholder_equal_to_the_text_is_never_taken_for_entered_text ... ok
+test runtime::iphone::tests::a_replaced_or_unreadable_field_never_reports_success ... ok
+test runtime::iphone::tests::a_verified_fill_reads_the_exact_value_back_and_skips_a_matching_one ... ok
+test runtime::iphone::tests::an_unreachable_agent_is_named_and_nothing_counts_as_typed ... ok
+test runtime::iphone::tests::focus_must_reach_the_tapped_field_within_the_wait ... ok
+test runtime::iphone::tests::fragmented_mjpeg_is_bounded_and_rejects_corrupt_frames ... ok
+test runtime::iphone::tests::jpeg_sizes_are_read_from_the_start_of_frame_header ... ok
+test runtime::iphone::tests::physical_protocol_maps_points_unicode_rotation_and_failure ... ok
+test runtime::iphone::tests::secure_and_unsupported_editors_are_refused_unread ... ok
+test runtime::iphone::tests::submit_sends_one_return_only_after_the_value_is_verified ... ok
+test runtime::iphone::tests::the_hardware_identifier_picks_the_frame ... ok
+test runtime::iphone::tests::unicode_is_written_and_compared_exactly ... ok
+test runtime::iphone::tests::webdriveragent_mjpeg_parts_are_read ... ok
+
+test result: ok. 13 passed; 0 failed; 0 ignored; 0 measured; 730 filtered out; finished in 4.16s
