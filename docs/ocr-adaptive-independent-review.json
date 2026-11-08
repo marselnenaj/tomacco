@@ -1,0 +1,80 @@
+{
+  "schema": "tomacco-ocr-adaptive-source-review/1",
+  "reviewed_at": "2026-11-08T09:50:31.890780+00:00",
+  "reviewer": "Codex independent child demo_audio_languages",
+  "baseline": "49d61e9d722264955d3e27c004b06415ac74952d",
+  "scope": [
+    "native/screen_ocr.rs",
+    "native/screen.rs",
+    "assets/operations.json"
+  ],
+  "source_sha256": {
+    "native/screen_ocr.rs": "76ca9c40fe9955fed71193f62a086bf7224837126c778a894835be56e9cc4b18",
+    "native/screen.rs": "cf538bb366ecae19ad54f8a8dfec87ad1237f9885908616df4a7306bbeb0f538",
+    "assets/operations.json": "76b7ec2a6510c6c97f7399afffac7cf5a1a026cb8c3e97d34779fad20cf6d71b"
+  },
+  "review_type": "Bounded read-only correctness review, not a security scan, benchmark execution or hardware qualification",
+  "open_findings": 0,
+  "findings": [
+    {
+      "id": "OR01",
+      "severity": "low",
+      "status": "resolved",
+      "title": "Total handler timing was captured before formatting matches",
+      "source_anchor": "native/screen.rs::read_text, result[total_ms] immediately before Ok(result)",
+      "before": "total_ms was assigned inside the initial response JSON, before optional compact-field removal and Found::value match serialization. For a cached/large matching result the displayed total excluded some handler work.",
+      "resolution": "Root now overwrites total_ms after assembling matches and removing omitted full-detail fields, immediately before returning the response. capture_ms and read_ms remain separate measures.",
+      "verification": "Inspected the final assignment ordering in current source. This is handler construction time, not transport/client wall time."
+    }
+  ],
+  "checked_contracts": [
+    {
+      "area": "Legacy default and action ambiguity",
+      "conclusion": "auto remains the schema/default and still merges both normal and inverted raw word sets before confidence filtering. testing.find/ocr_find, OCR actions, diffs and waits retain explicit auto. Adaptive observation is opt-in and documented as unable to prove absence/uniqueness; no input action switched to it."
+    },
+    {
+      "area": "Per-pass and final cache isolation",
+      "conclusion": "The shared process cache remains bounded to eight readings. Base keys separate PNG digest, language, min_confidence and requested region. Normal/inverted pass namespaces are distinct; adaptive final keys additionally include the complete selector (including index) and fuzzy flag. Full auto readings are independent of output query/detail/max_words, so sharing them is appropriate. Scripted recognizers can opt out as before. Concurrent misses may do duplicate work but do not skip required polarity selection."
+    },
+    {
+      "area": "Adaptive quality and target/index handling",
+      "conclusion": "Without a selector an empty retained reading or any retained word below80 triggers inversion. With a selector, missing requested text/index triggers inversion; otherwise every retained word intersecting the selected matching rectangle is confidence-checked. This avoids relying on a high phrase average or unrelated low-confidence text. Matching and fuzzy/index order remain the existing select semantics."
+    },
+    {
+      "area": "Legacy overlap/filter semantics",
+      "conclusion": "Each cached pass retains raw_words below the public confidence threshold. Auto/fallback merge raw readings first, then filter/sort/build lines, preserving the previous overlap-resolution order. Invalid nonfinite or outside0–100 TSV confidence is now discarded as invalid data."
+    },
+    {
+      "area": "Frozen input and regions",
+      "conclusion": "The PNG is read once, hashed and decoded; normal recognition sees a private frozen byte copy and inversion uses those same decoded pixels. Region cropping uses that frozen picture. Both pass outputs receive the whole-picture region offset once before the translation-invariant merge; dimensions remain the original picture dimensions."
+    },
+    {
+      "area": "Compact results",
+      "conclusion": "detail:matches requires a supported text/text_contains selector before capture; it omits words/lines/truncated only after matching all retained recognized words. max_words truncates full response details, never the search. The result still contains actual matches, confidence, boxes, dimensions and read metadata."
+    },
+    {
+      "area": "Accounting",
+      "conclusion": "passes denotes the polarity readings used; engine_runs counts actual recognizer calls for this request and becomes0 on cache hits. fallback_reason remains associated with the adaptive target/fuzzy-specific result. capture_ms is null for an image-only request; read_ms measures reading/decode/cache work, and total_ms now includes constructed matches."
+    },
+    {
+      "area": "Failures and cancellation",
+      "conclusion": "Recognition errors propagate; a failed/cancelled inverted fallback cannot become a partial successful adaptive reading. An already successful normal pass can remain cached, but no completed adaptive result is cached after fallback failure. Real recognizer subprocess execution keeps the existing toolchain cancellation checks; cached reads are observations with no device input side effect."
+    }
+  ],
+  "verification": {
+    "review_only": true,
+    "child_started_cargo_or_cmake": false,
+    "targeted_regression_sources": [
+      "native/screen_ocr.rs adaptive cache, target/fuzzy/index, low-confidence word, frozen input, raw-merge and failed fallback tests",
+      "native/screen.rs compact matching, capture-once and timing tests"
+    ],
+    "test_execution_owner": "Root; targeted compilation/qualification ongoing when this source review was written. No test pass or speedup is claimed by this independent source-only record.",
+    "source_hash_note": "Hashes identify the exact reviewed working-tree content. Refresh them after formatter or later source changes; do not infer product build provenance from this documentation commit."
+  },
+  "limits": [
+    "A confident first polarity can still miss minority-area text or duplicate matches; auto remains necessary when checking absence/uniqueness.",
+    "Performance improvement and corpus accuracy need measured root benchmark results; this review did not execute Tesseract or benchmarks.",
+    "The existing process cache assumes a stable recognizer configuration within the process; engine path/data changes are not dynamically fingerprinted, consistent with the previous cache contract.",
+    "No installed binary, live device, screenshot capture, hardware discovery, global configuration, browser or Bogen action was performed."
+  ]
+}
