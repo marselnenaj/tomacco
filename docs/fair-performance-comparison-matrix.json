@@ -1,0 +1,1316 @@
+{
+  "schema": "tomacco-fair-comparison-matrix/1",
+  "checked_at": "2026-11-08T11:23:51.663511+00:00",
+  "purpose": "Define reproducible evidence needed to pursue category leadership without claiming an unmeasured overall winner. Documentation coverage and measured performance are different facts.",
+  "status": "competitor adapters specified, not installed/executed; no device/hardware head-to-head qualified",
+  "sources": [
+    {
+      "id": "phoneuse-readme",
+      "url": "https://github.com/phoneuse-official/phoneuse/blob/main/README.md",
+      "kind": "official_repository",
+      "checked_at": "2026-11-08T11:23:51.663511+00:00",
+      "summary": "Local Mac/USB-iPhone developer preview using WebDriverAgent, REST and MCP; hosted PhoneUse is a separate deployment."
+    },
+    {
+      "id": "phoneuse-mcp-pinned",
+      "url": "https://github.com/phoneuse-official/phoneuse/blob/0255aeab12f9a6a7019951cf1845987d43ff009e/platform/backend/mcp_server.py",
+      "kind": "official_immutable_source",
+      "checked_at": "2026-11-08T11:23:51.663511+00:00",
+      "summary": "Pinned source separates screenshot, page_source fast/full, element-state precheck and click completion. Click completion asks the caller to inspect the result again."
+    },
+    {
+      "id": "devicemcp-docs",
+      "url": "https://devicemcp.ai/docs",
+      "kind": "official_docs",
+      "checked_at": "2026-11-08T11:23:51.663511+00:00",
+      "summary": "Documents macOS mirroring/control and agent operation across iPhone/iPad, iOS Simulator, Android emulator and Android device."
+    },
+    {
+      "id": "devicemcp-mcp",
+      "url": "https://devicemcp.ai/docs/ai-agents/mcp",
+      "kind": "official_docs",
+      "checked_at": "2026-11-08T11:23:51.663511+00:00",
+      "summary": "Built-in Mac-local MCP server; keeping the application open is part of the documented client setup."
+    },
+    {
+      "id": "devicemcp-changelog",
+      "url": "https://devicemcp.ai/changelog",
+      "kind": "official_changelog",
+      "checked_at": "2026-11-08T11:23:51.663511+00:00",
+      "summary": "Current page lists0.8.2 dated2026-11-07;0.8.0 announces real Android phones. These are vendor release descriptions, not measured qualification."
+    },
+    {
+      "id": "rocketsim-cli",
+      "url": "https://www.rocketsim.app/docs/features/agentic-development/rocketsim-cli/",
+      "kind": "official_docs",
+      "checked_at": "2026-11-08T11:23:51.663511+00:00",
+      "summary": "CLI talks to the running Mac application, documents Simulator selection, screen reads, interactions and batched flows. It explicitly does not ship an MCP server."
+    },
+    {
+      "id": "rocketsim-protocol",
+      "url": "https://www.rocketsim.app/docs/features/agentic-development/rs1-protocol/",
+      "kind": "official_docs",
+      "checked_at": "2026-11-08T11:23:51.663511+00:00",
+      "summary": "Documents the rs/1 agent protocol. Native CLI/agent output must be measured directly, not wrapped in an artificial MCP layer."
+    },
+    {
+      "id": "flowdeck-agents",
+      "url": "https://flowdeck.studio/blog/ai-agents",
+      "kind": "official_guide",
+      "checked_at": "2026-11-08T11:23:51.663511+00:00",
+      "summary": "Documents structured build JSON, simulator screen JPEG plus accessibility data, label-based interactions, visible assertions and optional background capture sessions."
+    },
+    {
+      "id": "flowdeck-start",
+      "url": "https://flowdeck.studio/blog/getting-started",
+      "kind": "official_guide",
+      "checked_at": "2026-11-08T11:23:51.663511+00:00",
+      "summary": "Documents Mac/Xcode setup, CLI/TUI and trial activation. No installation or activation performed for this comparison."
+    },
+    {
+      "id": "mobilebuild-readme",
+      "url": "https://github.com/getsentry/MobileBuildMCP/blob/main/README.md",
+      "kind": "official_repository",
+      "checked_at": "2026-11-08T11:23:51.663511+00:00",
+      "summary": "Official XcodeBuildMCP repository/site redirect to MobileBuildMCP. Current README describes both MCP and CLI modes, Mac/Xcode requirements and stateful CLI daemon."
+    },
+    {
+      "id": "mobilebuild-pinned",
+      "url": "https://github.com/getsentry/MobileBuildMCP/tree/2998ac77ebbca59544e88a27f34bfb830db9d924",
+      "kind": "official_immutable_source",
+      "checked_at": "2026-11-08T11:23:51.663511+00:00",
+      "summary": "Official repository main commit resolved through GitHub API during review; pin the tested release separately before any execution."
+    },
+    {
+      "id": "mobilebuild-site",
+      "url": "https://www.mobilebuildmcp.com/docs",
+      "kind": "official_docs",
+      "checked_at": "2026-11-08T11:23:51.663511+00:00",
+      "summary": "Current official documentation destination after the xcodebuildmcp.com redirect."
+    },
+    {
+      "id": "robomori-home",
+      "url": "https://robomori.com/",
+      "kind": "official_product_site",
+      "checked_at": "2026-11-08T11:23:51.663511+00:00",
+      "summary": "Advertises desktop Android emulator/physical-device management, settings/presets and captures across Mac, Windows and Linux. These product descriptions do not establish an agent API."
+    },
+    {
+      "id": "robomori-download",
+      "url": "https://robomori.com/download",
+      "kind": "official_download_page",
+      "checked_at": "2026-11-08T11:23:51.663511+00:00",
+      "summary": "Current HTML lists1.5.1 dated2026-11-07 and Mac/Windows/Linux installers. HTML fetched only; no installer downloaded or run.",
+      "retrieval": "web.open inaccessible; direct standard HTTPS read of official HTML succeeded",
+      "content_sha256": "24d365eeb4a5d1953b01c15bf23c332413658a2664eeef9ce000e843696f126a"
+    }
+  ],
+  "products": [
+    {
+      "id": "tomacco",
+      "name": "Tomacco",
+      "native_adapter": "persistent MCP plus direct CLI; local NativeView stream harness is a separate component test",
+      "measurements": "offline_components_only",
+      "release_to_pin": "final integrated ELF pending; old5c458f/b075f3 artifacts independently fingerprinted in qualification files",
+      "cohorts_to_attempt": [
+        "offline-image",
+        "android-linux-usb",
+        "ios-simulator-mac-if-controller-supported",
+        "ios-usb-mac-if-controller-supported",
+        "native-local-video"
+      ],
+      "sources": [
+        "docs/performance-baseline-qualification.json",
+        "docs/ocr-worker-performance-qualification.json",
+        "docs/nativeview-performance-qualification.json"
+      ]
+    },
+    {
+      "id": "phoneuse-local",
+      "name": "PhoneUse Local",
+      "native_adapter": "MCP\u2192local REST\u2192WebDriverAgent; keep manual tool calls separate from model-driven tasks",
+      "measurements": "not_measured",
+      "reason": "No authorized Mac/iPhone/signing/runtime or competitor execution",
+      "release_to_pin": "installed release/commit, WDA commit/build/signing and OCR/accessibility mode",
+      "cohorts_to_attempt": [
+        "ios-usb-mac"
+      ],
+      "sources": [
+        "phoneuse-readme",
+        "phoneuse-mcp-pinned"
+      ]
+    },
+    {
+      "id": "device-mcp",
+      "name": "Device MCP",
+      "native_adapter": "official built-in MCP client transport with Mac app already running for warm phase",
+      "measurements": "not_measured",
+      "reason": "No authorized installed binary/license/Mac/device test",
+      "release_to_pin": "actual app version/build/hash;0.8.2 is only the observed release listing",
+      "cohorts_to_attempt": [
+        "ios-simulator-mac",
+        "ios-usb-mac",
+        "android-mac-usb",
+        "android-mac-emulator"
+      ],
+      "sources": [
+        "devicemcp-docs",
+        "devicemcp-mcp",
+        "devicemcp-changelog"
+      ]
+    },
+    {
+      "id": "rocketsim",
+      "name": "RocketSim",
+      "native_adapter": "native CLI --agent/rs1\u2192running Mac app; no vendor MCP server, no extra wrapper in product-native timings",
+      "measurements": "not_measured",
+      "reason": "No authorized app/license/Mac/Simulator test",
+      "release_to_pin": "app and CLI hashes, rs1 protocol/version, session/focus/UDID behavior",
+      "cohorts_to_attempt": [
+        "ios-simulator-mac"
+      ],
+      "sources": [
+        "rocketsim-cli",
+        "rocketsim-protocol"
+      ]
+    },
+    {
+      "id": "flowdeck",
+      "name": "Flowdeck Studio/CLI",
+      "native_adapter": "official structured CLI; fresh screen calls and background-session reads are separate freshness modes",
+      "measurements": "not_measured",
+      "reason": "No authorized binary/trial/Mac/Simulator test",
+      "release_to_pin": "actual CLI/Studio build/hash, automation framework version, direct/background capture configuration",
+      "cohorts_to_attempt": [
+        "ios-simulator-mac",
+        "ios-usb-mac-if-interaction-surface-qualified"
+      ],
+      "sources": [
+        "flowdeck-agents",
+        "flowdeck-start"
+      ]
+    },
+    {
+      "id": "xcodebuildmcp",
+      "name": "MobileBuildMCP (formerly XcodeBuildMCP)",
+      "native_adapter": "official MCP and direct CLI recorded as distinct variants; workspace daemon warm state explicit",
+      "measurements": "not_measured",
+      "reason": "No installed/authorized current package, Mac or Simulator test; old2.7.0 anecdote is not a current measurement",
+      "release_to_pin": "actual current package version/hash and enabled workflow set; retain old product alias only for historical results",
+      "cohorts_to_attempt": [
+        "ios-simulator-mac",
+        "ios-usb-mac-if-interaction-surface-qualified"
+      ],
+      "sources": [
+        "mobilebuild-readme",
+        "mobilebuild-pinned",
+        "mobilebuild-site"
+      ]
+    },
+    {
+      "id": "robomori",
+      "name": "Robomori",
+      "native_adapter": "no agent adapter mapped from the checked official pages; do not infer absence from this limited review",
+      "measurements": "not_measured",
+      "reason": "No authorized installed binary/license/device test and no mapped documented agent protocol",
+      "release_to_pin": "actual signed installer/application build/hash;1.5.1 is only observed download listing",
+      "cohorts_to_attempt": [
+        "android-linux-desktop-manager",
+        "android-mac-desktop-manager",
+        "android-windows-desktop-manager"
+      ],
+      "sources": [
+        "robomori-home",
+        "robomori-download"
+      ]
+    }
+  ],
+  "cohorts": [
+    {
+      "id": "offline-image",
+      "boundary": "same immutable image/XML bytes on same OS/host/model data; only tools accepting those files can enter",
+      "status": "Tomacco_measured_only",
+      "restriction": "Native Mac OCR and Linux Tesseract results are separate platform cohorts unless actually run on the same host with declared backend differences."
+    },
+    {
+      "id": "ios-simulator-mac",
+      "boundary": "same Mac, OS/Xcode/Simulator runtime, same UDID/model/app binary/state/resolution/language; explicit identical Simulator boot/focus state",
+      "status": "not_measured",
+      "restriction": "Tomacco Linux\u2192SSH\u2192Mac is a separate cross-controller profile. Do not compare its overall time to a Mac-local competitor as if controller hardware and transport were identical. Common-host Tomacco adapter support must first be demonstrated."
+    },
+    {
+      "id": "ios-usb-mac",
+      "boundary": "same Mac, physical iPhone/iOS/app build, cable/port, trust/signing, WDA state if used and screen state",
+      "status": "not_measured",
+      "restriction": "USB and Wi-Fi are distinct. No active personal device or ongoing deployment/flash may be used."
+    },
+    {
+      "id": "android-linux-usb",
+      "boundary": "same Linux host, physical Android/OS/app build, cable/port, scrcpy/server/settings; only supported native adapters",
+      "status": "not_measured",
+      "restriction": "No extrapolation to Mac-only apps or physical Pixel while hardware access is restricted."
+    },
+    {
+      "id": "android-mac-usb",
+      "boundary": "same Mac, Android device/app/cable; only documented supported adapters",
+      "status": "not_measured",
+      "restriction": "Current Device MCP Android release note is a capability lead, not execution qualification."
+    },
+    {
+      "id": "desktop-manager",
+      "boundary": "same host OS, device/emulator state and human-visible task; startup/interaction tasks independent of agent API",
+      "status": "not_measured",
+      "restriction": "Robomori desktop-manager rows must not be assigned zero/failure values in an unrelated agent-server leaderboard."
+    },
+    {
+      "id": "native-local-video",
+      "boundary": "same generated packet bytes, source code, build flags, host and codec; no device or shown window",
+      "status": "Tomacco_component_measured_only",
+      "restriction": "GPU texture upload, display presentation, actual device capture/transport and touch excluded."
+    }
+  ],
+  "comparison_rules": [
+    "Every trial references the identical cohort manifest SHA: controller hardware/OS/power policy, target device/OS/display, app+fixture hashes, protocol/version/transport topology, tool binary/version, dependencies/language/model, compiler flags, cache/focus/window state, timeout, oracle and resource accounting.",
+    "Compare natural product modes first at the same semantic client boundary; native CLI vs persistent MCP are labelled variants with their own startup/resident costs. Provide matched-protocol subcohorts only where both products natively expose them. No artificial wrapper overhead assigned to a vendor.",
+    "Reset the test app to the exact declared state outside timing, then time capture/read/action/verification separately and the full loop. A200/acknowledgment alone is not visible success.",
+    "Cold is a vector: controller/server/session/engine/application state. Warm repeated exact bytes and warm fresh pixels are different workloads. Do not call an image-cache hit fresh OCR or FPS.",
+    "Pre-register3 randomized/Latin-square rounds of at least100 timed trials/case/variant plus10 declared warmup trials; store warmup too. Pair identical fixtures/trial IDs and alternate tool order. Host-load/thermal/power conditions and background activity recorded; no hidden cache flush or tuning.",
+    "Preserve all raw successes, errors, timeouts, cancellations, retries and unknown outcomes. Report denominator, success/failure rates, timeout bounds, attempts and duplicate mutations. Never discard failed trials to improve latency.",
+    "Report p50/p95 nearest-rank and sample counts for successful matched outcomes alongside all-attempt elapsed distribution and failures. Use paired bootstrap confidence intervals for differences/ratios; do not infer stable tails from small exploratory samples.",
+    "Record native wire UTF-8 bytes, images and normalized adapter bytes separately. Never compare characters to tokens, compressed JPEG to uncompressed PNG or full trees to selected matches without explicit modes and correctness/coverage.",
+    "Resource profile includes all owned tool/helper/daemon processes and child CPU. Record fresh peak, reply resident, idle resident and post-close cleanup separately; declare shared-page double counting, sampling granularity and GPU/device-energy omissions.",
+    "Frame freshness needs a rendered frame ID/source timestamp plus clock mapping. Unknown age remains null+reason. Fresh request time or vendor FPS is not proof of frame age.",
+    "Single mutations are never replayed after unknown delivery to make a test pass. Use an independent test-app counter and explicit refused/applied/unknown outcome. Cancel/reconnect verify no stale actions or leaked owned children.",
+    "Unsupported/not-documented/not-measured are separate statuses. A missing mapped API is not evidence a product lacks a capability. Do not force unrelated desktop managers into an agent-control leaderboard.",
+    "Agent reasoning/model token use belongs to a separate cohort with same model/version, prompt/skill context, tool discovery budget, seed/settings and allowed retries. Deterministic control-plane baselines exclude model inference.",
+    "No vendor FPS, vendor benchmark percentage, trimmed demo or forum/screenshot anecdote is a fair performance baseline. A leadership claim requires named cohort, pinned releases, declared metric weights, quality/coverage gates and reproducible paired evidence; no overall rank while incomparable or unmeasured rows remain."
+  ],
+  "metrics": [
+    {
+      "id": "capture_ms",
+      "start": "request written/native CLI process start",
+      "end": "complete image bytes+metadata available to client",
+      "correctness": "fixture hash or independent visible frame ID and geometry",
+      "notes": "Decode/encode/transfer included only where actually in this boundary; file-copy fixtures labelled separately"
+    },
+    {
+      "id": "read_tree_ms",
+      "start": "native read request",
+      "end": "complete tree result at client",
+      "correctness": "labelled node/geometry/reference inventory, hidden/password handling and late target coverage",
+      "notes": "Full/compact/query/detail variants have identical input tree; payload and omissions reported"
+    },
+    {
+      "id": "read_ocr_ms",
+      "start": "same fresh-image request",
+      "end": "full recognition result",
+      "correctness": "target/word recall, negative false positives, rectangle correctness and duplicate-target count",
+      "notes": "backend/model/language/polarity/region/confidence/engine/cache state pinned; changed pixels bypass cache"
+    },
+    {
+      "id": "tap_ack_ms",
+      "start": "single action submitted",
+      "end": "native acknowledgment received",
+      "correctness": "independent test-app counter; delivery state explicit",
+      "notes": "Never label acknowledgment as visible success"
+    },
+    {
+      "id": "tap_verified_ms",
+      "start": "same single action submitted",
+      "end": "independent visible expected postcondition observed",
+      "correctness": "rendered state marker and action counter exactly once",
+      "notes": "If adapter must perform a second read or assertion, include that time and bytes"
+    },
+    {
+      "id": "full_loop_ms",
+      "start": "first observation request",
+      "end": "verified result after action",
+      "correctness": "all read/selection/action/verification checks pass",
+      "notes": "Scripted deterministic loop first; LLM/model reasoning measured only in separate matched-agent cohort"
+    },
+    {
+      "id": "payload_bytes",
+      "start": "same request boundary",
+      "end": "same completed result",
+      "correctness": "byte counts verified from raw streams/files",
+      "notes": "native wire, normalized adapter output, tool text, images and advertised tool schemas counted separately; tokens only with named tokenizer/version"
+    },
+    {
+      "id": "cpu_ms",
+      "start": "same operation interval",
+      "end": "same operation interval",
+      "correctness": "owned process tree boundaries and sampled child accounting disclosed",
+      "notes": "tool/client/adapter/LLM CPU separate; clock resolution and OS method recorded"
+    },
+    {
+      "id": "rss_kib",
+      "start": "pre-call, sampled during call and retained idle checkpoints",
+      "end": "after reply, after idle timeout, after close",
+      "correctness": "whole owned process tree, source PIDs and sampling interval",
+      "notes": "steady resident and fresh peak are separate; shared-page double counting/GPU omissions explicit"
+    },
+    {
+      "id": "frame_age_ms",
+      "start": "source capture/render timestamp for returned frame",
+      "end": "client result availability",
+      "correctness": "independent frame ID and synchronized clock mapping/uncertainty",
+      "notes": "If source timestamp is absent, null+unavailable reason; never infer freshness from request latency"
+    },
+    {
+      "id": "cancel_ms",
+      "start": "explicit cancellation submitted",
+      "end": "terminal state and owned children gone",
+      "correctness": "no further mutation; already delivered or unknown outcomes recorded without automatic replay",
+      "notes": "unsupported API is unsupported, not zero latency"
+    },
+    {
+      "id": "reconnect_ms",
+      "start": "controlled owned-transport fault cleared",
+      "end": "fresh visible state and new valid references usable",
+      "correctness": "old handles rejected or guarded, no duplicate action, updated frame ID",
+      "notes": "test disconnect at defined offsets and retain every failure"
+    },
+    {
+      "id": "build_ready_ms",
+      "start": "build invocation with declared cache state",
+      "end": "test app visibly ready, separate build/installed/launched/first-frame checkpoints",
+      "correctness": "same source/compiler flags/artifact and oracle state",
+      "notes": "clean/incremental/no-build launches distinct; same dependencies/signing and no hidden downloads"
+    },
+    {
+      "id": "ui_responsiveness_ms",
+      "start": "timestamped local event or packet injection",
+      "end": "GUI callback/image availability or actual presentation (two different metrics)",
+      "correctness": "fresh output/pixel identity and event completion",
+      "notes": "offscreen software tests cannot establish GPU/display/device FPS"
+    }
+  ],
+  "test_matrix": [
+    {
+      "id": "capture-static",
+      "name": "Static labelled screen",
+      "fixture": {
+        "tree_nodes": 8,
+        "resolution": "same chosen device native resolution",
+        "text": "Sign in; Email; status marker"
+      },
+      "metrics": [
+        "capture_ms",
+        "frame_age_ms",
+        "payload_bytes",
+        "cpu_ms",
+        "rss_kib"
+      ],
+      "required_common_manifest": true,
+      "competitor_status": "not_measured",
+      "hardware_status": "unqualified"
+    },
+    {
+      "id": "tree-dense",
+      "name": "600-node tree; target at final node",
+      "fixture": {
+        "nodes": 600,
+        "target": "Sign in",
+        "full_budget": 100000,
+        "compact_budget": 6000,
+        "query": "Sign in"
+      },
+      "metrics": [
+        "read_tree_ms",
+        "payload_bytes",
+        "cpu_ms",
+        "rss_kib"
+      ],
+      "required_common_manifest": true,
+      "competitor_status": "not_measured",
+      "hardware_status": "offline_only_where_supported"
+    },
+    {
+      "id": "ocr-corpus",
+      "name": "Independent full20-case OCR corpus",
+      "fixture": {
+        "manifest": "tests/fixtures/ocr-corpus/manifest.json",
+        "independent_base_images": 16,
+        "cases": 20,
+        "language": "eng",
+        "min_confidence": 40,
+        "modes": [
+          "auto",
+          "never",
+          "adaptive where actually supported"
+        ],
+        "scoring": "same labelled targets and word multiset; retain negatives and duplicate matches"
+      },
+      "metrics": [
+        "read_ocr_ms",
+        "payload_bytes",
+        "cpu_ms",
+        "rss_kib"
+      ],
+      "required_common_manifest": true,
+      "competitor_status": "not_measured",
+      "hardware_status": "offline_only_where_supported"
+    },
+    {
+      "id": "ocr-fresh-stream",
+      "name": "Persistent reads with changed pixel content",
+      "fixture": {
+        "source_cases": [
+          "light-panel",
+          "real-landscape",
+          "real-landscape-inversion-target"
+        ],
+        "unique_images_per_trial": true,
+        "warmup_images": 10,
+        "cache_hits_must_be": false,
+        "invariant": "same text/target geometry; image generation excluded"
+      },
+      "metrics": [
+        "read_ocr_ms",
+        "payload_bytes",
+        "cpu_ms",
+        "rss_kib"
+      ],
+      "required_common_manifest": true,
+      "competitor_status": "not_measured",
+      "hardware_status": "offline_only_where_supported"
+    },
+    {
+      "id": "ocr-exact-repeat",
+      "name": "Unchanged-image cached reads",
+      "fixture": {
+        "same_bytes": true,
+        "warmup_calls": 1,
+        "name": "cache behavior, never FPS"
+      },
+      "metrics": [
+        "read_ocr_ms",
+        "payload_bytes",
+        "cpu_ms",
+        "rss_kib"
+      ],
+      "required_common_manifest": true,
+      "competitor_status": "not_measured",
+      "hardware_status": "offline_only_where_supported"
+    },
+    {
+      "id": "tap-once",
+      "name": "Tap labelled control and verify Loading",
+      "fixture": {
+        "coordinate_input": "normalized point or observed native reference, recorded separately",
+        "expected_action_counter_delta": 1,
+        "postcondition": "Loading visible"
+      },
+      "metrics": [
+        "tap_ack_ms",
+        "tap_verified_ms",
+        "full_loop_ms",
+        "frame_age_ms",
+        "payload_bytes",
+        "cpu_ms",
+        "rss_kib"
+      ],
+      "required_common_manifest": true,
+      "competitor_status": "not_measured",
+      "hardware_status": "unqualified"
+    },
+    {
+      "id": "duplicate-target",
+      "name": "Two Continue controls",
+      "fixture": {
+        "target_count": 2,
+        "expected": "return ambiguity until declared parent/region is selected; no blind first match"
+      },
+      "metrics": [
+        "read_tree_ms",
+        "read_ocr_ms",
+        "tap_verified_ms",
+        "payload_bytes"
+      ],
+      "required_common_manifest": true,
+      "competitor_status": "not_measured",
+      "hardware_status": "unqualified"
+    },
+    {
+      "id": "rotation-stale",
+      "name": "Rotate after observing target",
+      "fixture": {
+        "orientations": [
+          "portrait",
+          "landscape"
+        ],
+        "expected": "stale target refused or independently re-observed before exactly one action"
+      },
+      "metrics": [
+        "full_loop_ms",
+        "frame_age_ms",
+        "payload_bytes"
+      ],
+      "required_common_manifest": true,
+      "competitor_status": "not_measured",
+      "hardware_status": "unqualified"
+    },
+    {
+      "id": "text-fill",
+      "name": "Focused editor and Unicode readback",
+      "fixture": {
+        "text": [
+          "Gr\u00fc\u00dfe caf\u00e9",
+          "\u0627\u0644\u0639\u0631\u0628\u064a\u0629",
+          "\u65e5\u672c\u8a9e"
+        ],
+        "expected": "exact field value, keyboard/focus state and submit outcome; exclude missing OCR language data from engine comparison"
+      },
+      "metrics": [
+        "tap_verified_ms",
+        "full_loop_ms",
+        "payload_bytes",
+        "cpu_ms",
+        "rss_kib"
+      ],
+      "required_common_manifest": true,
+      "competitor_status": "not_measured",
+      "hardware_status": "unqualified"
+    },
+    {
+      "id": "scroll-moving",
+      "name": "Animated list, drag and two-contact gesture",
+      "fixture": {
+        "declared_trace": "identical timestamped normalized path/contact count",
+        "oracle": "rendered camera/list state and stability marker",
+        "unsupported": "separate capability status"
+      },
+      "metrics": [
+        "tap_ack_ms",
+        "tap_verified_ms",
+        "full_loop_ms",
+        "frame_age_ms",
+        "payload_bytes"
+      ],
+      "required_common_manifest": true,
+      "competitor_status": "not_measured",
+      "hardware_status": "unqualified"
+    },
+    {
+      "id": "cancel-owned",
+      "name": "Cancel queued/running/init read",
+      "fixture": {
+        "cancel_offsets_ms": [
+          0,
+          20,
+          100
+        ],
+        "operation": "owned test read/job only",
+        "oracle": "terminal cancellation and child cleanup; no device mutation after cancellation"
+      },
+      "metrics": [
+        "cancel_ms",
+        "cpu_ms",
+        "rss_kib"
+      ],
+      "required_common_manifest": true,
+      "competitor_status": "not_measured",
+      "hardware_status": "unqualified"
+    },
+    {
+      "id": "disconnect-reconnect",
+      "name": "Owned connection interrupted",
+      "fixture": {
+        "fault_offsets": [
+          "before send",
+          "after action delivered before reply",
+          "during read"
+        ],
+        "oracle": "delivery refused/applied/unknown explicit; no unsafe resend; fresh frame and references after reconnect"
+      },
+      "metrics": [
+        "reconnect_ms",
+        "frame_age_ms",
+        "payload_bytes",
+        "cpu_ms",
+        "rss_kib"
+      ],
+      "required_common_manifest": true,
+      "competitor_status": "not_measured",
+      "hardware_status": "unqualified"
+    },
+    {
+      "id": "build-start",
+      "name": "Same app clean/incremental/no-build launch",
+      "fixture": {
+        "source_commit": "pinned test app commit",
+        "compiler_flags": "identical",
+        "cache_profiles": [
+          "clean dependencies preinstalled",
+          "incremental one known change",
+          "existing binary run"
+        ],
+        "oracle": "visible ready counter"
+      },
+      "metrics": [
+        "build_ready_ms",
+        "payload_bytes",
+        "cpu_ms",
+        "rss_kib"
+      ],
+      "required_common_manifest": true,
+      "competitor_status": "not_measured",
+      "hardware_status": "unqualified"
+    },
+    {
+      "id": "local-video",
+      "name": "Three source resolutions and two codecs",
+      "fixture": {
+        "resolutions": [
+          [
+            1080,
+            1920
+          ],
+          [
+            1440,
+            3120
+          ],
+          [
+            3840,
+            2160
+          ]
+        ],
+        "codecs": [
+          "mjpeg",
+          "h264 access-unit"
+        ],
+        "packets": "generated before timing and SHA-pinned",
+        "burst_packets": 9,
+        "oracle": "17 decoded pixel positions, final burst color and recovery frame"
+      },
+      "metrics": [
+        "ui_responsiveness_ms",
+        "cpu_ms",
+        "rss_kib"
+      ],
+      "required_common_manifest": true,
+      "competitor_status": "not_measured",
+      "hardware_status": "offline_only_where_supported"
+    }
+  ],
+  "cohort_manifest_required_fields": [
+    "controller_hardware",
+    "controller_os_build",
+    "power_thermal_state",
+    "tool_binary_sha256",
+    "tool_native_protocol",
+    "transport_hops",
+    "device_model_id",
+    "device_os_build",
+    "display_resolution_scale_refresh",
+    "app_binary_sha256",
+    "fixture_manifest_sha256",
+    "language_locale",
+    "ocr_model_sha256",
+    "mode_and_confidence",
+    "server_session_engine_app_cache_state",
+    "window_focus_state",
+    "compiler_flags_and_dependencies",
+    "timeouts_and_cancel_fault_schedule",
+    "oracle_build_and_clock_mapping",
+    "resource_accounting_method",
+    "source_docs_snapshot",
+    "license_and_execution_authorization"
+  ],
+  "adapter_contract": {
+    "input_schema": {
+      "$schema": "https://json-schema.org/draft/2020-12/schema",
+      "title": "Fair benchmark adapter request",
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "schema",
+        "run_id",
+        "cohort_manifest_sha256",
+        "tool_release_sha256",
+        "case_id",
+        "trial",
+        "phase",
+        "operation",
+        "request_id",
+        "input",
+        "oracle"
+      ],
+      "properties": {
+        "schema": {
+          "const": "tomacco-fair-adapter-request/1"
+        },
+        "run_id": {
+          "type": "string"
+        },
+        "cohort_manifest_sha256": {
+          "type": "string",
+          "pattern": "^[a-f0-9]{64}$"
+        },
+        "tool_release_sha256": {
+          "type": "string",
+          "pattern": "^[a-f0-9]{64}$"
+        },
+        "case_id": {
+          "type": "string"
+        },
+        "trial": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "phase": {
+          "enum": [
+            "controller_cold",
+            "server_cold",
+            "session_first",
+            "engine_first",
+            "warm_fresh",
+            "warm_cached",
+            "application_cold",
+            "application_warm"
+          ]
+        },
+        "operation": {
+          "enum": [
+            "capture",
+            "read_tree",
+            "read_ocr",
+            "tap",
+            "type",
+            "gesture",
+            "wait",
+            "cancel",
+            "reconnect",
+            "build_run",
+            "local_video"
+          ]
+        },
+        "request_id": {
+          "type": "string"
+        },
+        "input": {
+          "type": "object",
+          "description": "Explicit device/session or immutable file hashes, native mode/region/query and fixture state; no discovery performed by adapter"
+        },
+        "oracle": {
+          "type": "object",
+          "required": [
+            "kind",
+            "expected"
+          ],
+          "properties": {
+            "kind": {
+              "enum": [
+                "labelled_file",
+                "instrumented_test_app",
+                "rendered_frame_id",
+                "local_packet_pixels"
+              ]
+            },
+            "expected": {
+              "type": "object"
+            }
+          }
+        }
+      }
+    },
+    "output_schema": {
+      "$schema": "https://json-schema.org/draft/2020-12/schema",
+      "title": "Fair benchmark adapter trial",
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "schema",
+        "run_id",
+        "request_id",
+        "cohort_manifest_sha256",
+        "tool_release_sha256",
+        "case_id",
+        "trial",
+        "phase",
+        "status",
+        "native_protocol",
+        "timing",
+        "io",
+        "resources",
+        "freshness",
+        "correctness",
+        "unavailable",
+        "raw_artifacts"
+      ],
+      "properties": {
+        "schema": {
+          "const": "tomacco-fair-adapter-trial/1"
+        },
+        "run_id": {
+          "type": "string"
+        },
+        "request_id": {
+          "type": "string"
+        },
+        "cohort_manifest_sha256": {
+          "type": "string",
+          "pattern": "^[a-f0-9]{64}$"
+        },
+        "tool_release_sha256": {
+          "type": "string",
+          "pattern": "^[a-f0-9]{64}$"
+        },
+        "case_id": {
+          "type": "string"
+        },
+        "trial": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "phase": {
+          "enum": [
+            "controller_cold",
+            "server_cold",
+            "session_first",
+            "engine_first",
+            "warm_fresh",
+            "warm_cached",
+            "application_cold",
+            "application_warm"
+          ]
+        },
+        "status": {
+          "enum": [
+            "ok",
+            "failed",
+            "timeout",
+            "cancelled",
+            "unsupported",
+            "unavailable",
+            "unknown"
+          ]
+        },
+        "native_protocol": {
+          "type": "object",
+          "required": [
+            "kind",
+            "version",
+            "normalization_overhead_ms"
+          ],
+          "properties": {
+            "kind": {
+              "enum": [
+                "mcp_stdio",
+                "mcp_http",
+                "native_cli",
+                "native_rest",
+                "local_socket",
+                "manual_ui"
+              ]
+            },
+            "version": {
+              "type": [
+                "string",
+                "null"
+              ]
+            },
+            "normalization_overhead_ms": {
+              "type": [
+                "number",
+                "null"
+              ],
+              "minimum": 0
+            }
+          }
+        },
+        "timing": {
+          "type": "object",
+          "required": [
+            "start_monotonic_ns",
+            "end_monotonic_ns",
+            "wall_ms",
+            "capture_ms",
+            "read_ms",
+            "action_ack_ms",
+            "visible_postcondition_ms",
+            "cancel_cleanup_ms",
+            "reconnect_ms"
+          ],
+          "properties": {
+            "start_monotonic_ns": {
+              "type": "string",
+              "pattern": "^[0-9]+$"
+            },
+            "end_monotonic_ns": {
+              "type": "string",
+              "pattern": "^[0-9]+$"
+            },
+            "wall_ms": {
+              "type": [
+                "number",
+                "null"
+              ],
+              "minimum": 0
+            },
+            "capture_ms": {
+              "type": [
+                "number",
+                "null"
+              ],
+              "minimum": 0
+            },
+            "read_ms": {
+              "type": [
+                "number",
+                "null"
+              ],
+              "minimum": 0
+            },
+            "action_ack_ms": {
+              "type": [
+                "number",
+                "null"
+              ],
+              "minimum": 0
+            },
+            "visible_postcondition_ms": {
+              "type": [
+                "number",
+                "null"
+              ],
+              "minimum": 0
+            },
+            "cancel_cleanup_ms": {
+              "type": [
+                "number",
+                "null"
+              ],
+              "minimum": 0
+            },
+            "reconnect_ms": {
+              "type": [
+                "number",
+                "null"
+              ],
+              "minimum": 0
+            }
+          }
+        },
+        "io": {
+          "type": "object",
+          "required": [
+            "native_request_bytes",
+            "native_response_bytes",
+            "tool_text_utf8_bytes",
+            "image_bytes",
+            "normalized_response_bytes"
+          ],
+          "properties": {
+            "native_request_bytes": {
+              "type": [
+                "integer",
+                "null"
+              ],
+              "minimum": 0
+            },
+            "native_response_bytes": {
+              "type": [
+                "integer",
+                "null"
+              ],
+              "minimum": 0
+            },
+            "tool_text_utf8_bytes": {
+              "type": [
+                "integer",
+                "null"
+              ],
+              "minimum": 0
+            },
+            "image_bytes": {
+              "type": [
+                "integer",
+                "null"
+              ],
+              "minimum": 0
+            },
+            "normalized_response_bytes": {
+              "type": [
+                "integer",
+                "null"
+              ],
+              "minimum": 0
+            }
+          }
+        },
+        "resources": {
+          "type": "object",
+          "required": [
+            "tool_cpu_ms",
+            "adapter_cpu_ms",
+            "rss_before_kib",
+            "rss_after_kib",
+            "sampled_peak_rss_kib",
+            "idle_rss_kib",
+            "sample_interval_ms",
+            "method"
+          ],
+          "properties": {
+            "tool_cpu_ms": {
+              "type": [
+                "number",
+                "null"
+              ],
+              "minimum": 0
+            },
+            "adapter_cpu_ms": {
+              "type": [
+                "number",
+                "null"
+              ],
+              "minimum": 0
+            },
+            "rss_before_kib": {
+              "type": [
+                "number",
+                "null"
+              ],
+              "minimum": 0
+            },
+            "rss_after_kib": {
+              "type": [
+                "number",
+                "null"
+              ],
+              "minimum": 0
+            },
+            "sampled_peak_rss_kib": {
+              "type": [
+                "number",
+                "null"
+              ],
+              "minimum": 0
+            },
+            "idle_rss_kib": {
+              "type": [
+                "number",
+                "null"
+              ],
+              "minimum": 0
+            },
+            "sample_interval_ms": {
+              "type": [
+                "number",
+                "null"
+              ],
+              "minimum": 0
+            },
+            "method": {
+              "type": "string"
+            }
+          }
+        },
+        "freshness": {
+          "type": "object",
+          "required": [
+            "frame_id",
+            "source_timestamp_ns",
+            "frame_age_ms",
+            "clock_uncertainty_ms"
+          ],
+          "properties": {
+            "frame_id": {
+              "type": [
+                "string",
+                "null"
+              ]
+            },
+            "source_timestamp_ns": {
+              "type": [
+                "string",
+                "null"
+              ]
+            },
+            "frame_age_ms": {
+              "type": [
+                "number",
+                "null"
+              ],
+              "minimum": 0
+            },
+            "clock_uncertainty_ms": {
+              "type": [
+                "number",
+                "null"
+              ],
+              "minimum": 0
+            }
+          }
+        },
+        "correctness": {
+          "type": "object",
+          "required": [
+            "oracle_passed",
+            "target_hits",
+            "target_total",
+            "word_hits",
+            "word_total",
+            "false_positives",
+            "applied_count",
+            "expected_applied_count",
+            "delivery"
+          ],
+          "properties": {
+            "oracle_passed": {
+              "type": [
+                "boolean",
+                "null"
+              ]
+            },
+            "target_hits": {
+              "type": [
+                "integer",
+                "null"
+              ],
+              "minimum": 0
+            },
+            "target_total": {
+              "type": [
+                "integer",
+                "null"
+              ],
+              "minimum": 0
+            },
+            "word_hits": {
+              "type": [
+                "integer",
+                "null"
+              ],
+              "minimum": 0
+            },
+            "word_total": {
+              "type": [
+                "integer",
+                "null"
+              ],
+              "minimum": 0
+            },
+            "false_positives": {
+              "type": [
+                "integer",
+                "null"
+              ],
+              "minimum": 0
+            },
+            "applied_count": {
+              "type": [
+                "integer",
+                "null"
+              ],
+              "minimum": 0
+            },
+            "expected_applied_count": {
+              "type": [
+                "integer",
+                "null"
+              ],
+              "minimum": 0
+            },
+            "delivery": {
+              "enum": [
+                "not_applicable",
+                "refused",
+                "applied",
+                "unknown"
+              ]
+            }
+          }
+        },
+        "unavailable": {
+          "type": "object",
+          "description": "Every null metric has its metric path and concrete reason; unsupported is not zero or a timed success",
+          "additionalProperties": {
+            "type": "string",
+            "minLength": 1
+          }
+        },
+        "raw_artifacts": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": [
+              "path",
+              "sha256"
+            ],
+            "properties": {
+              "path": {
+                "type": "string"
+              },
+              "sha256": {
+                "type": "string",
+                "pattern": "^[a-f0-9]{64}$"
+              }
+            }
+          }
+        }
+      }
+    },
+    "initial_implementation_status": "specification_only; no competitor adapters run",
+    "handshake": "Before timing, adapter records exact release/protocol and only capabilities from that pinned native tool. Host/device discovery is a separate authorized preparation step, never implicit in a measured request.",
+    "delivery_safety": "request_id is benchmark identity only; it must not imply native idempotency. Unknown delivery remains unknown; no automatic replay.",
+    "normalization": "Preserve native raw bytes/artifact hashes, timestamps and native errors; normalized records are additional output and their cost is separate."
+  },
+  "tomacco_measured_components": [
+    {
+      "record": "docs/performance-baseline-qualification.json",
+      "status": "417 offline records, old5c458f release only; no hardware comparison",
+      "components": [
+        "scripted capture/observe",
+        "8/600-node supplied hierarchy",
+        "payload bytes",
+        "tap+visible hierarchy postcondition",
+        "cold/warm MCP/CLI",
+        "sampled CPU/RSS"
+      ]
+    },
+    {
+      "record": "docs/ocr-worker-performance-qualification.json",
+      "status": "b075f3 prototype417 performance records and720 full corpus calls; final integrated binary still pending independent rerun",
+      "components": [
+        "changed-pixel worker vs explicit-system executable",
+        "unchanged-image cache",
+        "full20-case quality equality"
+      ],
+      "memory_tradeoff": "fresh process-tree peak modestly lower, but cached resident footprint ~10MiB\u2192~86MiB while model/engine persists; idle cleanup is separate lifecycle evidence"
+    },
+    {
+      "record": "docs/nativeview-performance-qualification.json",
+      "status": "120 local synthetic frames +54 burst packets +6 recoveries; no shown window",
+      "components": [
+        "feed\u2192GUI image availability",
+        "17 decoded pixel positions",
+        "burst final frame/recovery"
+      ],
+      "excluded": [
+        "GPU upload",
+        "screen presentation",
+        "physical device/transport/touch",
+        "realistic moving-content FPS"
+      ]
+    },
+    {
+      "record": "docs/nativeview-build-type-check.json",
+      "status": "same-source ABBA empty/Release480 frames; no consistent video gain",
+      "components": [
+        "same encoded packet hashes",
+        "explicit compiler flags",
+        "all correctness checks pass"
+      ]
+    }
+  ],
+  "execution_state": {
+    "competitor_installs": 0,
+    "competitor_runs": 0,
+    "physical_device_or_emulator_runs": 0,
+    "remote_connections": 0,
+    "paid_license_activations": 0,
+    "allowed_now": "Public primary docs/HTML reads and offline Tomacco fixtures only",
+    "next": "Root supplies final integrated immutable CLI, then rerun exact existing matrix; hardware/competitor execution remains a separately authorized future step."
+  }
+}
