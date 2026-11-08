@@ -1,0 +1,192 @@
+{
+  "review": "Tomacco flow atlas - second independent source/logic review (spec vs code)",
+  "reviewer": "Claude Opus 5.5 (claude-opus-5-5), read-only outside this clone",
+  "date": "2026-11-08",
+  "previous_review": "docs/flow-atlas-independent-review.json (commit e7d1012, 25 findings R01-R25) - kept unchanged as the historical record",
+  "source_baseline": {
+    "product": "4584d6bca3a07840e81683d99cd0adb386aeff35 (this clone, installed product)",
+    "registry": "assets/operations.json: 296 operations, 33 domains; 29 with destructiveHint true (identical whether a missing hint counts as destructive or not)",
+    "languages": "i18n/languages.json: 51 entries, all complete (English + 50 translations; es is the only entry outside the Omarchy registry); RTL ar, fa, he, ur",
+    "scope_note": "Source/fixture logic only. Nothing here is real-device qualification; Pixel untouched, no physical iPhone/AirPlay evidence. Untested is reported as untested, never as failed."
+  },
+  "reviewed_inputs": {
+    "main_core_specs": {
+      "clone": "/home/maslos/Work/tomacco-flow-logic-20261108",
+      "head": "ef145486202529561cdefc008fa7f50436484412 (specs last changed in 154e490; ef14548 changed only tools/atlas.py); spec files clean against HEAD",
+      "files_sha256_prefix": {
+        "01_architecture.py": "0793ded53e5eeefd",
+        "02_navigation.py": "c8766992a9732c2f",
+        "03_setup_project.py": "3f224c20644f9ec6",
+        "04_devices.py": "673501c3ab9cae1c",
+        "05_agent_loop.py": "21d31d4cd9832768",
+        "06_policy_jobs.py": "ae21e1cba25af8c3"
+      }
+    },
+    "lane_a_specs": {
+      "clone": "/home/maslos/Work/tomacco-flow-specs-a-20261108",
+      "head": "c095810b28bf694d04ebf446850a487f59e769d5; docs/spec-build-progress.json ready: true; spec files clean against HEAD; all six parse",
+      "files_sha256_prefix": {
+        "70_d19_files.py": "f726834aaa4530fa",
+        "71_d20_settings.py": "aa48a1760edc3f46",
+        "72_d21_testing.py": "baeb9edafbb65108",
+        "73_d22_debug_profile.py": "44eb2e8f13b8a53c",
+        "74_d23_demo.py": "ed04bf7713a052b0",
+        "75_d24_release.py": "bf5755fce3b0fc58"
+      }
+    },
+    "lane_b_specs": "/home/maslos/Work/tomacco-flow-specs-b-20261108/docs/flows/specs/ empty and no spec-build-progress.json at both re-lists: pending, not failed",
+    "root_inputs": [
+      "/home/maslos/Work/tomacco-flow-logic-handoff-20261108/additional-flow-scope-review.txt",
+      "/home/maslos/Work/tomacco-flow-logic-handoff-20261108/final-acceptance-todo.json",
+      "/home/maslos/Work/tomacco-flow-logic-handoff-20261108/root-observed-progress.json"
+    ],
+    "bogen": "Not opened in this pass (spec-vs-code only, as briefed). No statement here about actual Bogen renders."
+  },
+  "reviewed_diagram_ids": ["D01", "D02", "D03", "D04", "D05", "D06", "D07", "D08", "D09", "D10", "D11", "D12", "D13", "D14", "D15", "D16", "D17", "D18", "D19", "D20", "D21", "D22", "D23", "D24"],
+  "not_reviewed_missing": ["D25", "D26", "D27", "D28", "D29", "D30 (if any)", "S1 status/roadmap (linked from D10/D11, no spec)"],
+  "method": [
+    "Read every current spec 01-06 and 70-75 in full; re-verified each new or changed claim against QML/C++/Rust at 4584d6b.",
+    "Mechanical pass: every snake_case token in all 12 spec files exists somewhere in native/, qml/, src/, tools/, integrations/ or operations.json (no invented error codes); every dotted token matching a registry prefix is a real operation, a prefix wildcard (ios.virtual.*, device.reservation.*) or a field/file name (desktop.open.tab, settings.lock, doctor.host, result.attempts).",
+    "Coverage: 201 of 296 operations are named in at least one current spec; the 95 remaining are listed under coverage_gaps."
+  ],
+  "r01_r25_resolution": [
+    {"id": "R01", "status": "resolved", "evidence": "01_architecture.py: desk/phone -> schema edge 'TOMACCO_CALLER=desktop: ohne Guard', guard tag 'NUR AGENTEN-KANÄLE', first note; D15 lead/call node 'nicht TOMACCO_CALLER=desktop'. Matches src/control.cpp:31-38 and native/guard.rs:117-124. Tools-form confirmation still missing, see R26."},
+    {"id": "R02", "status": "resolved", "evidence": "D01 guard sub 'Standard: Policy full, Freigabe aus' + note '29 von 296 ... 30 s ... without_desktop: allow'; D15 lead and need node 'Standard: aus'. Matches native/guard/policy.rs:159-174, guard.rs:282-299; 29 destructive confirmed."},
+    {"id": "R03", "status": "resolved", "evidence": "D15 first note: Policy/Wurzeln je Schritt, Freigabe einmal, workflow.run confirm (guard.rs:254-280 per step, 282 once)."},
+    {"id": "R04", "status": "resolved", "evidence": "D15 big 'MCP-Antwort zu groß?', file is an error 'result_too_large: lief bereits', e0 policy_invalid with the terminal agent_policy exception (guard.rs:147-153, 178-183)."},
+    {"id": "R05", "status": "resolved", "evidence": "D05 who decision splits person (Häkchen/setup) and agent ('ask_first · nicht technisch erzwungen'), pol note 'destructiveHint: false ... nur eine Policy blockiert'. Nit (not a finding): the 'Desktop' branch label also covers tomaccoctl setup, which is a terminal; 'Desktop / setup' would be exact."},
+    {"id": "R06", "status": "resolved", "evidence": "D05 call -> licq -> lic 'Synchron abgelehnt, kein Job' before job (avd_manage.rs:465-481)."},
+    {"id": "R07", "status": "resolved", "evidence": "D06 found 'Projektart oder Tasks erkannt?', unknown 'project_unrecognized · invalid_project · path_not_found', empty note (projects.rs:102-116)."},
+    {"id": "R08", "status": "resolved", "evidence": "D06 kindq 'flutter oder xtool?' -> cjob vs csync; note on build:true only for xtool (projects.rs:850-905)."},
+    {"id": "R09", "status": "partial", "evidence": "D07 nohost is terminal with remedy, remote is a separate start, note 'wählen nie einen Host' - correct. But the remote node says 'Eigener Aufruf durch Agent/CLI' and the note says 'die Desktop-QML hat keine Remote-Route'; the person can run remote.* from the generic Tools form. See R27."},
+    {"id": "R10", "status": "resolved", "evidence": "D07 occ 'nur Build/Run-Jobs', limit 'MCP-Sitzung über Job-Limit?' -> session_job_limit (guard.rs:368-371 MCP only), sess 'Flutter-Sitzung läuft?' -> rerun."},
+    {"id": "R11", "status": "resolved", "evidence": "D04 pclose (closeSolo) and lost (soloGrace 4 s -> quitApp) split; bye 'ohne runtime.stop'; solo -> docked edge; quit 'höchstens 2,5 s' (NativeWorkspace.qml:124-125, 136, 196-212)."},
+    {"id": "R12", "status": "resolved", "evidence": "D02 none exit 'Erfassung · Smoke-Test · device_only · gleiche Version', l1359 'Icon-Rail, Aktivität sichtbar', 13 routes incl. preview and ios-research (NativeWorkspace.qml:182-193, 789; main.cpp:100). The CLI box path is a separate new item, R28."},
+    {"id": "R13", "status": "resolved", "evidence": "D08 lead 'headless; nur ein Emulator mit eigenem Fenster braucht X11', nodisp edge 'mit Fenster', swiftshader note (devices.rs:1125-1155)."},
+    {"id": "R14", "status": "resolved", "evidence": "D10 kinds 'Live-Touch (1 Kontakt), tap, swipe, Tasten, text, fill', noin 'Ohne BLE-HID keine Eingabe', skip note skipped_characters (airplay.rs:513-625)."},
+    {"id": "R15", "status": "resolved", "evidence": "D10 oerr and D12 noframe 'Fehler airplay_runtime'; D12 lead 'Ein Transport ohne Bild antwortet mit einem Fehler' (airplay.rs:637-642)."},
+    {"id": "R16", "status": "resolved", "evidence": "D12 geo 'Plan mit frame oder Marke noch gültig?' + geonote; D13 frame 'frame angegeben und geändert?' (actions.rs:296-310)."},
+    {"id": "R17", "status": "resolved", "evidence": "D12 unknown 'runtime_timeout · runtime_protocol · runtime_stopped · delivery: unknown', rid note request_outcome_unknown, refused list complete for reservation codes (ledger.rs:44-87, 573-581)."},
+    {"id": "R18", "status": "resolved", "evidence": "D13 fobs/mode/fok three-way; waittype '300 ms ... ungeprüft'; funobs focus_unobservable; note limited to Android, USB-WDA, Fixture (actions.rs:100-125, 187-215)."},
+    {"id": "R19", "status": "resolved", "evidence": "D13 wrong adds field_unsupported, field_unobservable; secret note; uncertain value_matches_placeholder; verified 'field_submit_not_sent möglich' (field.rs)."},
+    {"id": "R20", "status": "resolved", "evidence": "D11 bad 'nicht x86_64, keine VT-x/AVX2, GPU < 8 GiB ...' 'ARM-MacBook: nie'; boot 'ohne Passcode entsperren', lock node; fail codes (host_check.rs:146-152, setup_chain.rs)."},
+    {"id": "R21", "status": "resolved", "evidence": "D11 simok 'Baum: idb-JSON, nicht für screen.*' (runtime/ios.rs:484-489)."},
+    {"id": "R22", "status": "resolved", "evidence": "D14 ai 'Agent: android.input' is its own start; ios 'Anteil × (Punktbreite − 1) = WDA-Punkt' (iphone.rs:365-367)."},
+    {"id": "R23", "status": "resolved", "evidence": "D16 other -> reserved 'device_reserved (Halter, Ablauf)', take 'für die Person gedacht, nicht erzwungen', a1 request_in_progress, once note on reconciliation (coordination.rs:609-616, ledger.rs:633). One note sentence is inaccurate, see R29."},
+    {"id": "R24", "status": "resolved", "evidence": "D18 cs -> cq -> cqd 'cancelled vor dem Start · Cancelled while queued'; skip workflow_needs_confirmation, rest workflow_step_failed (jobs.rs:1024-1027)."},
+    {"id": "R25", "status": "resolved", "evidence": "D17 end -> poll 'waiting' loop, wait node 'Ablauf 15 min', r1 handoff_person_only / handoff_not_waiting (handoff.rs:25-28, 221-231)."}
+  ],
+  "r01_r25_counts": {"resolved": 24, "partial": 1, "open": 0},
+  "new_findings": [
+    {
+      "id": "R26",
+      "diagram": "D01, D15",
+      "severity": "low",
+      "wrong": "D01 first note 'Desktop und Telefon-Layout ... ohne Agent-Policy, Freigabe, Jobgrenze und Audit' and D15 lead 'der Desktop handelt für die Person und überspringt sie' are true for the guard, but no board shows that the generic Tools form has its own confirmation before destructive operations.",
+      "source": ["qml/Workspace.qml:245-256 destructiveOperation (annotations.destructiveHint===true), confirmingRun, submitForm(confirmed)", "qml/Workspace.qml:1058-1068 toolConfirm 'Run anyway' / Cancel, toolRun tip", "qml/Workspace.qml:42 operations: Agent.operations; src/control.cpp:173 all schema operations"],
+      "actual": "Tools lists every registered operation. For the 29 destructive ones, Run first shows an inline 'Run anyway / Cancel' confirmation, then sends through Agent.request with TOMACCO_CALLER=desktop (still no guard, no MCP inline-size limit). Purpose-built views call their operations directly without this step (FileWorkspace files.write, ReleaseWorkspace release.version).",
+      "correction": "D01 note (or D15 note): 'Am Desktop fragt das Werkzeuge-Formular selbst vor destruktiven Operationen (destructiveHint, „Run anyway“); das ist eine UI-Bestätigung, keine Agenten-Freigabe. Fachansichten wie Dateien oder Release rufen direkt.' Lane B's Tools board should draw it as its own branch.",
+      "evidence": "submitForm returns early with confirmingRun=true when destructiveOperation && !confirmed.",
+      "in_root_notes": "yes, root additional-flow-scope-review.txt item 2 (as a scope request); not yet in any spec"
+    },
+    {
+      "id": "R27",
+      "diagram": "D07",
+      "severity": "low",
+      "wrong": "remote node 'Eigener Aufruf durch Agent/CLI' and note 'die Desktop-QML hat keine Remote-Route'.",
+      "source": ["qml/Workspace.qml:225-228 showAction(name) selects any registered operation", "qml/Workspace.qml:572-575 projectPhoneHosts 'Mac hosts' -> showAction('remote.list'), text 'Tomacco never chooses or searches for one'", "assets/operations.json remote.run destructiveHint true"],
+      "actual": "No automatic redirect exists (that part of the board is right). But the person can call remote.sync / remote.run / remote.fetch from the Tools form (remote.run with the form's destructive confirmation), and the phone project page opens remote.list there.",
+      "correction": "remote: 'Eigener Aufruf: Agent, CLI oder Werkzeuge-Formular'. Note: 'Kein Projekt-Knopf leitet auf einen Host um; remote.* gibt es als eigene Operationen, am Desktop über das Werkzeuge-Formular (Telefon: „Mac hosts“ öffnet remote.list).'",
+      "evidence": "Literal grep for 'remote.run' in QML finds nothing because the form is generic, not because the GUI cannot run it.",
+      "in_root_notes": "yes, root 'PRECISION ON INDEPENDENT REVIEW R09'"
+    },
+    {
+      "id": "R28",
+      "diagram": "D02",
+      "severity": "low",
+      "wrong": "Edge cli -> show: 'CLI/Agent: desktop.open oder --workspace, 13 Ziele' -> 'workspace.showTab(section)'.",
+      "source": ["qml/Main.qml:79-87 showWorkspace(tab, projectPath, file, line)", "qml/Main.qml:192 initial --workspace", "qml/Workspace.qml:177-183 showTab: ios-research special case, ten tab names, otherwise throws 'Unknown workspace'"],
+      "actual": "desktop.open reaches Main.showWorkspace: it opens path/file/line first, leaves solo, sets nativeMode = (tab != preview); preview and runtime call workspace.close() (preview = web preview mode, runtime = live device); only the other 11 go to showTab, where ios-research opens Devices plus the iOS panel. showTab('runtime') or showTab('preview') would throw.",
+      "correction": "Route cli to 'Main.showWorkspace(tab): Projekt/Datei öffnen' and then a small decision 'preview / runtime / sonst': preview -> 'Web-Vorschau (nativeMode aus)', runtime -> live, sonst -> show. Keep the extra13 note.",
+      "evidence": "The box is drawn as a literal function name, so the shortcut is a false call path, not just simplification.",
+      "in_root_notes": "candidate named in the second-review brief; confirmed here"
+    },
+    {
+      "id": "R29",
+      "diagram": "D16",
+      "severity": "low",
+      "wrong": "Second note: 'Eine Ablehnung, die nachweislich nichts gesendet hat (...), wird nicht festgehalten: dieselbe request_id darf erneut.'",
+      "source": ["native/coordination/ledger.rs:42-74 REFUSED codes", "native/coordination/ledger.rs:619-626 completed/refused record is taken over by the next attempt", "native/coordination/ledger.rs:535, 565 settle keeps status refused"],
+      "actual": "The refusal is recorded (state completed, status refused, readable with device.request.get). A new call with the same request_id and the same intent resets it to pending and runs again. The board's own a2 node and comp sub ('refused') already say this; the note contradicts them.",
+      "correction": "'Eine Ablehnung, die nachweislich nichts gesendet hat, wird als refused gespeichert; dieselbe request_id mit gleicher Absicht führt erneut aus.' Optional: the refused set also contains policy_denied, approval_denied, path_outside_roots, frame_stale, mark_stale, focus_timeout, fill_verification_unsupported.",
+      "evidence": "UPDATE requests SET state='pending' ... WHERE id=?7 when row.status == 'refused'.",
+      "in_root_notes": "no"
+    },
+    {
+      "id": "R30",
+      "diagram": "D22",
+      "severity": "low",
+      "wrong": "m3 'Baseline vorhanden?' -> nein -> m4 'Wird Baseline · spätere Vergleiche lesen sie'.",
+      "source": ["native/profiling.rs:177-179 compare reads the explicit baseline path", "assets/operations.json profile.compare (baseline, current, budgets, report)", "qml/ProfileWorkspace.qml 'Catch regressions': Compare enabled only when the 'Previous JSON report' field is filled"],
+      "actual": "Tomacco never stores or promotes a report as a baseline. A saved report is just a JSON file; a later profile.compare or profile.budget call has to name it. Without a baseline there is no comparison; nothing happens automatically.",
+      "correction": "Replace m3/m4 with 'Früheren Bericht als baseline angegeben?' nein -> 'Bericht bleibt eine Datei; später als baseline angeben' (style dim, not a state).",
+      "evidence": "grep finds no baseline registry or default path in profiling.rs/perf.rs; testing.baselines (D21) is a separate screenshot concept.",
+      "in_root_notes": "no"
+    },
+    {
+      "id": "R31",
+      "diagram": "D24",
+      "severity": "medium",
+      "wrong": "a2 'Checkliste ok? (release.checklist)' -> nein -> a7 'Nicht bereit: target_sdk · version_code · debuggable · Debug-Schlüssel' (style err), ja -> a3 build -> a4 sign. This draws the checklist as a gate before build and signing.",
+      "source": ["native/releases.rs:50 release.checklist -> release_checks::checklist (its only caller)", "assets/operations.json release.checklist readOnlyHint true; release.sign, play.prepare have no checklist input", "qml/ReleaseWorkspace.qml:16-53 calls release.sign/verify/keystore/version, not release.checklist"],
+      "actual": "release.checklist is an advisory, read-only report (pass/fail per check). Nothing in release.sign, play.prepare or the Release view reads it, so a failing checklist blocks nothing; a debuggable or debug-signed build can still be signed and prepared.",
+      "correction": "Make a2 a step 'Checkliste lesen (nur Bericht)' with a dashed/dim edge to a note 'fail-Einträge sind Hinweise; release.sign und play.prepare prüfen sie nicht'. Draw a0/a1 -> a3 -> a4 as the actual path, and drop the err style on a7 (or turn it into the report node).",
+      "evidence": "Only grep hit for release_checks:: outside its own file is the dispatcher line.",
+      "in_root_notes": "no"
+    },
+    {
+      "id": "R32",
+      "diagram": "D24",
+      "severity": "medium",
+      "wrong": "Lead 'die Entscheidung trifft eine Person', and the only path to p9 'Commit' goes through human nodes p7 'Person prüft den Edit' and p10 'Destruktiv bestätigen'.",
+      "source": ["assets/operations.json play.commit required credentials, package, edit_id; no confirm field; destructiveHint true", "native/guard.rs:282-299 approval only for MCP when approval is enabled (default off); no desktop -> allowed unless without_desktop: deny", "qml/Workspace.qml:245-256 Tools-form confirmation"],
+      "actual": "Publishing is gated by a person only in the Tools form (and over MCP only when the opt-in approval is on and a desktop is open or without_desktop is deny). With defaults, an MCP agent or tomaccoctl call commits immediately with an edit_id; no step checks that a person reviewed the edit. The board's first note says most of this, so the lead and edges contradict the board's own note.",
+      "correction": "Lead: 'die Entscheidung soll eine Person treffen; Tomacco erzwingt sie nur im Werkzeuge-Formular und bei eingeschalteter MCP-Freigabe'. Split p10 by channel: 'Werkzeuge-Formular fragt' / 'MCP: nur mit Freigabe (Standard aus)' / 'CLI: fragt nie – Agent soll die Person fragen (nicht erzwungen)', all leading to p9. Same pattern as R05.",
+      "evidence": "guarded(): `if mcp && destructive && settings.approval_enabled()`; CLI channel never reaches ask().",
+      "in_root_notes": "no (same class as R05)"
+    },
+    {
+      "id": "R33",
+      "diagram": "D01",
+      "severity": "low",
+      "wrong": "mcp node 'MCP: Claude, Codex, Grok, OpenCode, Hermes, omp'.",
+      "source": ["native/agent_clients.rs:70-79 ten adapters"],
+      "actual": "Ten client adapters: claude-code, codex, gemini-cli, cursor, vscode, zed, opencode, grok-cli, hermes, omp. Any MCP client can connect; Gemini CLI, Cursor, VS Code and Zed are missing from the box.",
+      "correction": "'MCP-Clients, z. B. Claude Code, Codex, Gemini CLI … (10 Adapter, D2x)' or list all ten; Grok CLI is the community CLI adapter, not an xAI app/API.",
+      "evidence": "Enum ids match the palette search string at qml/NativeWorkspace.qml:780.",
+      "in_root_notes": "partly (root scope item 2 asks lane B to use the ten adapters)"
+    }
+  ],
+  "lane_a_checked_without_findings": {
+    "D19": "files.read 1 MiB/binary_file, list 2000 truncated, search 200, files.write if_match/file_conflict, outside_project; chooser cancel/Esc picks nothing, overwrite question; Ja is not a write permission (demo_conflict, catalog file_exists, release.sign path_exists via releases.rs:33-37 no_existing); settings export truncates (src/backend.cpp:365-384). Desktop files.write without agent approval is correctly stated.",
+    "D20": "settings.json vs QSettings separation; settings.configure lock + invalid_settings/invalid_tool/not_executable/invalid_argument (toolchain.rs:136-170); UI scale 75-200 in 25 steps, invalid -> 100, Ctrl+Alt +/-/0 (backend.cpp:308-315, Main.qml:207-209); 51 complete entries, es outside registry, RTL ar/fa/he/ur (languages.json, backend.cpp:267-268).",
+    "D21": "GPX only emulator-NNNN, gpx_unsupported for physical Android and iPhone (gpx.rs:276-289); desktop ScreenRecorder Android-only; testing.record records inputs, not video; recording/qualification caveats present.",
+    "D22": "debug admission: same request + ready -> reused, otherwise device_debug_busy (debugger.rs:226-229); measurement_unavailable fails a budget (profiling.rs:263-266). Only the baseline branch is wrong (R30).",
+    "D23": "MVP vs planned split, silent output, jobs not success until independently checked, demo_conflict admission. Not exhaustively re-derived; no contradiction found in spot checks.",
+    "D24": "apple.store and ios.store_ship destructiveHint false (no form dialog, no approval) is correct; play.prepare leaves an uncommitted edit; nothing submits for review; 'nichts veröffentlicht' status correct. Findings R31, R32."
+  },
+  "coverage_gaps": {
+    "pending_boards": "Lane B D25-D29/D30 (update, mobile local-vs-host, recovery, web preview, agent setup + Tools) has no spec files and no progress file at either re-list: pending, not failed. Core links already point to D25, D26, D27; D10/D11 link to S1, which has no spec.",
+    "unmapped_operations_count": 95,
+    "unmapped_by_domain": {"ios": 34, "android": 22, "preview": 16, "device": 4, "swift": 4, "apple": 4, "screen": 3, "update": 3, "diagnostics": 2, "remote": 2, "storage": 1},
+    "unmapped_flow_relevant": ["preview.* (all 16)", "update.check", "update.status", "update.rollback (update.apply is named only as a D18 job example)", "remote.configure", "remote.check", "storage.prune"],
+    "not_operations_but_flows": ["tomaccoctl setup agents [status|remove] (CLI bootstrap outside the 296; agent.policy is the only agent.* operation)", "GUI Studio.serveFolder web-build helper vs preview.*", "desktop.open tab preview vs phone extra id web-preview (aliases; D03 already notes it)", "generic Tools form: list/filter/prefill/validate/confirm/result (R26)"]
+  },
+  "remaining_uncertainty": [
+    "Lane A specs were checked by targeted source spot checks of every decision and error node, not by re-deriving every number in every note (D23 most lightly).",
+    "Omarchy bar channel: traced only to MobilePanel.qml 'tomaccoctl call' (CLI channel); no TOMACCO_CALLER override found, not traced further.",
+    "Actual Bogen renders were not inspected; D16-D18 application was still in progress per root-observed-progress.json. Nothing here judges a render.",
+    "docs/mobile-parity.json prose on host routing in project.execute is still treated as stale (D07 note says so); source has no such routing."
+  ],
+  "counts": {"new_findings": 8, "high": 0, "medium": 2, "low": 6}
+}

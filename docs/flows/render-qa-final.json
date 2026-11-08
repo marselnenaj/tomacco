@@ -1,0 +1,39 @@
+{
+  "checked_at": "2026-11-08T03:45:45.828Z",
+  "file_id": "u8uvnj33hx",
+  "page_id": "f5zgae58fy",
+  "artboards": 36,
+  "details": 33,
+  "lint": {
+    "counts": {
+      "contrast": 0,
+      "overflow": 0,
+      "token": 2869,
+      "grid": 655,
+      "alt": 0,
+      "small-text": 0,
+      "target": 0,
+      "repeated": 36,
+      "spacing": 0,
+      "hierarchy": 31,
+      "copy": 166
+    },
+    "critical_total": 0
+  },
+  "brand": {
+    "score": 96,
+    "counts": {
+      "hard": 0,
+      "soft": 0,
+      "waived": 0,
+      "layers": 5753
+    }
+  },
+  "visual_review": "All actual diagram sections and final whole boards inspected. All three companion boards inspected. Exported36 complete PNGs after final layout. No hidden/waived critical issue.",
+  "label_placement": {
+    "boards": 33,
+    "overlaps": 0
+  },
+  "top_level_overlap": 0,
+  "advisories": "Diagram geometry intentionally uses measured node/connector pixels; grid/token/copy-arrow/repeated/header hierarchy suggestions remain advisory, not waived critical findings."
+}

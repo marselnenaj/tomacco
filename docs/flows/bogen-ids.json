@@ -1,0 +1,264 @@
+{
+  "file_id": "u8uvnj33hx",
+  "page_id": "f5zgae58fy",
+  "components": {
+    "Logic / Node": {
+      "start": "qv1913sjyu",
+      "step": "ym3ppbwgde",
+      "decision": "96za07d6d4",
+      "state": "9ib1r52vy5",
+      "human": "q84dpvnuwe",
+      "ok": "erfjdg24fe",
+      "error": "henqjaqz4y",
+      "stop": "gv8s1dbt48",
+      "unsupported": "qgh73j1t2x",
+      "note": "hhp486g0vv"
+    }
+  },
+  "boards": {
+    "00": {
+      "artboard": "bxx82h1gcm",
+      "name": "00 · Übersicht, Legende & Index",
+      "header": "y9e2ucdftf",
+      "provenance": "hvd7hee2pu",
+      "legend": "wz9jj3gu53",
+      "index": "63kce95muu"
+    },
+    "D01": {
+      "artboard": "zsjsa63us8",
+      "header": "81ga3h1aep",
+      "canvas": "a2hdp7sn0j",
+      "footer": "kw79ifkfxv"
+    },
+    "D02": {
+      "artboard": "vksmw1dgne",
+      "header": "p566apccds",
+      "canvas": "tc36fmc2m9",
+      "footer": "apefkif9g3"
+    },
+    "D03": {
+      "artboard": "j4k0gtc0mn",
+      "header": "5ghhb9gg2i",
+      "canvas": "k8x5u18hj5",
+      "footer": "0r973gqis6"
+    },
+    "D04": {
+      "artboard": "tvt65zsrkf",
+      "header": "dzk6f04pb4",
+      "canvas": "t5r1fea89e",
+      "footer": "mcm3v4d7i2"
+    },
+    "D05": {
+      "artboard": "7m8xquxd9i",
+      "header": "csc7eeie2g",
+      "canvas": "3ank2abvqw",
+      "footer": "zhdn1ag97d"
+    },
+    "D06": {
+      "artboard": "8fjj1ks7vs",
+      "header": "na36mnys7d",
+      "canvas": "i8szai2mf1",
+      "footer": "yg09k766iw"
+    },
+    "D07": {
+      "artboard": "a4b866ybye",
+      "header": "2imhancze3",
+      "canvas": "bjk308ianz",
+      "footer": "evtx1njtte"
+    },
+    "D08": {
+      "artboard": "hgc0gfj00u",
+      "header": "mu3892zeq7",
+      "canvas": "5ifjz84xb1",
+      "footer": "crygqeg566"
+    },
+    "D09": {
+      "artboard": "9yeeati9yf",
+      "header": "3di10uhg0v",
+      "canvas": "4030a103fc",
+      "footer": "i386edx1m8"
+    },
+    "D10": {
+      "artboard": "13qr4k97tn",
+      "header": "rm2d6s5xh2",
+      "canvas": "2ek7fh33nn",
+      "footer": "23x4ch0dzp"
+    },
+    "D11": {
+      "artboard": "1hxc9y8dg1",
+      "header": "2dqzdr47ux",
+      "canvas": "rm1xyg13kv",
+      "footer": "e5jrdpf69h"
+    },
+    "D12": {
+      "artboard": "qsrfwt20hy",
+      "header": "i6hesxye35",
+      "canvas": "f4mjpa6hdh",
+      "footer": "856jn5n40u"
+    },
+    "D13": {
+      "artboard": "8cndx5g5m2",
+      "header": "54f0jw1256",
+      "canvas": "g005ec4xz5",
+      "footer": "g2hu2czvg7"
+    },
+    "D14": {
+      "artboard": "rr3tz2x3cn",
+      "header": "4qezi4j7wx",
+      "canvas": "hgx0yzctyd",
+      "footer": "a48mx5dte1"
+    },
+    "D15": {
+      "artboard": "m7hdtj54wj",
+      "header": "dkcvdc6vnh",
+      "canvas": "b0d8umtbp6",
+      "footer": "cxj81508m4"
+    },
+    "D16": {
+      "artboard": "9bgqanfm9m",
+      "header": "zw9dwimwc3",
+      "canvas": "yk259kscuw",
+      "footer": "089fg2tzmz"
+    },
+    "D17": {
+      "artboard": "cw5en7179g",
+      "header": "26yyug5vx7",
+      "canvas": "x63tpire3k",
+      "footer": "kckj1j484d"
+    },
+    "D18": {
+      "artboard": "0dmy7fe25p",
+      "header": "0cet9p0huy",
+      "canvas": "uwqu787iyd",
+      "footer": "pu10833wqf"
+    },
+    "D19": {
+      "artboard": "ymv2hhuqvh",
+      "name": "D19 · Dateien, Editor und Dateiwahl",
+      "header": "eh6tj7fias",
+      "canvas": "2ehw8paci2",
+      "footer": "qw87gwfwn2"
+    },
+    "D20": {
+      "artboard": "wcz36hxwbw",
+      "name": "D20 · Einstellungen, Größe und Sprache",
+      "header": "hzbz6h88e3",
+      "canvas": "kab7v9w9hq",
+      "footer": "71kruhmayc"
+    },
+    "D21": {
+      "artboard": "22keknuk0j",
+      "name": "D21 · UI-Tests, QA-Umgebungen, GPX und Aufnahme",
+      "header": "80g8bek6d5",
+      "canvas": "sm2ktyg8qz",
+      "footer": "zkd2mvidbv"
+    },
+    "D22": {
+      "artboard": "4ar1tc46sh",
+      "name": "D22 · Debuggen und Performance messen",
+      "header": "vm7pw3k9d6",
+      "canvas": "zawb3m6299",
+      "footer": "q2qs5tq304"
+    },
+    "D23": {
+      "artboard": "373rq1dd4q",
+      "name": "D23 · Demo Studio: Szene, Render-Job, geprüfte Datei",
+      "header": "w6xcgapf6d",
+      "canvas": "5gtyi5qtc0",
+      "footer": "z16s0zm7h1"
+    },
+    "D24": {
+      "artboard": "1xcj6hthsd",
+      "name": "D24 · App-Release: signieren, prüfen, veröffentlichen",
+      "header": "6qjcv2p7zf",
+      "canvas": "3f4787fnvj",
+      "footer": "b87mczd678"
+    },
+    "D25": {
+      "artboard": "1gv2wzmw23",
+      "name": "D25 · Tomacco aktualisiert sich selbst: prüfen, installieren, zurückrollen",
+      "header": "ts4x529wbj",
+      "canvas": "5833r1cwjb",
+      "footer": "cipw5kdnam"
+    },
+    "D26": {
+      "artboard": "erif4cg36n",
+      "name": "D26 · Telefon, lokal oder Mac-Host: wo eine Operation läuft",
+      "header": "a1qk6navi1",
+      "canvas": "0a4ddb1dxq",
+      "footer": "96gpcze15w"
+    },
+    "D27": {
+      "artboard": "kq7w9dvmcd",
+      "name": "D27 · Fehler und Recovery: was über die Wirkung bekannt ist",
+      "header": "15dk8gnkw5",
+      "canvas": "32bxdyr9u5",
+      "footer": "uj8bt301q4"
+    },
+    "D28": {
+      "artboard": "vb6x62k34s",
+      "name": "D28 · Web-Vorschau und Browser-Automation",
+      "header": "zay4wng5em",
+      "canvas": "y379v61zd7",
+      "footer": "u4qdeh7vhc"
+    },
+    "D29": {
+      "artboard": "fcdicmpmx1",
+      "name": "D29 · Coding-Agent verbinden",
+      "header": "fvy0sx4gq0",
+      "canvas": "sgfeskgact",
+      "footer": "6bdfcavidq"
+    },
+    "D30": {
+      "artboard": "3a34qh44im",
+      "name": "D30 · Tools-Formular: jede Operation von Hand aufrufen",
+      "header": "v2b1b9keb8",
+      "canvas": "304y3meazh",
+      "footer": "1t39ns4ybz"
+    },
+    "D31": {
+      "artboard": "5rxig5s6fy",
+      "name": "D31 · Android-Werkzeuge: AVDs, Gerätezustand und QA-Jobs",
+      "header": "tyi35p11gj",
+      "canvas": "29zkvgm3nk",
+      "footer": "r2yn4d8kzh"
+    },
+    "D32": {
+      "artboard": "evc3b4t282",
+      "name": "D32 · iOS-Labor: vorbereiten, beobachten und verifizierte Zustände behalten",
+      "header": "i8h1d5hzks",
+      "canvas": "krve6d4tad",
+      "footer": "ehnpkcwnd2"
+    },
+    "D33": {
+      "artboard": "sr8gnd34e1",
+      "name": "D33 · Artefakte, native Toolchains und Support-Belege",
+      "header": "6494s9in52",
+      "canvas": "xynia7hujf",
+      "footer": "07mp9afi9a"
+    },
+    "S1": {
+      "artboard": "e96psisvff",
+      "header": "3dsvtfh1dd",
+      "body": "exi84c870i"
+    },
+    "C1": {
+      "artboard": "ue039cnxf6",
+      "header": "v9ufh921fc",
+      "parts": [
+        "t6i1arseqb",
+        "vhixui6pxn",
+        "3rag6wvgd6",
+        "63qpfeex5b"
+      ]
+    }
+  },
+  "checkpoints": {
+    "prechange_root": "mw75fmkw-80c8e2ec",
+    "before_content": "mw75qhkk-855b3aec",
+    "after_D11": "see commit_list (logic-atlas: D01-D11)",
+    "after_D18": "see commit_list (logic-atlas D18)",
+    "root_before_fixes": "mw77bssp-592d8848",
+    "before_corrections": "mw77sbeh-f72141df"
+  }
+}

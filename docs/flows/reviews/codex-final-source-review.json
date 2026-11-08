@@ -1,0 +1,178 @@
+{
+  "review": "Final independent bounded source QA",
+  "created_at": "2026-11-08T03:41:42.961622+00:00",
+  "product_source": "4584d6bca3a07840e81683d99cd0adb386aeff35",
+  "phase": "complete",
+  "reviewed_diagrams": [
+    "D22",
+    "D24",
+    "D25",
+    "D26",
+    "D27",
+    "D28",
+    "D29",
+    "D30",
+    "D31",
+    "D32",
+    "D33"
+  ],
+  "spec_hashes": {
+    "docs/flows/specs/73_d22_debug_profile.py": "94e5920491869e3bbfafcc41bba096d8cf4d48a35a17f766922a14268b2f8ef9",
+    "docs/flows/specs/75_d24_release.py": "f089ad51e5da34736f448785e3a24f820a0124939b9b96a9d1611b2d3d28c658",
+    "docs/flows/specs/80_update_mobile_recovery_preview_agents.py": "13c1df886d17047bc70188a0bc0fe9c9d8e733ac613e7564c319cd6365cc33b2",
+    "docs/flows/specs/81_d31_android_tools.py": "3e9a45a8461def3f9294f25db24ff34ba756003fe1e52401597730df429986c2",
+    "docs/flows/specs/82_d32_ios_research_states.py": "a4b352e618ad5cdbc7be19c9c1ac879e2371a23f176b7815dd78f0eb8ffb6437",
+    "docs/flows/specs/83_d33_artifact_support_tools.py": "014bbe7e9b9a39f97ff20ba163b4cae1c214991864d54eb8d56895ab4fb13b81"
+  },
+  "scope": "Read-only review of actual product source and current diagram specs; no Bogen writes, hardware, process or runtime actions. Source/contract spot checks, not exhaustive argument proof or hardware qualification.",
+  "previous_findings": {
+    "R30": "resolved: D22 requires explicit baseline/current and no automatic baseline promotion",
+    "R31": "resolved: D24 checklist is advisory and never a backend gate",
+    "R32": "resolved: D24 splits channel confirmation; CLI and default MCP can commit without person review"
+  },
+  "findings": [
+    {
+      "id": "R34",
+      "severity": "medium",
+      "diagram": "D24",
+      "issue": "Declining Tools/MCP confirmation was drawn as play.abort, which would falsely imply automatic deletion of the uncommitted edit.",
+      "source": [
+        "qml/Workspace.qml:250-256 submitForm",
+        "qml/Workspace.qml:1063-1065 Cancel only clears confirmingRun",
+        "native/guard.rs:282-301 denial returns approval_denied",
+        "native/play_store.rs:241-247 explicit play.abort is its own DELETE operation"
+      ],
+      "status": "resolved_in_current_source",
+      "resolution": "No branch now ends as not_sent, edit remains until expiry; play.abort is a separate explicit start node."
+    },
+    {
+      "id": "R35",
+      "severity": "low",
+      "diagram": "D24",
+      "issue": "Prepare failure cleanup was stated as a guaranteed deleted edit. DELETE is best effort and its error is discarded; early creation/ID errors precede the cleanup closure.",
+      "source": [
+        "native/play_store.rs:249-253 creates/validates edit ID",
+        "native/play_store.rs:288-291 let _ = DELETE on closure error"
+      ],
+      "status": "resolved_in_current_source",
+      "resolution": "p6 says Prepare failed / DELETE attempted; note explicitly says best effort, cleanup not confirmed and no commit."
+    },
+    {
+      "id": "R36",
+      "severity": "low",
+      "diagram": "D32",
+      "issue": "Complete receipt alone was drawn as ready_for_next_request / native worker idle. Completed outcome and idle worker are separate conditions.",
+      "source": [
+        "native/ios_emulator/guest_control.rs:1387-1405 state completed vs ready_for_next_request"
+      ],
+      "status": "resolved_in_current_source",
+      "resolution": "gr now asks Receipt complete + Worker idle before the ready node."
+    },
+    {
+      "id": "R37",
+      "severity": "low",
+      "diagram": "D33",
+      "issue": "storage.prune was described as deleting only entries older than older_than_days. Optional max_job_log_mb can additionally select younger finished jobs until the retained log budget is met.",
+      "source": [
+        "assets/operations.json storage.prune.inputSchema.properties.max_job_log_mb",
+        "native/storage.rs:93-111 age selection, then budget selects oldest retained finished jobs"
+      ],
+      "status": "resolved_in_current_source",
+      "resolution": "p2 now says eligible finished entries; note explicitly documents age OR optional log budget, including younger finished jobs. Active jobs and external artifacts stay protected."
+    }
+  ],
+  "checks": {
+    "D25": [
+      "24h/6h update cache and explicit manual/channel invalidation: update.rs1102-1172",
+      "managed user installation/admission/reused job/busy: update.rs1385-1482",
+      "signature/checksum verification: update.rs1567-1666",
+      "journal rollback and full validation before changed-file restore: update.rs1705-1751,1982-2029; install.rs879-990",
+      "GUI auto install and restart flow: UpdateModel.qml; NativeWorkspace.qml restartForUpdate"
+    ],
+    "D26": [
+      "mobile 4 destinations plus More and width threshold, actual current parity counts192/64/40",
+      "no implicit project routing; generic Tools remote.* allowed",
+      "remote.check recommended only; remote.rs7-123"
+    ],
+    "D27": [
+      "ledger REFUSED stored/retryable vs LOST/unknown; completed side effects never blindly replayed",
+      "GUI control_plane_error/process timeout differs from no-effect admission: control.cpp132-200"
+    ],
+    "D28": [
+      "all16 preview operations and native/QML bridge",
+      "GUI serveFolder loopback/host/hidden-file/size limits: backend.cpp414-480",
+      "matrix restoration best-effort and original error preservation: preview.rs228-316",
+      "error/ready/evaluate/capture contracts: PreviewAutomation.qml8-131"
+    ],
+    "D29": [
+      "ten adapters; community Grok adapter",
+      "bootstrap outside registered296 operation dispatcher",
+      "CLI-owned writer vs backed-up JSON/YAML write; direct-writer failures do not promise Tomacco restore",
+      "GUI canRemove/canSetUp and CLI --yes/nonTTY behavior"
+    ],
+    "D30": [
+      "schema-derived validation then independent destructiveHint confirmation",
+      "TOMACCO_CALLER=desktop bypasses agent guard, schema/coordination remain",
+      "result is full JSON (MCP inline cap is separate) and ordinary Control request concurrency/timeout",
+      "Tools phone list/form/back flow"
+    ],
+    "D31": [
+      "AVD offline admission and explicit rename/wipe confirmation",
+      "Android display/settings readback and app_files run-as gate",
+      "android.each per-device sequential steps and concurrent devices; failure retains report",
+      "store screenshot theme/locale matrix and settings restore attempt",
+      "network capture requires explicit opt-in and root emulator; summary bounded/no HTTPS decryption"
+    ],
+    "D32": [
+      "own virtual USB bridge, local restore inputs, no physical USB/signing path",
+      "guest receipt/worker readiness and unknown no-replay semantics",
+      "verified disk base, save/use/delete and dry-run cleanup keepers",
+      "syslog from host uart.log, native crash report incompleteness, loopback debugging conditions"
+    ],
+    "D33": [
+      "APK/AAB inspect and size baseline: android_package.rs414-510; android_size.rs322-350",
+      "Swift Android configuration is a job, plan/execute require ready NDK/SDK; Android unit tests refused: swift.rs42-114",
+      "Flutter setup/build are expressly untested, source job metadata tested:false, modifies Flutter gen_snapshot; added explicit ios.flutter_build node matches apple_dev.rs321-395",
+      "Apple XCTest result-bundle cleanup fetch and Instruments trace artifacts: apple.rs115-187,304-330",
+      "device.capture waits up to30s; logs bounded jobs: devices.rs729-780",
+      "screen exports use new/empty directory, v1 bundle; batch retains per-device failures: screen_export.rs845-920",
+      "local diagnostics drafts sent:false/title-only issue_url and known-shape masking: report_draft.rs220-247",
+      "storage age/budget selection/dry-run/default kept resources: storage.rs75-243"
+    ]
+  },
+  "open_findings": [],
+  "missing_pending": [],
+  "actual_Bogen_render_QA": "Parent/root responsibility; not evaluated by this reviewer",
+  "completed_at": "2026-11-08T03:44:09.639326+00:00",
+  "mechanical": {
+    "board_count": 11,
+    "invalid_registered_operation_names": {},
+    "geometry_by_diagram": {
+      "D22": [],
+      "D24": [],
+      "D25": [],
+      "D26": [],
+      "D27": [],
+      "D28": [],
+      "D29": [],
+      "D30": [],
+      "D31": [],
+      "D32": [],
+      "D33": []
+    }
+  },
+  "result": "No open actionable source-logic findings in assigned current specs after four corrections. All four reported findings are resolved in current source. Actual canvas application and visual QA remain parent/root-owned.",
+  "finding_counts": {
+    "high": 0,
+    "medium": 1,
+    "low": 3,
+    "total_reported": 4,
+    "resolved": 4,
+    "open": 0
+  },
+  "limits": [
+    "This is a bounded source/contract spot review, not a proof of every flag, argument, tool version or OS/device behavior.",
+    "No Bogen render, prototype, brand or physical-device qualification was performed by this reviewer.",
+    "D22/D24 reviewed specifically for the root semantic repairs and release/measurement flow; prior R01-R33 full audit is retained separately."
+  ]
+}

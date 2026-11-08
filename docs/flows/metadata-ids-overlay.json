@@ -1,0 +1,51 @@
+{
+  "boards": {
+    "D01": {
+      "canvas": "a2hdp7sn0j",
+      "footer": "kw79ifkfxv"
+    },
+    "D02": {
+      "canvas": "tc36fmc2m9",
+      "footer": "apefkif9g3"
+    },
+    "D07": {
+      "canvas": "bjk308ianz",
+      "footer": "evtx1njtte"
+    },
+    "D15": {
+      "footer": "cxj81508m4"
+    },
+    "D16": {
+      "footer": "089fg2tzmz"
+    },
+    "S1": {
+      "artboard": "e96psisvff",
+      "header": "3dsvtfh1dd",
+      "body": "exi84c870i"
+    },
+    "00": {
+      "artboard": "bxx82h1gcm",
+      "header": "y9e2ucdftf",
+      "provenance": "hvd7hee2pu",
+      "legend": "wz9jj3gu53",
+      "index": "63kce95muu"
+    },
+    "C1": {
+      "artboard": "ue039cnxf6",
+      "header": "v9ufh921fc",
+      "parts": [
+        "t6i1arseqb",
+        "vhixui6pxn",
+        "3rag6wvgd6",
+        "63qpfeex5b"
+      ]
+    }
+  },
+  "review_fixes": {
+    "R26": "D01/D15 Tools UI confirmation",
+    "R27": "D07 explicit remote through Tools",
+    "R28": "D02 Main.showWorkspace special runtime/preview",
+    "R29": "D16 refused stored",
+    "R33": "D01 10 client adapters"
+  }
+}

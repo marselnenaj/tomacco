@@ -1,0 +1,28 @@
+TOMACCO FLOW ATLAS — FINAL INDEPENDENT SOURCE QA
+Product: 4584d6b; date: 2026-11-08
+Reviewed: D22, D24, D25, D26, D27, D28, D29, D30, D31, D32, D33
+Result: 0 open findings after 4 corrections (1 medium, 3 low).
+
+Resolved findings:
+  R34 D24 medium: Declining Tools/MCP confirmation was drawn as play.abort, which would falsely imply automatic deletion of the uncommitted edit.
+    Fixed: No branch now ends as not_sent, edit remains until expiry; play.abort is a separate explicit start node.
+  R35 D24 low: Prepare failure cleanup was stated as a guaranteed deleted edit. DELETE is best effort and its error is discarded; early creation/ID errors precede the cleanup closure.
+    Fixed: p6 says Prepare failed / DELETE attempted; note explicitly says best effort, cleanup not confirmed and no commit.
+  R36 D32 low: Complete receipt alone was drawn as ready_for_next_request / native worker idle. Completed outcome and idle worker are separate conditions.
+    Fixed: gr now asks Receipt complete + Worker idle before the ready node.
+  R37 D33 low: storage.prune was described as deleting only entries older than older_than_days. Optional max_job_log_mb can additionally select younger finished jobs until the retained log budget is met.
+    Fixed: p2 now says eligible finished entries; note explicitly documents age OR optional log budget, including younger finished jobs. Active jobs and external artifacts stay protected.
+
+Earlier R30 baseline, R31 checklist gate and R32 channel confirmation fixes verified.
+All assigned registered operation names exist; geometry checks report 0 problems.
+No pending boards in this assigned scope.
+Actual Bogen application/render/prototype checks belong to root.
+This review used only local source; no devices, apps, runtime, network, SSH or Bogen state were changed.
+
+Exact current spec SHA-256:
+  94e5920491869e3bbfafcc41bba096d8cf4d48a35a17f766922a14268b2f8ef9  docs/flows/specs/73_d22_debug_profile.py
+  f089ad51e5da34736f448785e3a24f820a0124939b9b96a9d1611b2d3d28c658  docs/flows/specs/75_d24_release.py
+  13c1df886d17047bc70188a0bc0fe9c9d8e733ac613e7564c319cd6365cc33b2  docs/flows/specs/80_update_mobile_recovery_preview_agents.py
+  3e9a45a8461def3f9294f25db24ff34ba756003fe1e52401597730df429986c2  docs/flows/specs/81_d31_android_tools.py
+  a4b352e618ad5cdbc7be19c9c1ac879e2371a23f176b7815dd78f0eb8ffb6437  docs/flows/specs/82_d32_ios_research_states.py
+  014bbe7e9b9a39f97ff20ba163b4cae1c214991864d54eb8d56895ab4fb13b81  docs/flows/specs/83_d33_artifact_support_tools.py

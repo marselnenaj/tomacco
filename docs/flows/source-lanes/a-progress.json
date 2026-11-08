@@ -1,0 +1,96 @@
+{
+  "lane": "A",
+  "date": "2026-11-08",
+  "model": "claude-opus-5-5",
+  "phase": "specs_complete_source_and_geometry_checked",
+  "ready": true,
+  "ready_scope": "Spec data for D19-D24 is source-checked against product 4584d6b and passes the frozen atlas.py check plus an extra edge-crossing/label-on-edge check. Not rendered in Bogen by this lane; the main writer owns Bogen.",
+  "product_source": "4584d6b (installed desktop, adaptive dialogs)",
+  "generator": "docs/flows/tools/atlas.py, read-only frozen copy, unchanged and not committed",
+  "boards": {
+    "D19": {
+      "file": "docs/flows/specs/70_d19_files.py",
+      "title": "Dateien, Editor und Dateiwahl",
+      "height_px": 2636,
+      "nodes": 41,
+      "edges": 37,
+      "ops": 5
+    },
+    "D20": {
+      "file": "docs/flows/specs/71_d20_settings.py",
+      "title": "Einstellungen, Größe und Sprache",
+      "height_px": 2640,
+      "nodes": 47,
+      "edges": 34,
+      "ops": 6
+    },
+    "D21": {
+      "file": "docs/flows/specs/72_d21_testing.py",
+      "title": "UI-Tests, QA-Umgebungen, GPX und Aufnahme",
+      "height_px": 2491,
+      "nodes": 44,
+      "edges": 36,
+      "ops": 34
+    },
+    "D22": {
+      "file": "docs/flows/specs/73_d22_debug_profile.py",
+      "title": "Debuggen und Performance messen",
+      "height_px": 2198,
+      "nodes": 36,
+      "edges": 29,
+      "ops": 24
+    },
+    "D23": {
+      "file": "docs/flows/specs/74_d23_demo.py",
+      "title": "Demo Studio: Szene, Render-Job, geprüfte Datei",
+      "height_px": 2110,
+      "nodes": 37,
+      "edges": 30,
+      "ops": 8
+    },
+    "D24": {
+      "file": "docs/flows/specs/75_d24_release.py",
+      "title": "App-Release: signieren, prüfen, veröffentlichen",
+      "height_px": 2648,
+      "nodes": 47,
+      "edges": 38,
+      "ops": 16
+    }
+  },
+  "ops_distinct": 93,
+  "ops_validation": "Every ops[] name exists in assets/operations.json (296 registered); no duplicates within a board. Fully covered domains: files, settings, catalog, testing, gpx, debug, profile, demo, release, play, android.environment. Also: android.record, ios.record, ios.virtual.record, ios.prepare, ios.signing, ios.store_ship, apple.archive, apple.export, apple.store.",
+  "checks": {
+    "atlas_check": "python3 -I docs/flows/tools/atlas.py check D19 D20 D21 D22 D23 D24 -> all OK (no overlap, no edge through a node, no text overflow, no label collision)",
+    "edge_crossings": "0 on every board (own read-only script over build() points)",
+    "labels_on_other_edges": "0 on every board",
+    "last_lane_matches_canvas_height": true,
+    "false_positives": "none reported"
+  },
+  "reviewed_sources": [
+    "qml/FileWorkspace.qml, qml/FileChooserDialog.qml, qml/ProjectFolderDialog.qml, src/backend.cpp (listing, saveTarget, pathInfo, filterPatterns, languages, uiScale, exportSettings/importSettings), native/files.rs",
+    "qml/NativeWorkspace.qml (settings dialog, transfer, palette, navigation ids), qml/Main.qml (shortcuts, choosers), qml/Theme.qml, native/toolchain.rs, native/catalog.rs, i18n/languages.json, src/main.cpp",
+    "qml/TestWorkspace.qml, qml/EnvironmentPanel.qml, native/automation.rs, native/recorder.rs, native/environment.rs, native/gpx.rs",
+    "qml/DebugWorkspace.qml, native/debugger.rs, native/android_debug.rs, native/jdwp.rs, native/dap.rs, qml/ProfileWorkspace.qml, native/profiling.rs, native/perf.rs, native/macrobench.rs",
+    "qml/DemoWorkspace.qml, native/demo.rs, src/demorenderer.cpp, docs/demo-studio.md (planned scope only)",
+    "qml/ReleaseWorkspace.qml, qml/Workspace.qml (showAction, confirmingRun), native/releases.rs, native/play_store.rs, native/iphone_setup.rs, native/apple_dev.rs, native/guard/approval.rs, native/api.rs routing",
+    "assets/operations.json (descriptions, schemas, destructiveHint), docs/adaptive-dialogs-progress.json"
+  ],
+  "source_findings_for_root": [
+    "Chooser replace question vs callers: after Yes, demo.preview/demo.export refuse an existing output (demo_conflict), catalog.export refuses (file_exists), release.sign/keystore refuse (path_exists); only Studio.exportSettings truncates. Drawn and noted in D19/D23.",
+    "apple.store (action upload) and ios.store_ship (upload: true) have destructiveHint false: no Tools-form confirmation and no MCP approval even when approval is on. Noted in D24.",
+    "Overview card text (qml/Workspace.qml:24) says video with a 3D device; the renderer is a QPainter perspective projection of a procedural extruded frame. Noted in D23 without changing product text.",
+    "The project chooser keeps its own sheet rule (width only); every other chooser also becomes a sheet below 480 logical px height. From adaptive-dialogs limitations; noted in D19 status."
+  ],
+  "remaining_issues": [
+    "Six spec files (70-75), not one or two: a single large write payload was rejected, so each board has its own file. IDs stay D19-D24.",
+    "Boards are 2110-2648 px tall (several lanes each). The main writer may split them into separate artboards at import; geometry is valid as is.",
+    "Not rendered or inspected in Bogen by this lane; Bogen-level design_lint and visual review are still open.",
+    "apple.build, apple.test, apple.simulator, apple.device, apple.devices, apple.project and apple.profile are not on these boards (they belong to Mac remote development boards, not this lane).",
+    "No hardware or runtime claims: GPX, recording, debugging, profiling, store uploads and the chooser phone sheet are source-level only; no Pixel, iPhone, Mac or store account was touched."
+  ],
+  "not_done_on_purpose": [
+    "No Bogen writes, no changes to the main writer's clone, no generator edits",
+    "No product code edits, no product test reruns, no translation mirror tests",
+    "No device, SSH, network, browser, install, push or publication"
+  ]
+}

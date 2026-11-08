@@ -1,0 +1,109 @@
+{
+  "task": "Tomacco app-flow / logic atlas on Bogen page 04",
+  "updated": "2026-11-08",
+  "phase": "implementation ready; all33diagrams+00/C1/S1 and382navigationlinks complete; root final global QA/export pending",
+  "source_commit": "4584d6bca3a07840e81683d99cd0adb386aeff35",
+  "operations_sha256": "bfa7809ea1cee09c9c851cb05fa2d68d19103c9ff5563d8699a9d1f085f84ee4",
+  "bogen": {
+    "file_id": "u8uvnj33hx",
+    "page_id": "f5zgae58fy",
+    "checkpoints": [
+      "mw75qhkk-855b3aec (before content)"
+    ]
+  },
+  "components": "Logic / Node variant set (10 kinds) on 00 board legend",
+  "completed_boards": {
+    "00": "bxx82h1gcm",
+    "D01": "zsjsa63us8",
+    "D02": "vksmw1dgne",
+    "D03": "j4k0gtc0mn",
+    "D04": "tvt65zsrkf",
+    "D05": "7m8xquxd9i",
+    "D06": "8fjj1ks7vs",
+    "D07": "a4b866ybye",
+    "D08": "hgc0gfj00u",
+    "D09": "9yeeati9yf",
+    "D10": "13qr4k97tn",
+    "D11": "1hxc9y8dg1",
+    "D12": "qsrfwt20hy",
+    "D13": "8cndx5g5m2",
+    "D14": "rr3tz2x3cn",
+    "D15": "m7hdtj54wj",
+    "D16": "9bgqanfm9m",
+    "D17": "cw5en7179g",
+    "D18": "0dmy7fe25p",
+    "D19": "ymv2hhuqvh",
+    "D20": "wcz36hxwbw",
+    "D21": "22keknuk0j",
+    "D22": "4ar1tc46sh",
+    "D23": "373rq1dd4q",
+    "D24": "1xcj6hthsd",
+    "D25": "1gv2wzmw23",
+    "D26": "erif4cg36n",
+    "D27": "kq7w9dvmcd",
+    "D28": "vb6x62k34s",
+    "D29": "fcdicmpmx1",
+    "D30": "3a34qh44im",
+    "D31": "5rxig5s6fy",
+    "D32": "evc3b4t282",
+    "D33": "sr8gnd34e1",
+    "S1": "e96psisvff",
+    "C1": "ue039cnxf6"
+  },
+  "render_evidence": {
+    "core": "Prior root inspections + metadata fixesD01/D02/D03/D07/D15/D16",
+    "new": "ROOT-APPLICATION-STATE.json allD19–33 render_reviewed",
+    "metadata": "00,C1,S1 section renders inspected; criticallint0"
+  },
+  "geometry_check": "atlas.py check all33:0issues; independentlabelchecker all33:0overlaps",
+  "scope_remaining": [],
+  "helpers": "team.spawn refused: helpers disabled for this task (no helper budget); worked alone",
+  "final_ready": true,
+  "implementation_ready": true,
+  "source_counts": {
+    "diagrams": 33,
+    "registry_operations": 296,
+    "domains": 33,
+    "cli_routes": 13,
+    "coding_agent_clients": 10,
+    "source_texts": 1894,
+    "translations_complete": 50
+  },
+  "metadata_boards": {
+    "00": "bxx82h1gcm",
+    "C1": "ue039cnxf6",
+    "S1": "e96psisvff"
+  },
+  "qualification_limits": [
+    "Pixel untouched pending readiness",
+    "Physical iPhone AirPlay A/V,swipes,verifiedfill unqualified",
+    "ARM containerverified/staged not nativePixelproof"
+  ],
+  "ready_for_root_final_qa": false,
+  "source_review": {
+    "open_findings": 0,
+    "total_resolved_findings": 37,
+    "reports": [
+      "docs/flows/reviews/claude-first-review.json",
+      "docs/flows/reviews/claude-second-review.json",
+      "docs/flows/reviews/codex-final-source-review.json"
+    ]
+  },
+  "metadata": {
+    "operation_data_source": "logic-operation-flow-map",
+    "operation_rows": 296,
+    "all_operation_nodes_resolved": true,
+    "all_diagram_nodes_resolved": true,
+    "navigation_links": 382,
+    "unique_navigation_targets": 56,
+    "prototype_problems": 0
+  },
+  "state": "complete",
+  "completed_detail_diagrams": 33,
+  "final_acceptance": "flows/final-acceptance.json",
+  "final_checkpoint": {
+    "id": "mw7akb4f-36ccc2cd",
+    "name": "Tomacco · Flows & Logik FINAL · 33 Diagramme / 296 Operationen"
+  },
+  "updated_at": "2026-11-08T03:48:04.284390+00:00"
+}

@@ -1,0 +1,513 @@
+{
+  "review": "Independent source/logic QA of the Tomacco Bogen app-flow atlas (page04 f5zgae58fy)",
+  "reviewer": "Claude Opus 5.5 (claude-opus-5-5), read-only reviewer",
+  "date": "2026-11-08",
+  "source_baseline": {
+    "review_clone": "/home/maslos/Work/tomacco-flow-qa-20261108",
+    "commit": "4584d6bca3a07840e81683d99cd0adb386aeff35",
+    "operations_json_sha256": "bfa7809ea1cee09c9c851cb05fa2d68d19103c9ff5563d8699a9d1f085f84ee4",
+    "operations": 296,
+    "domains": 33,
+    "note": "The operations.json hash equals the one in the owner's flow-logic-progress.json (spec baseline d4dbe958), so the registry is identical. Except for the adaptive file chooser (D19, not written yet), every finding below concerns production logic that is the same at d4dbe958 and 4584d6b. This is a static review of source and schema only. It is not a device, hardware or A/V qualification, and nothing here was executed against a device."
+  },
+  "reviewed_inputs": {
+    "specs": {
+      "01_architecture.py": "02:39",
+      "02_navigation.py": "02:51",
+      "03_setup_project.py": "02:55",
+      "04_devices.py": "03:01",
+      "05_agent_loop.py": "03:08",
+      "06_policy_jobs.py": "03:15 (appeared during the review and was re-read after its 03:15 edit; the cited copy is still present)"
+    },
+    "also_read": [
+      "docs/flows/tools/atlas.py (header, grid and node_box only)",
+      "docs/flow-logic-progress.json",
+      "docs/flows/ROOT-QA-NOTES.json (identical to handoff root-review-notes.json)",
+      "handoff implementation-brief.txt, independent-qa-brief.txt, label-placement-current.json"
+    ],
+    "final_relist": "03:15. Spec files 01-06 only. No D19+ spec existed when this review was written."
+  },
+  "reviewed_diagram_ids": [
+    "D01",
+    "D02",
+    "D03",
+    "D04",
+    "D05",
+    "D06",
+    "D07",
+    "D08",
+    "D09",
+    "D10",
+    "D11",
+    "D12",
+    "D13",
+    "D14",
+    "D15",
+    "D16",
+    "D17",
+    "D18"
+  ],
+  "method": [
+    "Read every node, edge, note, source anchor and lead of each spec and checked it against the cited QML/C++/Rust and assets/operations.json.",
+    "Mechanical check: every dotted operation-like token in specs 01-06 was compared against the 296 registry names. The only non-matches are non-operation references (settings.json, doctor.host, screen.rs, result.attempts) and the wildcard ios.emulator.prepare_*. No invented operation names were found.",
+    "No canvas edits and no lint runs. Geometry and label collisions were left to root's check-label-placement.py. Bogen was not opened, because the spec files are the source of the canvas."
+  ],
+  "findings": [
+    {
+      "id": "R01",
+      "diagram": "D01 (also D15 lead)",
+      "severity": "high",
+      "wrong": "Edge desk->guard plus lead 'Jeder Aufruf läuft durch tomaccoctl: Schutzregeln, Schema, Koordination' and note 'Nichts kann mehr als die anderen'. D15 lead: 'Jeder Aufruf über tomaccoctl call oder MCP passiert die Schutzregeln'.",
+      "source": [
+        "src/control.cpp:31-38 Control::personEnvironment (TOMACCO_CALLER=desktop)",
+        "native/guard.rs:66-81 enter() returns early for desktop",
+        "native/guard.rs:117-124 dispatch(): no channel -> api::dispatch directly"
+      ],
+      "actual": "The desktop app runs tomaccoctl call with TOMACCO_CALLER=desktop, and the phone-width app is the same desktop binary. guard::enter therefore sets no channel, and guard::dispatch skips agent policy, write roots, approval, the session job limit, the audit log and the MCP inline-size limit. Schema validation, coordination (reservations and request_id) and the handler still run. Only the Omarchy bar (plain tomaccoctl call, channel Cli), terminal CLI and MCP are guarded.",
+      "correction": "Route desk (and phone) around the guard straight to 'Schema prüfen', with the label 'Person am Desktop: TOMACCO_CALLER=desktop – keine Policy, Freigabe oder Audit'. Keep bar, cli and mcp through guard. Replace 'Nichts kann mehr als die anderen' with 'Dieselben Operationen und Handler; Schutzregeln gelten nur für Agenten-Kanäle (CLI, MCP)'. Qualify the D15 lead the same way.",
+      "evidence": "control.cpp comment: 'it acts for the person in front of it, so the agent policy, desktop approval and the audit log, which are for agents, leave it alone'.",
+      "in_root_notes": false
+    },
+    {
+      "id": "R02",
+      "diagram": "D01, D15",
+      "severity": "medium",
+      "wrong": "D01 guard node 'Freigabe (nur MCP + destruktiv)' does not say approval is opt-in. D15 shows the approval branch with no defaults or scope.",
+      "source": [
+        "native/guard/policy.rs:15-16 (nothing configured = full)",
+        "native/guard/policy.rs:159-174 approval_enabled / timeout 30 / without_desktop != deny",
+        "native/guard.rs:282-299",
+        "assets/operations.json destructiveHint"
+      ],
+      "actual": "Approval runs only when agent_policy.approval.destructive == true, which is off by default. The default timeout is 30 s, and without_desktop defaults to allow, so with no desktop the call runs. 'Destructive' means destructiveHint != false, which is 29 of 296 operations. Device input (runtime.input/gesture/actions, screen.tap, android.input), SDK installs, ios.prepare and project.execute/run are destructiveHint:false and are never asked about.",
+      "correction": "Add to D01/D15 meta: 'Standard: Policy full, Freigabe aus; an: 30 s, ohne Desktop erlaubt (without_desktop: allow)'. Add a D15 note: 'Nur 29 von 296 Operationen gelten als destruktiv; Geräteeingaben und Installationen fragen nie'.",
+      "evidence": "Computed from operations.json annotations: 29 operations without destructiveHint:false (catalog.remove, job.cancel, workflow.run, files.write, update.apply, play.commit, ...).",
+      "in_root_notes": false
+    },
+    {
+      "id": "R03",
+      "diagram": "D15",
+      "severity": "medium",
+      "wrong": "Note 'Policy, Wurzeln und Freigabe gelten auch für jeden Schritt von android.each und workflow.run.'",
+      "source": [
+        "native/guard.rs:254-258 refuse() per step",
+        "native/guard.rs:268-280 scope::check per step",
+        "native/guard.rs:282-299 approval asked once for the outer name",
+        "assets/operations.json workflow.run (workflow_needs_confirmation)"
+      ],
+      "actual": "Policy and write roots are checked for every step. The desktop approval question is asked once, for the composite call (workflow.run and android.each are themselves destructive), not per step. workflow.run also refuses the whole call before any step with workflow_needs_confirmation unless each destructive or publishing step carries confirm:true.",
+      "correction": "'Policy und Schreibwurzeln je Schritt; Freigabe einmal für den ganzen Aufruf; workflow.run verlangt zusätzlich confirm je destruktivem/publizierendem Schritt.'",
+      "evidence": "guarded(): the loop over inner covers only refuse and scope; ask(&question...) is built from name, not from the steps.",
+      "in_root_notes": false
+    },
+    {
+      "id": "R04",
+      "diagram": "D15",
+      "severity": "low",
+      "wrong": "The big/inline/file branch applies to every call, and 'file' is an ok node. The settings-unreadable branch is missing.",
+      "source": [
+        "native/guard.rs:178-183 (Channel::Mcp only, not result.read)",
+        "native/guard/results.rs:19-40 inline_or_saved",
+        "native/guard.rs:146-158 settings load error / policy_invalid"
+      ],
+      "actual": "Only MCP answers are size-limited. Over the limit, the answer is an error envelope result_too_large whose remedy says 'Do not call again', because the operation already ran and had its effects. When settings cannot be read, the call is refused with the load error (policy_invalid), except settings.configure agent_policy from a terminal.",
+      "correction": "Label the decision 'nur MCP'. Show 'file' as an error code with the side effect already done: 'result_too_large: lief bereits – nicht wiederholen, result.read'. Add a small policy_invalid refusal.",
+      "evidence": "results.rs remedy text.",
+      "in_root_notes": false
+    },
+    {
+      "id": "R05",
+      "diagram": "D05",
+      "severity": "high",
+      "wrong": "askfirst 'Braucht ein Ja? ask_first' -> person 'Person stimmt ausdrücklich zu' -> run 'Job: installieren (android.sdk_install · ... · swift.sdk_install)'. This reads as a gate that Tomacco enforces.",
+      "source": [
+        "native/setup.rs:86-92 next_steps ask_first (advice to agents)",
+        "native/setup.rs:1-2, 429 interactive setup / --yes",
+        "assets/operations.json android.sdk_install accept_licenses default false, destructiveHint false",
+        "native/avd_manage.rs:474-481",
+        "qml/AndroidDevices.qml:299 acceptLicense checkbox"
+      ],
+      "actual": "There are three different mechanisms. (1) Interactive `tomaccoctl setup` asks the person, and --yes skips the question. (2) In the desktop, the person ticks the licence checkbox (AndroidDevices.qml) before android.avd_setup is sent with accept_licenses. (3) Over MCP/CLI, ask_first in doctor.next_steps is advisory: the agent is expected to ask and then pass accept_licenses:true. Tomacco cannot verify that a person agreed, and because these installs are destructiveHint:false the desktop approval never asks. Only a restrictive agent policy can block them.",
+      "correction": "Split the person node: 'Desktop: Lizenz-Häkchen / setup fragt (Person)' versus 'Agent-Vertrag: ask_first → Person fragen, dann accept_licenses: true – nicht technisch erzwungen; nur eine Policy (read_only/deny) kann es verhindern'. Keep 'Nichts wird still installiert' true only for the desktop/setup paths.",
+      "evidence": "The android.sdk_install schema: 'License acceptance is opt-in'. Approval scope as in R02.",
+      "in_root_notes": false
+    },
+    {
+      "id": "R06",
+      "diagram": "D05",
+      "severity": "medium",
+      "wrong": "Edge run -> lic 'Lizenz fehlt' (style err) leaves the job node, as if the licence check were a job outcome.",
+      "source": [
+        "native/avd_manage.rs:465-481 avd_setup_blocked / sdk_license_required before the lock and job"
+      ],
+      "actual": "sdk_license_required and avd_setup_blocked are synchronous refusals of the call ('nothing was downloaded or created'). No job exists.",
+      "correction": "Attach lic to the call before the job ('Aufruf → sdk_license_required, synchron, kein Job'). Keep the job.wait branch only for failures after submission.",
+      "evidence": "The error is returned before Lock::open(avd-create-*.lock) and before any submit.",
+      "in_root_notes": false
+    },
+    {
+      "id": "R07",
+      "diagram": "D06",
+      "severity": "high",
+      "wrong": "found 'Plattform erkannt?' -> nein -> unknown 'Kein unterstütztes Projekt · platforms leer · invalid_path'.",
+      "source": [
+        "native/projects.rs:108-116 project_unrecognized",
+        "native/projects.rs:12-16, 102-107 invalid_project",
+        "native/core.rs path() path_not_found / invalid_path",
+        "qml/Workspace.qml:304-311 inspect result handling"
+      ],
+      "actual": "inspect fails with project_unrecognized only when there is no project kind AND no tomacco.json tasks. A folder with only tomacco.json tasks is a valid project with empty platforms, and the desktop selects and remembers any project inspect returns, whatever platforms are found. A malformed tomacco.json gives invalid_project; a missing path gives path_not_found; a bad path gives invalid_path.",
+      "correction": "Decision: 'Projektart oder tomacco.json-Tasks erkannt?'. Error node: 'project_unrecognized · invalid_project · path_not_found'. Add 'platforms darf leer sein (nur Tasks)'.",
+      "evidence": "The desktop's project.inspect handler sets panel.project and calls Studio.rememberProject before it looks at platforms.",
+      "in_root_notes": false
+    },
+    {
+      "id": "R08",
+      "diagram": "D06",
+      "severity": "medium",
+      "wrong": "create 'Job: anlegen, optional bauen' plus edge create->chosen 'Job fertig'.",
+      "source": [
+        "native/projects.rs:866-905 (jobs::submit only for flutter and xtool)",
+        "native/projects.rs:1097 synchronous return",
+        "native/projects.rs:~850 build:true only for xtool"
+      ],
+      "actual": "Only the flutter and xtool templates create a durable job. android, compose and swift-android are created synchronously and answer {created, application_id, platform, api}. build:true is accepted only for xtool; other kinds build with project.execute.",
+      "correction": "Branch after the template choice: 'flutter / xtool → Job (xtool optional build)' versus 'android / compose / swift-android → synchron angelegt'. Both then go to project.inspect -> chosen.",
+      "evidence": "The error text 'build:true is for kind xtool; other kinds build with project.execute'.",
+      "in_root_notes": false
+    },
+    {
+      "id": "R09",
+      "diagram": "D07",
+      "severity": "medium",
+      "wrong": "can 'Auf diesem Host baubar?' -> nein -> hostq 'Host gewählt?' -> ja -> remote 'Auf dem Host: sync, run, fetch'. This draws host routing as a branch of project.execute/run.",
+      "source": [
+        "native/projects.rs:261, 304, 449-450, 629, 709 (macos_required / platform_unsupported with remedy)",
+        "native/projects.rs:597-598 execute() = plan() + submit",
+        "assets/operations.json project.execute/run (no host/remote argument)",
+        "qml/*.qml (no remote.* call anywhere)"
+      ],
+      "actual": "project.execute and project.run never route to a host. On Linux an Xcode/Flutter-iOS build ends in the error macos_required, whose remedy names remote.configure / remote.run. The remote flow is a separate, explicit sequence of operations started by the caller (CLI/MCP agent), and the desktop QML has no remote route.",
+      "correction": "Make 'nicht hier baubar' terminal: 'macos_required · sdk_missing · platform_unsupported – Abhilfe nennt remote.*'. Show the remote.sync/run/fetch box as an alternative entry the caller chooses, connected by a dashed 'eigener Aufruf' edge, not as a decision outcome.",
+      "evidence": "grep for remote.run/remote.sync in qml finds nothing. Uncertainty: docs/mobile-parity.json evidence text says 'iOS build actions inside project.execute route to a host through the same explicit host choice'. The current source does not do this; treat that text as stale or planned.",
+      "in_root_notes": false
+    },
+    {
+      "id": "R10",
+      "diagram": "D07",
+      "severity": "low",
+      "wrong": "same/busy decisions drawn for all jobs; watch loop 'flutter? ja -> Hot Reload'.",
+      "source": [
+        "native/jobs.rs:548-569 single_active + exclusive admission, same_work, cancelling -> workspace_busy",
+        "native/jobs.rs:573 guard::admit_job (session_job_limit)",
+        "native/watch.rs:186-205, 71, 337"
+      ],
+      "actual": "Reuse and workspace_busy apply only to single_active jobs with an exclusive project (build/run/deploy specs). A matching job that is being cancelled answers workspace_busy, not reuse. An MCP session over its limit gets session_job_limit before the insert. In watch, the first Flutter cycle starts a project.run session, and later cycles send job.send reload only while that session is running. debounce_ms defaults to 800 (clamped 100-10000), and a failed cycle logs and continues.",
+      "correction": "Annotate same/busy 'nur Build/Run mit exklusivem Projekt'. Add session_job_limit to the refusals. Watch decision: 'Flutter-Sitzung läuft?' with nein -> 'project.run startet Sitzung'.",
+      "evidence": "Source as cited.",
+      "in_root_notes": false
+    },
+    {
+      "id": "R11",
+      "diagram": "D04",
+      "severity": "medium",
+      "wrong": "Node close 'Gerätefenster geschlossen oder Gerät verloren (4 s Gnadenfrist) · closeSolo() · soloGrace' then unsaved -> airplay -> stop 'runtime.stop' -> quit. Solo has no direct dock transition.",
+      "source": [
+        "qml/NativeWorkspace.qml:121-125 soloGrace -> quitApp()",
+        "qml/NativeWorkspace.qml:195-212 quitApp/showMainWindow/closeSolo",
+        "qml/DeviceWindow.qml:101, 113, 155-156"
+      ],
+      "actual": "There are two different paths. (a) The person closes the solo device window (close button or WM close -> closeRequested -> closeSolo): with unsaved edits the window docks into the main window; otherwise a non-AirPlay session gets runtime.stop and the app quits after at most 2.5 s, and an AirPlay receiver keeps waiting. (b) Every device window disappears (device lost or stream ended): soloGrace calls quitApp() after 4 s, with the unsaved check but WITHOUT runtime.stop, so the session is left to the control plane. Separately, the solo window's 'Im Workspace öffnen' button (dockRequested) docks directly. Closing or Esc on a non-solo detached window docks instead of quitting.",
+      "correction": "Split close into 'Person schließt Solo-Fenster (closeSolo)' and 'Kein Gerätefenster mehr, 4 s (soloGrace → quitApp, ohne runtime.stop)'. Add the transition solo -> docked 'Im Workspace öffnen (dockRequested)'. Root's pin addendum remains separate.",
+      "evidence": "Source as cited.",
+      "in_root_notes": "partially (root note covers only the missing pin transition)"
+    },
+    {
+      "id": "R12",
+      "diagram": "D02",
+      "severity": "low",
+      "wrong": "Start sheets first->onb / newer->whats; width decision bins; route set.",
+      "source": [
+        "qml/NativeWorkspace.qml:178-191 startupSheets",
+        "qml/NativeWorkspace.qml:694-744, 789",
+        "assets/operations.json desktop.open.tab enum"
+      ],
+      "actual": "No sheet opens for capture/smoke runs, for a device-only (solo) start, or when app/lastVersion equals the current version. What's New also opens when no version was recorded but settings exist. The width checks are independent booleans: between 1120 and 1359 there is a non-compact icon rail with activity visible, and that band is not drawn. desktop.open accepts 13 tabs: the 11 rail areas plus preview and ios-research. 'preview' is in no spec's routes (D03 says 'web-preview').",
+      "correction": "Add a 'nichts zeigen (Gerät-only-Start, gleiche Version)' exit. Add a 1120–1359 'Icon-Rail, Aktivität sichtbar' state or a note that the thresholds overlap. Map the desktop.open tabs preview and ios-research in D02 (13 CLI workspace routes), and use the source id 'preview'.",
+      "evidence": "Route coverage computed from the spec 'routes' fields.",
+      "in_root_notes": false
+    },
+    {
+      "id": "R13",
+      "diagram": "D08",
+      "severity": "medium",
+      "wrong": "Lead 'ein Emulator braucht Image, Lizenz und eine X11-Anzeige' plus boot->nodisp 'ohne Anzeige · emulator_no_display'. Note 'ohne Hardware-GPU startet er mit swiftshader'.",
+      "source": [
+        "native/devices.rs:1125-1137 (emulator_no_display only when !headless)",
+        "native/devices.rs:1144-1155 gpu choice",
+        "qml/AndroidDevices.qml:139, 299 start headless:true",
+        "integrations/omarchy/MobilePanel.qml startAvd headless:true"
+      ],
+      "actual": "The desktop and bar start emulators headless (-no-window) and show them through scrcpy, so no X11 display is needed. emulator_no_display applies only to windowed android.avd_start / android.emulator calls. swiftshader with -accel off is used only with software:true; otherwise the host's recommended -gpu mode is passed.",
+      "correction": "Lead: 'braucht Image und Lizenz; nur ein Emulator mit eigenem Fenster braucht X11 (XWayland)'. Label the nodisp edge 'mit Fenster (headless: false)'. Note: 'software: true → swiftshader; sonst empfohlener GPU-Modus des Hosts'.",
+      "evidence": "Source as cited.",
+      "in_root_notes": false
+    },
+    {
+      "id": "R14",
+      "diagram": "D10",
+      "severity": "medium",
+      "wrong": "kinds 'tap, swipe, text, Tasten home, enter, Pfeile' – incomplete, and silent character dropping is not shown.",
+      "source": [
+        "native/runtime/airplay.rs:513-534 touch phases",
+        "native/runtime/airplay.rs:556-574 keys",
+        "native/runtime/airplay.rs:576-590 text/fill skipped_characters",
+        "native/runtime/airplay.rs:611-625 capabilities"
+      ],
+      "actual": "AirPlay also takes a live single-contact touch stream (down/move/up/hover/cancel; live_touch true, max_contacts 1, atomic_trace false) from the desktop view and runtime.input, plus the keys volume_up/down, escape, backspace, tab and delete. fill types into the focused field without verification. Characters outside the US layout are skipped and reported only as skipped_characters while delivered stays true. Without a served BLE HID, live_touch, fill, text and exact_scroll are all false.",
+      "correction": "kinds: 'live touch (1 Kontakt), tap, swipe, Tasten, text/fill (US-Layout; andere Zeichen → skipped_characters, unverifiziert)'. Add 'ohne BLE-HID: keine Eingabe'. Root's absolute-HID correction remains separate.",
+      "evidence": "Source as cited.",
+      "in_root_notes": "partially (root covers absolute report4 / US keyboard only)"
+    },
+    {
+      "id": "R15",
+      "diagram": "D12",
+      "severity": "medium",
+      "wrong": "noframe 'AirPlay: kein Frame; die Desktop-Ansicht hat das Video' with op '{available: false, reason}'. Lead: 'Was der Transport nicht sehen kann, heißt available: false'.",
+      "source": [
+        "native/runtime/airplay.rs:637-642 capture/hierarchy -> Err airplay_runtime",
+        "native/runtime.rs:258-266 observe: device.capture(&path)?",
+        "native/runtime.rs:188-200, 236-238 available:false for geometry/context only"
+      ],
+      "actual": "runtime.observe and screen.* on an AirPlay session fail with the error code airplay_runtime ('Capture the AirPlay mirror from the desktop window'), not with a {available:false} frame. available:false is used for the parts of an observation that a transport cannot report (app, keyboard, focus, geometry).",
+      "correction": "Op: 'Fehler airplay_runtime (kein Frame, kein Baum)'. Lead: 'Was ein Transport nicht melden kann, heißt available: false; ein Transport ohne Bild antwortet mit Fehler'. Keep root's required link to BLE input with known coordinates / D17.",
+      "evidence": "The capabilities note of airplay.rs: 'runtime.observe and screen.* on this session answer an error'.",
+      "in_root_notes": "partially (root asks to separate visual automation from input; error shape not covered)"
+    },
+    {
+      "id": "R16",
+      "diagram": "D12, D13",
+      "severity": "medium",
+      "wrong": "D12 geo 'Geometrie und Marke unverändert?' as a gate before every send. D13 frame 'Frame unverändert?' as an unconditional first check.",
+      "source": [
+        "native/runtime/actions.rs:296-310 frame_stale",
+        "assets/operations.json runtime.actions (frame optional; required session, steps)",
+        "assets/operations.json runtime.input / runtime.gesture properties (no frame)",
+        "native/screen.rs screen.tap mark_stale"
+      ],
+      "actual": "frame_stale exists only in runtime.actions, and only when the optional frame from runtime.observe is passed (size/orientation compared). mark_stale exists only for screen.tap. A single runtime.input or runtime.gesture carries no frame and is not checked against the screen at all.",
+      "correction": "D12 geo: 'runtime.actions mit frame / screen.tap mit mark: noch gültig?' plus a note 'runtime.input und runtime.gesture prüfen keine Geometrie: vorher frisch beobachten'. D13: 'frame angegeben und geändert?'.",
+      "evidence": "Schema property lists: runtime.input has no frame and runtime.gesture has only session, contacts, token and request_id.",
+      "in_root_notes": false
+    },
+    {
+      "id": "R17",
+      "diagram": "D12 (also D13 uncertain/unknown wording)",
+      "severity": "medium",
+      "wrong": "answer -> unknown 'verloren', node 'Ausgang unbekannt ... request_outcome_unknown'. The refused node lists only device_reserved · reservation_expired · device_input_in_flight.",
+      "source": [
+        "native/coordination/ledger.rs:44-76 REFUSED, 77-83 LOST, 87 UNCERTAIN",
+        "native/coordination/ledger.rs:484-513 settle (and single-input reconciliation)",
+        "native/coordination/ledger.rs:573-581 request_outcome_unknown on retained",
+        "native/runtime/iphone.rs:19-26 delivery not_sent / unknown"
+      ],
+      "actual": "The call that loses its answer returns a transport code: runtime_timeout, runtime_protocol, runtime_stopped, io_error or invalid_json, or iphone_runtime with details.delivery 'unknown'. With a request_id, the ledger records status unknown. request_outcome_unknown is what a repeated request_id (or a record whose executor died) answers. Without a request_id there is no ledger record at all. The refusals that send nothing also include reservation_revoked, reservation_released, reservation_not_held and device_target_unknown.",
+      "correction": "Unknown node: 'runtime_timeout · runtime_protocol · runtime_stopped · delivery: unknown → beobachten; mit request_id: Wiederholung antwortet request_outcome_unknown'. Complete the refused list or point to D16.",
+      "evidence": "Source as cited.",
+      "in_root_notes": false
+    },
+    {
+      "id": "R18",
+      "diagram": "D13",
+      "severity": "medium",
+      "wrong": "focus 'Feld hat Fokus?' ja -> typed / nein -> focus_timeout. Note 'Ein Text-Schritt wartet auf ein Feld mit Fokus, bevor er tippt, damit keine ersten Zeichen verloren gehen.'",
+      "source": [
+        "native/runtime/actions.rs:100-125 wait_for_focus",
+        "native/runtime/actions.rs:187-215 text step focus modes"
+      ],
+      "actual": "focus is wait (default), require or none. When the transport reports neither focus nor keyboard (AirPlay; the Simulator reports no keyboard or app), the default wait mode sleeps settle_ms (300 ms) and types anyway, recording focus status 'unobservable'. require answers focus_unobservable, and none types immediately. focus_timeout appears only when focus is observable and never arrives.",
+      "correction": "Turn the decision into three branches: 'Fokus beobachtbar?' nein -> wait: 300 ms, dann tippen (unobservable) / require: focus_unobservable; ja -> 'fokussiert?' ja: tippen, nein: focus_timeout. Qualify the note: 'nur wo der Transport Fokus oder Tastatur meldet (Android, USB-WDA, Fixture)'.",
+      "evidence": "Source as cited.",
+      "in_root_notes": false
+    },
+    {
+      "id": "R19",
+      "diagram": "D13",
+      "severity": "medium",
+      "wrong": "wrong 'Abgelehnt vor dem Tippen: field_tap_failed · field_not_focused · field_wrong_target · field_stale'. Note 'geheime Felder werden nicht zurückgelesen'.",
+      "source": [
+        "native/runtime/field.rs:11-19 contract",
+        "native/runtime/field.rs:357-365, 431 field_unobservable",
+        "native/runtime/field.rs:394-410 field_unsupported (secure_field, non-editor)",
+        "native/runtime/field.rs:545-555 value_matches_placeholder",
+        "native/runtime/field.rs:580-600 field_submit_not_sent"
+      ],
+      "actual": "The refused-before-typing set also includes field_unsupported and field_unobservable. A verified fill on a secure (password) field is refused before typing (field_unsupported, reason secure_field): its value is never requested, nothing is typed, and only a fill without verify_value types into it, unverified. When the requested text equals the placeholder, the result is uncertain (value_matches_placeholder). With submit, field_submit_not_sent means the value was verified but no submit was sent.",
+      "correction": "Add field_unsupported and field_unobservable to wrong. Change the secret note to 'Passwortfeld mit verify_value: abgelehnt, nichts getippt (field_unsupported); ohne verify_value nur unverifiziert'. Add placeholder-equal -> uncertain and a submit outcome.",
+      "evidence": "Source as cited. iphone.rs:852-855: 'Contract-tested against a loopback WebDriverAgent double, not yet on hardware'.",
+      "in_root_notes": false
+    },
+    {
+      "id": "R20",
+      "diagram": "D11",
+      "severity": "medium",
+      "wrong": "bad 'Host ungeeignet: KVM, Speicher, Platte'. boot 'Starten und entsperren'.",
+      "source": [
+        "native/ios_emulator/host_check.rs:146-152 x86_64 required",
+        "assets/operations.json ios.virtual.host_check (VT-x/AMD-V, AVX2, memory 12/16 GiB, Vulkan GPU 8/16 GiB, disk 32/100 GiB, APFS module, passt)",
+        "assets/operations.json ios.virtual.unlock, ios.virtual.start, ios.virtual.setup"
+      ],
+      "actual": "The virtual iPhone needs an x86_64 Linux host. The Omarchy Linux ARM MacBook cannot host it at all, independent of KVM. It also needs a Vulkan GPU with at least 8 GiB, AVX2 and passt. Unlock never enters a passcode: a passcode lock, or one that stays locked for 10 minutes, fails the job. setup has 17 stages and refuses with ios_setup_out_of_order or ios_setup_needs_input. Launch acceptance does not prove a visible app scene.",
+      "correction": "bad: 'nicht x86_64, keine VT-x/AVX2, GPU < 8 GiB, RAM < 12 GiB, Platte, KVM'. boot: 'entsperrt ohne Passcode; Passcode-Sperre → Job scheitert (Person/D17)'. Add the refusal codes to stage. Keep root's 'not run vs failed' wording correction.",
+      "evidence": "host_check.rs message 'The virtual iOS device needs an x86_64 Linux host'.",
+      "in_root_notes": false
+    },
+    {
+      "id": "R21",
+      "diagram": "D11",
+      "severity": "low",
+      "wrong": "simok 'Frames, ASCII-HID-Text, Accessibility-Baum · runtime.hierarchy'.",
+      "source": [
+        "native/runtime/ios.rs:484-489 capabilities"
+      ],
+      "actual": "The Simulator transport (ssh/idb) offers live single-contact touch and ASCII keys. Its hierarchy is idb accessibility JSON that is not converted for screen.*, and it reports no foreground app or keyboard.",
+      "correction": "'Accessibility-JSON (nicht für screen.marks/tap), kein App-/Tastaturstatus'.",
+      "evidence": "Source as cited.",
+      "in_root_notes": false
+    },
+    {
+      "id": "R22",
+      "diagram": "D14",
+      "severity": "low",
+      "wrong": "Edge tr->adb 'Agent: android.input' hangs off the start 'Klick oder Touch auf das Gerätebild'. ios 'Pixel ÷ scale = WDA-Punkte'.",
+      "source": [
+        "native/runtime/iphone.rs:365-367 point()",
+        "assets/operations.json android.input (device pixels)"
+      ],
+      "actual": "android.input is a separate agent entry point that takes raw device pixels and does not go through the desktop click path. WDA input maps the normalized coordinate to x·(point width − 1). Pixel ÷ scale is only how screenshot pixels relate to points (runtime.observe scale).",
+      "correction": "Give android.input its own start 'Agent: android.input (Gerätepixel)'. ios: 'Anteil × (Punktbreite − 1) = WDA-Punkt'.",
+      "evidence": "Source as cited.",
+      "in_root_notes": "no (root covers AirPlay 'relativ' and label overlaps on D14)"
+    },
+    {
+      "id": "R23",
+      "diagram": "D16",
+      "severity": "medium",
+      "wrong": "acquire flow only has busy 'Eingaben anderer Clients laufen?' -> device_input_in_flight. take 'Person übernimmt' is drawn as human-only. pending answer without a code.",
+      "source": [
+        "assets/operations.json device.reservation.acquire / takeover",
+        "native/coordination.rs:609-616 reserved() device_reserved",
+        "native/coordination/ledger.rs:633 request_in_progress",
+        "native/coordination/ledger.rs:500-513 single-input reconciliation"
+      ],
+      "actual": "Acquiring a device already held by another holder answers device_reserved with holder labels and expiry; this is the most common refusal and it is not drawn. takeover is a normal destructive operation that any client could call (gated only by policy/approval). It is intended for the person but, unlike handoff.complete (handoff_person_only), it is not enforced as person-only. A repeated request_id that is still pending answers request_in_progress. An unknown runtime.input/gesture/screen.tap whose worker recorded the child input is reconciled to completed.",
+      "correction": "Add 'schon reserviert → device_reserved (Halter, Ablauf)'. Label take 'für die Person gedacht, nicht erzwungen; Agenten sollen fragen'. Name request_in_progress on a1. Add a small reconciliation note.",
+      "evidence": "The takeover description: 'Agents should not call this to get around a reservation; ask the person.'",
+      "in_root_notes": false
+    },
+    {
+      "id": "R24",
+      "diagram": "D18",
+      "severity": "low",
+      "wrong": "cancelled only reachable from running/res. Workflow refusal nodes have no codes.",
+      "source": [
+        "native/jobs.rs:1024-1027 Admission::Stopped 'Cancelled while queued'",
+        "assets/operations.json workflow.run"
+      ],
+      "actual": "job.cancel on a queued job ends it before it runs ('Cancelled while queued'). workflow.run refuses the whole call before step 1 with workflow_needs_confirmation (a destructive or publishing step without confirm), and stops with workflow_step_failed, details.steps and details.skipped.",
+      "correction": "Add queued -> cancelled. Name the codes on skip and rest.",
+      "evidence": "Source as cited.",
+      "in_root_notes": false
+    },
+    {
+      "id": "R25",
+      "diagram": "D17",
+      "severity": "low",
+      "wrong": "The handoff.wait end decision has no 'waiting' outcome. Error codes and the timeout are missing.",
+      "source": [
+        "native/handoff.rs:25-28 KINDS, STATES, DEFAULT_TIMEOUT 15 min",
+        "assets/operations.json handoff.wait/complete/cancel"
+      ],
+      "actual": "handoff.wait answers waiting (call again; do not act on the device) until the request is completed, cancelled or expired (default 15 min). Over MCP, handoff.complete answers handoff_person_only. Completing a cancelled or expired handoff answers handoff_not_waiting.",
+      "correction": "Add a 'waiting → erneut handoff.wait, Gerät nicht bedienen' loop, plus the codes and the 15-min default.",
+      "evidence": "Source as cited.",
+      "in_root_notes": false
+    }
+  ],
+  "root_notes_status": {
+    "note": "Root's corrections are listed as existing and open. Whether each is still present in the spec files was checked at 03:15; canvas state was not re-inspected.",
+    "items": [
+      {
+        "diagram": "D02",
+        "topic": "1440 px @200 % = 720 logical px",
+        "status": "open – the note still reads '1440-px-Fenster bei 200 %'"
+      },
+      {
+        "diagram": "D03",
+        "topic": "more/pback text overflows its node",
+        "status": "open (canvas)"
+      },
+      {
+        "diagram": "D04",
+        "topic": "pin/stayOnTop transition",
+        "status": "open – see also R11"
+      },
+      {
+        "diagram": "D05/all",
+        "topic": "zero real overflow in final lint",
+        "status": "open (canvas)"
+      },
+      {
+        "diagram": "00/D19/meta",
+        "topic": "installed source is 4584d6b; chooser installed; 1894 keys digest 161b3088e436",
+        "status": "open – progress.json still says source_commit d4dbe958; D06 note still says the chooser is 'nicht als installiert behauptet'; D09 note says 'in d4dbe958'"
+      },
+      {
+        "diagram": "D06",
+        "topic": "1040-px collector state; chooser wording",
+        "status": "open – chosen still h=1040"
+      },
+      {
+        "diagram": "D10",
+        "topic": "absolute HID report4, screenshot not ScreenRecorder, observe vs keyboard",
+        "status": "open – hid still 'Zeiger relativ', desk still 'nimmt es auf · ScreenRecorder', obs still 'keine Tastatur'"
+      },
+      {
+        "diagram": "D05/D09/D11",
+        "topic": "narrow 'nothing from Apple' claims; release checks not run vs failed",
+        "status": "open – D05 xip 'Tomacco lädt nichts von Apple', D09 note, D11 sim imgs, D11 exp 'nicht bestanden' still present"
+      },
+      {
+        "diagram": "D07/D08/D11/D13/D14",
+        "topic": "label/node collisions; D08 672-px collector",
+        "status": "open – label-placement-current.json now lists 10 collisions, including D13 kind->tap and four on D14"
+      },
+      {
+        "diagram": "D12 + all AirPlay",
+        "topic": "'relativ' wording; no-frame path vs input supported",
+        "status": "open – 'relativ' still in D10 hid, D12 ble and D14 air; see also R15"
+      }
+    ]
+  },
+  "missing_scope_vs_brief": [
+    "Not present yet (no spec file at 03:15): D19 files/editor/chooser (adaptive FileChooserDialog open/save/folder/overwrite/cancel at 4584d6b), D20 settings/language/RTL/UI scale/profile import-export, D21 testing/QA/GPX (Android emulator only) and recording, D22 debug/profiling budgets, D23 Demo Studio MVP, D24 app release/signing/store with person approval, D25 Tomacco self-update/rollback, D26 mobile/host routing (mobile-parity: 192 local / 64 remote / 40 conditional, verified_on_pixel false), D27 cross-cutting error/recovery, S1 status/roadmap (TV/Wear, Demo phases), 00 index links, coverage board, logic-operation-flow-map data source, atlas-map.json, README, PNGs, lint/brand_check and final checkpoint.",
+    "Operation coverage so far: 109 of 296 registry names appear anywhere in specs 01-06. Mentions by domain still missing: android 36, ios 36, preview 16, testing 16, profile 14, debug 10, apple 7, demo 7, device 7, release 7, catalog 4, files 5, swift 4, gpx 3, play 3, screen 3, update 3, diagnostics 2, settings 2, remote 1, storage 1. Expected to be covered by D19-D27 and the machine map; not a defect yet.",
+    "Route coverage: the desktop.open 'preview' tab is in no spec's routes (D03 uses the id 'web-preview'). The 14 mobile-parity ui_routes are otherwise covered.",
+    "D09 has no diagrammed iPhone failure branch for an ios.prepare developer-image/tunnel failure or for WDA delivery not_sent/unknown. That is acceptable if D27 carries it."
+  ],
+  "remaining_uncertainty": [
+    "Static source reading only. No claim is made about real Pixel, iPhone, AirPlay A/V or gesture behaviour, and none of the findings depend on hardware.",
+    "R09: docs/mobile-parity.json evidence text suggests that iOS build actions route to a host; the current Rust/QML does not do this. Possibly planned, or stale prose.",
+    "R01: I did not trace whether the Omarchy bar ever sets TOMACCO_CALLER. Its QML builds a plain [cli, 'call', op, args] command, and I found no environment override.",
+    "Lines are cited at 4584d6b. Spec anchors that use d4dbe958 line numbers may be offset in files touched by the chooser change (NativeWorkspace.qml, Workspace.qml), but the logic cited is unchanged.",
+    "Specs were reviewed as files. The Bogen canvas may lag or lead the spec files."
+  ],
+  "counts": {
+    "findings": 25,
+    "high": 3,
+    "medium": 15,
+    "low": 7,
+    "already_in_root_notes_fully": 0,
+    "partially_overlapping_root": 3
+  }
+}

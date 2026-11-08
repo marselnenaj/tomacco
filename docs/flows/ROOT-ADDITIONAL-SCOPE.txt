@@ -1,0 +1,18 @@
+ROOT FINAL-COVERAGE REVIEW — required if not already covered meaningfully in current atlas.
+
+User asked ALL app flows and logic, beyond matching every operation name to a broad domain. The original roughly27board breakdown missed two actual UI workflows. Check these before declaring the atlas complete; dedicated D28/D29 boards are appropriate if otherwise overloaded. Keep same page04, no new brand/page.
+
+1. Web preview and automation (preview.* has16operations, current D01-D18 only mention opening the web preview).
+   Actual names: preview.sessions,state,navigate,configure,evaluate,capture,inspect,console,errors,click,fill,reload,catalog_reload,audit,ready,matrix.
+   Sources: qml/Main.qml web mode and web build chooser -> Studio.serveFolder(selectedFolder); qml/PreviewAutomation.qml; qml/PreviewProtocol.qml; native preview transport/bridge source; operation schema.
+   Show choosing web folder or URL, local serve/Qt WebEngine session selection, navigation/load/ready/error, viewport/device config and emulation attachment, DOM inspect/JS/click/fill, console/page errors, screenshot/layout audit/matrix, reload/close/source changes as actually implemented. Distinguish GUI serveFolder (not an invented typed operation) from preview.*. Cover desktop.open tab preview versus mobile internal extra id web-preview alias. No automatic remote project build claims.
+
+2. Connect a coding agent AND generic Tools operation UI.
+   Sources qml/AgentClientDialog.qml,AgentClientPicker.qml, src/control.cpp agentClients, native/agent_clients.rs, native/main.rs setup CLI, qml/Workspace.qml:185-264,987etc.
+   Agent connection uses tomaccoctl setup agents [status|remove] [--yes] [--json] [--client ID], a CLI bootstrap subcommand OUTSIDE the296 typed dispatcher. There is NO registered agent.setup operation; the sole agent.* operation is agent.policy. Show client detection/status, connected/not_connected/absent/disabled/outdated/conflict/manual/unknown/failed, explicit user setup/remove, owned entry/backups/no clobber of foreign entries, manual config fallback, status refresh and next MCP connection. Use exact supported clients from current source (including Gemini), not assumptions.
+   Tools UI lists ALL Agent.operations, filters by title/name, chooses schema form and prefills context/defaults, validates required/numeric/range/JSON args before dispatch, THEN its OWN UI confirmation when annotations.destructiveHint===true (Workspace.qml:245-258 confirmingRun/submitForm), handles pending/result/error and phone list/detail Back. This GUI confirmation is separate from agent guard/approval, which the desktop person channel bypasses. MCP inline result limit does not apply to this GUI call channel. May be a second lane or a separate readable board if needed.
+
+PRECISION ON INDEPENDENT REVIEW R09
+R09 correctly says project.execute/run do NOT automatically route to a remote host and QML has no integrated remote build route. Do not interpret literal grep for remote.run as meaning a person cannot invoke remote.* through the generic Tools form: Workspace.operations=Agent.operations; showAction(name) selects any registered operation; form sends its name through Agent.request. Workspace.qml:574 also has projectPhoneHosts -> showAction('remote.list'). Keep canonical CLI preview tab and internal mobile extra web-preview IDs both mapped as aliases, rather than rewriting a real QML id incorrectly.
+
+If existing remaining diagrams already explain these flows clearly, reuse their coverage and avoid redundant boards. A coverage-row-only mapping to generic architecture or mobile-host routing does not explain an app workflow by itself. Root will verify actual flow coverage before final acceptance.

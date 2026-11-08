@@ -1,0 +1,116 @@
+{
+  "scope": "Explicit existing-flow group coverage; operation-specific contracts remain in registry descriptions. These references do not imply every argument is separately drawn.",
+  "map": {
+    "D04": {
+      "docked": [
+        "desktop.status"
+      ]
+    },
+    "D20": {
+      "A1": [
+        "settings.get"
+      ],
+      "E0": [
+        "catalog.list"
+      ]
+    },
+    "D17": {
+      "r2": [
+        "handoff.cancel"
+      ]
+    },
+    "D16": {
+      "held": [
+        "device.reservation.list",
+        "device.reservation.renew"
+      ],
+      "stored": [
+        "device.request.list"
+      ]
+    },
+    "D08": {
+      "emu": [
+        "android.emulator"
+      ]
+    },
+    "D21": {
+      "q0": [
+        "android.environment.preset.list",
+        "android.environment.preset.get",
+        "android.environment.preset.save",
+        "android.environment.preset.delete",
+        "android.environment.preset.export",
+        "android.environment.preset.import"
+      ],
+      "q1": [
+        "android.environment.capabilities",
+        "android.environment.inspect"
+      ],
+      "q10": [
+        "android.environment.restores"
+      ],
+      "g3": [
+        "gpx.status"
+      ],
+      "t2": [
+        "testing.find",
+        "testing.action",
+        "testing.run",
+        "testing.instrumentation"
+      ],
+      "t12": [
+        "testing.visual_diff"
+      ],
+      "t7": [
+        "testing.crashes"
+      ],
+      "t15": [
+        "testing.results",
+        "testing.coverage",
+        "testing.report",
+        "testing.history",
+        "testing.impact"
+      ],
+      "t0": [
+        "testing.setup"
+      ]
+    },
+    "D22": {
+      "d12": [
+        "debug.threads",
+        "debug.stack",
+        "debug.variables",
+        "debug.evaluate"
+      ],
+      "m1": [
+        "profile.frames",
+        "profile.memory",
+        "profile.usage"
+      ],
+      "m6": [
+        "profile.budget"
+      ],
+      "j2": [
+        "profile.baseline_profile"
+      ],
+      "j4": [
+        "profile.benchmark_results",
+        "profile.baseline_rules"
+      ],
+      "j7": [
+        "profile.baseline_install",
+        "profile.baseline_compare"
+      ]
+    },
+    "D19": {
+      "b12": [
+        "files.mkdir"
+      ]
+    },
+    "D11": {
+      "host": [
+        "ios.virtual.host_check"
+      ]
+    }
+  }
+}

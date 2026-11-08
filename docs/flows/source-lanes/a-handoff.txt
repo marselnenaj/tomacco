@@ -1,0 +1,59 @@
+Lane A handoff: source-only diagram specs D19-D24 (product 4584d6b)
+
+FILES (import these; nothing else)
+  docs/flows/specs/70_d19_files.py          D19 Dateien, Editor und Dateiwahl
+  docs/flows/specs/71_d20_settings.py       D20 Einstellungen, Groesse und Sprache
+  docs/flows/specs/72_d21_testing.py        D21 UI-Tests, QA-Umgebungen, GPX und Aufnahme
+  docs/flows/specs/73_d22_debug_profile.py  D22 Debuggen und Performance messen
+  docs/flows/specs/74_d23_demo.py           D23 Demo Studio: Szene, Render-Job, gepruefte Datei
+  docs/flows/specs/75_d24_release.py        D24 App-Release: signieren, pruefen, veroeffentlichen
+  One file per board: one big write payload was rejected. Every file is a normal
+  BOARDS module for the frozen atlas.py (N/E injected), German labels, exact English IDs.
+  Each board has nodes, edges, lanes, notes, sources, links, routes, ops and status;
+  screens only where page pvcps58bsa has a matching artboard.
+
+CHECKS (run in this clone, generator unchanged)
+  python3 -I docs/flows/tools/atlas.py check D19 D20 D21 D22 D23 D24  -> all OK
+  Extra read-only check over build() points: 0 edge-edge crossings, 0 labels on other edges.
+  ops[]: 93 distinct names, all registered in assets/operations.json, no duplicates per board.
+  Heights 2110-2648 px; the last lane of each board ends at the canvas bottom.
+
+WHAT EACH BOARD SHOWS
+  D19 tree/search/open (outside_project, not_file, file_too_large, binary_file), editing with
+      a dirty state, compare-and-swap save (file_conflict), reload/discard dialog, close refusal;
+      FileChooserDialog listing errors, target/problem gating, folder entered instead of chosen,
+      replace question, accepted -> only the caller reads or writes.
+  D20 settings.configure (invalid_settings, invalid_tool, not_executable), UI size 75-200 % in
+      25 % steps + reset, language resolution (alias, Omarchy file, desktop, English; RTL),
+      desktop-only settings export/import (format tomacco-desktop-settings v1, 256 KiB,
+      newer version), catalog.* device profiles (invalid/duplicate/builtin_profile, file_exists).
+  D21 testing.run job with retries, failure capture, report and job outcome (scenario_failed);
+      QA environment plan -> apply -> restore (environment_conflict/_unsupported);
+      GPX on an Android emulator only (gpx_unsupported); recording per device type, AirPlay none.
+  D22 debug session admission/reuse/device_debug_busy, running/stopped/disconnected/worker_exited;
+      measurement -> report -> baseline -> budget (measurement_unavailable fails);
+      Macrobenchmark and Baseline Profile Gradle jobs.
+  D23 capabilities, media inspect, scene create/get/update with if_revision (demo_conflict),
+      render admission, queued/running, success only after independent decode; planned items
+      drawn as unsupported; renderer is a QPainter projection, not a GPU 3D scene.
+  D24 version/notes/checklist, keystore and sign jobs with owner-only secret files,
+      play.prepare (validated edit, deleted on failure) -> person -> play.commit or play.abort,
+      Apple via xtool (terminal login, store_ship, upload never submits for review) or Mac SSH
+      (archive/export/store), no macOS host here.
+
+SOURCE FINDINGS WORTH A ROOT LOOK (product text and code unchanged)
+  1. Choosing Yes in the chooser's replace question does not allow overwriting:
+     demo.preview/export -> demo_conflict, catalog.export -> file_exists, release.sign -> path_exists.
+     Only the settings export truncates the file.
+  2. apple.store upload and ios.store_ship upload:true have destructiveHint false: no Tools-form
+     confirmation and no MCP approval even when approval is on.
+  3. qml/Workspace.qml:24 calls the Demo Studio output a video with a 3D device; the renderer draws
+     a perspective-projected procedural frame.
+
+OPEN
+  Not rendered in Bogen (main writer owns it); Bogen design_lint and visual review still to do.
+  The boards are tall; split them at import if wanted.
+  Not on these boards: apple.build/test/simulator/device/devices/project/profile (other boards).
+  Nothing here is a hardware claim: no Pixel, iPhone, Mac, store account or network was used.
+
+NOT COMMITTED: .claude/, docs/flows/tools/atlas.py (frozen copy).

@@ -1,0 +1,161 @@
+{
+  "schema": "tomacco-flow-source-lane/1",
+  "date": "2026-11-08T03:44:24.383061+00:00",
+  "product_source": "4584d6bca3a07840e81683d99cd0adb386aeff35",
+  "original_author": "Claude Opus 5.5 (D25–D30), stopped by weekly usage limit",
+  "completion_author": "Codex source lane (D25–D30 corrections; D31–D33 authored)",
+  "ready_for_canvas": true,
+  "bogens_writes_by_this_lane": false,
+  "physical_testing": false,
+  "boards": [
+    {
+      "id": "D25",
+      "spec_file": "docs/flows/specs/80_update_mobile_recovery_preview_agents.py",
+      "spec_sha256": "13c1df886d17047bc70188a0bc0fe9c9d8e733ac613e7564c319cd6365cc33b2",
+      "nodes": 38,
+      "edges": 34,
+      "ops": 8,
+      "canvas_height": 2657,
+      "generator_issues": []
+    },
+    {
+      "id": "D26",
+      "spec_file": "docs/flows/specs/80_update_mobile_recovery_preview_agents.py",
+      "spec_sha256": "13c1df886d17047bc70188a0bc0fe9c9d8e733ac613e7564c319cd6365cc33b2",
+      "nodes": 27,
+      "edges": 24,
+      "ops": 13,
+      "canvas_height": 2296,
+      "generator_issues": []
+    },
+    {
+      "id": "D27",
+      "spec_file": "docs/flows/specs/80_update_mobile_recovery_preview_agents.py",
+      "spec_sha256": "13c1df886d17047bc70188a0bc0fe9c9d8e733ac613e7564c319cd6365cc33b2",
+      "nodes": 27,
+      "edges": 28,
+      "ops": 22,
+      "canvas_height": 2560,
+      "generator_issues": []
+    },
+    {
+      "id": "D28",
+      "spec_file": "docs/flows/specs/80_update_mobile_recovery_preview_agents.py",
+      "spec_sha256": "13c1df886d17047bc70188a0bc0fe9c9d8e733ac613e7564c319cd6365cc33b2",
+      "nodes": 38,
+      "edges": 32,
+      "ops": 17,
+      "canvas_height": 2896,
+      "generator_issues": []
+    },
+    {
+      "id": "D29",
+      "spec_file": "docs/flows/specs/80_update_mobile_recovery_preview_agents.py",
+      "spec_sha256": "13c1df886d17047bc70188a0bc0fe9c9d8e733ac613e7564c319cd6365cc33b2",
+      "nodes": 25,
+      "edges": 26,
+      "ops": 0,
+      "canvas_height": 1964,
+      "generator_issues": []
+    },
+    {
+      "id": "D30",
+      "spec_file": "docs/flows/specs/80_update_mobile_recovery_preview_agents.py",
+      "spec_sha256": "13c1df886d17047bc70188a0bc0fe9c9d8e733ac613e7564c319cd6365cc33b2",
+      "nodes": 26,
+      "edges": 24,
+      "ops": 0,
+      "canvas_height": 2248,
+      "generator_issues": []
+    },
+    {
+      "id": "D31",
+      "spec_file": "docs/flows/specs/81_d31_android_tools.py",
+      "spec_sha256": "3e9a45a8461def3f9294f25db24ff34ba756003fe1e52401597730df429986c2",
+      "nodes": 36,
+      "edges": 32,
+      "ops": 23,
+      "canvas_height": 3102,
+      "generator_issues": []
+    },
+    {
+      "id": "D32",
+      "spec_file": "docs/flows/specs/82_d32_ios_research_states.py",
+      "spec_sha256": "a4b352e618ad5cdbc7be19c9c1ac879e2371a23f176b7815dd78f0eb8ffb6437",
+      "nodes": 39,
+      "edges": 25,
+      "ops": 35,
+      "canvas_height": 3430,
+      "generator_issues": []
+    },
+    {
+      "id": "D33",
+      "spec_file": "docs/flows/specs/83_d33_artifact_support_tools.py",
+      "spec_sha256": "014bbe7e9b9a39f97ff20ba163b4cae1c214991864d54eb8d56895ab4fb13b81",
+      "nodes": 44,
+      "edges": 31,
+      "ops": 23,
+      "canvas_height": 3780,
+      "generator_issues": []
+    }
+  ],
+  "coverage": {
+    "registered": 296,
+    "listed_distinct": 296,
+    "missing": [],
+    "invalid": []
+  },
+  "corrections": [
+    "D25 cached check intervals24h/6h; heading clearance",
+    "D26 four primary phone destinations plus More; remote.check is recommended, not enforced gate; MCP approval opt-in",
+    "D27 refused ledger entries stored and reused for same intent; unknown not replayed",
+    "D29 backups only direct file writers; external CLI writers manage themselves",
+    "D30 clear confirm/UI-navigation edge routing",
+    "D31 explicit AVD action split and shorter readback diamond",
+    "D32 completed receipt AND worker idle before ready_for_next_request",
+    "D33 prune age OR finished-job log budget; explicit Flutter build node; Swift configuration job must be awaited"
+  ],
+  "source_review": {
+    "methods": [
+      "Read relevant registered operation contracts",
+      "Inspect actual native/api.rs dispatch handlers and focused implementation branches",
+      "Pure generator geometry checks with current atlas.py",
+      "Explicit ops_by_node grouping for every new specialist operation"
+    ],
+    "anchors": [
+      "native/update.rs:879-2056",
+      "native/install.rs:879-990,1091-1162,2067-2093,2404-2405",
+      "native/remote.rs:7-123",
+      "native/coordination/ledger.rs:42-107,619-626",
+      "native/preview.rs:41-316",
+      "qml/PreviewAutomation.qml",
+      "qml/PreviewProtocol.qml",
+      "native/agent_clients.rs:1606-1725",
+      "qml/MobileNav.qml:4-31",
+      "native/api.rs:105-245",
+      "native/swift.rs:1-125",
+      "native/apple.rs:1-335",
+      "native/apple_dev.rs:340-395",
+      "native/storage.rs:70-121",
+      "native/ios_emulator/guest_control.rs:1390-1405"
+    ],
+    "limits": [
+      "Contract/lifecycle coverage; not every argument combination",
+      "No hardware/discovery/SSH/process operations",
+      "Bogen visual application and final mapping performed by root/metadata lanes",
+      "No Pixel installation, physical iPhone A/V, native speaker or public release claim"
+    ]
+  },
+  "maintainer_clarifications": [
+    {
+      "flow": "D33",
+      "node": "fb",
+      "fact": "ios.flutter_build yields unsigned untested release ARM64 device Runner.ipa, not a virtual-guest build; native/apple_dev.rs340–395. Its preceding setup changes gen_snapshot once per Flutter version. Board marks Flutter-iOS-Linux explicitly untested."
+    },
+    {
+      "flow": "D31",
+      "node": "a2",
+      "fact": "android.avd_create starts a durable job (120s exclusive create) and invokes avd_profile internally. Await creation before optional later config steps; arrows are selected workflow, not automatic dispatch."
+    }
+  ]
+}
