@@ -1,0 +1,86 @@
+{
+  "schema": "tomacco-ocr-atlas-delta/1",
+  "state": "ready_for_root_final_qa",
+  "file_id": "u8uvnj33hx",
+  "page_id": "f5zgae58fy",
+  "entry_artboard": "bxx82h1gcm",
+  "d12_artboard": "qsrfwt20hy",
+  "expected_product": "1caa17221161c2dc4c5c6eedb92ed9277772c57a",
+  "expected_runtime": "e552e6f643632182dfc8531effd8bc5916c206a3",
+  "previous_installed_product": "1713806db7ef00eda9754bb5bea23cd803179aa0",
+  "previous_runtime": "578819be350cc430196fef59a8d07ea91b3c34e4",
+  "prepared_from": "49d61e9",
+  "live_writes_started": true,
+  "physical_device_access": false,
+  "canvas_scope": [
+    "D12 canvas and footer",
+    "00 installed product span",
+    "S1 current status body"
+  ],
+  "retained": [
+    "all33 diagram artboard IDs",
+    "all10 Logic/Node variants",
+    "brand mm6iq5cs67",
+    "pages01–03 read-only",
+    "default auto and testing OCR policies",
+    "578819b ARM verification/staging proof",
+    "Pixel remains untouched"
+  ],
+  "prepared_counts": {
+    "D12_nodes": 41,
+    "D12_edges": 33,
+    "atlas_nodes": 1000,
+    "diagrams": 33,
+    "operations": 296
+  },
+  "live_write_gate": "Root must freeze source, pin exact product/runtime, and provide desktop_installed:true receipt whose product_commit equals the pin. Preparation does not install or call Bogen.",
+  "after_gate": [
+    "Read final committed source and operations schema; refresh qualified source hashes",
+    "Preserve prior current acceptance/proofs under history/1713806",
+    "Apply D12 canvas/footer and current00/S1 only",
+    "Refresh actual node IDs, source map,296-record data source and navigation",
+    "Compute all36 actual bounds and reflow rows if needed",
+    "Render/lint changed boards; independently check labels; inspect actual screenshots",
+    "Regenerate changed PNGs and current manifests; preserve historical proofs",
+    "Checkpoint and hand current acceptance to root without resetting previous product gates"
+  ],
+  "installed_gate_checked_at": "2026-11-08T10:05:06.491264+00:00",
+  "updated_at": "2026-11-08T10:11:41.300849+00:00",
+  "mutations": [
+    {
+      "board": "D12",
+      "part": "canvas",
+      "old_id": "f4mjpa6hdh",
+      "new_id": "r7yrx876s5",
+      "phase": "written"
+    },
+    {
+      "board": "D12",
+      "part": "footer",
+      "old_id": "856jn5n40u",
+      "new_id": "ex6d22txbm",
+      "phase": "written"
+    },
+    {
+      "board": "S1",
+      "part": "body",
+      "old_id": "5dnw9ci2wn",
+      "new_id": "wg8i8iwcd8",
+      "phase": "written"
+    }
+  ],
+  "checkpoint": {
+    "id": "mw7o72ek-10a562b1",
+    "name": "Tomacco · OCR adaptive optional · Produkt1caa172 · 1000 Nodes / 296 Operationen"
+  },
+  "nodes_verified": 1000,
+  "prototype_links": 382,
+  "png_exports": 36,
+  "regenerated_pngs": [
+    "00",
+    "D12",
+    "S1"
+  ],
+  "critical_lint": 0,
+  "brand_hard": 0
+}

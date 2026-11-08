@@ -1,8 +1,6 @@
 {
-  "source_epoch": "1713806 + audio578819b",
-  "historical_review_notes": "history/4584d6b/ROOT-QA-NOTES.json",
-  "historical_resolution_index": "review-resolutions.json",
-  "current_evidence": "demo-audio-delta-acceptance.json",
-  "current_review": "Root actual screenshots, source hashes, full map, render hashes, layout, live lint and brand accepted; see root-final-review.json",
-  "root_final_acceptance_pending": false
+  "source_epoch": "1caa17221161c2dc4c5c6eedb92ed9277772c57a",
+  "historical_root_review": "history/1713806/root-final-review.json",
+  "current_evidence": "ocr-delta-acceptance.json",
+  "root_final_acceptance_pending": true
 }

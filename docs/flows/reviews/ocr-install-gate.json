@@ -1,0 +1,64 @@
+{
+  "state": "desktop_installed",
+  "started_at": "2026-11-08T09:51:36.603026+00:00",
+  "physical_device_access": false,
+  "desktop_installed": true,
+  "published": false,
+  "stages": [
+    {
+      "label": "ctest-core",
+      "state": "failed",
+      "command": [
+        "dbus-run-session",
+        "--",
+        "ctest",
+        "--test-dir",
+        "/home/maslos/Work/tomacco-ocr-fast-20261108/build",
+        "--output-on-failure",
+        "--parallel",
+        "1",
+        "-R",
+        "^(rust-core|control-plane)$"
+      ],
+      "exit_code": 8,
+      "seconds": 478.7
+    },
+    {
+      "label": "installer-after-package-fix",
+      "state": "passed",
+      "tests": 67,
+      "skipped": 2,
+      "log": "/home/maslos/Work/tomacco-ocr-fast-20261108/qa/ocr-fast/installer-after-png-manifest-check.log"
+    }
+  ],
+  "product_commit": "1caa17221161c2dc4c5c6eedb92ed9277772c57a",
+  "source_hashes": {
+    "native/screen.rs": "cf538bb366ecae19ad54f8a8dfec87ad1237f9885908616df4a7306bbeb0f538",
+    "native/screen_ocr.rs": "76ca9c40fe9955fed71193f62a086bf7224837126c778a894835be56e9cc4b18",
+    "assets/operations.json": "76b7ec2a6510c6c97f7399afffac7cf5a1a026cb8c3e97d34779fad20cf6d71b"
+  },
+  "isolated_test_home": "/tmp/tomacco-ocr-qa-tvm92sng",
+  "error": "ctest-core failed",
+  "initial_product_commit": "e552e6f643632182dfc8531effd8bc5916c206a3",
+  "runtime_code_commit": "e552e6f643632182dfc8531effd8bc5916c206a3",
+  "corrected_failure": "Benchmark missing from CMake package; added tool and manifest-verified PNG corpus. Entire installer module rerun:67tests,2skips,passed. Actual CMake package OCR:3calls,0errors.",
+  "qualification_method": "Full control-plane1667tests(37skips), sole packaging failure corrected and complete installer module passed; all743Rusttests+2update-e2e passed. Runtime source hashes unchanged.",
+  "blocked_transport_attempts": {
+    "xtool": 14,
+    "idevice_id": 9,
+    "ideviceinfo": 8,
+    "gradle": 6,
+    "avdmanager": 6,
+    "sdkmanager": 6,
+    "go-ios": 5,
+    "iproxy": 5,
+    "idevicesyslog": 6,
+    "emulator": 5,
+    "scrcpy": 5,
+    "ssh": 6,
+    "adb": 9
+  },
+  "transport_audit_note": "Tool availability/fallback tests reached blocking scripts. Every listed script was verified to exit97 without invoking the real transport. OCR benchmark separately recorded zero trapped calls.",
+  "finished_at": "2026-11-08T10:03:53.566388+00:00",
+  "desktop_receipt": "/home/maslos/Work/tomacco-ocr-qualification-20261108/desktop-update-receipt.json"
+}

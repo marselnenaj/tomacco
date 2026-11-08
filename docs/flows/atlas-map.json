@@ -1,12 +1,12 @@
 {
   "schema": "tomacco-flow-atlas/1",
-  "product_source": "1713806db7ef00eda9754bb5bea23cd803179aa0",
+  "product_source": "1caa17221161c2dc4c5c6eedb92ed9277772c57a",
   "core_source_baseline": "4584d6bca3a07840e81683d99cd0adb386aeff35",
   "date": "2026-11-08",
-  "runtime_code_commit": "578819be350cc430196fef59a8d07ea91b3c34e4",
+  "runtime_code_commit": "e552e6f643632182dfc8531effd8bc5916c206a3",
   "source_keys": 1898,
   "i18n_digest": "47ea5c3a1e0f",
-  "registry_sha256": "52d2b761a5c73a57c8f28c529d1e36eaa26b3ac1af77ffe34ff9a2536072de97",
+  "registry_sha256": "76b7ec2a6510c6c97f7399afffac7cf5a1a026cb8c3e97d34779fad20cf6d71b",
   "bogen": {
     "file_id": "u8uvnj33hx",
     "page_id": "f5zgae58fy"
@@ -8590,7 +8590,7 @@
             272,
             144
           ],
-          "bogen_id": "8by0zh6ivm"
+          "bogen_id": "6vtzuguta4"
         },
         {
           "id": "caps",
@@ -8604,7 +8604,7 @@
             272,
             144
           ],
-          "bogen_id": "yuhdh6e6ru"
+          "bogen_id": "n0zi4dbjq9"
         },
         {
           "id": "obs",
@@ -8618,7 +8618,7 @@
             272,
             144
           ],
-          "bogen_id": "4fh2wbkv6s"
+          "bogen_id": "qmhnhya9je"
         },
         {
           "id": "avail",
@@ -8632,7 +8632,7 @@
             272,
             144
           ],
-          "bogen_id": "cssh1ck2sw"
+          "bogen_id": "fq0pnv8aq5"
         },
         {
           "id": "noframe",
@@ -8646,7 +8646,7 @@
             272,
             144
           ],
-          "bogen_id": "shm41yie4r"
+          "bogen_id": "8px68ybcjk"
         },
         {
           "id": "alt",
@@ -8660,7 +8660,7 @@
             272,
             156
           ],
-          "bogen_id": "w8w2x663rp"
+          "bogen_id": "4bbg7u98e5"
         },
         {
           "id": "target",
@@ -8674,7 +8674,7 @@
             272,
             156
           ],
-          "bogen_id": "ydtysyhk00"
+          "bogen_id": "0smqqt2zr6"
         },
         {
           "id": "geo",
@@ -8688,7 +8688,7 @@
             272,
             144
           ],
-          "bogen_id": "9au27cyxne"
+          "bogen_id": "tmp5ygc4rg"
         },
         {
           "id": "res",
@@ -8702,7 +8702,7 @@
             272,
             144
           ],
-          "bogen_id": "48ui59a6m3"
+          "bogen_id": "7tuaw20h29"
         },
         {
           "id": "send",
@@ -8716,7 +8716,7 @@
             272,
             156
           ],
-          "bogen_id": "m2j8fdvj3n"
+          "bogen_id": "rydsd5nt4j"
         },
         {
           "id": "how",
@@ -8730,7 +8730,7 @@
             272,
             144
           ],
-          "bogen_id": "8ig8eismdv"
+          "bogen_id": "1kq6ccm4mx"
         },
         {
           "id": "refused",
@@ -8744,7 +8744,7 @@
             272,
             176
           ],
-          "bogen_id": "qmfgen8rex"
+          "bogen_id": "6auch8gyev"
         },
         {
           "id": "geonote",
@@ -8758,7 +8758,7 @@
             272,
             192
           ],
-          "bogen_id": "he6vbqbcag"
+          "bogen_id": "qe6kzrbayq"
         },
         {
           "id": "fillnote",
@@ -8772,7 +8772,7 @@
             272,
             120
           ],
-          "bogen_id": "82veufwvsf"
+          "bogen_id": "pxavkaqf6x"
         },
         {
           "id": "done",
@@ -8786,7 +8786,7 @@
             272,
             176
           ],
-          "bogen_id": "ryv1stkmc2"
+          "bogen_id": "huqujp4brc"
         },
         {
           "id": "android",
@@ -8800,7 +8800,7 @@
             272,
             144
           ],
-          "bogen_id": "3rgmh43srb"
+          "bogen_id": "ewjnya0cge"
         },
         {
           "id": "wda",
@@ -8814,7 +8814,7 @@
             272,
             144
           ],
-          "bogen_id": "htv863mcw2"
+          "bogen_id": "m3r296m0n3"
         },
         {
           "id": "ble",
@@ -8828,7 +8828,7 @@
             272,
             144
           ],
-          "bogen_id": "pqg7zmz5jz"
+          "bogen_id": "vqbjacdxdc"
         },
         {
           "id": "answer",
@@ -8842,7 +8842,7 @@
             272,
             144
           ],
-          "bogen_id": "7stbnukf2n"
+          "bogen_id": "x8j6xfr4fc"
         },
         {
           "id": "verify",
@@ -8856,7 +8856,7 @@
             272,
             144
           ],
-          "bogen_id": "esvij8b66i"
+          "bogen_id": "rd12e356zb"
         },
         {
           "id": "unknown",
@@ -8870,7 +8870,7 @@
             272,
             204
           ],
-          "bogen_id": "866hjwh7kc"
+          "bogen_id": "agb5vs43j1"
         },
         {
           "id": "rid",
@@ -8884,7 +8884,273 @@
             272,
             168
           ],
-          "bogen_id": "dg3gnynax0"
+          "bogen_id": "ccig96547p"
+        },
+        {
+          "id": "qstart",
+          "kind": "start",
+          "title": "Pixeltext lesen",
+          "op": "screen.ocr · PNG oder Gerät",
+          "tag": "START",
+          "box": [
+            0,
+            1356,
+            272,
+            120
+          ],
+          "bogen_id": "072g2rfr9b"
+        },
+        {
+          "id": "qmode",
+          "kind": "decision",
+          "title": "invert-Modus?",
+          "op": "",
+          "tag": "",
+          "box": [
+            328,
+            1356,
+            272,
+            144
+          ],
+          "bogen_id": "9xfpqbf4kt"
+        },
+        {
+          "id": "qauto",
+          "kind": "step",
+          "title": "Normal und invertiert lesen, zusammenführen",
+          "op": "auto · Standard",
+          "tag": "SCHRITT",
+          "box": [
+            656,
+            1354,
+            272,
+            124
+          ],
+          "bogen_id": "4pkmggmch5"
+        },
+        {
+          "id": "qend",
+          "kind": "ok",
+          "title": "Erkannter Pixeltext",
+          "op": "Beide Polaritäten; OCR kann trotzdem Text übersehen",
+          "tag": "ENDE · OK",
+          "box": [
+            984,
+            1356,
+            272,
+            120
+          ],
+          "bogen_id": "j725wkcr1i"
+        },
+        {
+          "id": "qnormal",
+          "kind": "step",
+          "title": "Zuerst normal lesen",
+          "op": "adaptive · nur ausdrücklich",
+          "tag": "SCHRITT",
+          "box": [
+            328,
+            1616,
+            272,
+            120
+          ],
+          "bogen_id": "5tzyd12uye"
+        },
+        {
+          "id": "qneed",
+          "kind": "decision",
+          "title": "Fallback nötig?",
+          "op": "leer · Ziel/Index fehlt · gewählte Wörter <80",
+          "tag": "",
+          "box": [
+            656,
+            1600,
+            272,
+            176
+          ],
+          "bogen_id": "twvgn8ms8h"
+        },
+        {
+          "id": "qinv",
+          "kind": "step",
+          "title": "Invertiert lesen, zusammenführen",
+          "op": "fallback_reason",
+          "tag": "SCHRITT",
+          "box": [
+            984,
+            1614,
+            272,
+            124
+          ],
+          "bogen_id": "4adej9hdqq"
+        },
+        {
+          "id": "qfast",
+          "kind": "ok",
+          "title": "Adaptive Antwort",
+          "op": "1 oder 2 Polaritäten",
+          "tag": "ENDE · OK",
+          "box": [
+            1312,
+            1616,
+            272,
+            120
+          ],
+          "bogen_id": "ipq1cz3x8v"
+        },
+        {
+          "id": "qfrozen",
+          "kind": "note",
+          "title": "Genau ein eingefrorenes PNG für beide Lesungen; kein zweiter Geräte-Capture",
+          "op": "",
+          "tag": "HINWEIS",
+          "box": [
+            0,
+            1614,
+            272,
+            124
+          ],
+          "bogen_id": "b2ah6bph51"
+        },
+        {
+          "id": "qlimit",
+          "kind": "note",
+          "title": "Adaptive Ergebnisse können andere Wörter und Duplikate übersehen. Kein Nachweis für Abwesenheit oder Eindeutigkeit.",
+          "op": "",
+          "tag": "HINWEIS",
+          "box": [
+            0,
+            1926,
+            600,
+            120
+          ],
+          "bogen_id": "npgd89h51i"
+        },
+        {
+          "id": "qcache",
+          "kind": "note",
+          "title": "Begrenzter Cache: einzelne Polaritäten wiederverwenden. Bildinhalt, Sprache, Region und Konfidenz zählen; adaptive Antworten zusätzlich nach Ziel, Index und fuzzy.",
+          "op": "",
+          "tag": "HINWEIS",
+          "box": [
+            656,
+            1926,
+            928,
+            120
+          ],
+          "bogen_id": "p0bp6w8kdj"
+        },
+        {
+          "id": "qd",
+          "kind": "decision",
+          "title": "detail: matches?",
+          "op": "full bleibt Standard",
+          "tag": "",
+          "box": [
+            0,
+            2216,
+            272,
+            144
+          ],
+          "bogen_id": "1hi0351igh"
+        },
+        {
+          "id": "qselector",
+          "kind": "decision",
+          "title": "Textselektor da?",
+          "op": "text oder text_contains",
+          "tag": "",
+          "box": [
+            328,
+            2216,
+            272,
+            144
+          ],
+          "bogen_id": "6g3b6dxhu2"
+        },
+        {
+          "id": "qcompact",
+          "kind": "step",
+          "title": "Nur Zielantwort",
+          "op": "matches · keine words/lines-Arrays",
+          "tag": "SCHRITT",
+          "box": [
+            656,
+            2216,
+            272,
+            120
+          ],
+          "bogen_id": "c2u19b7j1y"
+        },
+        {
+          "id": "qfull",
+          "kind": "step",
+          "title": "Vollständige Detailstruktur",
+          "op": "words/lines durch max_words begrenzt",
+          "tag": "SCHRITT",
+          "box": [
+            0,
+            2476,
+            272,
+            120
+          ],
+          "bogen_id": "jysv939chi"
+        },
+        {
+          "id": "qbad",
+          "kind": "error",
+          "title": "Vor Capture und OCR abgelehnt",
+          "op": "invalid_argument",
+          "tag": "FEHLER",
+          "box": [
+            328,
+            2474,
+            272,
+            124
+          ],
+          "bogen_id": "e1nxj5gw0r"
+        },
+        {
+          "id": "qstats",
+          "kind": "note",
+          "title": "Suche betrachtet alle erkannten Wörter. max_words kürzt nur ausgegebene Details, keine Zielsuche.",
+          "op": "",
+          "tag": "HINWEIS",
+          "box": [
+            656,
+            2452,
+            272,
+            168
+          ],
+          "bogen_id": "z4dbdhi7ci"
+        },
+        {
+          "id": "qtimes",
+          "kind": "note",
+          "title": "engine_runs: echte Aufrufe 0/1/2; passes: gewählte Polaritäten. capture_ms bei PNG null; read_ms und total_ms separat.",
+          "op": "",
+          "tag": "HINWEIS",
+          "box": [
+            984,
+            2476,
+            600,
+            120
+          ],
+          "bogen_id": "6b5x6bfiw5"
+        },
+        {
+          "id": "qguard",
+          "kind": "note",
+          "title": "testing.action, testing.find, Warten und Abwesenheitsprüfungen bleiben bei auto. never/always lesen weiterhin nur die gewählte Polarität.",
+          "op": "",
+          "tag": "HINWEIS",
+          "box": [
+            1312,
+            2168,
+            272,
+            216
+          ],
+          "bogen_id": "655f5f9qin"
         }
       ],
       "edges": [
@@ -9329,6 +9595,294 @@
             74,
             26
           ]
+        },
+        {
+          "from": "qstart",
+          "to": "qmode",
+          "label": "",
+          "kind": "flow",
+          "points": [
+            [
+              272,
+              1416
+            ],
+            [
+              300,
+              1416
+            ],
+            [
+              300,
+              1428
+            ],
+            [
+              328,
+              1428
+            ]
+          ]
+        },
+        {
+          "from": "qmode",
+          "to": "qauto",
+          "label": "auto",
+          "kind": "flow",
+          "points": [
+            [
+              600,
+              1428
+            ],
+            [
+              628,
+              1428
+            ],
+            [
+              628,
+              1416
+            ],
+            [
+              656,
+              1416
+            ]
+          ],
+          "label_box": [
+            590,
+            1436,
+            47,
+            26
+          ]
+        },
+        {
+          "from": "qauto",
+          "to": "qend",
+          "label": "",
+          "kind": "success",
+          "points": [
+            [
+              928,
+              1416
+            ],
+            [
+              984,
+              1416
+            ]
+          ]
+        },
+        {
+          "from": "qmode",
+          "to": "qnormal",
+          "label": "adaptive",
+          "kind": "flow",
+          "points": [
+            [
+              464,
+              1500
+            ],
+            [
+              464,
+              1616
+            ]
+          ],
+          "label_box": [
+            474,
+            1508,
+            76,
+            26
+          ]
+        },
+        {
+          "from": "qnormal",
+          "to": "qneed",
+          "label": "",
+          "kind": "flow",
+          "points": [
+            [
+              600,
+              1676
+            ],
+            [
+              628,
+              1676
+            ],
+            [
+              628,
+              1688
+            ],
+            [
+              656,
+              1688
+            ]
+          ]
+        },
+        {
+          "from": "qneed",
+          "to": "qinv",
+          "label": "ja",
+          "kind": "flow",
+          "points": [
+            [
+              928,
+              1688
+            ],
+            [
+              956,
+              1688
+            ],
+            [
+              956,
+              1676
+            ],
+            [
+              984,
+              1676
+            ]
+          ],
+          "label_box": [
+            938,
+            1696,
+            27,
+            26
+          ]
+        },
+        {
+          "from": "qinv",
+          "to": "qfast",
+          "label": "",
+          "kind": "success",
+          "points": [
+            [
+              1256,
+              1676
+            ],
+            [
+              1312,
+              1676
+            ]
+          ]
+        },
+        {
+          "from": "qneed",
+          "to": "qfast",
+          "label": "nein",
+          "kind": "success",
+          "points": [
+            [
+              792,
+              1776
+            ],
+            [
+              792,
+              1836
+            ],
+            [
+              1448,
+              1836
+            ],
+            [
+              1448,
+              1736
+            ]
+          ],
+          "label_box": [
+            802,
+            1784,
+            46,
+            26
+          ]
+        },
+        {
+          "from": "qd",
+          "to": "qselector",
+          "label": "ja",
+          "kind": "flow",
+          "points": [
+            [
+              272,
+              2288
+            ],
+            [
+              328,
+              2288
+            ]
+          ],
+          "label_box": [
+            282,
+            2254,
+            27,
+            26
+          ]
+        },
+        {
+          "from": "qd",
+          "to": "qfull",
+          "label": "nein",
+          "kind": "flow",
+          "points": [
+            [
+              136,
+              2360
+            ],
+            [
+              136,
+              2476
+            ]
+          ],
+          "label_box": [
+            146,
+            2368,
+            46,
+            26
+          ]
+        },
+        {
+          "from": "qselector",
+          "to": "qcompact",
+          "label": "ja",
+          "kind": "flow",
+          "points": [
+            [
+              600,
+              2288
+            ],
+            [
+              628,
+              2288
+            ],
+            [
+              628,
+              2276
+            ],
+            [
+              656,
+              2276
+            ]
+          ],
+          "label_box": [
+            610,
+            2296,
+            27,
+            26
+          ]
+        },
+        {
+          "from": "qselector",
+          "to": "qbad",
+          "label": "nein",
+          "kind": "error",
+          "points": [
+            [
+              464,
+              2360
+            ],
+            [
+              464,
+              2474
+            ]
+          ],
+          "label_box": [
+            474,
+            2368,
+            46,
+            26
+          ]
         }
       ],
       "operations": [
@@ -9351,12 +9905,21 @@
         "native/runtime/actions.rs:296-310 frame_stale (nur mit frame)",
         "native/screen.rs screen.tap mark_stale",
         "native/coordination/ledger.rs:44-87, 484-513, 573-581 REFUSED, LOST, request_outcome_unknown",
-        "native/runtime/iphone.rs:19-26 delivery not_sent/unknown"
+        "native/runtime/iphone.rs:19-26 delivery not_sent/unknown",
+        "native/screen.rs read_text: detail-Vorabprüfung, einzelner Capture, read_selected, vollständige Zielsuche, getrennte Messzeiten",
+        "native/screen_ocr.rs adaptive_fallback, read_selected: opt-in adaptive, ausgewählte Wörter <80, eingefrorenes PNG, begrenzte Polaritäts-/Zielcaches",
+        "assets/operations.json screen.ocr: invert auto/never/always/adaptive, detail full/matches; testing/find/wait-Standards bleiben auto",
+        "docs/ocr-adaptive-qualification.json: optimierter CLI-Korpus, gleiche Binary, begrenzte handgelabelte Targets; kompakte MCP-Einzelabfrage separat"
       ],
       "notes": [
         "AirPlay hat keinen visuellen Agentenkreis: runtime.observe und screen.* antworten airplay_runtime. BLE-Eingabe mit bekannten Koordinaten bleibt möglich, aber ohne automatische Prüfung; prüfen kann nur die Person.",
         "Eine Reservierung ist kooperativ: sie schützt zwischen Clients, die Tomacco nutzen, nicht gegen adb, SSH oder Flash-Werkzeuge des Nutzers.",
-        "Kein Weg verspricht genau-einmal-Ausführung auf dem Gerät; nur eine frische Beobachtung zeigt die Wirkung."
+        "Kein Weg verspricht genau-einmal-Ausführung auf dem Gerät; nur eine frische Beobachtung zeigt die Wirkung.",
+        "screen.ocr invert:auto bleibt die Vorgabe mit normaler und invertierter Lesung. adaptive ist eine ausdrückliche Optimierung für eine bekannte Zielsuche; es ist keine Garantie für Vollständigkeit, Abwesenheit oder Eindeutigkeit. Auch auto bleibt fehleranfällige Pixel-OCR.",
+        "Adaptive Fallbacks: Nach Konfidenzfilter kein Wort, angefragter Text/Index fehlt oder ein Wort des ausgewählten Treffers hat Konfidenz <80. Ohne Zielabfrage zählt jedes beibehaltene Wort <80. Bei Fallback wird dasselbe eingefrorene PNG invertiert gelesen.",
+        "detail:matches verlangt text oder text_contains und lässt words/lines weg. Die Suche wird nicht durch max_words gekürzt. engine_runs zählt echte Engine-Aufrufe, passes die gewählte Lesepolitik; ein kompletter Cachetreffer kann engine_runs:0 liefern.",
+        "capture_ms ist bei einem gespeicherten PNG null. read_ms und total_ms messen getrennte Arbeit. Fixture-Zeiten sind kein Vergleich mit echter Hardware oder anderen Produkten.",
+        "Lokaler optimierter PNG-Korpus: 16 unabhängige Bilder, 20 Fälle, 180 CLI-Aufrufe. Median über die unabhängigen Bilder: auto 312.79 ms, adaptive 275.65 ms (11.87 % geringer); dieselbe gemessene Ziel- und Worttrefferquote in diesem Korpus. Kein Geräte-Capture, Transport, Tap oder Konkurrenzprodukt gemessen. Eine einzelne MCP-Zielabfrage schrumpfte von 1,922 auf 699 UTF-8-Bytes; dies ist kein allgemeiner Payload-Mittelwert."
       ],
       "links": [
         [
@@ -9387,16 +9950,16 @@
       "routes": [
         "runtime"
       ],
-      "height": 1122,
+      "height": 2644,
       "spec_file": "docs/flows/specs/05_agent_loop.py",
-      "source_baseline_label": "Kern 4584d6b",
+      "source_baseline_label": "Kern 4584d6b · OCR e552e6f",
       "bogen": {
         "artboard": "qsrfwt20hy",
         "header": "i6hesxye35",
-        "canvas": "f4mjpa6hdh",
-        "footer": "856jn5n40u"
+        "canvas": "r7yrx876s5",
+        "footer": "ex6d22txbm"
       },
-      "spec_sha256": "21d31d4cd98327689793f0b54265c77d79014660eb1abb0fa335452d37178af9"
+      "spec_sha256": "52017b3e62c570cd2ae62cbb4f27887f5ceddb8f6837085fd5a6fd76f26c64b9"
     },
     {
       "id": "D13",
@@ -10371,7 +10934,7 @@
         "canvas": "g005ec4xz5",
         "footer": "g2hu2czvg7"
       },
-      "spec_sha256": "21d31d4cd98327689793f0b54265c77d79014660eb1abb0fa335452d37178af9"
+      "spec_sha256": "52017b3e62c570cd2ae62cbb4f27887f5ceddb8f6837085fd5a6fd76f26c64b9"
     },
     {
       "id": "D14",
@@ -10894,7 +11457,7 @@
         "canvas": "hgx0yzctyd",
         "footer": "a48mx5dte1"
       },
-      "spec_sha256": "21d31d4cd98327689793f0b54265c77d79014660eb1abb0fa335452d37178af9"
+      "spec_sha256": "52017b3e62c570cd2ae62cbb4f27887f5ceddb8f6837085fd5a6fd76f26c64b9"
     },
     {
       "id": "D15",
@@ -34704,12 +35267,16 @@
         "native/runtime/actions.rs:296-310 frame_stale (nur mit frame)",
         "native/screen.rs screen.tap mark_stale",
         "native/coordination/ledger.rs:44-87, 484-513, 573-581 REFUSED, LOST, request_outcome_unknown",
-        "native/runtime/iphone.rs:19-26 delivery not_sent/unknown"
+        "native/runtime/iphone.rs:19-26 delivery not_sent/unknown",
+        "native/screen.rs read_text: detail-Vorabprüfung, einzelner Capture, read_selected, vollständige Zielsuche, getrennte Messzeiten",
+        "native/screen_ocr.rs adaptive_fallback, read_selected: opt-in adaptive, ausgewählte Wörter <80, eingefrorenes PNG, begrenzte Polaritäts-/Zielcaches",
+        "assets/operations.json screen.ocr: invert auto/never/always/adaptive, detail full/matches; testing/find/wait-Standards bleiben auto",
+        "docs/ocr-adaptive-qualification.json: optimierter CLI-Korpus, gleiche Binary, begrenzte handgelabelte Targets; kompakte MCP-Einzelabfrage separat"
       ],
       "status": "implemented_source_contract; hardware qualifications see S1",
       "destructive": false,
       "bogen_artboard": "qsrfwt20hy",
-      "bogen_node": "ydtysyhk00"
+      "bogen_node": "0smqqt2zr6"
     },
     {
       "operation": "screen.tap",
@@ -34729,12 +35296,16 @@
         "native/runtime/actions.rs:296-310 frame_stale (nur mit frame)",
         "native/screen.rs screen.tap mark_stale",
         "native/coordination/ledger.rs:44-87, 484-513, 573-581 REFUSED, LOST, request_outcome_unknown",
-        "native/runtime/iphone.rs:19-26 delivery not_sent/unknown"
+        "native/runtime/iphone.rs:19-26 delivery not_sent/unknown",
+        "native/screen.rs read_text: detail-Vorabprüfung, einzelner Capture, read_selected, vollständige Zielsuche, getrennte Messzeiten",
+        "native/screen_ocr.rs adaptive_fallback, read_selected: opt-in adaptive, ausgewählte Wörter <80, eingefrorenes PNG, begrenzte Polaritäts-/Zielcaches",
+        "assets/operations.json screen.ocr: invert auto/never/always/adaptive, detail full/matches; testing/find/wait-Standards bleiben auto",
+        "docs/ocr-adaptive-qualification.json: optimierter CLI-Korpus, gleiche Binary, begrenzte handgelabelte Targets; kompakte MCP-Einzelabfrage separat"
       ],
       "status": "implemented_source_contract; hardware qualifications see S1",
       "destructive": false,
       "bogen_artboard": "qsrfwt20hy",
-      "bogen_node": "he6vbqbcag"
+      "bogen_node": "qe6kzrbayq"
     },
     {
       "operation": "screen.tree",
@@ -34754,24 +35325,28 @@
         "native/runtime/actions.rs:296-310 frame_stale (nur mit frame)",
         "native/screen.rs screen.tap mark_stale",
         "native/coordination/ledger.rs:44-87, 484-513, 573-581 REFUSED, LOST, request_outcome_unknown",
-        "native/runtime/iphone.rs:19-26 delivery not_sent/unknown"
+        "native/runtime/iphone.rs:19-26 delivery not_sent/unknown",
+        "native/screen.rs read_text: detail-Vorabprüfung, einzelner Capture, read_selected, vollständige Zielsuche, getrennte Messzeiten",
+        "native/screen_ocr.rs adaptive_fallback, read_selected: opt-in adaptive, ausgewählte Wörter <80, eingefrorenes PNG, begrenzte Polaritäts-/Zielcaches",
+        "assets/operations.json screen.ocr: invert auto/never/always/adaptive, detail full/matches; testing/find/wait-Standards bleiben auto",
+        "docs/ocr-adaptive-qualification.json: optimierter CLI-Korpus, gleiche Binary, begrenzte handgelabelte Targets; kompakte MCP-Einzelabfrage separat"
       ],
       "status": "implemented_source_contract; hardware qualifications see S1",
       "destructive": false,
       "bogen_artboard": "qsrfwt20hy",
-      "bogen_node": "ydtysyhk00"
+      "bogen_node": "0smqqt2zr6"
     },
     {
       "operation": "screen.ocr",
       "title": "Read text on screen",
       "domain": "screen",
       "primary_flow": "D12",
-      "logical_node": "target",
+      "logical_node": "qstart",
       "mapping_kind": "named_operation",
       "related_flows": [
         "D12"
       ],
-      "description": "Read the text on a device's screen or in a PNG with Tesseract, for screens that have no UI hierarchy: the virtual iPhone, games, WebViews. Answers every word and line with its box and Tesseract's confidence (0 to 100), and with text (whole words, any letter case) or text_contains (part of a word or line), the matches with their centre, ready to tap. The recognition is of pixels, not of controls: small, low-contrast or decorative text can be misread or missed, a space can be lost (\"Signin\"), and a picture with light and dark areas may need region. A dark theme is handled by also reading the inverted picture. Needs tesseract (capabilities.ocr says whether it is installed).",
+      "description": "Read the text on a device's screen or in a PNG with Tesseract, for screens that have no UI hierarchy: the virtual iPhone, games, WebViews. Answers every word and line with its box and Tesseract's confidence (0 to 100), and with text (whole words, any letter case) or text_contains (part of a word or line), the matches with their centre, ready to tap. The recognition is of pixels, not of controls: small, low-contrast or decorative text can be misread or missed, a space can be lost (\"Signin\"), and a picture with light and dark areas may need region. By default both normal and inverted pictures are read for dark themes. Opt-in invert:adaptive can skip the second reading on a confident first pass, falling back for missing targets, empty or low-confidence results; this can miss additional text, so it does not prove absence or uniqueness. detail:matches gives a compact target result. Reports actual engine_runs, cache use, fallback_reason and capture/read/total milliseconds. Needs tesseract (capabilities.ocr says whether it is installed).",
       "source_contract": "assets/operations.json#/61",
       "source_anchors": [
         "native/runtime/airplay.rs:637-642 capture/hierarchy → airplay_runtime",
@@ -34779,12 +35354,16 @@
         "native/runtime/actions.rs:296-310 frame_stale (nur mit frame)",
         "native/screen.rs screen.tap mark_stale",
         "native/coordination/ledger.rs:44-87, 484-513, 573-581 REFUSED, LOST, request_outcome_unknown",
-        "native/runtime/iphone.rs:19-26 delivery not_sent/unknown"
+        "native/runtime/iphone.rs:19-26 delivery not_sent/unknown",
+        "native/screen.rs read_text: detail-Vorabprüfung, einzelner Capture, read_selected, vollständige Zielsuche, getrennte Messzeiten",
+        "native/screen_ocr.rs adaptive_fallback, read_selected: opt-in adaptive, ausgewählte Wörter <80, eingefrorenes PNG, begrenzte Polaritäts-/Zielcaches",
+        "assets/operations.json screen.ocr: invert auto/never/always/adaptive, detail full/matches; testing/find/wait-Standards bleiben auto",
+        "docs/ocr-adaptive-qualification.json: optimierter CLI-Korpus, gleiche Binary, begrenzte handgelabelte Targets; kompakte MCP-Einzelabfrage separat"
       ],
       "status": "implemented_source_contract; hardware qualifications see S1",
       "destructive": false,
       "bogen_artboard": "qsrfwt20hy",
-      "bogen_node": "ydtysyhk00"
+      "bogen_node": "072g2rfr9b"
     },
     {
       "operation": "screen.diff",
@@ -34828,12 +35407,16 @@
         "native/runtime/actions.rs:296-310 frame_stale (nur mit frame)",
         "native/screen.rs screen.tap mark_stale",
         "native/coordination/ledger.rs:44-87, 484-513, 573-581 REFUSED, LOST, request_outcome_unknown",
-        "native/runtime/iphone.rs:19-26 delivery not_sent/unknown"
+        "native/runtime/iphone.rs:19-26 delivery not_sent/unknown",
+        "native/screen.rs read_text: detail-Vorabprüfung, einzelner Capture, read_selected, vollständige Zielsuche, getrennte Messzeiten",
+        "native/screen_ocr.rs adaptive_fallback, read_selected: opt-in adaptive, ausgewählte Wörter <80, eingefrorenes PNG, begrenzte Polaritäts-/Zielcaches",
+        "assets/operations.json screen.ocr: invert auto/never/always/adaptive, detail full/matches; testing/find/wait-Standards bleiben auto",
+        "docs/ocr-adaptive-qualification.json: optimierter CLI-Korpus, gleiche Binary, begrenzte handgelabelte Targets; kompakte MCP-Einzelabfrage separat"
       ],
       "status": "implemented_source_contract; hardware qualifications see S1",
       "destructive": false,
       "bogen_artboard": "qsrfwt20hy",
-      "bogen_node": "esvij8b66i"
+      "bogen_node": "rd12e356zb"
     },
     {
       "operation": "screen.export",
@@ -38852,12 +39435,16 @@
         "native/runtime/actions.rs:296-310 frame_stale (nur mit frame)",
         "native/screen.rs screen.tap mark_stale",
         "native/coordination/ledger.rs:44-87, 484-513, 573-581 REFUSED, LOST, request_outcome_unknown",
-        "native/runtime/iphone.rs:19-26 delivery not_sent/unknown"
+        "native/runtime/iphone.rs:19-26 delivery not_sent/unknown",
+        "native/screen.rs read_text: detail-Vorabprüfung, einzelner Capture, read_selected, vollständige Zielsuche, getrennte Messzeiten",
+        "native/screen_ocr.rs adaptive_fallback, read_selected: opt-in adaptive, ausgewählte Wörter <80, eingefrorenes PNG, begrenzte Polaritäts-/Zielcaches",
+        "assets/operations.json screen.ocr: invert auto/never/always/adaptive, detail full/matches; testing/find/wait-Standards bleiben auto",
+        "docs/ocr-adaptive-qualification.json: optimierter CLI-Korpus, gleiche Binary, begrenzte handgelabelte Targets; kompakte MCP-Einzelabfrage separat"
       ],
       "status": "implemented_source_contract; hardware qualifications see S1",
       "destructive": false,
       "bogen_artboard": "qsrfwt20hy",
-      "bogen_node": "8by0zh6ivm"
+      "bogen_node": "6vtzuguta4"
     },
     {
       "operation": "runtime.audio",
@@ -39007,12 +39594,16 @@
         "native/runtime/actions.rs:296-310 frame_stale (nur mit frame)",
         "native/screen.rs screen.tap mark_stale",
         "native/coordination/ledger.rs:44-87, 484-513, 573-581 REFUSED, LOST, request_outcome_unknown",
-        "native/runtime/iphone.rs:19-26 delivery not_sent/unknown"
+        "native/runtime/iphone.rs:19-26 delivery not_sent/unknown",
+        "native/screen.rs read_text: detail-Vorabprüfung, einzelner Capture, read_selected, vollständige Zielsuche, getrennte Messzeiten",
+        "native/screen_ocr.rs adaptive_fallback, read_selected: opt-in adaptive, ausgewählte Wörter <80, eingefrorenes PNG, begrenzte Polaritäts-/Zielcaches",
+        "assets/operations.json screen.ocr: invert auto/never/always/adaptive, detail full/matches; testing/find/wait-Standards bleiben auto",
+        "docs/ocr-adaptive-qualification.json: optimierter CLI-Korpus, gleiche Binary, begrenzte handgelabelte Targets; kompakte MCP-Einzelabfrage separat"
       ],
       "status": "implemented_source_contract; hardware qualifications see S1",
       "destructive": false,
       "bogen_artboard": "qsrfwt20hy",
-      "bogen_node": "ydtysyhk00"
+      "bogen_node": "0smqqt2zr6"
     },
     {
       "operation": "runtime.observe",
@@ -39085,12 +39676,16 @@
         "native/runtime/actions.rs:296-310 frame_stale (nur mit frame)",
         "native/screen.rs screen.tap mark_stale",
         "native/coordination/ledger.rs:44-87, 484-513, 573-581 REFUSED, LOST, request_outcome_unknown",
-        "native/runtime/iphone.rs:19-26 delivery not_sent/unknown"
+        "native/runtime/iphone.rs:19-26 delivery not_sent/unknown",
+        "native/screen.rs read_text: detail-Vorabprüfung, einzelner Capture, read_selected, vollständige Zielsuche, getrennte Messzeiten",
+        "native/screen_ocr.rs adaptive_fallback, read_selected: opt-in adaptive, ausgewählte Wörter <80, eingefrorenes PNG, begrenzte Polaritäts-/Zielcaches",
+        "assets/operations.json screen.ocr: invert auto/never/always/adaptive, detail full/matches; testing/find/wait-Standards bleiben auto",
+        "docs/ocr-adaptive-qualification.json: optimierter CLI-Korpus, gleiche Binary, begrenzte handgelabelte Targets; kompakte MCP-Einzelabfrage separat"
       ],
       "status": "implemented_source_contract; hardware qualifications see S1",
       "destructive": false,
       "bogen_artboard": "qsrfwt20hy",
-      "bogen_node": "he6vbqbcag"
+      "bogen_node": "qe6kzrbayq"
     },
     {
       "operation": "ios.doctor",
@@ -40783,8 +41378,8 @@
     "prototype_evidence": "prototype-validation.json",
     "layout_evidence": "layout-final.json",
     "review_resolutions": "review-resolutions.json",
-    "root_final_acceptance_pending": false,
-    "final_ready": true,
-    "root_review": "root-final-review.json"
+    "root_final_acceptance_pending": true,
+    "final_ready": false,
+    "ocr_observations": "reviews/ocr-bogen-observations.json"
   }
 }

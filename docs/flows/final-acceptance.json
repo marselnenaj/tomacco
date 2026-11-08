@@ -1,15 +1,15 @@
 {
   "schema": "tomacco-flow-atlas-acceptance/1",
-  "checked_at": "2026-11-08T09:02:11.589977+00:00",
-  "final_ready": true,
+  "checked_at": "2026-11-08T10:11:41.300849+00:00",
+  "final_ready": false,
   "file_id": "u8uvnj33hx",
   "page_id": "f5zgae58fy",
   "entry_artboard": "bxx82h1gcm",
   "checkpoint": {
-    "id": "mw7lront-a8f559a8",
-    "name": "Tomacco · ARM Originalton578819b geprüft und bereitgelegt · Pixel unverändert"
+    "id": "mw7o72ek-10a562b1",
+    "name": "Tomacco · OCR adaptive optional · Produkt1caa172 · 1000 Nodes / 296 Operationen"
   },
-  "product_source": "1713806db7ef00eda9754bb5bea23cd803179aa0",
+  "product_source": "1caa17221161c2dc4c5c6eedb92ed9277772c57a",
   "public_release": "1.4.1",
   "counts": {
     "diagrams": 33,
@@ -17,7 +17,7 @@
     "domains": 33,
     "cli_routes": 13,
     "artboards": 36,
-    "logical_nodes": 981,
+    "logical_nodes": 1000,
     "coding_agent_clients": 10,
     "prototype_links": 382,
     "unique_targets": 56,
@@ -55,23 +55,31 @@
     "reviews/demo-audio-independent-review.json",
     "reviews/demo-audio-install-gate.json",
     "reviews/demo-audio-bogen-observations.json",
-    "root-final-review.json",
-    "reviews/demo-audio-arm-bogen-followup.json"
+    "reviews/demo-audio-arm-bogen-followup.json",
+    "ocr-delta-plan.json",
+    "reviews/ocr-bogen-observations.json",
+    "reviews/ocr-install-gate.json",
+    "reviews/ocr-desktop-update-receipt.json",
+    "reviews/ocr-adaptive-independent-review.json",
+    "../ocr-adaptive-qualification.json"
   ],
   "qualification_limits": [
     "No Pixel installation or physical qualification",
     "No physical iPhone AirPlay audio/swipe/verified-fill qualification",
     "Virtual iPhone experimental research runtime",
-    "Mobile parity source prose is advisory and does not override actual routes"
+    "Mobile parity source prose is advisory and does not override actual routes",
+    "Adaptive OCR can miss additional words/duplicates; no absence/uniqueness proof",
+    "Current OCR ARM package not built/qualified;578819b ARM proof remains separate"
   ],
   "no_hardware_access_for_atlas": true,
   "no_publication": true,
   "advisories": "Diagram geometry intentionally uses measured node/connector pixels; grid/token/copy-arrow/repeated/header hierarchy suggestions remain advisory, not waived critical findings.",
   "implementation_ready": true,
-  "ready_for_root_final_qa": false,
-  "runtime_code_commit": "578819be350cc430196fef59a8d07ea91b3c34e4",
+  "ready_for_root_final_qa": true,
+  "runtime_code_commit": "e552e6f643632182dfc8531effd8bc5916c206a3",
   "core_source_baseline": "4584d6bca3a07840e81683d99cd0adb386aeff35",
-  "historical_acceptance": "history/4584d6b/final-acceptance.json",
-  "pending": [],
-  "root_review": "root-final-review.json"
+  "historical_acceptance": "history/1713806/final-acceptance.json",
+  "pending": [
+    "Root final review of current OCR atlas delta"
+  ]
 }

@@ -1,0 +1,26 @@
+{
+  "state": "prepared_not_applied",
+  "source_commit": "e552e6f643632182dfc8531effd8bc5916c206a3",
+  "native_source_sha256": {
+    "native/screen_ocr.rs": "76ca9c40fe9955fed71193f62a086bf7224837126c778a894835be56e9cc4b18",
+    "native/screen.rs": "cf538bb366ecae19ad54f8a8dfec87ad1237f9885908616df4a7306bbeb0f538",
+    "assets/operations.json": "76b7ec2a6510c6c97f7399afffac7cf5a1a026cb8c3e97d34779fad20cf6d71b"
+  },
+  "D12_spec_sha256": "4c4f0ed96cbfc5848fc111a3f40fe814658cc5e93f0c2ca02383679061757a1b",
+  "D12_nodes": 41,
+  "D12_edges": 33,
+  "atlas_nodes": 1000,
+  "canvas_height": 2644,
+  "geometry_issues": [],
+  "independent_label_qa": {
+    "boards": 33,
+    "labels": 478,
+    "issues": [],
+    "overlaps": 0,
+    "method": "Independent Archivo500@16 measurement and separating-axis polygon checks"
+  },
+  "live_writes_started": false,
+  "installed_gate": "closed",
+  "historical_preparation_snapshot": true,
+  "superseded_by": "reviews/ocr-bogen-observations.json"
+}

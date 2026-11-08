@@ -1,15 +1,21 @@
 {
-  "created_at": "2026-11-08T08:58:11.894770+00:00",
-  "product_source": "1713806db7ef00eda9754bb5bea23cd803179aa0",
+  "created_at": "2026-11-08T10:11:41.300849+00:00",
+  "product_source": "1caa17221161c2dc4c5c6eedb92ed9277772c57a",
   "count": 36,
+  "regenerated": [
+    "00",
+    "D12",
+    "S1"
+  ],
+  "unchanged_exports_from": "history/1713806/render-manifest.json",
   "files": [
     {
       "diagram": "00",
       "path": "renders/00.png",
       "width": 1680,
       "height": 2704,
-      "bytes": 404077,
-      "sha256": "37926c1c1759aaca62091207d3c82f1e8f2578a53ba533cb282618fad290d5d5"
+      "bytes": 403754,
+      "sha256": "447caef5221ab59464263f073132a38b0f1731f7b02da78f1c8e1e81ed6c3431"
     },
     {
       "diagram": "C1",
@@ -23,9 +29,9 @@
       "diagram": "S1",
       "path": "renders/S1.png",
       "width": 1680,
-      "height": 1486,
-      "bytes": 315910,
-      "sha256": "b40dd4118d5acee2620f5f0ad5d2867b344d0bd76f116f6d7ee645c1e285fb7c"
+      "height": 1651,
+      "bytes": 369236,
+      "sha256": "8eb92b36cd82fa710ccc775c47d158f6e8d72ad23f08fb6a3b6c774ac26972ee"
     },
     {
       "diagram": "D01",
@@ -119,9 +125,9 @@
       "diagram": "D12",
       "path": "renders/D12.png",
       "width": 1680,
-      "height": 1841,
-      "bytes": 361785,
-      "sha256": "ebda890d1989a0cfc9047a2a2a5ce729823ecf02bef09c812d4d36dcb2bdf76d"
+      "height": 3840,
+      "bytes": 728212,
+      "sha256": "2caf8a5354c46108cbe669a32769687c9190d6b191b63af736945f36320b8ff2"
     },
     {
       "diagram": "D13",
@@ -291,6 +297,5 @@
       "bytes": 717295,
       "sha256": "d68ea470f74bb1b015c712a86a2c4f8ee70115d96b046ab2e6bb53a61043a43e"
     }
-  ],
-  "updated_at": "2026-11-08T09:01:36.845Z"
+  ]
 }

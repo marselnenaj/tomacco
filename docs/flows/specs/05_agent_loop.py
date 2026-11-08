@@ -166,3 +166,56 @@ BOARDS = [
         "routes": ["settings", "runtime"],
     },
 ]
+
+# Optional OCR fast path. Prepared before installation; the write gate records
+# the final qualified source in this label before any live canvas replacement.
+_ocr = next(b for b in BOARDS if b['id'] == 'D12')
+_ocr['oy'] = 16
+_ocr['source_label'] = 'Kern 4584d6b · OCR e552e6f'
+_ocr.setdefault('lanes', []).extend([
+    {'label': 'screen.ocr · optionale adaptive Polarität', 'y': 1260, 'h': 24},
+    {'label': 'Antwortumfang und Messwerte', 'y': 2120, 'h': 24},
+])
+_ocr['nodes'].extend([
+    N('qstart', 'start', 0, 0, 'Pixeltext lesen', 'screen.ocr · PNG oder Gerät', y=1340),
+    N('qmode', 'decision', 1, 0, 'invert-Modus?', y=1340),
+    N('qauto', 'step', 2, 0, 'Normal und invertiert lesen, zusammenführen', 'auto · Standard', y=1340),
+    N('qend', 'ok', 3, 0, 'Erkannter Pixeltext', 'Beide Polaritäten; OCR kann trotzdem Text übersehen', y=1340),
+    N('qnormal', 'step', 1, 0, 'Zuerst normal lesen', 'adaptive · nur ausdrücklich', y=1600),
+    N('qneed', 'decision', 2, 0, 'Fallback nötig?', 'leer · Ziel/Index fehlt · gewählte Wörter <80', y=1600),
+    N('qinv', 'step', 3, 0, 'Invertiert lesen, zusammenführen', 'fallback_reason', y=1600),
+    N('qfast', 'ok', 4, 0, 'Adaptive Antwort', '1 oder 2 Polaritäten', y=1600),
+    N('qfrozen', 'note', 0, 0, 'Genau ein eingefrorenes PNG für beide Lesungen; kein zweiter Geräte-Capture', y=1600),
+    N('qlimit', 'note', 0, 0, 'Adaptive Ergebnisse können andere Wörter und Duplikate übersehen. Kein Nachweis für Abwesenheit oder Eindeutigkeit.', span=2, y=1910),
+    N('qcache', 'note', 2, 0, 'Begrenzter Cache: einzelne Polaritäten wiederverwenden. Bildinhalt, Sprache, Region und Konfidenz zählen; adaptive Antworten zusätzlich nach Ziel, Index und fuzzy.', span=3, y=1910),
+    N('qd', 'decision', 0, 0, 'detail: matches?', 'full bleibt Standard', y=2200),
+    N('qselector', 'decision', 1, 0, 'Textselektor da?', 'text oder text_contains', y=2200),
+    N('qcompact', 'step', 2, 0, 'Nur Zielantwort', 'matches · keine words/lines-Arrays', y=2200),
+    N('qfull', 'step', 0, 0, 'Vollständige Detailstruktur', 'words/lines durch max_words begrenzt', y=2460),
+    N('qbad', 'error', 1, 0, 'Vor Capture und OCR abgelehnt', 'invalid_argument', y=2460),
+    N('qstats', 'note', 2, 0, 'Suche betrachtet alle erkannten Wörter. max_words kürzt nur ausgegebene Details, keine Zielsuche.', y=2460),
+    N('qtimes', 'note', 3, 0, 'engine_runs: echte Aufrufe 0/1/2; passes: gewählte Polaritäten. capture_ms bei PNG null; read_ms und total_ms separat.', span=2, y=2460),
+    N('qguard', 'note', 4, 0, 'testing.action, testing.find, Warten und Abwesenheitsprüfungen bleiben bei auto. never/always lesen weiterhin nur die gewählte Polarität.', y=2200),
+])
+_ocr['edges'].extend([
+    E('qstart', 'qmode'), E('qmode', 'qauto', 'auto'), E('qauto', 'qend', style='ok'),
+    E('qmode', 'qnormal', 'adaptive'), E('qnormal', 'qneed'),
+    E('qneed', 'qinv', 'ja'), E('qinv', 'qfast', style='ok'),
+    E('qneed', 'qfast', 'nein', s1='b', s2='b', via=[(792,1820),(1448,1820)], style='ok'),
+    E('qd', 'qselector', 'ja'), E('qd', 'qfull', 'nein'),
+    E('qselector', 'qcompact', 'ja'), E('qselector', 'qbad', 'nein', style='err'),
+])
+_ocr['notes'].extend([
+    'screen.ocr invert:auto bleibt die Vorgabe mit normaler und invertierter Lesung. adaptive ist eine ausdrückliche Optimierung für eine bekannte Zielsuche; es ist keine Garantie für Vollständigkeit, Abwesenheit oder Eindeutigkeit. Auch auto bleibt fehleranfällige Pixel-OCR.',
+    'Adaptive Fallbacks: Nach Konfidenzfilter kein Wort, angefragter Text/Index fehlt oder ein Wort des ausgewählten Treffers hat Konfidenz <80. Ohne Zielabfrage zählt jedes beibehaltene Wort <80. Bei Fallback wird dasselbe eingefrorene PNG invertiert gelesen.',
+    'detail:matches verlangt text oder text_contains und lässt words/lines weg. Die Suche wird nicht durch max_words gekürzt. engine_runs zählt echte Engine-Aufrufe, passes die gewählte Lesepolitik; ein kompletter Cachetreffer kann engine_runs:0 liefern.',
+    'capture_ms ist bei einem gespeicherten PNG null. read_ms und total_ms messen getrennte Arbeit. Fixture-Zeiten sind kein Vergleich mit echter Hardware oder anderen Produkten.',
+])
+_ocr['sources'].extend([
+    'native/screen.rs read_text: detail-Vorabprüfung, einzelner Capture, read_selected, vollständige Zielsuche, getrennte Messzeiten',
+    'native/screen_ocr.rs adaptive_fallback, read_selected: opt-in adaptive, ausgewählte Wörter <80, eingefrorenes PNG, begrenzte Polaritäts-/Zielcaches',
+    'assets/operations.json screen.ocr: invert auto/never/always/adaptive, detail full/matches; testing/find/wait-Standards bleiben auto',
+])
+
+_ocr['notes'].append('Lokaler optimierter PNG-Korpus: 16 unabhängige Bilder, 20 Fälle, 180 CLI-Aufrufe. Median über die unabhängigen Bilder: auto 312.79 ms, adaptive 275.65 ms (11.87 % geringer); dieselbe gemessene Ziel- und Worttrefferquote in diesem Korpus. Kein Geräte-Capture, Transport, Tap oder Konkurrenzprodukt gemessen. Eine einzelne MCP-Zielabfrage schrumpfte von 1,922 auf 699 UTF-8-Bytes; dies ist kein allgemeiner Payload-Mittelwert.')
+_ocr['sources'].append('docs/ocr-adaptive-qualification.json: optimierter CLI-Korpus, gleiche Binary, begrenzte handgelabelte Targets; kompakte MCP-Einzelabfrage separat')

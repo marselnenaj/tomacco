@@ -2,7 +2,7 @@
 
 The editable atlas lives in **Bogen → Tomacco · App → 04 · Flows & Logik** (file `u8uvnj33hx`, page `f5zgae58fy`). Start at **00**. **C1** links operation domains and all CLI routes. **S1** separates implemented source behavior, prerequisites, pending physical qualification and future work.
 
-Current product provenance and installation evidence are recorded in `provenance-current.json`. The source-audio follow-up extends the `4584d6b` core; exact installed source is kept separate from unchanged core source anchors. The public release remains **1.4.1**. Atlas documentation commits are separate from the installed product commit. No physical device was changed to build this atlas.
+Current product provenance and installation evidence are recorded in `provenance-current.json`. The source-audio and optional OCR follow-ups extend the `4584d6b` core; exact installed source is kept separate from unchanged core source anchors. The public release remains **1.4.1**. Atlas documentation commits are separate from the installed product commit. No physical device was changed to build this atlas.
 
 ## Contents
 
@@ -47,6 +47,14 @@ Existing Bogen screen pages 01–03 are referenced, not changed by this atlas. T
 
 D23 models saved `audio.mode` (`muted` by default, optional `source`), source-track/AAC admission, silent PNG previews and independently checked AAC exports aligned to the first decoded video timestamp. `demo-audio-delta-state.json` records the installation gate and subsequent canvas mutations. Current provenance changes only after the qualification receipt confirms `desktop_installed: true`; the helper never installs software or calls hardware.
 
-Current audio-delta checks: 981 actual logical nodes, 382 verified links to 56 existing targets and 36 complete PNG exports. `demo-audio-delta-acceptance.json` separates completed checks from the final root review. Historical acceptance and PNGs remain in `history/4584d6b/`. Reconcile new live-tool observations with `tools/audio_acceptance.py`; the helper deliberately leaves final approval to the root reviewer.
+Historical audio-era checks (product `1713806`): 981 actual logical nodes, 382 verified links to 56 existing targets and 36 complete PNG exports. `demo-audio-delta-acceptance.json` separates completed checks from the final root review. Historical acceptance and PNGs remain in `history/4584d6b/`. Reconcile new live-tool observations with `tools/audio_acceptance.py`; the helper deliberately leaves final approval to the root reviewer.
 
 Final root review passed: `final-acceptance.json` and `root-final-review.json` record the current accepted atlas. Historical4584 evidence remains under `history/4584d6b/`.
+
+## Optional OCR follow-up
+
+The installed product is `1caa172`, OCR runtime `e552e6f`. D12 models opt-in `invert:adaptive`, compact `detail:matches`, frozen-input polarity reuse, target/index confidence fallbacks and actual engine/timing accounting. `auto` remains the default and still governs OCR actions, finds, waits and absence checks. Adaptive observations cannot prove absence or uniqueness. The 16-image/20-case optimized local PNG corpus measured a median cold CLI call of 312.79 ms for auto and 275.65 ms for adaptive, with equal labelled target/word recall on this corpus. Device capture, transfer, input latency and competitor products were not measured. The 1,922→699-byte payload observation concerns one compact MCP target query. Full measurement boundaries and raw aggregates are in `../ocr-adaptive-qualification.json`.
+
+The verified/staged ARM package remains `578819b`; no ARM package containing this newer OCR delta has been built or qualified. Pixel remains untouched. `ocr-delta-plan.json` records the installed gate and canvas changes. Historical audio-era acceptance is preserved under `history/1713806/`; current OCR acceptance awaits root review.
+
+Current OCR atlas checks: 33 diagrams, 36 artboards, 1,000 verified actual logical nodes and all 296 operations. All 382 links resolve to 56 exact existing targets. Only the changed 00/D12/S1 PNGs were regenerated; hashes and complete dimensions of all 36 exports were checked. `ocr-delta-acceptance.json` awaits root final review. The pure-document helper `tools/ocr_acceptance.py` reconciles live observations and source/spec/PNG hashes and deliberately leaves that final review gate pending.

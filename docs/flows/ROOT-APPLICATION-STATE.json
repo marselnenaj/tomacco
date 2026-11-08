@@ -1,14 +1,14 @@
 {
-  "phase": "complete",
-  "root_owner": true,
+  "phase": "ready_for_root_final_qa",
+  "root_owner": false,
   "all_new_boards_complete": true,
-  "final_ready": true,
-  "product_source": "1713806db7ef00eda9754bb5bea23cd803179aa0",
-  "runtime_code_commit": "578819be350cc430196fef59a8d07ea91b3c34e4",
+  "final_ready": false,
+  "product_source": "1caa17221161c2dc4c5c6eedb92ed9277772c57a",
+  "runtime_code_commit": "e552e6f643632182dfc8531effd8bc5916c206a3",
   "file_id": "u8uvnj33hx",
   "page_id": "f5zgae58fy",
-  "historical_state": "history/4584d6b/ROOT-APPLICATION-STATE.json",
-  "current_acceptance": "demo-audio-delta-acceptance.json",
+  "historical_state": "history/1713806/ROOT-APPLICATION-STATE.json",
+  "current_acceptance": "ocr-delta-acceptance.json",
   "boards": {
     "D01": {
       "artboard": "zsjsa63us8",
@@ -90,23 +90,23 @@
     "D12": {
       "artboard": "qsrfwt20hy",
       "header": "i6hesxye35",
-      "canvas": "f4mjpa6hdh",
-      "footer": "856jn5n40u",
-      "spec_sha256": "21d31d4cd98327689793f0b54265c77d79014660eb1abb0fa335452d37178af9"
+      "canvas": "r7yrx876s5",
+      "footer": "ex6d22txbm",
+      "spec_sha256": "52017b3e62c570cd2ae62cbb4f27887f5ceddb8f6837085fd5a6fd76f26c64b9"
     },
     "D13": {
       "artboard": "8cndx5g5m2",
       "header": "54f0jw1256",
       "canvas": "g005ec4xz5",
       "footer": "g2hu2czvg7",
-      "spec_sha256": "21d31d4cd98327689793f0b54265c77d79014660eb1abb0fa335452d37178af9"
+      "spec_sha256": "52017b3e62c570cd2ae62cbb4f27887f5ceddb8f6837085fd5a6fd76f26c64b9"
     },
     "D14": {
       "artboard": "rr3tz2x3cn",
       "header": "4qezi4j7wx",
       "canvas": "hgx0yzctyd",
       "footer": "a48mx5dte1",
-      "spec_sha256": "21d31d4cd98327689793f0b54265c77d79014660eb1abb0fa335452d37178af9"
+      "spec_sha256": "52017b3e62c570cd2ae62cbb4f27887f5ceddb8f6837085fd5a6fd76f26c64b9"
     },
     "D15": {
       "artboard": "m7hdtj54wj",
@@ -256,7 +256,5 @@
       "footer": "07mp9afi9a",
       "spec_sha256": "014bbe7e9b9a39f97ff20ba163b4cae1c214991864d54eb8d56895ab4fb13b81"
     }
-  },
-  "root_final_review": "root-final-review.json",
-  "checked_at": "2026-11-08T09:02:11.589977+00:00"
+  }
 }
