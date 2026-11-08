@@ -49,13 +49,19 @@ OpenMP settings are preserved. Cancellation, time/output/memory limits, recyclin
 55-second idle cleanup bound retention; a dispatched failure is not silently retried.
 The warm model uses more resident RAM until cleanup.
 
-The integrated pre-release benchmark measured a median matched new/old elapsed ratio
-of **0.307** for warm fresh-image MCP reads (about 3.26× old/new) and **0.837** for the
-explicit-system CLI route. Across 540 corpus calls, 360 non-timing output comparisons
-matched. These are local PNG measurements, not device, GPU or competitor rankings.
-[Exact benchmark boundaries](performance-final-qualification.json) retain the measured
-catalogue-complete `8614c90` binary and source `2fea917`. These are pre-release
-identities; a version change is not a new timing measurement.
+With the default two-polarity policy, warm fresh-image OCR reads were about **3.2×
+faster than the published 1.4.1 package** in 36 matched pairs across three real app
+crops. All 90 pairs across the default and one-pass policies retained the same word
+text and rectangles, including existing recognition misses. The old package's
+signature and checksum were verified before execution. These are local English-model
+PNG reads under recorded host load, not physical-device or competitor measurements.
+[Public 1.4.1 comparison and exact boundaries](public-v1.4.1-performance.json).
+
+A separate 20-case, 540-call corpus matrix compared the same 1.5.0 CLI with the
+pre-optimization development build. All 360 non-timing output comparisons matched.
+[Full qualification](performance-final-qualification.json) identifies the measured
+`cfad72cd` CLI, candidate `c2e2326` and runtime source `e0b79fe`; later documentation
+commits do not change that recognition code. The warm model uses more resident RAM.
 
 Fresh app, keyboard and focus reads now run together on one WDA session, preserving
 individual errors and ordered input. Delayed loopback results do not establish latency
