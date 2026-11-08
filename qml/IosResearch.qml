@@ -1,7 +1,6 @@
 import QtQuick
 import QtQuick.Controls
 import QtQuick.Layouts
-import QtQuick.Dialogs
 import QtCore
 import "."
 import "AppFiles.js" as AppFiles
@@ -699,7 +698,7 @@ Rectangle {
             }
         }
     }
-    FileDialog {id:engineFile;title:qsTr("Choose iOS emulator");onAccepted:view.enginePath=decodeURIComponent(selectedFile.toString().replace(/^file:\/\//,""))}
-    FolderDialog {id:bundleFolder;title:view.pmpMode?qsTr("Choose prepared firmware package"):qsTr("Choose prepared iOS package");onAccepted:view.setBundle(decodeURIComponent(selectedFolder.toString().replace(/^file:\/\//,"")))}
-    FolderDialog {id:applicationFolder;title:qsTr("Choose app bundle (.app directory)");onAccepted:view.virtualAppPath=decodeURIComponent(selectedFolder.toString().replace(/^file:\/\//,""))}
+    FileChooserDialog {id:engineFile;objectName:"iosEngineFileDialog";mode:"open";title:qsTr("Choose iOS emulator");onAccepted:view.enginePath=selectedPath}
+    FileChooserDialog {id:bundleFolder;objectName:"iosBundleFolderDialog";mode:"folder";title:view.pmpMode?qsTr("Choose prepared firmware package"):qsTr("Choose prepared iOS package");onAccepted:view.setBundle(selectedPath)}
+    FileChooserDialog {id:applicationFolder;objectName:"iosApplicationFolderDialog";mode:"folder";title:qsTr("Choose app bundle (.app directory)");onAccepted:view.virtualAppPath=selectedPath}
 }

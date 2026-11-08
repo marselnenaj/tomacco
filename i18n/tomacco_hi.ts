@@ -7777,4 +7777,27 @@ GNU जनरल पब्लिक लाइसेंस, संस्करण
         <translation>ऊपर वाला फ़ोल्डर</translation>
     </message>
 </context>
+<context>
+    <name>FileChooserDialog</name>
+    <message>
+        <source>%1 already exists. Do you want to replace it?</source>
+        <translation>%1 पहले से मौजूद है। क्या आप इसे बदलना चाहते हैं?</translation>
+    </message>
+    <message>
+        <source>File name</source>
+        <translation>फ़ाइल का नाम</translation>
+    </message>
+    <message>
+        <source>File type</source>
+        <translation>फ़ाइल का प्रकार</translation>
+    </message>
+    <message>
+        <source>No files here</source>
+        <translation>यहाँ कोई फ़ाइल नहीं है</translation>
+    </message>
+    <message>
+        <source>Type or paste a folder path</source>
+        <translation>किसी फ़ोल्डर का पाथ लिखें या पेस्ट करें</translation>
+    </message>
+</context>
 </TS>

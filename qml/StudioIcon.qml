@@ -37,6 +37,7 @@ Canvas {
         case "cards": box(6,6,12,15);line([8,3,16,3]);break
         case "grid": box(2,4,5,16);box(9.5,4,5,16);box(17,4,5,16);break
         case "files": line([3,20,3,4,9.5,4,12,7,21,7,21,20,3,20]);break
+        case "file": line([5,3,14,3,19,8,19,21,5,21,5,3]);line([14,3,14,8,19,8]);break
         case "devices": box(2,4,13,12);line([5,20,12,20]);line([8.5,16,8.5,20]);box(17,9,5,12);break
         case "jobs": line([4,6,20,6]);line([4,12,20,12]);line([4,18,14,18]);fill(17,16,4,4);break
         case "agent": line([8,6,2,12,8,18]);line([16,6,22,12,16,18]);line([14,4,10,20]);break

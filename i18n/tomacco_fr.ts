@@ -7809,4 +7809,27 @@ Sous licence GNU General Public License, version 2 ou ultérieure.</translation>
         <translation>Dossier parent</translation>
     </message>
 </context>
+<context>
+    <name>FileChooserDialog</name>
+    <message>
+        <source>%1 already exists. Do you want to replace it?</source>
+        <translation>%1 existe déjà. Voulez-vous le remplacer ?</translation>
+    </message>
+    <message>
+        <source>File name</source>
+        <translation>Nom du fichier</translation>
+    </message>
+    <message>
+        <source>File type</source>
+        <translation>Type de fichier</translation>
+    </message>
+    <message>
+        <source>No files here</source>
+        <translation>Aucun fichier ici</translation>
+    </message>
+    <message>
+        <source>Type or paste a folder path</source>
+        <translation>Saisissez ou collez le chemin d&apos;un dossier</translation>
+    </message>
+</context>
 </TS>

@@ -7777,4 +7777,27 @@ GNU General Public License, අනුවාදය 2 හෝ පසු අනු�
         <translation>ඉහළ ෆෝල්ඩරය</translation>
     </message>
 </context>
+<context>
+    <name>FileChooserDialog</name>
+    <message>
+        <source>%1 already exists. Do you want to replace it?</source>
+        <translation>%1 දැනටමත් පවතී. එය ප්‍රතිස්ථාපනය කිරීමට ඔබට අවශ්‍යද?</translation>
+    </message>
+    <message>
+        <source>File name</source>
+        <translation>ගොනු නාමය</translation>
+    </message>
+    <message>
+        <source>File type</source>
+        <translation>ගොනු වර්ගය</translation>
+    </message>
+    <message>
+        <source>No files here</source>
+        <translation>මෙහි ගොනු නැත</translation>
+    </message>
+    <message>
+        <source>Type or paste a folder path</source>
+        <translation>ෆෝල්ඩරයක මාර්ගය ඇතුළත් කරන්න හෝ අලවන්න</translation>
+    </message>
+</context>
 </TS>

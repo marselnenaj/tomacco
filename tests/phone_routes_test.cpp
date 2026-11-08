@@ -25,6 +25,7 @@
 #include <QScopeGuard>
 #include <QtTest>
 #include <QtWebEngineQuick/qtwebenginequickglobal.h>
+#include <functional>
 #include <memory>
 
 static const QString longAvd=QStringLiteral("Pixel_9_Pro_XL_API_36_Testgeraet_mit_sehr_langem_Namen");
@@ -413,6 +414,150 @@ private slots:
         noErrors();
     }
 
+    void file_choosers_are_phone_sheets_with_touch_targets_data() {
+        QTest::addColumn<int>("width");QTest::addColumn<int>("height");QTest::addColumn<int>("percent");QTest::addColumn<int>("keyboard");
+        QTest::newRow("320x640-100")<<320<<640<<100<<0;QTest::newRow("360x800-150")<<360<<800<<150<<0;
+        QTest::newRow("393x852-175")<<393<<852<<175<<0;QTest::newRow("412x915-200")<<412<<915<<200<<0;
+        QTest::newRow("393x852-125-keyboard")<<393<<852<<125<<330;QTest::newRow("360x480-150-short")<<360<<480<<150<<0;
+        QTest::newRow("852x393-100-landscape")<<852<<393<<100<<0;QTest::newRow("915x412-150-landscape")<<915<<412<<150<<0;
+    }
+    void file_choosers_are_phone_sheets_with_touch_targets() {
+        // The phone device page's Install and Screenshot open the app's chooser as a sheet over the
+        // phone (Qt's FileDialog fallback was a fixed 600x497 window, wider than the phone). Cancel
+        // installs nothing and saves nothing.
+        QFETCH(int,width);QFETCH(int,height);QFETCH(int,percent);QFETCH(int,keyboard);
+        auto *install=window->findChild<QObject *>("installFileDialog");QVERIFY(install);
+        auto *screenshot=window->findChild<QObject *>("screenshotFileDialog");QVERIFY(screenshot);
+        const auto restore=qScopeGuard([&]{
+            for(auto *d:{install,screenshot}){QMetaObject::invokeMethod(d,"close");if(keyboard)d->setProperty("insetBottom",0);}
+            workspace->setProperty("phoneDevice",QString());
+            QMetaObject::invokeMethod(workspace,"chooseDevicePlatform",Q_ARG(QVariant,QString("android")));
+        });
+        QTemporaryDir root;QVERIFY(root.isValid());
+        const QString base=root.filePath(QString::fromUtf8("Apps mit Leerzeichen #1 · フォルダー"));
+        const QString longApp=QString::fromUtf8("Eine sehr lange App für die Übersetzungsprüfung auf schmalen Telefonen العربية.ipa");
+        QVERIFY(QDir().mkpath(base+"/Unterordner"));
+        for(const auto &name:{longApp,QStringLiteral("app #2 100%.apk"),QStringLiteral("notes.txt")}){QFile f(base+"/"+name);QVERIFY(f.open(QIODevice::WriteOnly));f.write("synthetic");}
+        setSize(width,height,percent);
+        // The phone layout below 600 logical px of width; the chooser is a sheet also in a short window.
+        const bool phone=width<px(600),sheet=phone || height<px(480);
+        QSignalSpy installed(install,SIGNAL(accepted()));QSignalSpy saved(screenshot,SIGNAL(accepted()));
+        const auto button=[&](const QString &text)->QQuickItem *{
+            std::function<QQuickItem *(QQuickItem *)> walk=[&](QQuickItem *i)->QQuickItem *{
+                if(!i->isVisible())return nullptr;
+                if(i->inherits("QQuickAbstractButton") && i->property("text").toString()==text && i->width()>0)return i;
+                for(auto *c:i->childItems())if(auto *f=walk(c))return f;return nullptr;};
+            return walk(window->contentItem());
+        };
+        const auto openFromDevicePage=[&](QObject *dialog,const QString &label) {
+            if(!phone){QVERIFY(QMetaObject::invokeMethod(dialog,"open"));return;}
+            auto *b=button(label);QVERIFY2(b,qPrintable(label));tap(b);
+        };
+        if(phone) {
+            showTab("devices");QVERIFY(QMetaObject::invokeMethod(workspace,"chooseDevicePlatform",Q_ARG(QVariant,QString("ios"))));
+            // The platform's own device list answers first (it would replace the injected phone);
+            // a later background list may still do so, so the phone is put back before each click.
+            const auto listing=[&]{for(const auto &r:mapOf(workspace->property("pending")))if(r.toMap().value("operation").toString()=="device.list")return true;return false;};
+            QTRY_VERIFY_WITH_TIMEOUT(!listing(),10000);
+            for(int attempt=0;attempt<8 && !shown("devicePhoneActions");++attempt) {
+                workspace->setProperty("devices",QVariantList{QVariantMap{{"id","00008110-001A2B3C4D5E6F70"},{"name","iPhone 16 Pro"},{"platform","ios"},{"state","device"}}});
+                QTest::qWait(60);
+                if(auto *row=shown("phoneRow-00008110-001A2B3C4D5E6F70")){reveal(row);QTest::mouseClick(window,Qt::LeftButton,Qt::NoModifier,sceneRect(row).center().toPoint());}
+                QTest::qWait(150);
+            }
+            QTRY_VERIFY(shown("devicePhoneActions"));
+        }
+        // Open: Install IPA.
+        openFromDevicePage(install,"Install IPA");
+        QTRY_VERIFY(install->property("opened").toBool());
+        const auto check=[&](QObject *dialog,const QString &context) {
+            const QString prefix=dialog->objectName();
+            QCOMPARE(dialog->property("sheet").toBool(),sheet);
+            const QRectF box(dialog->property("x").toReal(),dialog->property("y").toReal(),dialog->property("width").toReal(),dialog->property("height").toReal());
+            QVERIFY2(box.left()>=-0.5 && box.top()>=-0.5 && box.right()<=window->width()+0.5 && box.bottom()<=window->height()-keyboard+0.5,
+                qPrintable(QString("%1: %2,%3 %4x%5").arg(context).arg(box.x()).arg(box.y()).arg(box.width()).arg(box.height())));
+            if(sheet)QVERIFY2(qAbs(box.width()-window->width())<1 && qAbs(box.height()-(window->height()-keyboard))<1,qPrintable(context+": a sheet fills the room above the keyboard"));
+            auto *location=shown(prefix+"Location");QVERIFY(location);
+            QCOMPARE(location->property("font").value<QFont>().pixelSize(),px(sheet?16:13));
+            QVERIFY(location->property("contentWidth").toReal()<=location->width()+1);
+            QStringList parts{"Parent","Home","Hidden","-button-0","-button-1","FileName","Filter"};
+            for(const auto &part:parts) {
+                auto *item=any(prefix+part);QVERIFY2(item,qPrintable(prefix+part));
+                reveal(item);QTRY_VERIFY2(item->isVisible(),qPrintable(prefix+part));
+                QVERIFY2(insideWidth(item),qPrintable(context+": "+part+" sticks out"));
+                const auto r=sceneRect(item);
+                QVERIFY2(r.bottom()<=box.bottom()+0.5,qPrintable(context+": "+part+" below the sheet"));
+                if(sheet)touchTarget(item,part=="Parent" || part=="Home" ? item->property("displayText").toString().isEmpty() : false);
+            }
+            // The foot's buttons stay visible above the keyboard without scrolling, each at its natural
+            // width (a label is never squeezed letter by letter or cut).
+            for(const auto &part:{"-button-0","-button-1"}) {
+                auto *b=shown(prefix+part);QVERIFY(sceneRect(b).bottom()<=window->height()-keyboard+0.5);
+                const qreal room=b->parentItem()->width();
+                QVERIFY2(b->width()>=qMin(b->property("naturalWidth").toReal(),room)-1,qPrintable(QString("%1: %2 is %3 of %4 wide").arg(context,part).arg(b->width()).arg(b->property("naturalWidth").toReal())));
+                auto *label=find(b,"studioButtonLabel",true);QVERIFY(label);
+                QVERIFY2(!label->property("truncated").toBool(),qPrintable(context+": "+part+" label is cut"));
+                QVERIFY2(label->property("lineCount").toInt()==1,qPrintable(context+": "+part+" label breaks"));
+            }
+            auto *list=shown(prefix+"Folders");QVERIFY(list);QVERIFY(list->height()>=2*dialog->property("rowHeight").toReal()-1);
+            const auto filter=shown(prefix+"Filter");QVERIFY(filter);
+            auto *label=filter->property("contentItem").value<QQuickItem *>();QVERIFY(!label->property("truncated").toBool());
+            QVERIFY(label->property("contentWidth").toReal()<=label->width()+1);
+        };
+        auto *location=shown("installFileDialogLocation");QVERIFY(location);
+        tap(location);QTRY_VERIFY(location->hasActiveFocus());
+        QTest::keyClick(window,Qt::Key_A,Qt::ControlModifier);
+        {QInputMethodEvent event;event.setCommitString(base);QCoreApplication::sendEvent(QGuiApplication::focusObject(),&event);}
+        QTest::keyClick(window,Qt::Key_Return);
+        QTRY_COMPARE(mapOf(install->property("listing")).value("path").toString(),base);
+        if(keyboard)install->setProperty("insetBottom",keyboard);
+        QTest::qWait(60);
+        check(install,QString("install %1x%2 %3").arg(width).arg(height).arg(percent));
+        // Only apps are listed; every name whole; a tap names the file and chooses nothing.
+        QStringList files;for(const auto &e:mapOf(install->property("listing")).value("files").toList())files<<e.toMap().value("name").toString();
+        QCOMPARE(files,(QStringList{"app #2 100%.apk",longApp}));
+        auto *list=shown("installFileDialogFolders");QVERIFY(list);
+        reveal(list);
+        for(int i=0;i<files.size();++i) {
+            QMetaObject::invokeMethod(list,"positionViewAtIndex",Q_ARG(int,1+i),Q_ARG(int,4));QTest::qWait(40);
+            auto *row=shown(QString("installFileDialogFile-%1").arg(i));QVERIFY(row);
+            if(sheet)touchTarget(row);QVERIFY(insideWidth(row));
+            auto *name=find(row,"fileChooserEntryName",true);QVERIFY(name);
+            QCOMPARE(name->property("text").toString(),files[i]);QVERIFY(!name->property("truncated").toBool());
+            QVERIFY(name->property("contentWidth").toReal()<=name->width()+1);QVERIFY(insideWidth(name));
+        }
+        tap(shown("installFileDialogFile-1"));
+        QTRY_COMPARE(shown("installFileDialogFileName")?shown("installFileDialogFileName")->property("text").toString():any("installFileDialogFileName")->property("text").toString(),longApp);
+        QVERIFY(install->property("visible").toBool());QCOMPARE(installed.count(),0);
+        capture(QString("file-chooser-install%1").arg(keyboard?"-keyboard":""));
+        reveal(shown("installFileDialog-button-1"));tap("installFileDialog-button-1");
+        QTRY_VERIFY(!install->property("visible").toBool());
+        QCOMPARE(installed.count(),0);
+        for(const auto &request:mapOf(workspace->property("pending")))QVERIFY(request.toMap().value("operation").toString()!="device.install");
+        // Save: Screenshot, a typed name; the name field shows above the keyboard.
+        openFromDevicePage(screenshot,"Screenshot");
+        QTRY_VERIFY(screenshot->property("opened").toBool());
+        if(keyboard)screenshot->setProperty("insetBottom",keyboard);
+        auto *name=any("screenshotFileDialogFileName");QVERIFY(name);
+        QTRY_VERIFY(name->hasActiveFocus());
+        QMetaObject::invokeMethod(name,"forceActiveFocus");
+        {QInputMethodEvent event;event.setCommitString(QString::fromUtf8("Bildschirmfoto vom iPhone mit einem langen Namen #3"));QCoreApplication::sendEvent(QGuiApplication::focusObject(),&event);}
+        QTest::qWait(80);
+        QTRY_VERIFY(name->isVisible());
+        {
+            auto *body=any("screenshotFileDialogBody");QVERIFY(body);
+            auto *flick=body->property("contentItem").value<QQuickItem *>();
+            const auto field=sceneRect(name),view=sceneRect(flick);
+            QVERIFY2(field.top()>=view.top()-0.5 && field.bottom()<=view.bottom()+0.5,qPrintable(QString("the focused name %1..%2 is out of the view %3..%4").arg(field.top()).arg(field.bottom()).arg(view.top()).arg(view.bottom())));
+        }
+        capture(QString("file-chooser-screenshot%1").arg(keyboard?"-keyboard":""));
+        check(screenshot,QString("screenshot %1x%2 %3").arg(width).arg(height).arg(percent));
+        QVERIFY(screenshot->property("target").toString().endsWith(QString::fromUtf8("Bildschirmfoto vom iPhone mit einem langen Namen #3")));
+        QTest::keyClick(window,Qt::Key_Escape);QTRY_VERIFY(!screenshot->property("visible").toBool());
+        QCOMPARE(saved.count(),0);
+        for(const auto &request:mapOf(workspace->property("pending")))QVERIFY(request.toMap().value("operation").toString()!="device.screenshot");
+        noErrors();
+    }
     void project_chooser_is_a_phone_sheet_with_touch_targets_data() {
         QTest::addColumn<int>("width");QTest::addColumn<int>("percent");
         QTest::newRow("360-100")<<360<<100;QTest::newRow("360-150")<<360<<150;QTest::newRow("393-125")<<393<<125;

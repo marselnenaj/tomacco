@@ -7789,4 +7789,27 @@ Lisensyado sa ilalim ng GNU General Public License, bersyon 2 o mas bago.</trans
         <translation>Folder sa itaas</translation>
     </message>
 </context>
+<context>
+    <name>FileChooserDialog</name>
+    <message>
+        <source>%1 already exists. Do you want to replace it?</source>
+        <translation>Mayroon nang %1. Gusto mo ba itong palitan?</translation>
+    </message>
+    <message>
+        <source>File name</source>
+        <translation>Pangalan ng file</translation>
+    </message>
+    <message>
+        <source>File type</source>
+        <translation>Uri ng file</translation>
+    </message>
+    <message>
+        <source>No files here</source>
+        <translation>Walang file dito</translation>
+    </message>
+    <message>
+        <source>Type or paste a folder path</source>
+        <translation>I-type o i-paste ang path ng isang folder</translation>
+    </message>
+</context>
 </TS>

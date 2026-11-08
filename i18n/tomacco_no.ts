@@ -7777,4 +7777,27 @@ Lisensiert under GNU General Public License, versjon 2 eller nyere.</translation
         <translation>Overordnet mappe</translation>
     </message>
 </context>
+<context>
+    <name>FileChooserDialog</name>
+    <message>
+        <source>%1 already exists. Do you want to replace it?</source>
+        <translation>%1 finnes allerede. Vil du erstatte den?</translation>
+    </message>
+    <message>
+        <source>File name</source>
+        <translation>Filnavn</translation>
+    </message>
+    <message>
+        <source>File type</source>
+        <translation>Filtype</translation>
+    </message>
+    <message>
+        <source>No files here</source>
+        <translation>Ingen filer her</translation>
+    </message>
+    <message>
+        <source>Type or paste a folder path</source>
+        <translation>Skriv inn eller lim inn banen til en mappe</translation>
+    </message>
+</context>
 </TS>

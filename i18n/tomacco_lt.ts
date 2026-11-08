@@ -7789,4 +7789,27 @@ Licencijuota pagal GNU General Public License 2 ar vėlesnę versiją.</translat
         <translation>Tėvinis aplankas</translation>
     </message>
 </context>
+<context>
+    <name>FileChooserDialog</name>
+    <message>
+        <source>%1 already exists. Do you want to replace it?</source>
+        <translation>%1 jau yra. Ar norite jį pakeisti?</translation>
+    </message>
+    <message>
+        <source>File name</source>
+        <translation>Failo pavadinimas</translation>
+    </message>
+    <message>
+        <source>File type</source>
+        <translation>Failo tipas</translation>
+    </message>
+    <message>
+        <source>No files here</source>
+        <translation>Čia failų nėra</translation>
+    </message>
+    <message>
+        <source>Type or paste a folder path</source>
+        <translation>Įveskite arba įklijuokite aplanko kelią</translation>
+    </message>
+</context>
 </TS>

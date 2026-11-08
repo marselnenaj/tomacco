@@ -1,7 +1,6 @@
 import QtQuick
 import QtQuick.Controls
 import QtQuick.Layouts
-import QtQuick.Dialogs
 import "."
 import "Numbers.js" as Numbers
 
@@ -45,7 +44,6 @@ StudioScrollView {
     readonly property var presetIds: capabilities.presets && capabilities.presets.length ? capabilities.presets.map(p=>typeof p==="string"?p:p.id) : ["portrait-orbit","landscape-orbit","square-float","portrait-still"]
     function clone(value) { return JSON.parse(JSON.stringify(value)) }
     function fileUrl(path) { return "file://"+path.split("/").map(encodeURIComponent).join("/") }
-    function localPath(url) { return decodeURIComponent(url.toString().replace(/^file:\/\//,"")) }
     function call(op,args,context) { const id=workspace.request(op,args,true);requests[id]=Object.assign({generation:generation},context || {});return id }
     function message(text,error) { notice=text;failed=!!error }
     function inspectSource() { if(sourceFile.text.trim())call("demo.media.inspect",{path:sourceFile.text.trim()},{source:sourceFile.text.trim()}) }
@@ -260,11 +258,11 @@ StudioScrollView {
             Caption {visible:!!view.completedOutput;text:view.completedOutput;wrapMode:Text.WrapAnywhere}
         }
     }
-    FileDialog {id:sourceDialog;nameFilters:[qsTr("Videos (*.mp4 *.mov *.mkv *.webm)")];onAccepted:{sourceFile.text=view.localPath(selectedFile);view.inspectSource()}}
-    FileDialog {id:sceneSaveDialog;fileMode:FileDialog.SaveFile;defaultSuffix:"json";nameFilters:[qsTr("Scenes (*.json)")];onAccepted:sceneFile.text=view.localPath(selectedFile)}
-    FileDialog {id:sceneOpenDialog;nameFilters:[qsTr("Scenes (*.json)")];onAccepted:view.openScene(view.localPath(selectedFile))}
-    FileDialog {id:previewDialog;fileMode:FileDialog.SaveFile;defaultSuffix:"png";nameFilters:[qsTr("PNG image (*.png)")];onAccepted:view.render("preview",view.localPath(selectedFile))}
-    FileDialog {id:exportDialog;fileMode:FileDialog.SaveFile;defaultSuffix:"mp4";nameFilters:[qsTr("MP4 video (*.mp4)")];onAccepted:view.render("export",view.localPath(selectedFile))}
+    FileChooserDialog {id:sourceDialog;objectName:"demoSourceDialog";mode:"open";title:qsTr("Choose video");nameFilters:[qsTr("Videos (*.mp4 *.mov *.mkv *.webm)")];onAccepted:{sourceFile.text=selectedPath;view.inspectSource()}}
+    FileChooserDialog {id:sceneSaveDialog;objectName:"demoSceneSaveDialog";mode:"save";title:qsTr("Choose scene path");defaultSuffix:"json";nameFilters:[qsTr("Scenes (*.json)")];onAccepted:sceneFile.text=selectedPath}
+    FileChooserDialog {id:sceneOpenDialog;objectName:"demoSceneOpenDialog";mode:"open";title:qsTr("Open scene");nameFilters:[qsTr("Scenes (*.json)")];onAccepted:view.openScene(selectedPath)}
+    FileChooserDialog {id:previewDialog;objectName:"demoPreviewDialog";mode:"save";title:qsTr("Render preview");defaultSuffix:"png";nameFilters:[qsTr("PNG image (*.png)")];onAccepted:view.render("preview",selectedPath)}
+    FileChooserDialog {id:exportDialog;objectName:"demoExportDialog";mode:"save";title:qsTr("Export MP4");defaultSuffix:"mp4";nameFilters:[qsTr("MP4 video (*.mp4)")];onAccepted:view.render("export",selectedPath)}
     StudioDialog {id:reloadDialog;title:qsTr("Discard unsaved changes?");modal:true;parent:Overlay.overlay;anchors.centerIn:parent;width:Math.min((parent?parent.width:view.width)-Theme.gapLg,Theme.px(480));contentItem:ColumnLayout {
         Caption {text:qsTr("Reload the saved scene and replace your draft. The video source stays unchanged.")}
         Flow {Layout.fillWidth:true;spacing:Theme.gapSm

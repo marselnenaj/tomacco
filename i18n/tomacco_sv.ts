@@ -7801,4 +7801,27 @@ Licensierat under GNU General Public License, version 2 eller senare.</translati
         <translation>Överordnad mapp</translation>
     </message>
 </context>
+<context>
+    <name>FileChooserDialog</name>
+    <message>
+        <source>%1 already exists. Do you want to replace it?</source>
+        <translation>%1 finns redan. Vill du ersätta den?</translation>
+    </message>
+    <message>
+        <source>File name</source>
+        <translation>Filnamn</translation>
+    </message>
+    <message>
+        <source>File type</source>
+        <translation>Filtyp</translation>
+    </message>
+    <message>
+        <source>No files here</source>
+        <translation>Inga filer här</translation>
+    </message>
+    <message>
+        <source>Type or paste a folder path</source>
+        <translation>Skriv eller klistra in sökvägen till en mapp</translation>
+    </message>
+</context>
 </TS>

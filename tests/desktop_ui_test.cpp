@@ -342,6 +342,218 @@ class DesktopUiTest : public QObject {
         }
         QVERIFY2(qmlErrors.isEmpty(),qPrintable(qmlErrors.join('\n')));
     }
+    // The app's file and folder choosers (qml/FileChooserDialog.qml): their parts carry the dialog's object name.
+    QQuickItem *filePart(QObject *dialog,const QString &part) { return visualItem(window->contentItem(),dialog->objectName()+part); }
+    QVariantMap fileListing(QObject *dialog) { return mapOf(dialog->property("listing")); }
+    QStringList fileNames(QObject *dialog,const QString &kind) { QStringList names;for(const auto &entry:fileListing(dialog).value(kind).toList())names<<entry.toMap().value("name").toString();return names; }
+    // A row by name, scrolled into the list's view: folders are Folder-N, the files after them File-N.
+    QQuickItem *fileRow(QObject *dialog,const QString &name) {
+        const auto folders=fileNames(dialog,"folders"),files=fileNames(dialog,"files");
+        int index=folders.indexOf(name);QString part=QString("Folder-%1").arg(index);
+        if(index<0) { const int file=files.indexOf(name);if(file<0)return nullptr;index=folders.size()+file;part=QString("File-%1").arg(file); }
+        QMetaObject::invokeMethod(filePart(dialog,"Folders"),"positionViewAtIndex",Q_ARG(int,index),Q_ARG(int,4));
+        QTest::qWait(30);
+        return filePart(dialog,part);
+    }
+    // Ctrl+L, a typed (or pasted) path and Enter.
+    void fileGo(QObject *dialog,const QString &path) {
+        QTest::keyClick(window,Qt::Key_L,Qt::ControlModifier);
+        QTRY_VERIFY(filePart(dialog,"Location") && filePart(dialog,"Location")->hasActiveFocus());
+        type(path);QTest::keyClick(window,Qt::Key_Return);
+    }
+    // The file name field, emptied and typed into.
+    void typeFileName(QObject *dialog,const QString &name) {
+        auto *field=filePart(dialog,"FileName");QVERIFY(field);
+        // As Tab reaches it: taking the focus scrolls it into view (a short dialog, a phone keyboard).
+        QMetaObject::invokeMethod(field,"forceActiveFocus");QTRY_VERIFY(field->hasActiveFocus());
+        QMetaObject::invokeMethod(field,"selectAll");type(name);
+        QTRY_COMPARE(field->property("text").toString(),name);
+    }
+    // Scrolls every flickable that holds an item so that the item shows in the window, as a person scrolls to it.
+    void scrollTo(QQuickItem *target) {
+        for(auto *p=target->parentItem();p;p=p->parentItem()) {
+            if(!p->inherits("QQuickFlickable"))continue;
+            auto *content=p->property("contentItem").value<QQuickItem *>();
+            const auto r=target->mapRectToItem(content,QRectF(0,0,target->width(),target->height()));
+            const qreal y=p->property("contentY").toReal(),h=p->height();
+            if(r.top()<y || r.bottom()>y+h)p->setProperty("contentY",qBound(0.0,r.center().y()-h/2,qMax(0.0,p->property("contentHeight").toReal()-h)));
+        }
+        QTest::qWait(40);
+    }
+    // A visible button by its label (entry points whose buttons have no object name).
+    QQuickItem *buttonLabelled(QQuickItem *parent,const QString &text) {
+        if(parent->isVisible() && parent->inherits("QQuickAbstractButton") && parent->property("text").toString()==text && parent->width()>0)return parent;
+        if(!parent->isVisible())return nullptr;
+        for(auto *child:parent->childItems())if(auto *found=buttonLabelled(child,text))return found;
+        return nullptr;
+    }
+    // Synthetic files only: spaces, # and %, Unicode and right-to-left names, a long name, a folder, a
+    // hidden file, a text file other filters leave out, a link to a file, a broken link and an unreadable file.
+    struct ChooserFiles { QString base,scene,longScene,arabic,linkName,folder,unreadable,notes; };
+    static ChooserFiles chooserFiles(const QTemporaryDir &root) {
+        ChooserFiles f;
+        f.base=root.filePath(QString::fromUtf8("Dateien mit Leerzeichen #1 %20 · ünïcödé · フォルダー"));
+        QDir().mkpath(f.base);
+        f.folder=QString::fromUtf8("Unterordner mit einem sehr langen Namen für die Übersetzungsprüfung");
+        QDir().mkpath(f.base+"/"+f.folder);
+        f.scene=QString::fromUtf8("Szene #1 mit 100% Leerzeichen.json");
+        f.longScene=QString::fromUtf8("Eine sehr lange Szenendatei für die Übersetzungsprüfung der Anwendung mit Überlänge und noch mehr Text.json");
+        f.arabic=QString::fromUtf8("مشهد تجريبي طويل جدا للتحقق من الاتجاه.json");
+        f.notes=QStringLiteral("notes.txt");
+        f.unreadable=QStringLiteral("locked.json");
+        for(const auto &name:{f.scene,f.longScene,f.arabic,f.notes,QStringLiteral(".versteckt.json"),f.unreadable,QStringLiteral("model.xip"),QStringLiteral("Bundle.app/Info.plist")}) {
+            QDir().mkpath(QFileInfo(f.base+"/"+name).absolutePath());
+            QFile file(f.base+"/"+name);if(file.open(QIODevice::WriteOnly))file.write("{\"synthetic\": true}\n");
+        }
+        QFile::setPermissions(f.base+"/"+f.unreadable,QFile::WriteOwner);
+        f.linkName=QString::fromUtf8("Verknüpfung zur Szene.json");
+        QFile::link(f.base+"/"+f.scene,f.base+"/"+f.linkName);
+        QFile::link(f.base+"/fehlt.json",f.base+"/kaputt.json");
+        return f;
+    }
+    // Everything of an open chooser lies inside the window: the location, the file name and every
+    // entry name whole (wrapped, never cut), the controls at full width without overlapping, text at
+    // the interface size, touch targets on a phone sheet, and no separate window of Qt's fallback.
+    void checkFileChooserLayout(QObject *dialog,int percent,const QString &context) {
+        QTRY_VERIFY2(dialog->property("opened").toBool(),qPrintable(context));
+        for(auto *other:QGuiApplication::topLevelWindows())
+            QVERIFY2(other==window || !other->isVisible() || other->title()!=dialog->property("title").toString(),qPrintable(context+": a separate chooser window "+other->title()));
+        const auto scene=[](QQuickItem *i){return i->mapRectToScene(QRectF(0,0,i->width(),i->height()));};
+        const QRectF frame(0,0,window->width(),window->height());
+        const QRectF box(dialog->property("x").toReal(),dialog->property("y").toReal(),dialog->property("width").toReal(),dialog->property("height").toReal());
+        QVERIFY2(frame.adjusted(-0.5,-0.5,0.5,0.5).contains(box),qPrintable(QString("%1: chooser %2,%3 %4x%5 in %6x%7").arg(context).arg(box.x()).arg(box.y()).arg(box.width()).arg(box.height()).arg(window->width()).arg(window->height())));
+        const bool sheet=dialog->property("sheet").toBool();
+        // A sheet in a narrow or a short window (a phone, also held sideways).
+        QCOMPARE(sheet,window->width()<qRound(600*percent/100.0) || window->height()<qRound(480*percent/100.0));
+        const int body=qRound((sheet?16:13)*percent/100.0);
+        if(sheet)QVERIFY2(qAbs(box.width()-window->width())<1,qPrintable(context+": a phone sheet fills the width"));
+        else QVERIFY2(box.width()>=qMin(760.0*percent/100,window->width()-2.0*qRound(24*percent/100.0))-1,qPrintable(context+": the dialog grows with the interface"));
+        const QString mode=dialog->property("mode").toString();
+        auto *location=filePart(dialog,"Location");QVERIFY(location);
+        QCOMPARE(location->property("font").value<QFont>().pixelSize(),body);
+        QCOMPARE(location->property("text").toString(),fileListing(dialog).value("path").toString());
+        QVERIFY2(location->property("contentWidth").toReal()<=location->width()+1,qPrintable(context+": the location wraps"));
+        QCOMPARE(location->property("effectiveHorizontalAlignment").toInt(),int(Qt::AlignLeft));
+        QList<QQuickItem *> controls{filePart(dialog,"Parent"),filePart(dialog,"Home"),filePart(dialog,"Hidden"),filePart(dialog,"-button-0"),filePart(dialog,"-button-1")};
+        if(mode!="folder")controls<<filePart(dialog,"FileName");
+        if(mode!="folder" && !dialog->property("nameFilters").toStringList().isEmpty())controls<<filePart(dialog,"Filter");
+        auto *scrolling=filePart(dialog,"Body");QVERIFY(scrolling);
+        auto *flick=scrolling->property("contentItem").value<QQuickItem *>();QVERIFY(flick);
+        QVERIFY2(flick->property("contentWidth").toReal()<=flick->width()+0.5,qPrintable(context+": the body scrolls sideways"));
+        const auto bodyScroll=qScopeGuard([&]{flick->setProperty("contentY",0);});
+        // A short dialog scrolls its body (never the foot); each control is reachable in it.
+        const auto bring=[&](QQuickItem *c){
+            const auto r=c->mapRectToItem(flick->property("contentItem").value<QQuickItem *>(),QRectF(0,0,c->width(),c->height()));
+            if(c->objectName().contains("-button-"))return;
+            if(r.top()<flick->property("contentY").toReal() || r.bottom()>flick->property("contentY").toReal()+flick->height())
+                flick->setProperty("contentY",qBound(0.0,r.bottom()-flick->height(),qMax(0.0,flick->property("contentHeight").toReal()-flick->height())));
+        };
+        for(auto *c:controls) {
+            QVERIFY2(c && c->isVisible(),qPrintable(context));
+            bring(c);
+            const auto r=scene(c);
+            QVERIFY2(box.adjusted(-0.5,-0.5,0.5,0.5).contains(r),qPrintable(QString("%1: %2 at %3,%4 %5x%6 outside the chooser").arg(context,c->objectName()).arg(r.x()).arg(r.y()).arg(r.width()).arg(r.height())));
+            if(c->metaObject()->indexOfProperty("displayText")>=0 && !c->property("displayText").toString().isEmpty())
+                QVERIFY2(c->width()+1>=qMin(c->implicitWidth(),c->property("naturalWidth").toReal()) || c->property("wraps").toBool(),qPrintable(context+": "+c->property("text").toString()+" is squeezed"));
+            if(sheet)QVERIFY2(c->height()>=qRound(48*percent/100.0)-0.5,qPrintable(context+": "+c->objectName()+" is no touch target"));
+            QVERIFY2(!accessibleName(c).isEmpty(),qPrintable(context+": "+c->objectName()+" has no name"));
+        }
+        flick->setProperty("contentY",0);QTest::qWait(20);
+        // What shows of each: the body's controls are clipped to its scrolled view, the foot's are not.
+        const auto visible=[&](QQuickItem *c){const auto r=scene(c);return c->objectName().contains("-button-")?r:r.intersected(scene(flick));};
+        for(int a=0;a<controls.size();++a)for(int b=a+1;b<controls.size();++b) {
+            const auto ra=visible(controls[a]),rb=visible(controls[b]);
+            if(ra.isEmpty() || rb.isEmpty())continue;
+            QVERIFY2(!ra.adjusted(1,1,-1,-1).intersects(rb.adjusted(1,1,-1,-1)),qPrintable(context+": "+controls[a]->objectName()+" overlaps "+controls[b]->objectName()));
+        }
+        // The foot's buttons sit inside the window, above its lower edge.
+        for(const auto &part:{"-button-0","-button-1"}) {
+            auto *button=filePart(dialog,part);
+            QVERIFY2(scene(button).bottom()<=box.bottom()+0.5 && scene(button).right()<=box.right()+0.5 && scene(button).left()>=box.left()-0.5,qPrintable(context+": "+part));
+            QVERIFY2(!button->property("text").toString().isEmpty(),qPrintable(context+": "+part+" has no label"));
+            // Never squeezed: its natural width, unless the whole foot is narrower; the label never cut.
+            const qreal room=button->parentItem()->width();
+            QVERIFY2(button->width()>=qMin(button->property("naturalWidth").toReal(),room)-1,qPrintable(QString("%1: %2 is %3 of %4 wide").arg(context,part).arg(button->width()).arg(button->property("naturalWidth").toReal())));
+            auto *label=visualItem(button,"studioButtonLabel");QVERIFY(label);
+            QVERIFY2(!label->property("truncated").toBool(),qPrintable(context+": "+part+" label is cut"));
+        }
+        if(mode!="folder") {
+            auto *name=filePart(dialog,"FileName");
+            QCOMPARE(name->property("font").value<QFont>().pixelSize(),body);
+            QVERIFY2(name->property("contentWidth").toReal()<=name->width()+1,qPrintable(context+": the file name wraps"));
+            QCOMPARE(name->property("effectiveHorizontalAlignment").toInt(),int(Qt::AlignLeft));
+        }
+        if(auto *filter=filePart(dialog,"Filter"); filter && filter->isVisible()) {
+            auto *label=filter->property("contentItem").value<QQuickItem *>();QVERIFY(label);
+            QVERIFY2(!label->property("truncated").toBool() && label->property("contentWidth").toReal()<=label->width()+1,qPrintable(context+": the file type is cut"));
+        }
+        auto *list=filePart(dialog,"Folders");QVERIFY(list);
+        // Scrolled to the list: it shows whole inside the chooser (or fills the scrolled view).
+        {
+            const auto inBody=list->mapRectToItem(flick->property("contentItem").value<QQuickItem *>(),QRectF(0,0,list->width(),list->height()));
+            flick->setProperty("contentY",qBound(0.0,inBody.top(),qMax(0.0,flick->property("contentHeight").toReal()-flick->height())));
+        }
+        QTRY_VERIFY2(box.adjusted(-0.5,-0.5,0.5,0.5).contains(scene(list)) || list->height()>flick->height(),qPrintable(context+": the list is out of reach"));
+        QVERIFY2(scene(list).intersected(scene(flick)).height()>=qMin(list->height(),flick->height())-1,qPrintable(context+": the list is cut"));
+        const auto listRect=scene(list);
+        QVERIFY2(list->height()>=2*dialog->property("rowHeight").toReal()-1,qPrintable(context+": the list keeps room for two rows"));
+        const auto entries=fileListing(dialog).value("folders").toList()+fileListing(dialog).value("files").toList();
+        for(const auto &entry:entries) {
+            const auto item=entry.toMap();
+            auto *row=fileRow(dialog,item.value("name").toString());QVERIFY2(row,qPrintable(context+": no row for "+item.value("name").toString()));
+            const auto rowRect=scene(row);
+            QVERIFY2(rowRect.left()>=listRect.left()-0.5 && rowRect.right()<=listRect.right()+0.5,qPrintable(context+": row sticks out"));
+            QVERIFY(row->height()>=dialog->property("rowHeight").toReal()-0.5);
+            auto *name=visualItem(row,dialog->property("namePrefix").toString()+"Name");QVERIFY(name);
+            QCOMPARE(name->property("text").toString(),item.value("name").toString());
+            QCOMPARE(name->property("textFormat").toInt(),int(Qt::PlainText));
+            QCOMPARE(name->property("font").value<QFont>().pixelSize(),body);
+            QVERIFY2(!name->property("truncated").toBool() && name->property("contentWidth").toReal()<=name->width()+1,qPrintable(context+": cut name "+item.value("name").toString()));
+            QVERIFY2(rowRect.adjusted(-0.5,-0.5,0.5,0.5).contains(scene(name)),qPrintable(context+": name outside its row "+item.value("name").toString()));
+            auto *link=visualItem(row,dialog->property("namePrefix").toString()+"Link");QVERIFY(link);
+            QCOMPARE(link->isVisible(),item.value("link").toBool());
+            if(item.value("link").toBool())QVERIFY(link->property("contentWidth").toReal()<=link->width()+1);
+            if(sheet)QVERIFY2(row->height()>=qRound(48*percent/100.0)-0.5,qPrintable(context+": a row is no touch target"));
+        }
+        QVERIFY2(qmlErrors.isEmpty(),qPrintable(qmlErrors.join('\n')));
+    }
+    // Each of the 23 file and folder entry points outside the project chooser, as its caller declares it.
+    struct ChooserEntry { const char *name; const char *mode; QStringList filters; const char *suffix; };
+    static QList<ChooserEntry> chooserEntries() {
+        return {
+            {"installFileDialog","open",{"Mobile apps (*.apk *.ipa)"},""},{"screenshotFileDialog","save",{"PNG (*.png)"},""},
+            {"scenarioFileDialog","open",{"JSON (*.json)"},""},{"webBuildFolderDialog","folder",{},""},
+            {"profileImportDialog","open",{"Device profiles (*.json)"},""},{"profileExportDialog","save",{"JSON (*.json)"},""},
+            {"iosEngineFileDialog","open",{},""},{"iosBundleFolderDialog","folder",{},""},{"iosApplicationFolderDialog","folder",{},""},
+            {"traceFileDialog","open",{"Perfetto (*.pftrace *.perfetto-trace)"},""},
+            {"routeFileDialog","open",{"GPX route (*.gpx)"},""},{"environmentImportDialog","open",{"QA environment (*.json)"},""},
+            {"environmentExportDialog","save",{"QA environment (*.json)"},"json"},
+            {"demoSourceDialog","open",{"Videos (*.mp4 *.mov *.mkv *.webm)"},""},{"demoSceneSaveDialog","save",{"Scenes (*.json)"},"json"},
+            {"demoSceneOpenDialog","open",{"Scenes (*.json)"},""},{"demoPreviewDialog","save",{"PNG image (*.png)"},"png"},
+            {"demoExportDialog","save",{"MP4 video (*.mp4)"},"mp4"},{"debugProgramDialog","open",{"All files (*)"},""},
+            {"settingsExportDialog","save",{"Tomacco settings (*.json)"},"json"},{"settingsImportDialog","open",{"Tomacco settings (*.json)"},""},
+            {"appleSdkFileDialog","open",{"Xcode archive (*.xip)","All files (*)"},""},{"androidModelFileDialog","open",{"Device profile (*.json)"},""}};
+    }
+    // Builds every page that declares a chooser (they are made when first shown).
+    void buildChooserPages() {
+        for(const auto &tab:{"runtime","debug","testing","profiling","demo","devices"}) { open(tab);QTest::qWait(60); }
+        if(!object("iosResearch")) {
+            // Showing the iOS test system opens its dialog a moment later; it is closed again once open.
+            open("ios-research");QTRY_VERIFY(object("iosResearch") && object("iosResearchDialog"));
+            auto *research=object("iosResearchDialog");
+            QTRY_VERIFY(research->property("visible").toBool());
+            QMetaObject::invokeMethod(research,"close");QTRY_VERIFY(!research->property("visible").toBool());
+        }
+        QVERIFY(QMetaObject::invokeMethod(workspace,"chooseDevicePlatform",Q_ARG(QVariant,QString("android"))));
+        open("runtime");QTest::qWait(60);
+    }
+    // The first shown item whose property has this value.
+    QQuickItem *visualWith(QQuickItem *parent,const char *property,const QString &value) {
+        if(!parent->isVisible())return nullptr;
+        if(parent->property(property).toString()==value)return parent;
+        for(auto *child:parent->childItems())if(auto *found=visualWith(child,property,value))return found;
+        return nullptr;
+    }
 private slots:
     void device_window_pin_reaches_the_compositor_data() {
         QTest::addColumn<bool>("lua");
@@ -4028,6 +4240,393 @@ for line in sys.stdin:
         chooserPart("Folders")->setProperty("contentY",0);
         capture("project-chooser-175-"+code);
         QTest::keyClick(window,Qt::Key_Escape);QTRY_VERIFY(!dialog->property("visible").toBool());
+        QVERIFY2(qmlErrors.isEmpty(),qPrintable(qmlErrors.join('\n')));
+    }
+    void every_file_and_folder_entry_point_uses_the_app_chooser() {
+        // Before: 23 entry points declared QtQuick.Dialogs FileDialog/FolderDialog, whose fallback opened
+        // a separate 600x400 or 600x497 window with 16 px icons at every interface size. Now each
+        // is the app's own chooser with the caller's mode, file types and default suffix.
+        buildChooserPages();
+        // A stock dialog shows in the window's object tree at least through its QFileDialogOptions.
+        QStringList stock;
+        for(auto *child:window->findChildren<QObject *>()) {
+            const QString type=QString::fromLatin1(child->metaObject()->className());
+            if(type.startsWith("FileChooserDialog") || type.startsWith("ProjectFolderDialog"))continue;
+            if(type.contains("FileDialog") || type.contains("FolderDialog") || type.startsWith("QQuickAbstractDialog"))stock<<type+" "+child->objectName();
+        }
+        QVERIFY2(stock.isEmpty(),qPrintable(stock.join(", ")));
+        for(const auto &entry:chooserEntries()) {
+            auto *dialog=object(entry.name);QVERIFY2(dialog,entry.name);
+            QVERIFY2(QString(dialog->metaObject()->className()).startsWith("FileChooserDialog"),entry.name);
+            QCOMPARE(dialog->property("mode").toString(),QString::fromLatin1(entry.mode));
+            QCOMPARE(dialog->property("nameFilters").toStringList(),entry.filters);
+            QCOMPARE(dialog->property("defaultSuffix").toString(),QString::fromLatin1(entry.suffix));
+            QVERIFY2(!dialog->property("title").toString().isEmpty(),entry.name);
+            QVERIFY2(!dialog->property("visible").toBool(),entry.name);
+        }
+        QCOMPARE(window->findChildren<QObject *>("projectFolderDialog").size(),1);
+        QVERIFY2(qmlErrors.isEmpty(),qPrintable(qmlErrors.join('\n')));
+    }
+    void file_choosers_fit_at_every_interface_size_data() {
+        QTest::addColumn<int>("percent");QTest::addColumn<QSize>("size");
+        for(const int percent:{100,125,150,175,200}) {
+            QTest::newRow(qPrintable(QString("%1-1380x970").arg(percent)))<<percent<<QSize(1380,970);
+            QTest::newRow(qPrintable(QString("%1-900x640").arg(percent)))<<percent<<QSize(900,640);
+        }
+    }
+    void file_choosers_fit_at_every_interface_size() {
+        // An open-file, a save and a folder chooser with long Unicode names, at each size and window.
+        QFETCH(int,percent);QFETCH(QSize,size);
+        buildChooserPages();
+        const int previousScale=backend->uiScale();const QSize previousSize=window->size();
+        const auto storedScale=QSettings().value("appearance/uiScale");
+        QTemporaryDir root;QVERIFY(root.isValid());const auto f=chooserFiles(root);
+        const QStringList names{"scenarioFileDialog","settingsExportDialog","webBuildFolderDialog"};
+        const auto restore=qScopeGuard([&]{for(const auto &name:names)QMetaObject::invokeMethod(object(qPrintable(name)),"close");backend->setUiScale(previousScale);if(!storedScale.isValid())QSettings().remove("appearance/uiScale");window->resize(previousSize);});
+        backend->setUiScale(percent);window->resize(size);QTest::qWait(100);window->requestActivate();
+        for(const auto &name:names) {
+            auto *dialog=object(qPrintable(name));QVERIFY(dialog);
+            QVERIFY(QMetaObject::invokeMethod(dialog,"open"));QTRY_VERIFY(dialog->property("opened").toBool());
+            fileGo(dialog,f.base);QTRY_COMPARE(fileListing(dialog).value("path").toString(),f.base);
+            const QString mode=dialog->property("mode").toString();
+            if(mode=="folder")QCOMPARE(fileNames(dialog,"files"),QStringList());
+            else {
+                // Only the file type's files, folders always; no hidden file, no broken link.
+                const auto files=fileNames(dialog,"files");
+                QVERIFY2(files.contains(f.scene) && files.contains(f.longScene) && files.contains(f.arabic) && files.contains(f.linkName),qPrintable(files.join("|")));
+                QVERIFY(!files.contains(f.notes) && !files.contains(".versteckt.json") && !files.contains("kaputt.json") && !files.contains("model.xip"));
+                QVERIFY(fileNames(dialog,"folders").contains(f.folder));
+                typeFileName(dialog,mode=="save"?QString::fromUtf8("Einstellungen für den Rechner im Büro mit einem langen Namen #2"):f.longScene);
+            }
+            checkFileChooserLayout(dialog,percent,QString("%1 %2 %3x%4").arg(name).arg(percent).arg(size.width()).arg(size.height()));
+            if(percent==175 || percent==100 || percent==200)capture(QString("file-chooser-%1-%2-%3x%4").arg(mode).arg(percent).arg(size.width()).arg(size.height()));
+            QSignalSpy accepted(dialog,SIGNAL(accepted()));
+            QTest::keyClick(window,Qt::Key_Escape);QTRY_VERIFY(!dialog->property("visible").toBool());
+            QCOMPARE(accepted.count(),0);
+        }
+        // Merely browsing wrote nothing.
+        QVERIFY(!QFileInfo::exists(f.base+QString::fromUtf8("/Einstellungen für den Rechner im Büro mit einem langen Namen #2.json")));
+        QVERIFY2(qmlErrors.isEmpty(),qPrintable(qmlErrors.join('\n')));
+    }
+    void save_chooser_adds_the_suffix_and_asks_before_replacing() {
+        // The demo's scene path (a save chooser whose choice only fills a field): a new name gets
+        // .json, an existing file is chosen only after Yes, and No or Escape keep everything as it was.
+        buildChooserPages();open("demo");
+        const int previousScale=backend->uiScale();const QSize previousSize=window->size();
+        const auto storedScale=QSettings().value("appearance/uiScale");
+        auto *dialog=object("demoSceneSaveDialog");QVERIFY(dialog);
+        auto *field=item("demoScenePath");QVERIFY(field);
+        const QString before=field->property("text").toString();
+        const auto restore=qScopeGuard([&]{QMetaObject::invokeMethod(dialog,"close");field->setProperty("text",before);backend->setUiScale(previousScale);if(!storedScale.isValid())QSettings().remove("appearance/uiScale");window->resize(previousSize);});
+        QTemporaryDir root;QVERIFY(root.isValid());const auto f=chooserFiles(root);
+        const auto existing=f.base+"/"+f.scene;
+        const auto content=[&]{QFile file(existing);file.open(QIODevice::ReadOnly);return file.readAll();};
+        const QByteArray original=content();
+        backend->setUiScale(175);window->resize(1380,970);QTest::qWait(120);window->requestActivate();
+        QSignalSpy accepted(dialog,SIGNAL(accepted()));
+        // Opened as a person opens it: the page's own button.
+        auto *choose=buttonLabelled(window->contentItem(),"Choose scene path");QVERIFY(choose);scrollTo(choose);clickOn(choose);
+        QTRY_VERIFY(dialog->property("opened").toBool());
+        QCOMPARE(dialog->property("title").toString(),QString("Choose scene path"));
+        QTRY_VERIFY(filePart(dialog,"FileName")->hasActiveFocus());
+        fileGo(dialog,f.base);QTRY_COMPARE(fileListing(dialog).value("path").toString(),f.base);
+        QCOMPARE(filePart(dialog,"Filter")->property("displayText").toString(),QString("Scenes (*.json)"));
+        // A new name: Save adds the suffix and chooses it; nothing is written.
+        typeFileName(dialog,QString::fromUtf8("neue Szene #2 100%"));
+        QCOMPARE(dialog->property("target").toString(),f.base+QString::fromUtf8("/neue Szene #2 100%.json"));
+        QVERIFY(filePart(dialog,"-button-0")->isEnabled());
+        capture("file-chooser-save-new-175");
+        QTest::keyClick(window,Qt::Key_Return);
+        QTRY_VERIFY(!dialog->property("visible").toBool());
+        QCOMPARE(accepted.count(),1);
+        QCOMPARE(field->property("text").toString(),f.base+QString::fromUtf8("/neue Szene #2 100%.json"));
+        QCOMPARE(dialog->property("selectedFile").toUrl(),QUrl::fromLocalFile(f.base+QString::fromUtf8("/neue Szene #2 100%.json")));
+        QVERIFY(dialog->property("selectedFile").toUrl().toString(QUrl::FullyEncoded).contains("%2523")==false);
+        QVERIFY(dialog->property("selectedFile").toUrl().toString(QUrl::FullyEncoded).contains("%23"));
+        QVERIFY(!QFileInfo::exists(f.base+QString::fromUtf8("/neue Szene #2 100%.json")));
+        // It opens again where it was; a name with a dot keeps it as typed.
+        scrollTo(choose);clickOn(choose);QTRY_VERIFY(dialog->property("opened").toBool());
+        QCOMPARE(fileListing(dialog).value("path").toString(),f.base);
+        typeFileName(dialog,"szene.v2");QCOMPARE(dialog->property("target").toString(),f.base+"/szene.v2");
+        // A folder's name enters the folder instead of choosing.
+        typeFileName(dialog,f.folder);clickOn(filePart(dialog,"-button-0"));
+        QTRY_COMPARE(fileListing(dialog).value("path").toString(),f.base+"/"+f.folder);
+        QVERIFY(dialog->property("visible").toBool());QCOMPARE(filePart(dialog,"FileName")->property("text").toString(),QString());
+        QTest::keyClick(window,Qt::Key_Up,Qt::AltModifier);QTRY_COMPARE(fileListing(dialog).value("path").toString(),f.base);
+        // A folder that does not exist cannot take the file, and says so.
+        typeFileName(dialog,QString::fromUtf8("fehlt überall/szene"));
+        QTRY_VERIFY(!filePart(dialog,"-button-0")->isEnabled());
+        auto *problem=filePart(dialog,"Problem");QVERIFY(problem);QTRY_VERIFY(problem->isVisible());
+        QCOMPARE(problem->property("text").toString(),QString("%1 cannot be read.").arg(f.base+QString::fromUtf8("/fehlt überall")));
+        QTest::keyClick(window,Qt::Key_Return,Qt::ControlModifier);QTest::qWait(100);QVERIFY(dialog->property("visible").toBool());
+        // An existing file: clicking its row names it; Save asks first.
+        clickOn(fileRow(dialog,f.scene));
+        QTRY_COMPARE(filePart(dialog,"FileName")->property("text").toString(),f.scene);
+        QVERIFY(dialog->property("visible").toBool());QCOMPARE(accepted.count(),1);
+        auto *question=object(qPrintable(dialog->objectName()+"Replace"));QVERIFY(question);
+        clickOn(filePart(dialog,"-button-0"));
+        QTRY_VERIFY(question->property("opened").toBool());
+        auto *questionText=visualItem(window->contentItem(),dialog->objectName()+"ReplaceText");QVERIFY(questionText);
+        QCOMPARE(questionText->property("text").toString(),QString("%1 already exists. Do you want to replace it?").arg(existing));
+        QVERIFY(questionText->property("contentWidth").toReal()<=questionText->width()+1);
+        {
+            const QRectF q(question->property("x").toReal(),question->property("y").toReal(),question->property("width").toReal(),question->property("height").toReal());
+            QVERIFY(QRectF(0,0,window->width(),window->height()).contains(q));
+        }
+        // DialogButtonBox roles: YesRole 5, NoRole 6 (StudioDialog names its buttons by role).
+        auto *no=visualItem(window->contentItem(),dialog->objectName()+"Replace-button-6");QVERIFY(no);
+        auto *yes=visualItem(window->contentItem(),dialog->objectName()+"Replace-button-5");QVERIFY(yes);
+        QTRY_VERIFY(no->hasActiveFocus());
+        capture("file-chooser-replace-question-175");
+        // Escape closes only the question.
+        QTest::keyClick(window,Qt::Key_Escape);QTRY_VERIFY(!question->property("visible").toBool());
+        QVERIFY(dialog->property("visible").toBool());QCOMPARE(accepted.count(),1);
+        QCOMPARE(field->property("text").toString(),f.base+QString::fromUtf8("/neue Szene #2 100%.json"));
+        // No keeps the chooser too.
+        clickOn(filePart(dialog,"-button-0"));QTRY_VERIFY(question->property("opened").toBool());
+        clickOn(no);QTRY_VERIFY(!question->property("visible").toBool());
+        QVERIFY(dialog->property("visible").toBool());QCOMPARE(accepted.count(),1);
+        QCOMPARE(content(),original);
+        // Yes chooses it; the chooser itself never writes the file.
+        clickOn(filePart(dialog,"-button-0"));QTRY_VERIFY(question->property("opened").toBool());
+        clickOn(yes);QTRY_VERIFY(!dialog->property("visible").toBool());
+        QCOMPARE(accepted.count(),2);
+        QCOMPARE(field->property("text").toString(),existing);
+        QCOMPARE(content(),original);
+        // Cancel and Escape choose nothing.
+        for(const bool escape:{false,true}) {
+            scrollTo(choose);clickOn(choose);QTRY_VERIFY(dialog->property("opened").toBool());
+            typeFileName(dialog,"verworfen");
+            if(escape)QTest::keyClick(window,Qt::Key_Escape);else clickOn(filePart(dialog,"-button-1"));
+            QTRY_VERIFY(!dialog->property("visible").toBool());
+            QCOMPARE(accepted.count(),2);QCOMPARE(field->property("text").toString(),existing);
+        }
+        QVERIFY(!QFileInfo::exists(f.base+"/verworfen.json"));
+        QVERIFY2(qmlErrors.isEmpty(),qPrintable(qmlErrors.join('\n')));
+    }
+    void open_chooser_filters_validates_and_chooses_existing_files() {
+        buildChooserPages();open("testing");
+        const int previousScale=backend->uiScale();const QSize previousSize=window->size();
+        const auto storedScale=QSettings().value("appearance/uiScale");
+        auto *dialog=object("scenarioFileDialog");QVERIFY(dialog);
+        auto *sdk=object("appleSdkFileDialog");QVERIFY(sdk);
+        auto *field=visualWith(window->contentItem(),"placeholderText","JSON scenario");QVERIFY(field);
+        const QString before=field->property("text").toString();
+        const auto restore=qScopeGuard([&]{QMetaObject::invokeMethod(dialog,"close");QMetaObject::invokeMethod(sdk,"close");field->setProperty("text",before);backend->setUiScale(previousScale);if(!storedScale.isValid())QSettings().remove("appearance/uiScale");window->resize(previousSize);});
+        QTemporaryDir root;QVERIFY(root.isValid());const auto f=chooserFiles(root);
+        backend->setUiScale(150);window->resize(1380,970);QTest::qWait(120);window->requestActivate();
+        QSignalSpy accepted(dialog,SIGNAL(accepted()));
+        auto *choose=buttonLabelled(window->contentItem(),"Choose");QVERIFY(choose);scrollTo(choose);clickOn(choose);
+        QTRY_VERIFY(dialog->property("opened").toBool());
+        QTRY_VERIFY(filePart(dialog,"Folders")->hasActiveFocus());
+        fileGo(dialog,f.base);QTRY_COMPARE(fileListing(dialog).value("path").toString(),f.base);
+        // Nothing is chosen yet; highlighting a file with the keys names it, still without choosing.
+        QVERIFY(!filePart(dialog,"-button-0")->isEnabled());
+        QVERIFY(QMetaObject::invokeMethod(filePart(dialog,"Folders"),"forceActiveFocus"));
+        const auto rows=fileNames(dialog,"folders")+fileNames(dialog,"files");
+        filePart(dialog,"Folders")->setProperty("currentIndex",0);
+        while(filePart(dialog,"Folders")->property("currentIndex").toInt()<fileNames(dialog,"folders").size())QTest::keyClick(window,Qt::Key_Down);
+        QTRY_COMPARE(filePart(dialog,"FileName")->property("text").toString(),rows.value(fileNames(dialog,"folders").size()));
+        QVERIFY(filePart(dialog,"-button-0")->isEnabled());QCOMPARE(accepted.count(),0);QVERIFY(dialog->property("visible").toBool());
+        // An unreadable file cannot be opened, and says so.
+        typeFileName(dialog,f.unreadable);
+        if(!QFileInfo(f.base+"/"+f.unreadable).isReadable()) {
+            QTRY_VERIFY(!filePart(dialog,"-button-0")->isEnabled());
+            QTRY_VERIFY(filePart(dialog,"Problem")->isVisible());
+            QCOMPARE(filePart(dialog,"Problem")->property("text").toString(),QString("%1 cannot be read.").arg(f.base+"/"+f.unreadable));
+        }
+        // A missing name chooses nothing; a whole pasted path of a file is shown in its folder and named.
+        typeFileName(dialog,"fehlt.json");QTRY_VERIFY(!filePart(dialog,"-button-0")->isEnabled());
+        fileGo(dialog,f.base+"/"+f.folder);QTRY_COMPARE(fileListing(dialog).value("path").toString(),f.base+"/"+f.folder);
+        fileGo(dialog,f.base+"/"+f.scene);
+        QTRY_COMPARE(fileListing(dialog).value("path").toString(),f.base);
+        QCOMPARE(filePart(dialog,"FileName")->property("text").toString(),f.scene);
+        // A link to a file names its target and is chosen as the link (as Qt's dialogs did).
+        auto *linkRow=fileRow(dialog,f.linkName);QVERIFY(linkRow);
+        QCOMPARE(visualItem(linkRow,"fileChooserEntryLink")->property("text").toString(),QString::fromUtf8("→ ")+QFileInfo(f.base+"/"+f.scene).canonicalFilePath());
+        // A double click on a file opens it: # and % and Unicode reach the field as the plain path.
+        const auto row=fileRow(dialog,f.scene);QVERIFY(row);
+        QTest::mouseDClick(window,Qt::LeftButton,Qt::NoModifier,row->mapToScene(QPointF(row->width()/2,row->height()/2)).toPoint());
+        QTRY_VERIFY(!dialog->property("visible").toBool());
+        QCOMPARE(accepted.count(),1);
+        QCOMPARE(field->property("text").toString(),f.base+"/"+f.scene);
+        // Enter on a highlighted file opens it; the link stays the link. The listing made while
+        // opening already keeps to the file type.
+        scrollTo(choose);clickOn(choose);QTRY_VERIFY(dialog->property("opened").toBool());
+        QCOMPARE(fileListing(dialog).value("path").toString(),f.base);
+        QCOMPARE(fileNames(dialog,"files"),rows.mid(fileNames(dialog,"folders").size()));
+        QVERIFY(!fileNames(dialog,"files").contains(f.notes));
+        QVERIFY(QMetaObject::invokeMethod(filePart(dialog,"Folders"),"forceActiveFocus"));
+        filePart(dialog,"Folders")->setProperty("currentIndex",rows.indexOf(f.linkName));
+        QTRY_COMPARE(filePart(dialog,"FileName")->property("text").toString(),f.linkName);
+        QTest::keyClick(window,Qt::Key_Return);QTRY_VERIFY(!dialog->property("visible").toBool());
+        QCOMPARE(accepted.count(),2);QCOMPARE(field->property("text").toString(),f.base+"/"+f.linkName);
+        // Enter on a folder enters it; a click on a folder too; Cancel chooses nothing.
+        scrollTo(choose);clickOn(choose);QTRY_VERIFY(dialog->property("opened").toBool());
+        clickOn(fileRow(dialog,f.folder));QTRY_COMPARE(fileListing(dialog).value("path").toString(),f.base+"/"+f.folder);
+        QTRY_VERIFY(filePart(dialog,"Status")->isVisible());QCOMPARE(filePart(dialog,"Status")->property("text").toString(),QString("No files here"));
+        clickOn(filePart(dialog,"-button-1"));QTRY_VERIFY(!dialog->property("visible").toBool());
+        QCOMPARE(accepted.count(),2);
+        // Switching the file type lists other files; Cancel requests no SDK import.
+        QSignalSpy sdkAccepted(sdk,SIGNAL(accepted()));
+        QVERIFY(QMetaObject::invokeMethod(sdk,"open"));QTRY_VERIFY(sdk->property("opened").toBool());
+        fileGo(sdk,f.base);QTRY_COMPARE(fileListing(sdk).value("path").toString(),f.base);
+        QCOMPARE(fileNames(sdk,"files"),QStringList{"model.xip"});
+        auto *filter=filePart(sdk,"Filter");QVERIFY(filter);QCOMPARE(filter->property("count").toInt(),2);
+        clickOn(filter);QTRY_VERIFY(filter->property("popup").value<QObject *>()->property("opened").toBool());
+        QTest::keyClick(window,Qt::Key_Down);QTest::keyClick(window,Qt::Key_Return);
+        QTRY_COMPARE(filter->property("currentIndex").toInt(),1);
+        QTRY_VERIFY(fileNames(sdk,"files").contains(f.notes));
+        QVERIFY(fileNames(sdk,"files").contains("model.xip") && fileNames(sdk,"files").contains(f.scene));
+        checkFileChooserLayout(sdk,150,"Apple SDK 150 %");
+        capture("file-chooser-open-filter-150");
+        typeFileName(sdk,"model.xip");QVERIFY(filePart(sdk,"-button-0")->isEnabled());
+        auto *native=object("nativeWorkspace");QVERIFY(native);
+        const auto requestsBefore=mapOf(native->property("requests")).keys();
+        QTest::keyClick(window,Qt::Key_Escape);QTRY_VERIFY(!sdk->property("visible").toBool());
+        QTest::qWait(patient(200));
+        QCOMPARE(sdkAccepted.count(),0);
+        for(const auto &request:mapOf(native->property("requests")))QVERIFY(request.toMap().value("op").toString()!="ios.sdk_install");
+        Q_UNUSED(requestsBefore);
+        // The chosen file type stays for the next opening.
+        QVERIFY(QMetaObject::invokeMethod(sdk,"open"));QTRY_VERIFY(sdk->property("opened").toBool());
+        QCOMPARE(filePart(sdk,"Filter")->property("currentIndex").toInt(),1);
+        QTest::keyClick(window,Qt::Key_Escape);QTRY_VERIFY(!sdk->property("visible").toBool());
+        sdk->setProperty("filterIndex",0);
+        QVERIFY2(qmlErrors.isEmpty(),qPrintable(qmlErrors.join('\n')));
+    }
+    void folder_chooser_chooses_the_folder_it_shows() {
+        buildChooserPages();
+        auto *research=object("iosResearch");QVERIFY(research);
+        auto *dialog=object("iosApplicationFolderDialog");QVERIFY(dialog);
+        auto *web=object("webBuildFolderDialog");QVERIFY(web);
+        const QString before=research->property("virtualAppPath").toString();
+        const auto restore=qScopeGuard([&]{QMetaObject::invokeMethod(dialog,"close");QMetaObject::invokeMethod(web,"close");research->setProperty("virtualAppPath",before);window->resize(1380,970);});
+        QTemporaryDir root;QVERIFY(root.isValid());const auto f=chooserFiles(root);
+        QVERIFY(QFile::link(f.base,root.filePath("Verknüpfter Ordner")));
+        window->resize(1380,970);QTest::qWait(80);window->requestActivate();
+        QSignalSpy accepted(dialog,SIGNAL(accepted()));
+        QVERIFY(QMetaObject::invokeMethod(dialog,"open"));QTRY_VERIFY(dialog->property("opened").toBool());
+        // Through a linked folder: the path as browsed, not resolved.
+        fileGo(dialog,root.filePath("Verknüpfter Ordner"));QTRY_COMPARE(fileListing(dialog).value("path").toString(),root.filePath("Verknüpfter Ordner"));
+        QCOMPARE(fileNames(dialog,"files"),QStringList());
+        QVERIFY(fileNames(dialog,"folders").contains("Bundle.app"));
+        // A file is no folder: the location says so and Open is off.
+        fileGo(dialog,root.filePath("Verknüpfter Ordner/")+f.notes);
+        QTRY_VERIFY(filePart(dialog,"Status")->isVisible());QVERIFY(!filePart(dialog,"-button-0")->isEnabled());
+        fileGo(dialog,root.filePath("Verknüpfter Ordner"));
+        clickOn(fileRow(dialog,"Bundle.app"));
+        QTRY_COMPARE(fileListing(dialog).value("path").toString(),root.filePath("Verknüpfter Ordner/Bundle.app"));
+        QCOMPARE(accepted.count(),0);QVERIFY(dialog->property("visible").toBool());
+        QVERIFY(filePart(dialog,"-button-0")->isEnabled());
+        clickOn(filePart(dialog,"-button-0"));QTRY_VERIFY(!dialog->property("visible").toBool());
+        QCOMPARE(accepted.count(),1);
+        QCOMPARE(research->property("virtualAppPath").toString(),root.filePath("Verknüpfter Ordner/Bundle.app"));
+        QCOMPARE(dialog->property("selectedFolder").toUrl(),QUrl::fromLocalFile(root.filePath("Verknüpfter Ordner/Bundle.app")));
+        // The web build chooser: Escape leaves the browser where it was.
+        auto *browser=object("phoneBrowser");
+        const auto url=browser?browser->property("url").toUrl():QUrl();
+        QSignalSpy webAccepted(web,SIGNAL(accepted()));
+        QVERIFY(QMetaObject::invokeMethod(web,"open"));QTRY_VERIFY(web->property("opened").toBool());
+        fileGo(web,f.base+"/"+f.folder);QTRY_COMPARE(fileListing(web).value("path").toString(),f.base+"/"+f.folder);
+        QVERIFY(filePart(web,"-button-0")->isEnabled());
+        checkFileChooserLayout(web,backend->uiScale(),"web build");
+        QTest::keyClick(window,Qt::Key_Escape);QTRY_VERIFY(!web->property("visible").toBool());
+        QCOMPARE(webAccepted.count(),0);
+        if(browser)QCOMPARE(browser->property("url").toUrl(),url);
+        QVERIFY2(qmlErrors.isEmpty(),qPrintable(qmlErrors.join('\n')));
+    }
+    void choosers_that_start_an_operation_dispatch_nothing_on_cancel() {
+        // Install, screenshot, imports, exports, renders and the iOS package: a choice made ready
+        // and then cancelled (button or Escape) emits no accepted and requests no operation.
+        buildChooserPages();
+        QTemporaryDir root;QVERIFY(root.isValid());const auto f=chooserFiles(root);
+        auto *native=object("nativeWorkspace");QVERIFY(native);
+        QSignalSpy replies(control.get(),&Control::apiFinished);
+        const QStringList operations{"device.install","device.screenshot","catalog.import","catalog.export","ios.sdk_install","demo.media.inspect","demo.render","demo.scene.open","environment.import","environment.export","location.route"};
+        const QStringList names{"installFileDialog","screenshotFileDialog","profileImportDialog","profileExportDialog","settingsExportDialog","settingsImportDialog",
+            "appleSdkFileDialog","androidModelFileDialog","environmentImportDialog","environmentExportDialog","routeFileDialog","demoSourceDialog",
+            "demoSceneOpenDialog","demoPreviewDialog","demoExportDialog","iosBundleFolderDialog","iosEngineFileDialog","webBuildFolderDialog"};
+        window->resize(1380,970);QTest::qWait(60);window->requestActivate();
+        int index=0;
+        for(const auto &name:names) {
+            auto *dialog=object(qPrintable(name));QVERIFY2(dialog,qPrintable(name));
+            const auto close=qScopeGuard([&]{QMetaObject::invokeMethod(dialog,"close");});
+            QSignalSpy accepted(dialog,SIGNAL(accepted()));QSignalSpy rejected(dialog,SIGNAL(rejected()));
+            QVERIFY(QMetaObject::invokeMethod(dialog,"open"));QTRY_VERIFY2(dialog->property("opened").toBool(),qPrintable(name));
+            fileGo(dialog,f.base);QTRY_COMPARE(fileListing(dialog).value("path").toString(),f.base);
+            const QString mode=dialog->property("mode").toString();
+            if(mode!="folder")typeFileName(dialog,mode=="save"?QString("bereit"):f.scene);
+            else fileGo(dialog,f.base+"/Bundle.app");
+            QTRY_VERIFY2(filePart(dialog,"-button-0")->isEnabled(),qPrintable(name+": a choice is ready"));
+            if(index++%2)QTest::keyClick(window,Qt::Key_Escape);else clickOn(filePart(dialog,"-button-1"));
+            QTRY_VERIFY(!dialog->property("visible").toBool());
+            QCOMPARE(accepted.count(),0);QCOMPARE(rejected.count(),1);
+            QCOMPARE(dialog->property("selectedPath").toString(),QString());
+        }
+        QTest::qWait(patient(300));
+        for(const auto &reply:replies)QVERIFY2(!operations.contains(reply.value(1).toString()),qPrintable(reply.value(1).toString()));
+        for(const auto &request:mapOf(workspace->property("pending")))QVERIFY(!operations.contains(request.toMap().value("operation").toString()));
+        for(const auto &request:mapOf(native->property("requests")))QVERIFY(!operations.contains(request.toMap().value("op").toString()));
+        QVERIFY(!QFileInfo::exists(f.base+"/bereit") && !QFileInfo::exists(f.base+"/bereit.json") && !QFileInfo::exists(f.base+"/bereit.png") && !QFileInfo::exists(f.base+"/bereit.mp4"));
+        QVERIFY2(qmlErrors.isEmpty(),qPrintable(qmlErrors.join('\n')));
+    }
+    void file_chooser_reads_in_german_arabic_and_japanese_data() {
+        QTest::addColumn<QString>("code");QTest::addColumn<bool>("rightToLeft");
+        QTest::newRow("de")<<"de"<<false;QTest::newRow("ar")<<"ar"<<true;QTest::newRow("ja")<<"ja"<<false;
+    }
+    void file_chooser_reads_in_german_arabic_and_japanese() {
+        QFETCH(QString,code);QFETCH(bool,rightToLeft);
+        buildChooserPages();
+        auto *dialog=object("settingsExportDialog");QVERIFY(dialog);
+        const int previousScale=backend->uiScale();const QSize previousSize=window->size();
+        const auto storedScale=QSettings().value("appearance/uiScale");
+        QSignalSpy accepted(dialog,SIGNAL(accepted()));
+        const auto restore=qScopeGuard([&]{QMetaObject::invokeMethod(object("settingsExportDialogReplace"),"close");QMetaObject::invokeMethod(dialog,"close");backend->setLanguage("en");backend->setUiScale(previousScale);if(!storedScale.isValid())QSettings().remove("appearance/uiScale");window->resize(previousSize);});
+        QTemporaryDir root;QVERIFY(root.isValid());const auto f=chooserFiles(root);
+        {QFile settings(f.base+QString::fromUtf8("/Einstellungen.json"));QVERIFY(settings.open(QIODevice::WriteOnly));settings.write("{}\n");}
+        backend->setLanguage(code);backend->setUiScale(175);window->resize(1380,970);QTest::qWait(150);window->requestActivate();
+        QVERIFY(QMetaObject::invokeMethod(dialog,"open"));QTRY_VERIFY(dialog->property("opened").toBool());
+        QCOMPARE(dialog->property("title").toString(),QCoreApplication::translate("NativeWorkspace","Export settings"));
+        for(const auto &[part,context,source]:{std::tuple{"FileNameLabel","FileChooserDialog","File name"},{"-button-0","StudioDialog","Save"},{"-button-1","StudioDialog","Cancel"},{"Parent","ProjectFolderDialog","Parent folder"}}) {
+            const auto shown=filePart(dialog,part)->property("text").toString();
+            QCOMPARE(shown,QCoreApplication::translate(context,source));
+            QVERIFY2(shown!=QString::fromLatin1(source),qPrintable(code+" has no translation of "+source));
+        }
+        QCOMPARE(filePart(dialog,"Location")->property("placeholderText").toString(),QCoreApplication::translate("FileChooserDialog","Type or paste a folder path"));
+        QCOMPARE(accessibleName(filePart(dialog,"Filter")),QCoreApplication::translate("FileChooserDialog","File type"));
+        fileGo(dialog,f.base);QTRY_COMPARE(fileListing(dialog).value("path").toString(),f.base);
+        typeFileName(dialog,QString::fromUtf8("Einstellungen"));
+        QCOMPARE(dialog->property("target").toString(),f.base+QString::fromUtf8("/Einstellungen.json"));
+        checkFileChooserLayout(dialog,175,code+" 175 %");
+        const auto parentX=filePart(dialog,"Parent")->mapToScene(QPointF(0,0)).x(),homeX=filePart(dialog,"Home")->mapToScene(QPointF(0,0)).x();
+        QVERIFY2(rightToLeft?parentX>homeX:parentX<homeX,qPrintable(code));
+        const auto saveX=filePart(dialog,"-button-0")->mapToScene(QPointF(0,0)).x(),cancelX=filePart(dialog,"-button-1")->mapToScene(QPointF(0,0)).x();
+        QVERIFY2(rightToLeft?saveX<cancelX:saveX>cancelX,qPrintable(code));
+        // Every name starts beside its icon, whatever its own direction; a file type's wildcards read left to right.
+        for(const auto &name:{f.scene,f.arabic}) {
+            auto *row=fileRow(dialog,name);QVERIFY(row);
+            QCOMPARE(visualItem(row,"fileChooserEntryName")->property("effectiveHorizontalAlignment").toInt(),int(rightToLeft?Qt::AlignRight:Qt::AlignLeft));
+        }
+        auto *filterLabel=filePart(dialog,"Filter")->property("contentItem").value<QQuickItem *>();
+        QCOMPARE(filterLabel->property("text").toString().contains(QChar(0x2066)),rightToLeft);
+        QVERIFY(filterLabel->property("text").toString().contains("*.json"));
+        capture("file-chooser-save-175-"+code);
+        // The replace question in the language, the path isolated in a right-to-left sentence; No leaves the file.
+        clickOn(filePart(dialog,"-button-0"));
+        auto *question=object("settingsExportDialogReplace");QVERIFY(question);QTRY_VERIFY(question->property("opened").toBool());
+        const auto path=f.base+QString::fromUtf8("/Einstellungen.json");
+        const auto expected=QCoreApplication::translate("FileChooserDialog","%1 already exists. Do you want to replace it?").arg(rightToLeft?QString(QChar(0x2066))+path+QChar(0x2069):path);
+        auto *text=visualItem(window->contentItem(),"settingsExportDialogReplaceText");QVERIFY(text);
+        QCOMPARE(text->property("text").toString(),expected);
+        QVERIFY(expected!=QString("%1 already exists. Do you want to replace it?").arg(path));
+        QVERIFY(text->property("contentWidth").toReal()<=text->width()+1);
+        capture("file-chooser-replace-175-"+code);
+        QTest::keyClick(window,Qt::Key_Escape);QTRY_VERIFY(!question->property("visible").toBool());
+        QVERIFY(dialog->property("visible").toBool());
+        QTest::keyClick(window,Qt::Key_Escape);QTRY_VERIFY(!dialog->property("visible").toBool());
+        QCOMPARE(accepted.count(),0);
+        {QFile settings(path);QVERIFY(settings.open(QIODevice::ReadOnly));QCOMPARE(settings.readAll(),QByteArray("{}\n"));}
         QVERIFY2(qmlErrors.isEmpty(),qPrintable(qmlErrors.join('\n')));
     }
     void a_project_folder_dropped_on_the_window_opens() {

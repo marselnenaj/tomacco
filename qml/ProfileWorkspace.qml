@@ -2,7 +2,6 @@ import QtQuick
 import "."
 import QtQuick.Controls
 import QtQuick.Layouts
-import QtQuick.Dialogs
 StudioScrollView {
     // The form keeps clear of the overlay scroll bar at the right edge.
     clip: true; rightPadding: Theme.gapMd; contentWidth: availableWidth
@@ -61,5 +60,5 @@ StudioScrollView {
     }
     StudioCodeView { Layout.fillWidth: true; Layout.preferredHeight: Theme.px(180); visible: !!text; text: view.comparison || view.report.threads_csv || "" }
     }
-    FileDialog { id: traceDialog; nameFilters: ["Perfetto (*.pftrace *.perfetto-trace)"]; onAccepted: trace.text=decodeURIComponent(selectedFile.toString().replace(/^file:\/\//,"")) }
+    FileChooserDialog { id: traceDialog; objectName: "traceFileDialog"; mode: "open"; title: qsTr("Choose file"); nameFilters: ["Perfetto (*.pftrace *.perfetto-trace)"]; onAccepted: trace.text=selectedPath }
 }

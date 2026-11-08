@@ -7777,4 +7777,27 @@ GNU جنرل پبلک لائسنس، ورژن 2 یا اس کے بعد کے تح�
         <translation>اوپر والا فولڈر</translation>
     </message>
 </context>
+<context>
+    <name>FileChooserDialog</name>
+    <message>
+        <source>%1 already exists. Do you want to replace it?</source>
+        <translation>%1 پہلے سے موجود ہے۔ کیا آپ اسے تبدیل کرنا چاہتے ہیں؟</translation>
+    </message>
+    <message>
+        <source>File name</source>
+        <translation>فائل کا نام</translation>
+    </message>
+    <message>
+        <source>File type</source>
+        <translation>فائل کی قسم</translation>
+    </message>
+    <message>
+        <source>No files here</source>
+        <translation>یہاں کوئی فائل نہیں</translation>
+    </message>
+    <message>
+        <source>Type or paste a folder path</source>
+        <translation>کسی فولڈر کا پاتھ ٹائپ یا پیسٹ کریں</translation>
+    </message>
+</context>
 </TS>

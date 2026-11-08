@@ -7777,4 +7777,27 @@ GNU General Public License, 2-versiya yoki undan keyingi versiya asosida litsenz
         <translation>Yuqori jild</translation>
     </message>
 </context>
+<context>
+    <name>FileChooserDialog</name>
+    <message>
+        <source>%1 already exists. Do you want to replace it?</source>
+        <translation>%1 allaqachon mavjud. Uni almashtirmoqchimisiz?</translation>
+    </message>
+    <message>
+        <source>File name</source>
+        <translation>Fayl nomi</translation>
+    </message>
+    <message>
+        <source>File type</source>
+        <translation>Fayl turi</translation>
+    </message>
+    <message>
+        <source>No files here</source>
+        <translation>Bu yerda fayllar yoʻq</translation>
+    </message>
+    <message>
+        <source>Type or paste a folder path</source>
+        <translation>Jild yoʻlini kiriting yoki joylang</translation>
+    </message>
+</context>
 </TS>

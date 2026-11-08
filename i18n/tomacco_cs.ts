@@ -7789,4 +7789,27 @@ Licencováno pod GNU General Public License, verze 2 nebo novejší.</translatio
         <translation>Nadřazená složka</translation>
     </message>
 </context>
+<context>
+    <name>FileChooserDialog</name>
+    <message>
+        <source>%1 already exists. Do you want to replace it?</source>
+        <translation>%1 již existuje. Chcete ho nahradit?</translation>
+    </message>
+    <message>
+        <source>File name</source>
+        <translation>Název souboru</translation>
+    </message>
+    <message>
+        <source>File type</source>
+        <translation>Typ souboru</translation>
+    </message>
+    <message>
+        <source>No files here</source>
+        <translation>Nejsou zde žádné soubory</translation>
+    </message>
+    <message>
+        <source>Type or paste a folder path</source>
+        <translation>Zadejte nebo vložte cestu ke složce</translation>
+    </message>
+</context>
 </TS>

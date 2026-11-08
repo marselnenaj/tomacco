@@ -7777,4 +7777,27 @@ Licensed under the GNU General Public License, version 2 or later.</source>
         <translation>תיקיית האב</translation>
     </message>
 </context>
+<context>
+    <name>FileChooserDialog</name>
+    <message>
+        <source>%1 already exists. Do you want to replace it?</source>
+        <translation>%1 כבר קיים. להחליף אותו?</translation>
+    </message>
+    <message>
+        <source>File name</source>
+        <translation>שם הקובץ</translation>
+    </message>
+    <message>
+        <source>File type</source>
+        <translation>סוג הקובץ</translation>
+    </message>
+    <message>
+        <source>No files here</source>
+        <translation>אין כאן קבצים</translation>
+    </message>
+    <message>
+        <source>Type or paste a folder path</source>
+        <translation>הקלידו או הדביקו נתיב של תיקייה</translation>
+    </message>
+</context>
 </TS>

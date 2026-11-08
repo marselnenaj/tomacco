@@ -1,7 +1,6 @@
 import QtQuick
 import QtQuick.Controls
 import QtQuick.Layouts
-import QtQuick.Dialogs
 import "."
 
 StudioScrollView {
@@ -244,5 +243,5 @@ StudioScrollView {
         StudioButton { visible:view.active;text:(view.showEvents?qsTr("Hide events"):qsTr("Show events"))+" · "+view.cursor;quiet:true;onClicked:view.showEvents=!view.showEvents }
         StudioCodeView { Layout.fillWidth:true;Layout.preferredHeight:Theme.px(140);visible:view.showEvents;text:view.events || qsTr("No debugger events yet.") }
     }
-    FileDialog { id:programDialog;title:view.nativeAndroid?qsTr("Choose library with debug symbols"):qsTr("Choose debug program");nameFilters:view.nativeAndroid?[qsTr("Android libraries (*.so)"),qsTr("All files (*)")]:[qsTr("All files (*)")];onAccepted:program.text=decodeURIComponent(selectedFile.toString().replace(/^file:\/\//,"")) }
+    FileChooserDialog { id:programDialog;objectName:"debugProgramDialog";mode:"open";title:view.nativeAndroid?qsTr("Choose library with debug symbols"):qsTr("Choose debug program");nameFilters:view.nativeAndroid?[qsTr("Android libraries (*.so)"),qsTr("All files (*)")]:[qsTr("All files (*)")];onAccepted:program.text=selectedPath }
 }

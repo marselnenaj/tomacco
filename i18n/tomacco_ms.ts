@@ -7765,4 +7765,27 @@ Dilesenkan di bawah GNU General Public License, versi 2 atau lebih baharu.</tran
         <translation>Folder induk</translation>
     </message>
 </context>
+<context>
+    <name>FileChooserDialog</name>
+    <message>
+        <source>%1 already exists. Do you want to replace it?</source>
+        <translation>%1 sudah wujud. Gantikannya?</translation>
+    </message>
+    <message>
+        <source>File name</source>
+        <translation>Nama fail</translation>
+    </message>
+    <message>
+        <source>File type</source>
+        <translation>Jenis fail</translation>
+    </message>
+    <message>
+        <source>No files here</source>
+        <translation>Tiada fail di sini</translation>
+    </message>
+    <message>
+        <source>Type or paste a folder path</source>
+        <translation>Taip atau tampal laluan folder</translation>
+    </message>
+</context>
 </TS>

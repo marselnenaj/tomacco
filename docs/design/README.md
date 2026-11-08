@@ -89,3 +89,24 @@ Xcode-Projekt importieren · Liest ein .xcodeproj und legt die Tomacco-Konfigura
 Artboard `f9343218ev` auf Seite `pvcps58bsa` zeigt die gebaute App (Qt offscreen, `test-phone-routes`) neben den Boards: Geräte Liste/Detail, Dateien Suche/Datei, Jobs Detail, Projekt Build & Run und Liste, Einstellungen-Sheet, Agent-Clients sowie die Geräteseite bei 412 px und 200 %. Dateien: `docs/design/phone-final/`. Bogen-Checkpoint `mw5run13-bd8b7896`; `brand_check` des Artboards: 0 harte Verstöße.
 
 Abweichungen der App von den Boards, bewusst: Die Meta-Angabe einer Zeile rutscht unter 300 logischen px unter den Titel (sonst würde der Titel bei 200 % zu schmal); Telefon-Seiten mit eigener Kopfzeile (Projekt, Geräte) zeigen kein Abschnittsband; ein Schalter „Downloads nur im WLAN“ fehlt, weil es dafür keine Einstellung im Kern gibt.
+
+## Datei-, Ordner- und Speichern-Wahl (2026-11-08)
+
+Eine Komponentenfamilie für alle 24 Einstiege (23 frühere Qt-`FileDialog`/`FolderDialog` und die Projektwahl), umgesetzt in `qml/FileChooserDialog.qml`.
+
+| Was | Seite | ID |
+|---|---|---|
+| Komponente `Mobile / File chooser` (Varianten `form`: `sheet` / `dialog`; Props title, path, file-name, show-file, file-type, show-type, problem, show-problem, action; Slot `entries`) | 02 | `wn42y1snnf` (sheet), `suu0bhd363` (dialog) |
+| Komponente `Mobile / File chooser entry` (Varianten `kind`: `folder` / `file`; Props name, target, show-target) | 02 | `8m44q5eqhx`, `5cj9u8jtpg` |
+| Komponente `Mobile / File chooser replace` (Prop question) | 02 | `dyqk7tkjs2` |
+| Artboard Komponente & Zustände (Speichern, Ordner, Fehler) | 02 | `cy5ndx7v8b` |
+| Artboard Desktop-Dialog (100 %) | 02 | `kkdhpfje2k` |
+| Board 24 · Datei wählen · Sheet · 393 | 01 | `xw5eiqpyd2` |
+| Desktop · Speichern & Ersetzen? · 1440×900 | 03 | `kznxb39dd7` |
+| App-Render · Datei-, Ordner- und Speichern-Wahl (offscreen, synthetische Dateien) | 03 | `m2ga8mchqa` |
+
+Texte auf den Boards sind Designdaten in den deutschen Übersetzungen der App (`i18n/tomacco_de.ts`). Das App-Render-Board zeigt echte Aufnahmen der gebauten App (Qt offscreen, Software-Renderer, isolierte Umgebung, nur synthetische Dateien); die Tastatur im Telefonbild ist eine simulierte Aussparung. Dateien: `docs/design/adaptive-dialogs/`.
+
+Prüfungen: `brand_check` 0 harte Verstöße auf allen fünf Boards (Board 24: 91, Komponenten-Artboard: 92, Desktop-Dialog: 96, Desktop-Screen: 94, App-Render: 87); einziger weicher Hinweis ist der absichtlich blasse deaktivierte „Öffnen“-Knopf im Fehlerzustand (`28ye2fsz4m/ru48bv1nf3`, 3,94:1, wie `Theme.faint` in der App). `responsive_check`: Board 24 und das Komponenten-Artboard ohne Überlauf bei 320/360/393/412, das Desktop-Board bei 1440/1380/900 (nach Zentrieren der Frage).
+
+Bogen-Checkpoints: `mw73b3ja-8f55895a` (Stand vor dieser Arbeit), `mw73t6do-44d8c362` (Komponenten, Boards, Belege). Keine Seite und keine Brand neu angelegt; bestehende Boards unverändert.

@@ -7809,4 +7809,27 @@ Gelicentieerd onder de GNU General Public License, versie 2 of later.</translati
         <translation>Bovenliggende map</translation>
     </message>
 </context>
+<context>
+    <name>FileChooserDialog</name>
+    <message>
+        <source>%1 already exists. Do you want to replace it?</source>
+        <translation>%1 bestaat al. Wil je het vervangen?</translation>
+    </message>
+    <message>
+        <source>File name</source>
+        <translation>Bestandsnaam</translation>
+    </message>
+    <message>
+        <source>File type</source>
+        <translation>Bestandstype</translation>
+    </message>
+    <message>
+        <source>No files here</source>
+        <translation>Hier staan geen bestanden</translation>
+    </message>
+    <message>
+        <source>Type or paste a folder path</source>
+        <translation>Typ of plak het pad van een map</translation>
+    </message>
+</context>
 </TS>

@@ -2,7 +2,6 @@ import QtQuick
 import "."
 import QtQuick.Controls
 import QtQuick.Layouts
-import QtQuick.Dialogs
 StudioScrollView {
     // The form keeps clear of the overlay scroll bar at the right edge.
     clip: true; rightPadding: Theme.gapMd; contentWidth: availableWidth
@@ -48,5 +47,5 @@ StudioScrollView {
     }
     StudioCodeView { Layout.fillWidth: true; Layout.preferredHeight: Theme.px(180); visible: !!view.result; text: view.result }
     }
-    FileDialog { id: scenarioDialog; nameFilters: ["JSON (*.json)"]; onAccepted: scenario.text=decodeURIComponent(selectedFile.toString().replace(/^file:\/\//,"")) }
+    FileChooserDialog { id: scenarioDialog; objectName: "scenarioFileDialog"; mode: "open"; title: qsTr("JSON scenario"); nameFilters: ["JSON (*.json)"]; onAccepted: scenario.text=selectedPath }
 }

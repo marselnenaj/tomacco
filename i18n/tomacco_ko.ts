@@ -7765,4 +7765,27 @@ GNU General Public License 버전 2 또는 그 이후 버전에 따라 라이선
         <translation>상위 폴더</translation>
     </message>
 </context>
+<context>
+    <name>FileChooserDialog</name>
+    <message>
+        <source>%1 already exists. Do you want to replace it?</source>
+        <translation>%1이(가) 이미 있습니다. 바꾸시겠습니까?</translation>
+    </message>
+    <message>
+        <source>File name</source>
+        <translation>파일 이름</translation>
+    </message>
+    <message>
+        <source>File type</source>
+        <translation>파일 형식</translation>
+    </message>
+    <message>
+        <source>No files here</source>
+        <translation>여기에는 파일이 없습니다</translation>
+    </message>
+    <message>
+        <source>Type or paste a folder path</source>
+        <translation>폴더 경로를 입력하거나 붙여 넣으세요</translation>
+    </message>
+</context>
 </TS>

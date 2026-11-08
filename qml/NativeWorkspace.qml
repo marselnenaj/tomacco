@@ -1,7 +1,6 @@
 import QtQuick
 import QtQuick.Controls
 import QtQuick.Layouts
-import QtQuick.Dialogs
 import QtCore
 import Tomacco.Native 1.0
 import "."
@@ -1435,8 +1434,8 @@ Rectangle {
             }
         }}}
     }
-    FileDialog {id:settingsExport;title:qsTr("Export settings");fileMode:FileDialog.SaveFile;defaultSuffix:"json";nameFilters:[qsTr("Tomacco settings (*.json)")];onAccepted:view.exportSettingsTo(decodeURIComponent(selectedFile.toString().replace(/^file:\/\//,"")))}
-    FileDialog {id:settingsImport;title:qsTr("Import settings");nameFilters:[qsTr("Tomacco settings (*.json)")];onAccepted:view.importSettingsFrom(decodeURIComponent(selectedFile.toString().replace(/^file:\/\//,"")))}
+    FileChooserDialog {id:settingsExport;objectName:"settingsExportDialog";mode:"save";title:qsTr("Export settings");defaultSuffix:"json";nameFilters:[qsTr("Tomacco settings (*.json)")];onAccepted:view.exportSettingsTo(selectedPath)}
+    FileChooserDialog {id:settingsImport;objectName:"settingsImportDialog";mode:"open";title:qsTr("Import settings");nameFilters:[qsTr("Tomacco settings (*.json)")];onAccepted:view.importSettingsFrom(selectedPath)}
     OnboardingSheet {id:onboarding;anchors.centerIn:parent;width:Math.min(view.width-Theme.gapXxxl,Theme.px(560));height:Math.min(view.height-Theme.gapLg,implicitHeight);onConnectRequested:view.connectAgent()}
     AgentClientDialog {id:agentClients;sheet:view.phone;x:view.phone?view.insetLeft:Math.round((view.width-width)/2);y:view.phone?view.insetTop:Math.round((view.height-height)/2)
         width:view.phone?view.width-view.insetLeft-view.insetRight:Math.min(view.width-Theme.gapLg,Theme.px(860))
@@ -1517,7 +1516,7 @@ Rectangle {
             }
         }
     }
-    FileDialog {id:appleSdkFile;title:qsTr("Import the Apple SDK from Xcode");nameFilters:[qsTr("Xcode archive (*.xip)"),qsTr("All files (*)")];onAccepted:{workspace.request("ios.sdk_install",{path:decodeURIComponent(selectedFile.toString().replace(/^file:\/\//,""))});workspace.showTab("jobs");iphoneSetup.close()}}
+    FileChooserDialog {id:appleSdkFile;objectName:"appleSdkFileDialog";mode:"open";title:qsTr("Import the Apple SDK from Xcode");nameFilters:[qsTr("Xcode archive (*.xip)"),qsTr("All files (*)")];onAccepted:{workspace.request("ios.sdk_install",{path:selectedPath});workspace.showTab("jobs");iphoneSetup.close()}}
     StudioDialog {
         id:about;objectName:"aboutDialog";title:qsTr("About Tomacco");anchors.centerIn:parent;width:Math.min(view.width-Theme.gapXxxl,Theme.px(620));height:Math.min(view.height-Theme.gapLg,implicitHeight);modal:true;standardButtons:Dialog.Close
         contentItem:StudioScrollView {clip:true;contentWidth:availableWidth;ColumnLayout {width:parent.width-Theme.gapMd;spacing:Theme.gapMd

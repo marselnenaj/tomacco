@@ -7777,4 +7777,27 @@ Litsentsitud GNU General Public License&apos;i versiooni 2 või hilisema alusel.
         <translation>Ülemkaust</translation>
     </message>
 </context>
+<context>
+    <name>FileChooserDialog</name>
+    <message>
+        <source>%1 already exists. Do you want to replace it?</source>
+        <translation>%1 on juba olemas. Kas soovid selle asendada?</translation>
+    </message>
+    <message>
+        <source>File name</source>
+        <translation>Faili nimi</translation>
+    </message>
+    <message>
+        <source>File type</source>
+        <translation>Faili tüüp</translation>
+    </message>
+    <message>
+        <source>No files here</source>
+        <translation>Siin pole faile</translation>
+    </message>
+    <message>
+        <source>Type or paste a folder path</source>
+        <translation>Sisesta või kleebi kausta tee</translation>
+    </message>
+</context>
 </TS>

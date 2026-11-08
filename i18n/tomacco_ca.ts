@@ -7777,4 +7777,27 @@ Llicència: Llicència Pública General de GNU, versió 2 o posterior.</translat
         <translation>Carpeta superior</translation>
     </message>
 </context>
+<context>
+    <name>FileChooserDialog</name>
+    <message>
+        <source>%1 already exists. Do you want to replace it?</source>
+        <translation>%1 ja existeix. Vols substituir-lo?</translation>
+    </message>
+    <message>
+        <source>File name</source>
+        <translation>Nom del fitxer</translation>
+    </message>
+    <message>
+        <source>File type</source>
+        <translation>Tipus de fitxer</translation>
+    </message>
+    <message>
+        <source>No files here</source>
+        <translation>No hi ha cap fitxer aquí</translation>
+    </message>
+    <message>
+        <source>Type or paste a folder path</source>
+        <translation>Escriu o enganxa el camí d&apos;una carpeta</translation>
+    </message>
+</context>
 </TS>

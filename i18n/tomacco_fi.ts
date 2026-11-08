@@ -7777,4 +7777,27 @@ Lisensoitu GNU General Public License -lisenssillä, versio 2 tai uudempi.</tran
         <translation>Yläkansio</translation>
     </message>
 </context>
+<context>
+    <name>FileChooserDialog</name>
+    <message>
+        <source>%1 already exists. Do you want to replace it?</source>
+        <translation>%1 on jo olemassa. Haluatko korvata sen?</translation>
+    </message>
+    <message>
+        <source>File name</source>
+        <translation>Tiedostonimi</translation>
+    </message>
+    <message>
+        <source>File type</source>
+        <translation>Tiedostotyyppi</translation>
+    </message>
+    <message>
+        <source>No files here</source>
+        <translation>Täällä ei ole tiedostoja</translation>
+    </message>
+    <message>
+        <source>Type or paste a folder path</source>
+        <translation>Kirjoita tai liitä kansion polku</translation>
+    </message>
+</context>
 </TS>

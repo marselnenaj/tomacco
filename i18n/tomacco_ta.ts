@@ -7777,4 +7777,27 @@ GNU General Public License, பதிப்பு 2 அல்லது அதற
         <translation>மேல் கோப்புறை</translation>
     </message>
 </context>
+<context>
+    <name>FileChooserDialog</name>
+    <message>
+        <source>%1 already exists. Do you want to replace it?</source>
+        <translation>%1 ஏற்கனவே உள்ளது. அதை மாற்ற விரும்புகிறீர்களா?</translation>
+    </message>
+    <message>
+        <source>File name</source>
+        <translation>கோப்பின் பெயர்</translation>
+    </message>
+    <message>
+        <source>File type</source>
+        <translation>கோப்பு வகை</translation>
+    </message>
+    <message>
+        <source>No files here</source>
+        <translation>இங்கே கோப்புகள் இல்லை</translation>
+    </message>
+    <message>
+        <source>Type or paste a folder path</source>
+        <translation>ஒரு கோப்புறையின் பாதையைத் தட்டச்சு செய்யவும் அல்லது ஒட்டவும்</translation>
+    </message>
+</context>
 </TS>

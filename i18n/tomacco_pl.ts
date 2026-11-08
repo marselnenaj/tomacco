@@ -7813,4 +7813,27 @@ Na licencji GNU General Public License w wersji 2 lub nowszej.</translation>
         <translation>Folder nadrzędny</translation>
     </message>
 </context>
+<context>
+    <name>FileChooserDialog</name>
+    <message>
+        <source>%1 already exists. Do you want to replace it?</source>
+        <translation>%1 już istnieje. Czy chcesz go zastąpić?</translation>
+    </message>
+    <message>
+        <source>File name</source>
+        <translation>Nazwa pliku</translation>
+    </message>
+    <message>
+        <source>File type</source>
+        <translation>Typ pliku</translation>
+    </message>
+    <message>
+        <source>No files here</source>
+        <translation>Nie ma tu plików</translation>
+    </message>
+    <message>
+        <source>Type or paste a folder path</source>
+        <translation>Wpisz lub wklej ścieżkę folderu</translation>
+    </message>
+</context>
 </TS>

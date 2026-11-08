@@ -7789,4 +7789,27 @@ Faoi cheadúnas Cheadúnas Poiblí Ginearálta GNU, leagan 2 nó aon leagan nío
         <translation>Máthairfhillteán</translation>
     </message>
 </context>
+<context>
+    <name>FileChooserDialog</name>
+    <message>
+        <source>%1 already exists. Do you want to replace it?</source>
+        <translation>Tá %1 ann cheana. Ar mhaith leat é a athsholáthar?</translation>
+    </message>
+    <message>
+        <source>File name</source>
+        <translation>Ainm an chomhaid</translation>
+    </message>
+    <message>
+        <source>File type</source>
+        <translation>Cineál comhaid</translation>
+    </message>
+    <message>
+        <source>No files here</source>
+        <translation>Níl aon chomhad anseo</translation>
+    </message>
+    <message>
+        <source>Type or paste a folder path</source>
+        <translation>Clóscríobh nó greamaigh conair fillteáin</translation>
+    </message>
+</context>
 </TS>

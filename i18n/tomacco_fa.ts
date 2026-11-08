@@ -7765,4 +7765,27 @@ Licensed under the GNU General Public License, version 2 or later.</source>
         <translation>پوشهٔ بالاتر</translation>
     </message>
 </context>
+<context>
+    <name>FileChooserDialog</name>
+    <message>
+        <source>%1 already exists. Do you want to replace it?</source>
+        <translation>%1 از قبل وجود دارد. آیا می‌خواهید آن را جایگزین کنید؟</translation>
+    </message>
+    <message>
+        <source>File name</source>
+        <translation>نام فایل</translation>
+    </message>
+    <message>
+        <source>File type</source>
+        <translation>نوع فایل</translation>
+    </message>
+    <message>
+        <source>No files here</source>
+        <translation>اینجا فایلی نیست</translation>
+    </message>
+    <message>
+        <source>Type or paste a folder path</source>
+        <translation>مسیر یک پوشه را وارد یا جای‌گذاری کنید</translation>
+    </message>
+</context>
 </TS>

@@ -7821,4 +7821,27 @@ Licensed under the GNU General Public License, version 2 or later.</source>
         <translation>Родительская папка</translation>
     </message>
 </context>
+<context>
+    <name>FileChooserDialog</name>
+    <message>
+        <source>%1 already exists. Do you want to replace it?</source>
+        <translation>%1 уже существует. Заменить его?</translation>
+    </message>
+    <message>
+        <source>File name</source>
+        <translation>Имя файла</translation>
+    </message>
+    <message>
+        <source>File type</source>
+        <translation>Тип файла</translation>
+    </message>
+    <message>
+        <source>No files here</source>
+        <translation>Здесь нет файлов</translation>
+    </message>
+    <message>
+        <source>Type or paste a folder path</source>
+        <translation>Введите или вставьте путь к папке</translation>
+    </message>
+</context>
 </TS>

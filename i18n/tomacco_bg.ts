@@ -7777,4 +7777,27 @@ Licensed under the GNU General Public License, version 2 or later.</source>
         <translation>Родителска папка</translation>
     </message>
 </context>
+<context>
+    <name>FileChooserDialog</name>
+    <message>
+        <source>%1 already exists. Do you want to replace it?</source>
+        <translation>%1 вече съществува. Искате ли да го замените?</translation>
+    </message>
+    <message>
+        <source>File name</source>
+        <translation>Име на файла</translation>
+    </message>
+    <message>
+        <source>File type</source>
+        <translation>Тип на файла</translation>
+    </message>
+    <message>
+        <source>No files here</source>
+        <translation>Тук няма файлове</translation>
+    </message>
+    <message>
+        <source>Type or paste a folder path</source>
+        <translation>Въведете или поставете път до папка</translation>
+    </message>
+</context>
 </TS>

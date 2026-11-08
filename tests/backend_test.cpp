@@ -135,6 +135,66 @@ private slots:
         // Choosing goes through projectFolder: a link opens its target, an app bundle is no project.
         QCOMPARE(backend.projectFolder(backend.resolveFolderPath("link to app1",base)),QFileInfo(base+"/app1").canonicalFilePath());
     }
+    void theFileChooserListsFilesNamesSaveTargetsAndEncodesUrls() {
+        QTemporaryDir root; QVERIFY(root.isValid());
+        const QString base=root.filePath(QString::fromUtf8("Dateien #1 %20 · 日本語"));
+        QVERIFY(QDir().mkpath(base+"/Ordner"));QVERIFY(QDir().mkpath(base+"/.versteckt"));
+        for(const auto &name:{QStringLiteral("szene10.json"),QStringLiteral("Szene9.JSON"),QStringLiteral("notes.txt"),QStringLiteral(".hidden.json"),QString::fromUtf8("مشهد.json"),QStringLiteral("video.MP4")})write(base+"/"+name,"{}");
+        QVERIFY(QFile::link(base+"/szene10.json",base+"/link.json"));
+        QVERIFY(QFile::link(base+"/gone.json",base+"/broken.json"));
+        Backend backend(QString(),nullptr,false);
+        // Wildcards as Qt's dialogs read a name filter.
+        QCOMPARE(Backend::filterPatterns("Videos (*.mp4 *.mov *.mkv *.webm)"),(QStringList{"*.mp4","*.mov","*.mkv","*.webm"}));
+        QCOMPARE(Backend::filterPatterns("All files (*)"),QStringList{"*"});
+        QCOMPARE(Backend::filterPatterns("*.json"),QStringList{"*.json"});
+        QCOMPARE(Backend::filterPatterns(QString::fromUtf8("Einstellungen (Tomacco) (*.json)")),QStringList{"*.json"});
+        // Files of the type, case ignored, in reading order, links included, broken links and hidden ones not.
+        const auto names=[](const QVariantList &list){QStringList out;for(const auto &e:list)out<<e.toMap().value("name").toString();return out;};
+        auto listing=backend.fileListing(base,{},false,{"*.json"});
+        QCOMPARE(names(listing.value("folders").toList()),QStringList{"Ordner"});
+        QCOMPARE(names(listing.value("files").toList()),(QStringList{"link.json","Szene9.JSON","szene10.json",QString::fromUtf8("مشهد.json")}));
+        for(const auto &e:listing.value("files").toList()){const auto file=e.toMap();QCOMPARE(file.value("path").toString(),base+"/"+file.value("name").toString());
+            QCOMPARE(file.value("link").toBool(),file.value("name").toString()=="link.json");
+            if(file.value("link").toBool())QCOMPARE(file.value("target").toString(),QFileInfo(base+"/szene10.json").canonicalFilePath());}
+        QCOMPARE(names(backend.fileListing(base,{},false,{"*"}).value("files").toList()).size(),6);
+        QCOMPARE(names(backend.fileListing(base,{},false,{}).value("files").toList()).size(),6);
+        QCOMPARE(names(backend.fileListing(base,{},true,{"*.json"}).value("files").toList()).size(),5);
+        QCOMPARE(names(backend.fileListing(base,{},true,{"*.json"}).value("folders").toList()).size(),2);
+        QCOMPARE(names(backend.fileListing(base,{},false,Backend::filterPatterns("Videos (*.mp4 *.mov)")).value("files").toList()),QStringList{"video.MP4"});
+        QCOMPARE(backend.fileListing(base+"/fehlt",{},false,{}).value("error").toString(),QString("missing"));
+        QVERIFY(backend.fileListing(base+"/fehlt",{},false,{}).value("files").toList().isEmpty());
+        // The folder listing of the project chooser is unchanged: no files key.
+        QVERIFY(!backend.folderListing(base).contains("files"));
+        // What a path is.
+        QVERIFY(backend.pathInfo(base+"/szene10.json").value("file").toBool());
+        QVERIFY(backend.pathInfo(base+"/Ordner").value("folder").toBool());
+        QVERIFY(backend.pathInfo(base+"/link.json").value("link").toBool() && backend.pathInfo(base+"/link.json").value("file").toBool());
+        QVERIFY(backend.pathInfo(base+"/broken.json").value("exists").toBool() && !backend.pathInfo(base+"/broken.json").value("file").toBool());
+        QVERIFY(!backend.pathInfo(base+"/fehlt.json").value("exists").toBool());
+        QVERIFY(!backend.pathInfo(QString()).value("exists").toBool());
+        // Save targets: the default suffix only on a name without a dot; names neither trimmed nor resolved.
+        QCOMPARE(backend.saveTarget("neu",base,"json"),base+"/neu.json");
+        QCOMPARE(backend.saveTarget("neu",base,".json"),base+"/neu.json");
+        QCOMPARE(backend.saveTarget("neu.v2",base,"json"),base+"/neu.v2");
+        QCOMPARE(backend.saveTarget(" neu ",base,"json"),base+"/ neu .json");
+        QCOMPARE(backend.saveTarget("neu",base,{}),base+"/neu");
+        QCOMPARE(backend.saveTarget("Ordner",base,"json"),base+"/Ordner");
+        QCOMPARE(backend.saveTarget("Ordner/",base,"json"),base+"/Ordner");
+        QCOMPARE(backend.saveTarget("..",base,"json"),QDir::cleanPath(root.path()));
+        QCOMPARE(backend.saveTarget("Ordner/innen",base,"json"),base+"/Ordner/innen.json");
+        QCOMPARE(backend.saveTarget(base+"/abs","/elsewhere","json"),base+"/abs.json");
+        QCOMPARE(backend.saveTarget("~/x",base,"json"),QDir::cleanPath(QDir::homePath()+"/x.json"));
+        QCOMPARE(backend.saveTarget(QUrl::fromLocalFile(base+"/url #1").toString(QUrl::FullyEncoded),base,"json"),base+"/url #1.json");
+        QCOMPARE(backend.saveTarget("a\nb",base,"json"),base+"/ab.json");
+        QCOMPARE(backend.saveTarget("   ",base,"json"),QString());
+        QCOMPARE(backend.saveTarget("https://example.invalid/x",base,"json"),base+"/https:/example.invalid/x.json");
+        // A path as a URL: # and % stay part of the name.
+        const auto url=backend.fileUrl(base+"/a #1 100%.json");
+        QVERIFY(url.isLocalFile());QCOMPARE(url.toLocalFile(),base+"/a #1 100%.json");
+        QVERIFY(url.toString(QUrl::FullyEncoded).contains("%231%20100%25.json"));
+        QCOMPARE(QUrl::fromPercentEncoding(url.toString().toUtf8()).mid(7),base+"/a #1 100%.json");
+        QVERIFY(backend.fileUrl(QString()).isEmpty());
+    }
     // The chooser's reading order in the C locale (LC_ALL=C, C.UTF-8, POSIX, as test pipelines and
     // minimal systems run) and in interface languages; QLocale's default is set for the row only.
     void theProjectChooserOrdersFoldersNaturallyInEveryLocale_data() {

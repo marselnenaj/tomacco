@@ -7789,4 +7789,27 @@ Licensed under the GNU General Public License, version 2 or later.</source>
         <translation>Надређена фасцикла</translation>
     </message>
 </context>
+<context>
+    <name>FileChooserDialog</name>
+    <message>
+        <source>%1 already exists. Do you want to replace it?</source>
+        <translation>%1 већ постоји. Да ли желите да је замените?</translation>
+    </message>
+    <message>
+        <source>File name</source>
+        <translation>Назив датотеке</translation>
+    </message>
+    <message>
+        <source>File type</source>
+        <translation>Врста датотеке</translation>
+    </message>
+    <message>
+        <source>No files here</source>
+        <translation>Овде нема датотека</translation>
+    </message>
+    <message>
+        <source>Type or paste a folder path</source>
+        <translation>Унесите или налепите путању фасцикле</translation>
+    </message>
+</context>
 </TS>

@@ -7765,4 +7765,27 @@ Licensed under the GNU General Public License, version 2 or later.</source>
         <translation>โฟลเดอร์ระดับบน</translation>
     </message>
 </context>
+<context>
+    <name>FileChooserDialog</name>
+    <message>
+        <source>%1 already exists. Do you want to replace it?</source>
+        <translation>%1 มีอยู่แล้ว ต้องการแทนที่หรือไม่</translation>
+    </message>
+    <message>
+        <source>File name</source>
+        <translation>ชื่อไฟล์</translation>
+    </message>
+    <message>
+        <source>File type</source>
+        <translation>ชนิดไฟล์</translation>
+    </message>
+    <message>
+        <source>No files here</source>
+        <translation>ไม่มีไฟล์ที่นี่</translation>
+    </message>
+    <message>
+        <source>Type or paste a folder path</source>
+        <translation>พิมพ์หรือวางพาธของโฟลเดอร์</translation>
+    </message>
+</context>
 </TS>

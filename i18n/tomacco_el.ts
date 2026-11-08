@@ -7777,4 +7777,27 @@ Licensed under the GNU General Public License, version 2 or later.</source>
         <translation>Γονικός φάκελος</translation>
     </message>
 </context>
+<context>
+    <name>FileChooserDialog</name>
+    <message>
+        <source>%1 already exists. Do you want to replace it?</source>
+        <translation>Το %1 υπάρχει ήδη. Θέλετε να το αντικαταστήσετε;</translation>
+    </message>
+    <message>
+        <source>File name</source>
+        <translation>Όνομα αρχείου</translation>
+    </message>
+    <message>
+        <source>File type</source>
+        <translation>Τύπος αρχείου</translation>
+    </message>
+    <message>
+        <source>No files here</source>
+        <translation>Δεν υπάρχουν αρχεία εδώ</translation>
+    </message>
+    <message>
+        <source>Type or paste a folder path</source>
+        <translation>Πληκτρολογήστε ή επικολλήστε τη διαδρομή ενός φακέλου</translation>
+    </message>
+</context>
 </TS>

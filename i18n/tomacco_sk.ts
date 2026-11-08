@@ -7789,4 +7789,27 @@ Licencované pod GNU General Public License, verzia 2 alebo novšia.</translatio
         <translation>Nadradený priečinok</translation>
     </message>
 </context>
+<context>
+    <name>FileChooserDialog</name>
+    <message>
+        <source>%1 already exists. Do you want to replace it?</source>
+        <translation>%1 už existuje. Chcete ho nahradiť?</translation>
+    </message>
+    <message>
+        <source>File name</source>
+        <translation>Názov súboru</translation>
+    </message>
+    <message>
+        <source>File type</source>
+        <translation>Typ súboru</translation>
+    </message>
+    <message>
+        <source>No files here</source>
+        <translation>Nie sú tu žiadne súbory</translation>
+    </message>
+    <message>
+        <source>Type or paste a folder path</source>
+        <translation>Zadajte alebo vložte cestu k priečinku</translation>
+    </message>
+</context>
 </TS>

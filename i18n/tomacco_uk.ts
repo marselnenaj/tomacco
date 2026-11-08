@@ -7789,4 +7789,27 @@ Licensed under the GNU General Public License, version 2 or later.</source>
         <translation>Батьківська папка</translation>
     </message>
 </context>
+<context>
+    <name>FileChooserDialog</name>
+    <message>
+        <source>%1 already exists. Do you want to replace it?</source>
+        <translation>%1 уже існує. Замінити його?</translation>
+    </message>
+    <message>
+        <source>File name</source>
+        <translation>Назва файлу</translation>
+    </message>
+    <message>
+        <source>File type</source>
+        <translation>Тип файлу</translation>
+    </message>
+    <message>
+        <source>No files here</source>
+        <translation>Тут немає файлів</translation>
+    </message>
+    <message>
+        <source>Type or paste a folder path</source>
+        <translation>Введіть або вставте шлях до папки</translation>
+    </message>
+</context>
 </TS>

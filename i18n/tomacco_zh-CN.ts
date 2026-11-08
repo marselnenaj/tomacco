@@ -7797,4 +7797,27 @@ Licensed under the GNU General Public License, version 2 or later.</source>
         <translation>上级文件夹</translation>
     </message>
 </context>
+<context>
+    <name>FileChooserDialog</name>
+    <message>
+        <source>%1 already exists. Do you want to replace it?</source>
+        <translation>%1 已存在。要替换它吗？</translation>
+    </message>
+    <message>
+        <source>File name</source>
+        <translation>文件名</translation>
+    </message>
+    <message>
+        <source>File type</source>
+        <translation>文件类型</translation>
+    </message>
+    <message>
+        <source>No files here</source>
+        <translation>这里没有文件</translation>
+    </message>
+    <message>
+        <source>Type or paste a folder path</source>
+        <translation>输入或粘贴文件夹路径</translation>
+    </message>
+</context>
 </TS>

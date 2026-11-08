@@ -7765,4 +7765,27 @@ Licensed under the GNU General Public License, version 2 or later.</source>
         <translation>Thư mục cha</translation>
     </message>
 </context>
+<context>
+    <name>FileChooserDialog</name>
+    <message>
+        <source>%1 already exists. Do you want to replace it?</source>
+        <translation>%1 đã tồn tại. Bạn có muốn thay thế không?</translation>
+    </message>
+    <message>
+        <source>File name</source>
+        <translation>Tên tệp</translation>
+    </message>
+    <message>
+        <source>File type</source>
+        <translation>Loại tệp</translation>
+    </message>
+    <message>
+        <source>No files here</source>
+        <translation>Không có tệp nào ở đây</translation>
+    </message>
+    <message>
+        <source>Type or paste a folder path</source>
+        <translation>Nhập hoặc dán đường dẫn thư mục</translation>
+    </message>
+</context>
 </TS>

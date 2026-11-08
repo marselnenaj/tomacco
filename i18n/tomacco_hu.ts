@@ -7765,4 +7765,27 @@ A GNU General Public License 2-es vagy későbbi verziója alatt licencelve.</tr
         <translation>Szülőmappa</translation>
     </message>
 </context>
+<context>
+    <name>FileChooserDialog</name>
+    <message>
+        <source>%1 already exists. Do you want to replace it?</source>
+        <translation>%1 már létezik. Lecseréled?</translation>
+    </message>
+    <message>
+        <source>File name</source>
+        <translation>Fájlnév</translation>
+    </message>
+    <message>
+        <source>File type</source>
+        <translation>Fájltípus</translation>
+    </message>
+    <message>
+        <source>No files here</source>
+        <translation>Itt nincsenek fájlok</translation>
+    </message>
+    <message>
+        <source>Type or paste a folder path</source>
+        <translation>Írd be vagy illeszd be egy mappa elérési útját</translation>
+    </message>
+</context>
 </TS>

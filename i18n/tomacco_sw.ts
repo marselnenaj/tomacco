@@ -7777,4 +7777,27 @@ Imepewa leseni chini ya Leseni ya Umma ya Jumla ya GNU, toleo la 2 au la baadaye
         <translation>Folda ya juu</translation>
     </message>
 </context>
+<context>
+    <name>FileChooserDialog</name>
+    <message>
+        <source>%1 already exists. Do you want to replace it?</source>
+        <translation>%1 tayari ipo. Je, unataka kuibadilisha?</translation>
+    </message>
+    <message>
+        <source>File name</source>
+        <translation>Jina la faili</translation>
+    </message>
+    <message>
+        <source>File type</source>
+        <translation>Aina ya faili</translation>
+    </message>
+    <message>
+        <source>No files here</source>
+        <translation>Hakuna faili hapa</translation>
+    </message>
+    <message>
+        <source>Type or paste a folder path</source>
+        <translation>Andika au bandika njia ya folda</translation>
+    </message>
+</context>
 </TS>

@@ -7801,4 +7801,27 @@ Licencirano pod GNU General Public License, različica 2 ali novejša.</translat
         <translation>Nadrejena mapa</translation>
     </message>
 </context>
+<context>
+    <name>FileChooserDialog</name>
+    <message>
+        <source>%1 already exists. Do you want to replace it?</source>
+        <translation>%1 že obstaja. Ali jo želite zamenjati?</translation>
+    </message>
+    <message>
+        <source>File name</source>
+        <translation>Ime datoteke</translation>
+    </message>
+    <message>
+        <source>File type</source>
+        <translation>Vrsta datoteke</translation>
+    </message>
+    <message>
+        <source>No files here</source>
+        <translation>Tukaj ni datotek</translation>
+    </message>
+    <message>
+        <source>Type or paste a folder path</source>
+        <translation>Vnesite ali prilepite pot do mape</translation>
+    </message>
+</context>
 </TS>

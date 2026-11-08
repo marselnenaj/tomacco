@@ -7809,4 +7809,27 @@ Licenciado sob a GNU General Public License, versão 2 ou posterior.</translatio
         <translation>Pasta superior</translation>
     </message>
 </context>
+<context>
+    <name>FileChooserDialog</name>
+    <message>
+        <source>%1 already exists. Do you want to replace it?</source>
+        <translation>%1 já existe. Pretende substituí-lo?</translation>
+    </message>
+    <message>
+        <source>File name</source>
+        <translation>Nome do ficheiro</translation>
+    </message>
+    <message>
+        <source>File type</source>
+        <translation>Tipo de ficheiro</translation>
+    </message>
+    <message>
+        <source>No files here</source>
+        <translation>Não há ficheiros aqui</translation>
+    </message>
+    <message>
+        <source>Type or paste a folder path</source>
+        <translation>Escreva ou cole o caminho de uma pasta</translation>
+    </message>
+</context>
 </TS>

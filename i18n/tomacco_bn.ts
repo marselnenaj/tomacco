@@ -7777,4 +7777,27 @@ GNU জেনারেল পাবলিক লাইসেন্স, সংস
         <translation>উপরের ফোল্ডার</translation>
     </message>
 </context>
+<context>
+    <name>FileChooserDialog</name>
+    <message>
+        <source>%1 already exists. Do you want to replace it?</source>
+        <translation>%1 আগে থেকেই আছে। আপনি কি এটি প্রতিস্থাপন করতে চান?</translation>
+    </message>
+    <message>
+        <source>File name</source>
+        <translation>ফাইলের নাম</translation>
+    </message>
+    <message>
+        <source>File type</source>
+        <translation>ফাইলের ধরন</translation>
+    </message>
+    <message>
+        <source>No files here</source>
+        <translation>এখানে কোনো ফাইল নেই</translation>
+    </message>
+    <message>
+        <source>Type or paste a folder path</source>
+        <translation>একটি ফোল্ডারের পাথ লিখুন বা পেস্ট করুন</translation>
+    </message>
+</context>
 </TS>

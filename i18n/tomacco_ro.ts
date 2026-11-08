@@ -7789,4 +7789,27 @@ Licențiat sub Licența Publică Generală GNU, versiunea 2 sau ulterioară.</tr
         <translation>Dosarul părinte</translation>
     </message>
 </context>
+<context>
+    <name>FileChooserDialog</name>
+    <message>
+        <source>%1 already exists. Do you want to replace it?</source>
+        <translation>%1 există deja. Vrei să îl înlocuiești?</translation>
+    </message>
+    <message>
+        <source>File name</source>
+        <translation>Numele fișierului</translation>
+    </message>
+    <message>
+        <source>File type</source>
+        <translation>Tipul fișierului</translation>
+    </message>
+    <message>
+        <source>No files here</source>
+        <translation>Nu există fișiere aici</translation>
+    </message>
+    <message>
+        <source>Type or paste a folder path</source>
+        <translation>Introdu sau lipește calea unui dosar</translation>
+    </message>
+</context>
 </TS>

@@ -123,6 +123,24 @@ public:
     // a symbolic link to a folder keeps its own path and names its resolved target. Sorted by
     // name as people read numbers and letters; names starting with a dot only when `hidden`.
     Q_INVOKABLE QVariantMap folderListing(const QString &typed,const QString &base={},bool hidden=false) const;
+    // What the app's file chooser (qml/FileChooserDialog.qml) lists for a typed path: folderListing
+    // plus "files", the files and symbolic links to files whose name matches one of `patterns`
+    // (wildcards such as "*.json", case ignored; none, "" or "*" match every file), each
+    // {name, path, link, target} in the same reading order. A broken link is no file.
+    Q_INVOKABLE QVariantMap fileListing(const QString &typed,const QString &base,bool hidden,const QStringList &patterns) const;
+    // The wildcards of a name filter as Qt's file dialogs take it: "Videos (*.mp4 *.mov)" is
+    // {"*.mp4","*.mov"}; a filter without parentheses is its own space-separated wildcards.
+    Q_INVOKABLE static QStringList filterPatterns(const QString &filter);
+    // What a path names, without following it further than QFileInfo does: {exists, folder, file,
+    // link, readable, writable}. A broken symbolic link exists (writing to it would follow it).
+    Q_INVOKABLE QVariantMap pathInfo(const QString &path) const;
+    // The file a save chooser writes: `name` as typed (a name, a relative or absolute path, "~/...",
+    // or a file: URL) taken from folder `base`, cleaned but neither trimmed nor resolved. When the
+    // name has no dot and does not name a folder, ".defaultSuffix" is added, as in Qt's file
+    // dialogs. Empty for an empty or blank name; a name ending in "/" stays the folder it names.
+    Q_INVOKABLE QString saveTarget(const QString &name,const QString &base,const QString &defaultSuffix={}) const;
+    // A local path as a file: URL, percent-encoded where a URL needs it (#, %, ?, spaces, ...).
+    Q_INVOKABLE QUrl fileUrl(const QString &path) const;
     // The release this build's version names, where its corresponding source
     // is offered (docs/SOURCE.md.in); the repository when no version is set.
     QUrl sourceUrl() const;
@@ -233,6 +251,8 @@ private slots:
     // The notification service's ActionInvoked signal.
     void notificationAction(uint id,const QString &action);
 private:
+    // folderListing and fileListing: the folders of a typed path and, when `files`, its matching files.
+    QVariantMap listing(const QString &typed,const QString &base,bool hidden,bool files,const QStringList &patterns) const;
     static QString s_uiLanguage;
     static bool s_rightToLeft;
     void watchSystemLanguage();

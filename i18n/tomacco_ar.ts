@@ -7857,4 +7857,27 @@ Licensed under the GNU General Public License, version 2 or later.</source>
         <translation>المجلد الأعلى</translation>
     </message>
 </context>
+<context>
+    <name>FileChooserDialog</name>
+    <message>
+        <source>%1 already exists. Do you want to replace it?</source>
+        <translation>%1 موجود بالفعل. هل تريد استبداله؟</translation>
+    </message>
+    <message>
+        <source>File name</source>
+        <translation>اسم الملف</translation>
+    </message>
+    <message>
+        <source>File type</source>
+        <translation>نوع الملف</translation>
+    </message>
+    <message>
+        <source>No files here</source>
+        <translation>لا توجد ملفات هنا</translation>
+    </message>
+    <message>
+        <source>Type or paste a folder path</source>
+        <translation>اكتب مسار مجلد أو الصقه</translation>
+    </message>
+</context>
 </TS>

@@ -7797,4 +7797,27 @@ GNU General Public License バージョン 2 以降の下で公開されてい�
         <translation>親フォルダー</translation>
     </message>
 </context>
+<context>
+    <name>FileChooserDialog</name>
+    <message>
+        <source>%1 already exists. Do you want to replace it?</source>
+        <translation>%1 は既に存在します。置き換えますか？</translation>
+    </message>
+    <message>
+        <source>File name</source>
+        <translation>ファイル名</translation>
+    </message>
+    <message>
+        <source>File type</source>
+        <translation>ファイルの種類</translation>
+    </message>
+    <message>
+        <source>No files here</source>
+        <translation>ここにはファイルがありません</translation>
+    </message>
+    <message>
+        <source>Type or paste a folder path</source>
+        <translation>フォルダーのパスを入力または貼り付けてください</translation>
+    </message>
+</context>
 </TS>

@@ -1,7 +1,6 @@
 import QtQuick
 import QtQuick.Controls
 import QtQuick.Layouts
-import QtQuick.Dialogs
 import QtWebEngine
 import "."
 import "ColorNames.js" as ColorNames
@@ -467,7 +466,7 @@ ApplicationWindow {
         Text { id: noticeText; anchors.centerIn: parent; width: Math.min(implicitWidth,root.width-Theme.gapXxxl*2); text: root.notice; wrapMode: Text.Wrap; color: Theme.text; font.pixelSize: Theme.fontSmall }
     }
     Timer { id: toastTimer; interval: 5000; onTriggered: root.notice="" }
-    FolderDialog { id: folderDialog; title: qsTr("Choose a web build"); onAccepted: { let url=Studio.serveFolder(selectedFolder); if(url.toString().length) phone.browser.url=url } }
+    FileChooserDialog { id: folderDialog; objectName: "webBuildFolderDialog"; mode: "folder"; title: qsTr("Choose a web build"); onAccepted: { let url=Studio.serveFolder(selectedFolder); if(url.toString().length) phone.browser.url=url } }
 
     StudioDialog {
         id: help; anchors.centerIn: parent; width: Math.min(root.width-Theme.gapXxxl,Theme.px(520)); modal: true
@@ -517,8 +516,8 @@ ApplicationWindow {
         onConnectAgentRequested: nativeWorkspace.connectAgent()
         onGuestDockRequested: { nativeWorkspace.showMainWindow(); root.nativeMode=true; workspace.showTab("ios-research") } onProfilesChanged: { root.selectDevice(0); Studio.reloadModels() } }
     StudioDialog { id: unsavedClose; objectName: "unsavedCloseDialog"; anchors.centerIn: parent; modal: true; title: qsTr("Unsaved changes"); standardButtons: Dialog.Discard | Dialog.Cancel; Label { text: qsTr("The workspace has unsaved changes."); color: Theme.muted } onDiscarded: {root.discardOnClose=true;root.close()} }
-    FileDialog { id: profileImport; title: qsTr("Import device profiles"); nameFilters: [qsTr("Device profiles (*.json)")]; onAccepted: Agent.request("catalog.import",{path:decodeURIComponent(selectedFile.toString().replace(/^file:\/\//,""))}) }
-    FileDialog { id: profileExport; title: qsTr("Export device profile"); fileMode: FileDialog.SaveFile; nameFilters: ["JSON (*.json)"]; onAccepted: Agent.request("catalog.export",{profile_id:root.currentModel.id,path:decodeURIComponent(selectedFile.toString().replace(/^file:\/\//,""))}) }
+    FileChooserDialog { id: profileImport; objectName: "profileImportDialog"; mode: "open"; title: qsTr("Import device profiles"); nameFilters: [qsTr("Device profiles (*.json)")]; onAccepted: Agent.request("catalog.import",{path:selectedPath}) }
+    FileChooserDialog { id: profileExport; objectName: "profileExportDialog"; mode: "save"; title: qsTr("Export device profile"); nameFilters: ["JSON (*.json)"]; onAccepted: Agent.request("catalog.export",{profile_id:root.currentModel.id,path:selectedPath}) }
     Connections { target: Agent; function onApiFinished(id,operation,response) {
         if(operation==="catalog.import" || operation==="catalog.export") {
             if(response.ok) { root.selectDevice(0); Studio.reloadModels(); root.toast(qsTr("Device catalog updated")) }

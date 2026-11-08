@@ -1,7 +1,6 @@
 import QtQuick
 import QtQuick.Controls
 import QtQuick.Layouts
-import QtQuick.Dialogs
 import "."
 import "OperationTitles.js" as OperationTitles
 import "LogFilter.js" as LogFilter
@@ -1080,6 +1079,6 @@ Rectangle {
             Loader { id:demoPage; active: !!panel.visited.demo; sourceComponent: Component { DemoWorkspace { workspace: panel } } }
         }
     }
-    FileDialog { id: installFile; title: qsTr("Install app on device"); nameFilters: [qsTr("Mobile apps (*.apk *.ipa)")]; onAccepted: panel.request("device.install",{platform:panel.selectedPlatform,device:panel.selectedDevice,paths:[decodeURIComponent(selectedFile.toString().replace(/^file:\/\//,""))]}) }
-    FileDialog { id: screenshotFile; title: qsTr("Save device screenshot"); fileMode: FileDialog.SaveFile; nameFilters: ["PNG (*.png)"]; onAccepted: panel.request("device.screenshot",{platform:panel.selectedPlatform,device:panel.selectedDevice,path:decodeURIComponent(selectedFile.toString().replace(/^file:\/\//,""))}) }
+    FileChooserDialog { id: installFile; objectName: "installFileDialog"; mode: "open"; title: qsTr("Install app on device"); nameFilters: [qsTr("Mobile apps (*.apk *.ipa)")]; onAccepted: panel.request("device.install",{platform:panel.selectedPlatform,device:panel.selectedDevice,paths:[selectedPath]}) }
+    FileChooserDialog { id: screenshotFile; objectName: "screenshotFileDialog"; mode: "save"; title: qsTr("Save device screenshot"); nameFilters: ["PNG (*.png)"]; onAccepted: panel.request("device.screenshot",{platform:panel.selectedPlatform,device:panel.selectedDevice,path:selectedPath}) }
 }

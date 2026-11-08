@@ -7777,4 +7777,27 @@ Með leyfi samkvæmt GNU General Public License, útgáfu 2 eða nýrri.</transl
         <translation>Yfirmappa</translation>
     </message>
 </context>
+<context>
+    <name>FileChooserDialog</name>
+    <message>
+        <source>%1 already exists. Do you want to replace it?</source>
+        <translation>%1 er þegar til. Viltu skipta henni út?</translation>
+    </message>
+    <message>
+        <source>File name</source>
+        <translation>Skráarheiti</translation>
+    </message>
+    <message>
+        <source>File type</source>
+        <translation>Skráargerð</translation>
+    </message>
+    <message>
+        <source>No files here</source>
+        <translation>Engar skrár hér</translation>
+    </message>
+    <message>
+        <source>Type or paste a folder path</source>
+        <translation>Sláðu inn eða límdu slóð möppu</translation>
+    </message>
+</context>
 </TS>

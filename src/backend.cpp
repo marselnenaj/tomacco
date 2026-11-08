@@ -616,36 +616,94 @@ QString Backend::resolveFolderPath(const QString &typed,const QString &base) con
     return QDir::cleanPath(path);
 }
 QVariantMap Backend::folderListing(const QString &typed,const QString &base,bool hidden) const {
+    return listing(typed,base,hidden,false,{});
+}
+QVariantMap Backend::fileListing(const QString &typed,const QString &base,bool hidden,const QStringList &patterns) const {
+    return listing(typed,base,hidden,true,patterns);
+}
+QVariantMap Backend::listing(const QString &typed,const QString &base,bool hidden,bool files,const QStringList &patterns) const {
     const QString path=resolveFolderPath(typed,base);
     const QFileInfo info(path);
     QString error;
     if(!info.exists())error=QStringLiteral("missing");
     else if(!info.isDir())error=QStringLiteral("not-folder");
-    QVariantList folders;
+    QVariantList folders,matching;
     if(error.isEmpty()) {
         QDir directory(path);
         if(!info.isReadable() || !info.isExecutable() || !directory.isReadable())error=QStringLiteral("unreadable");
-        QDir::Filters filters=QDir::Dirs|QDir::NoDotAndDotDot;
-        if(hidden)filters|=QDir::Hidden;
-        auto entries=directory.entryInfoList(filters,QDir::NoSort);
         // Reading order of the interface language (applyLanguage sets the default locale). In the C locale
         // (LC_ALL=C, C.UTF-8, POSIX, LC_COLLATE=C) Qt compares plain UTF-16 and ignores numeric mode, so
-        // there the folders are ordered as in English, the source language.
+        // there the entries are ordered as in English, the source language.
         QCollator collator;
         if(collator.locale().language()==QLocale::C)collator.setLocale(QLocale(QLocale::English,QLocale::UnitedStates));
         collator.setNumericMode(true);collator.setCaseSensitivity(Qt::CaseInsensitive);
-        std::stable_sort(entries.begin(),entries.end(),[&](const QFileInfo &a,const QFileInfo &b){
-            const int order=collator.compare(a.fileName(),b.fileName());
-            return order?order<0:a.fileName()<b.fileName();
-        });
+        const auto order=[&](QFileInfoList entries) {
+            std::stable_sort(entries.begin(),entries.end(),[&](const QFileInfo &a,const QFileInfo &b){
+                const int order=collator.compare(a.fileName(),b.fileName());
+                return order?order<0:a.fileName()<b.fileName();
+            });
+            return entries;
+        };
         const QString prefix=path==QLatin1String("/")?path:path+QLatin1Char('/');
-        for(const auto &entry:entries)
-            folders.append(QVariantMap{{"name",entry.fileName()},{"path",prefix+entry.fileName()},{"link",entry.isSymLink()},
-                {"target",entry.isSymLink()?entry.canonicalFilePath():QString()}});
+        const auto entry=[&](const QFileInfo &item) {
+            return QVariantMap{{"name",item.fileName()},{"path",prefix+item.fileName()},{"link",item.isSymLink()},
+                {"target",item.isSymLink()?item.canonicalFilePath():QString()}};
+        };
+        QDir::Filters filters=QDir::Dirs|QDir::NoDotAndDotDot;
+        if(hidden)filters|=QDir::Hidden;
+        for(const auto &item:order(directory.entryInfoList(filters,QDir::NoSort)))folders.append(entry(item));
+        if(files) {
+            QStringList wildcards;
+            for(const auto &pattern:patterns)if(!pattern.trimmed().isEmpty())wildcards<<pattern.trimmed();
+            if(wildcards.contains(QStringLiteral("*")))wildcards.clear();
+            // Without QDir::CaseSensitive the wildcards ignore case: *.json also lists SCENE.JSON.
+            QDir::Filters fileFilters=QDir::Files|QDir::NoDotAndDotDot;
+            if(hidden)fileFilters|=QDir::Hidden;
+            for(const auto &item:order(directory.entryInfoList(wildcards,fileFilters,QDir::NoSort)))matching.append(entry(item));
+        }
     }
-    return {{"path",path},{"parent",path==QLatin1String("/")?QString():QDir::cleanPath(path+QLatin1String("/.."))},
+    QVariantMap result{{"path",path},{"parent",path==QLatin1String("/")?QString():QDir::cleanPath(path+QLatin1String("/.."))},
         {"home",QDir::homePath()},{"error",error},{"folders",folders}};
+    if(files)result.insert(QStringLiteral("files"),matching);
+    return result;
 }
+QStringList Backend::filterPatterns(const QString &filter) {
+    // As Qt's qt_clean_filter_list: the wildcards in the last parentheses, else the whole text.
+    static const QRegularExpression described(QStringLiteral("^(.*)\\(([^()]*)\\)\\s*$"));
+    const auto match=described.match(filter);
+    const QString list=match.hasMatch()?match.captured(2):filter;
+    return list.split(QRegularExpression(QStringLiteral("[\\s;]+")),Qt::SkipEmptyParts);
+}
+QVariantMap Backend::pathInfo(const QString &path) const {
+    const QFileInfo info(path);
+    const bool exists=!path.isEmpty() && (info.exists() || info.isSymLink());
+    return {{"exists",exists},{"folder",exists && info.isDir()},{"file",exists && info.isFile()},{"link",exists && info.isSymLink()},
+        {"readable",exists && info.isReadable()},{"writable",exists && info.isWritable()}};
+}
+QString Backend::saveTarget(const QString &typed,const QString &base,const QString &defaultSuffix) const {
+    QString name=typed;
+    name.remove(QLatin1Char('\n'));name.remove(QLatin1Char('\r'));
+    if(name.trimmed().isEmpty())return {};
+    if(name.startsWith(QLatin1String("file:"),Qt::CaseInsensitive)) {
+        const QUrl url(name.trimmed());
+        if(!url.isLocalFile())return {};
+        name=url.toLocalFile();
+    }
+    const QString home=QDir::homePath();
+    const QString start=base.trimmed().isEmpty()?home:base.trimmed();
+    if(name==QLatin1String("~"))name=home+QLatin1Char('/');
+    else if(name.startsWith(QLatin1String("~/")))name=home+name.mid(1);
+    if(QDir::isRelativePath(name))name=start+QLatin1Char('/')+name;
+    const bool folderForm=name.endsWith(QLatin1Char('/')) || name.endsWith(QLatin1String("/.")) || name.endsWith(QLatin1String("/.."));
+    QString path=QDir::cleanPath(name);
+    if(folderForm)return path;
+    QString suffix=defaultSuffix.trimmed();
+    while(suffix.startsWith(QLatin1Char('.')))suffix.remove(0,1);
+    const QFileInfo info(path);
+    if(!suffix.isEmpty() && !info.fileName().contains(QLatin1Char('.')) && !info.isDir())path+=QLatin1Char('.')+suffix;
+    return path;
+}
+QUrl Backend::fileUrl(const QString &path) const { return path.isEmpty()?QUrl():QUrl::fromLocalFile(path); }
 QString Backend::qtVersion() const { return QString::fromLatin1(qVersion()); }
 QUrl Backend::sourceUrl() const {
     const QString repository=QStringLiteral("https://github.com/marselnenaj/tomacco");

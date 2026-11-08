@@ -1,7 +1,6 @@
 import QtQuick
 import QtQuick.Controls
 import QtQuick.Layouts
-import QtQuick.Dialogs
 import "."
 
 ColumnLayout {
@@ -407,5 +406,5 @@ ColumnLayout {
             }
         }}
     }
-    FileDialog {id:modelFile;title:qsTr("Import Android model");nameFilters:[qsTr("Device profile (*.json)")];onAccepted:library.request("catalog.import",{path:decodeURIComponent(selectedFile.toString().replace(/^file:\/\//,""))})}
+    FileChooserDialog {id:modelFile;objectName:"androidModelFileDialog";mode:"open";title:qsTr("Import Android model");nameFilters:[qsTr("Device profile (*.json)")];onAccepted:library.request("catalog.import",{path:selectedPath})}
 }

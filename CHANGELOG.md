@@ -110,6 +110,13 @@ operations and their JSON results.
   pencil button is the nickname only.
 
 ### Fixed
+- **File and folder choosers at a large interface size.** The 23 remaining Qt file and folder
+  dialogs (install, screenshot, imports, exports, routes, traces, the Apple SDK, iOS packages, the
+  web build, Demo Studio) are now the app's own chooser that the project chooser already used: it
+  follows the interface size, language and phone layout, shows paths and names whole, filters by
+  file type, adds a save's default extension, asks before replacing a file and starts nothing on
+  Cancel or Esc.
+
 - **Starting again after a stop.** `runtime.stop` waits until the session's worker has ended
   (`stopped: true`), so a `runtime.start` right after it no longer waits 30 seconds on the old
   session; a session that ends while starting answers `runtime_start_failed` at once.

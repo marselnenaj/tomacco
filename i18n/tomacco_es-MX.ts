@@ -7809,4 +7809,27 @@ Con licencia GNU General Public License, versión 2 o posterior.</translation>
         <translation>Carpeta superior</translation>
     </message>
 </context>
+<context>
+    <name>FileChooserDialog</name>
+    <message>
+        <source>%1 already exists. Do you want to replace it?</source>
+        <translation>%1 ya existe. ¿Quieres reemplazarlo?</translation>
+    </message>
+    <message>
+        <source>File name</source>
+        <translation>Nombre del archivo</translation>
+    </message>
+    <message>
+        <source>File type</source>
+        <translation>Tipo de archivo</translation>
+    </message>
+    <message>
+        <source>No files here</source>
+        <translation>No hay archivos aquí</translation>
+    </message>
+    <message>
+        <source>Type or paste a folder path</source>
+        <translation>Escribe o pega la ruta de una carpeta</translation>
+    </message>
+</context>
 </TS>

@@ -7789,4 +7789,27 @@ Licencēts saskaņā ar GNU General Public License 2. vai jaunāku versiju.</tra
         <translation>Vecākmape</translation>
     </message>
 </context>
+<context>
+    <name>FileChooserDialog</name>
+    <message>
+        <source>%1 already exists. Do you want to replace it?</source>
+        <translation>%1 jau pastāv. Vai vēlaties to aizstāt?</translation>
+    </message>
+    <message>
+        <source>File name</source>
+        <translation>Faila nosaukums</translation>
+    </message>
+    <message>
+        <source>File type</source>
+        <translation>Faila tips</translation>
+    </message>
+    <message>
+        <source>No files here</source>
+        <translation>Šeit nav failu</translation>
+    </message>
+    <message>
+        <source>Type or paste a folder path</source>
+        <translation>Ievadiet vai ielīmējiet mapes ceļu</translation>
+    </message>
+</context>
 </TS>

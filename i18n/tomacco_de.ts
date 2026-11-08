@@ -7809,4 +7809,27 @@ Lizenziert unter der GNU General Public License, Version 2 oder neuer.</translat
         <translation>Übergeordneter Ordner</translation>
     </message>
 </context>
+<context>
+    <name>FileChooserDialog</name>
+    <message>
+        <source>%1 already exists. Do you want to replace it?</source>
+        <translation>%1 ist bereits vorhanden. Datei ersetzen?</translation>
+    </message>
+    <message>
+        <source>File name</source>
+        <translation>Dateiname</translation>
+    </message>
+    <message>
+        <source>File type</source>
+        <translation>Dateityp</translation>
+    </message>
+    <message>
+        <source>No files here</source>
+        <translation>Hier sind keine Dateien</translation>
+    </message>
+    <message>
+        <source>Type or paste a folder path</source>
+        <translation>Gib den Pfad eines Ordners ein oder füge ihn ein</translation>
+    </message>
+</context>
 </TS>

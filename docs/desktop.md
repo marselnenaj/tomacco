@@ -218,8 +218,27 @@ lists folders whose names start with a dot. The keyboard: Ctrl+L goes to the loc
 Tab to the list, ↑ ↓ move, Enter or → opens a folder, Backspace, ← or Alt+↑ goes up,
 and Esc or **Cancel** closes the chooser without changing the open project. On a
 short window the chooser scrolls above its buttons; on a phone it is a sheet over the
-whole screen with 48 px targets. The other file choosers (settings, profiles, apps,
-web builds) are still Qt's own.
+whole screen with 48 px targets.
+
+### Choosing files and folders
+
+Every other place that opens, imports, saves or exports a file or picks a folder uses
+the same chooser (`qml/FileChooserDialog.qml`, of which the project chooser is one form):
+installing an app and saving a screenshot on a device, importing and exporting settings,
+device profiles, Android models and QA environments, a GPX route, the UI-test scenario,
+the Perfetto trace, the debug program, the Apple SDK, the iOS emulator, its prepared
+package and app bundle, the web build, and the Demo Studio's video, scene, preview and
+export. Qt's stock dialogs kept a fixed 600×497 window with 16 px icons, so at 175 %
+paths, names and file types were cut off. The location and the file name show whole
+(wrapped, left to right also in a right-to-left language) and take a typed or pasted
+path; folders come first, then the files of the chosen **File type**; **Hidden** also
+lists names that start with a dot. A click on a file names it, a double click or Enter
+opens it, and nothing happens until then. Saving adds the type's extension to a name
+without a dot (`settings` becomes `settings.json`), keeps a name with a dot as typed, and
+asks before it replaces an existing file; **No** and Esc keep the chooser open. Esc or
+**Cancel** closes it without starting an install, import, export or render. Below 600
+logical pixels of width or 480 of height the chooser is a sheet over the whole window
+that ends above the on-screen keyboard and keeps the focused file name in view.
 
 Screenshots of the live device, from the camera button, the palette, Ctrl+Shift+S or
 the device window's rail (Ctrl+Shift+S there too), are saved in `~/Pictures/Tomacco`

@@ -7789,4 +7789,27 @@ Licencirano pod GNU General Public License, verzija 2 ili novija.</translation>
         <translation>Nadređena mapa</translation>
     </message>
 </context>
+<context>
+    <name>FileChooserDialog</name>
+    <message>
+        <source>%1 already exists. Do you want to replace it?</source>
+        <translation>%1 već postoji. Želite li je zamijeniti?</translation>
+    </message>
+    <message>
+        <source>File name</source>
+        <translation>Naziv datoteke</translation>
+    </message>
+    <message>
+        <source>File type</source>
+        <translation>Vrsta datoteke</translation>
+    </message>
+    <message>
+        <source>No files here</source>
+        <translation>Ovdje nema datoteka</translation>
+    </message>
+    <message>
+        <source>Type or paste a folder path</source>
+        <translation>Upišite ili zalijepite putanju mape</translation>
+    </message>
+</context>
 </TS>

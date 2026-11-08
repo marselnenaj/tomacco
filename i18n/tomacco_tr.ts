@@ -7765,4 +7765,27 @@ GNU Genel Kamu Lisansı, sürüm 2 veya sonrası kapsamında lisanslanmıştır.
         <translation>Üst klasör</translation>
     </message>
 </context>
+<context>
+    <name>FileChooserDialog</name>
+    <message>
+        <source>%1 already exists. Do you want to replace it?</source>
+        <translation>%1 zaten var. Değiştirmek istiyor musunuz?</translation>
+    </message>
+    <message>
+        <source>File name</source>
+        <translation>Dosya adı</translation>
+    </message>
+    <message>
+        <source>File type</source>
+        <translation>Dosya türü</translation>
+    </message>
+    <message>
+        <source>No files here</source>
+        <translation>Burada dosya yok</translation>
+    </message>
+    <message>
+        <source>Type or paste a folder path</source>
+        <translation>Bir klasör yolu yazın veya yapıştırın</translation>
+    </message>
+</context>
 </TS>

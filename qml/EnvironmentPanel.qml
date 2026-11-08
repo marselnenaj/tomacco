@@ -1,7 +1,6 @@
 import QtQuick
 import QtQuick.Controls
 import QtQuick.Layouts
-import QtQuick.Dialogs
 import "."
 import "Numbers.js" as Numbers
 
@@ -246,9 +245,9 @@ ColumnLayout {
         Caption {objectName:"routeState";visible:!!view.routeJob;text:view.routeStateText()}
         Caption {text:qsTr("The emulator does not report its position, so the position before playback is unknown and is not restored. Set one in the preset's GPS field afterwards if you need it.")}
     }
-    FileDialog {id:routeDialog;nameFilters:[qsTr("GPX route (*.gpx)")];onAccepted:view.inspectRoute(decodeURIComponent(selectedFile.toString().replace(/^file:\/\//,"")))}
-    FileDialog {id:importDialog;nameFilters:[qsTr("QA environment (*.json)")];onAccepted:view.importFrom(decodeURIComponent(selectedFile.toString().replace(/^file:\/\//,"")))}
-    FileDialog {id:exportDialog;fileMode:FileDialog.SaveFile;defaultSuffix:"json";nameFilters:[qsTr("QA environment (*.json)")];onAccepted:view.exportTo(decodeURIComponent(selectedFile.toString().replace(/^file:\/\//,"")))}
+    FileChooserDialog {id:routeDialog;objectName:"routeFileDialog";mode:"open";title:qsTr("Route playback");nameFilters:[qsTr("GPX route (*.gpx)")];onAccepted:view.inspectRoute(selectedPath)}
+    FileChooserDialog {id:importDialog;objectName:"environmentImportDialog";mode:"open";title:qsTr("Import…");nameFilters:[qsTr("QA environment (*.json)")];onAccepted:view.importFrom(selectedPath)}
+    FileChooserDialog {id:exportDialog;objectName:"environmentExportDialog";mode:"save";title:qsTr("Export…");defaultSuffix:"json";nameFilters:[qsTr("QA environment (*.json)")];onAccepted:view.exportTo(selectedPath)}
     StudioDialog {id:deleteDialog;objectName:"environmentDeleteDialog";title:qsTr("Delete this preset?");modal:true;parent:Overlay.overlay;anchors.centerIn:parent;width:Math.min((parent?parent.width:view.width)-Theme.gapLg,Theme.px(480));contentItem:ColumnLayout {
         Caption {text:qsTr("The preset is removed from this computer. Devices keep their settings, and restore points stay.")}
         Flow {Layout.fillWidth:true;spacing:Theme.gapSm
