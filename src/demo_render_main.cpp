@@ -12,6 +12,7 @@
 #include <QStandardPaths>
 #include <QTemporaryFile>
 #include <QElapsedTimer>
+#include <QRegularExpression>
 #include <csignal>
 #include <cstdio>
 #include <cmath>
@@ -31,20 +32,27 @@ struct Child {
         process.setProgram(exe);process.setArguments(args);process.start();
         if(!process.waitForStarted(5000)){error="Could not start "+QFileInfo(exe).fileName()+": "+process.errorString();return false;}return true;
     }
-    QString diagnostics(){return QString::fromUtf8(process.readAllStandardError()).right(4096).trimmed();}
+    QByteArray stderrTail;
+    void collectDiagnostics() {
+        stderrTail+=process.readAllStandardError();
+        if(stderrTail.size()>65536)stderrTail.remove(0,stderrTail.size()-65536);
+    }
+    QString diagnostics(){collectDiagnostics();return QString::fromUtf8(stderrTail).right(4096).trimmed();}
 };
 bool waitFinished(Child &child,int timeout,QString &error) {
     QElapsedTimer timer;timer.start();
     while(child.process.state()!=QProcess::NotRunning) {
         if(interrupted){error="Rendering canceled.";return false;}
         if(timer.elapsed()>timeout){error="The local media process timed out.";return false;}
-        child.process.waitForFinished(100);
+        child.process.waitForFinished(100);child.collectDiagnostics();
     }
+    child.collectDiagnostics();
     if(child.process.exitStatus()!=QProcess::NormalExit || child.process.exitCode()!=0){error="The local media process failed: "+child.diagnostics();return false;}return true;
 }
 bool readFrame(Child &decoder,QImage &frame,QString &error) {
     const qsizetype needed=frame.sizeInBytes();qsizetype offset=0;QElapsedTimer timer;timer.start();
     while(offset<needed) {
+        decoder.collectDiagnostics();
         if(interrupted){error="Rendering canceled.";return false;}
         const auto n=decoder.process.read(reinterpret_cast<char*>(frame.bits())+offset,needed-offset);
         if(n>0){offset+=n;timer.restart();continue;}
@@ -57,6 +65,7 @@ bool readFrame(Child &decoder,QImage &frame,QString &error) {
 bool writeFrame(Child &encoder,const QImage &frame,QString &error) {
     const char *bytes=reinterpret_cast<const char*>(frame.constBits());qsizetype offset=0;const auto total=frame.sizeInBytes();QElapsedTimer timer;timer.start();
     while(offset<total || encoder.process.bytesToWrite()>0) {
+        encoder.collectDiagnostics();
         if(interrupted){error="Rendering canceled.";return false;}
         if(encoder.process.state()==QProcess::NotRunning){error="The video encoder stopped: "+encoder.diagnostics();return false;}
         if(encoder.process.bytesToWrite()<1024*1024 && offset<total) {
@@ -102,7 +111,10 @@ bool verifyDisplaySize(const Demo::Scene &scene,const QString &ffprobe,QString &
     if(w!=scene.sourceWidth || h!=scene.sourceHeight){error="The video's display dimensions changed; inspect it again before rendering.";return false;}return true;
 }
 QStringList decoderArguments(const Demo::Scene &scene,std::optional<double> time) {
-    QStringList args{"-v","error","-nostdin","-threads","2","-protocol_whitelist","file,pipe","-ss",QString::number(scene.clipStart,'f',9),"-i",scene.sourcePath,"-map","0:v:0","-an","-sn","-dn"};
+    const bool captureOrigin=scene.sourceAudio && !time;
+    QStringList args{"-v",captureOrigin?"info":"error","-nostats","-nostdin","-threads","2"};
+    if(captureOrigin)args<<"-copyts"<<"-start_at_zero";
+    args<<"-protocol_whitelist"<<"file,pipe"<<"-ss"<<QString::number(scene.clipStart,'f',9)<<"-i"<<scene.sourcePath<<"-an"<<"-sn"<<"-dn";
     QString filter=QString("setpts=PTS-STARTPTS,fps=fps=%1:start_time=0:round=near:eof_action=pass").arg(scene.fps);
     if(time) {
         // Sampling through the same rational timeline as export makes a paused
@@ -110,8 +122,29 @@ QStringList decoderArguments(const Demo::Scene &scene,std::optional<double> time
         const int index=std::clamp(int(std::floor(*time*scene.fps)),0,scene.frameCount()-1);
         filter+=QString(",select=eq(n\\,%1)").arg(index);
     }
-    args<<"-vf"<<filter;
+    if(captureOrigin) {
+        // Observe exactly the frame that the existing decoder rebases to zero.
+        // copyts/start_at_zero preserves format-relative timestamps, including
+        // coarse time-base seek rounding. The side branch logs only one frame;
+        // normalizing before observing would lose its actual source origin.
+        args<<"-filter_complex_threads"<<"1"<<"-filter_complex"
+            <<QString("[0:v:0]split=2[video][stamp];[stamp]select=eq(n\\,0),showinfo=checksum=0,nullsink;[video]%1[sampled]").arg(filter)
+            <<"-map"<<"[sampled]";
+    } else args<<"-map"<<"0:v:0"<<"-vf"<<filter;
     args<<"-frames:v"<<QString::number(time?1:scene.frameCount())<<"-threads"<<"2"<<"-pix_fmt"<<"rgba"<<"-f"<<"rawvideo"<<"pipe:1";return args;
+}
+std::optional<double> firstVideoOrigin(Child &decoder,QString &error) {
+    decoder.collectDiagnostics();
+    const QString log=QString::fromUtf8(decoder.stderrTail);
+    const auto base=QRegularExpression("config in time_base: ([0-9]+)/([0-9]+)").match(log);
+    const auto frame=QRegularExpression("n:\\s*0\\s+pts:\\s*(-?[0-9]+)\\s+pts_time:").match(log);
+    bool a=false,b=false,c=false;
+    const qint64 numerator=base.captured(1).toLongLong(&a),denominator=base.captured(2).toLongLong(&b),pts=frame.captured(1).toLongLong(&c);
+    const double origin=double(pts)*double(numerator)/double(denominator);
+    if(!base.hasMatch() || !frame.hasMatch() || !a || !b || !c || numerator<=0 || denominator<=0 || !std::isfinite(origin) || origin<0 || origin>86400) {
+        error="Could not establish a bounded first-video timestamp for source audio alignment.";return std::nullopt;
+    }
+    return origin;
 }
 int run(const QString &scenePath,const QString &output,std::optional<double> time,QString &error) {
     QFile input(scenePath);if(!QFileInfo(scenePath).isAbsolute() || !QFileInfo(scenePath).isFile() || !input.open(QIODevice::ReadOnly) || input.size()>1024*1024){error="Could not read a demo scene document of at most 1 MiB.";return 1;}
@@ -124,18 +157,26 @@ int run(const QString &scenePath,const QString &output,std::optional<double> tim
     Artifact movie(output),poster(output+".poster.png"),manifest(output+".manifest.json");
     if(!movie.prepare(error) || (!time && (!poster.prepare(error) || !manifest.prepare(error))))return 1;
     if(!verifyDisplaySize(scene,ffprobe,error))return 1;
+    QImage frame(scene.sourceWidth,scene.sourceHeight,QImage::Format_RGBA8888);
+    if(frame.isNull()){error="Could not allocate the source frame.";return 1;}
     Child decoder,encoder;if(!decoder.start(ffmpeg,decoderArguments(scene,time),error))return 1;
+    double audioOrigin=scene.clipStart;bool firstFrameReady=false;
+    if(scene.sourceAudio && !time) {
+        if(!readFrame(decoder,frame,error))return 1;
+        const auto origin=firstVideoOrigin(decoder,error);if(!origin)return 1;
+        audioOrigin=*origin;firstFrameReady=true;
+    }
     if(!time) {
         QStringList args{"-v","error","-nostdin","-threads","2"};
         if(scene.sourceAudio)args<<"-copyts"<<"-start_at_zero";
         args<<"-f"<<"rawvideo"<<"-pixel_format"<<"rgba"<<"-video_size"<<QString("%1x%2").arg(scene.width).arg(scene.height)<<"-framerate"<<QString::number(scene.fps)<<"-i"<<"pipe:0";
         if(scene.sourceAudio) {
-            const QString start=QString::number(scene.clipStart,'f',9);
-            const QString end=QString::number(scene.clipStart+scene.duration,'f',9);
+            const QString start=QString::number(audioOrigin,'f',9);
+            const QString end=QString::number(audioOrigin+scene.duration,'f',9);
             const QString duration=QString::number(double(scene.frameCount())/scene.fps,'f',9);
-            // Keep source timestamps relative to the container's start, just as
-            // the video seek does. Subtract the clip origin, not STARTPTS: the
-            // latter would move a late-starting audio stream to the first frame.
+            // Keep source timestamps relative to the container's start. Subtract
+            // the actual first decoded video sample, not an arbitrary seek time
+            // or audio STARTPTS; both would shift offset or VFR recordings.
             // A finite silence bed also covers an audio track that ends before
             // this clip; it never extends or truncates the rendered video.
             args<<"-ss"<<start<<"-protocol_whitelist"<<"file,pipe"<<"-i"<<scene.sourcePath;
@@ -145,11 +186,10 @@ int run(const QString &scenePath,const QString &output,std::optional<double> tim
         args<<"-map_metadata"<<"-1"<<"-map_chapters"<<"-1"<<"-c:v"<<"libx264"<<"-preset"<<"fast"<<"-crf"<<"18"<<"-pix_fmt"<<"yuv420p"<<"-threads"<<"2"<<"-movflags"<<"+faststart"<<"-f"<<"mp4"<<"-y"<<movie.temporary.fileName();
         if(!encoder.start(ffmpeg,args,error))return 1;
     }
-    Demo::Renderer renderer(scene);QImage frame(scene.sourceWidth,scene.sourceHeight,QImage::Format_RGBA8888);
-    if(frame.isNull()){error="Could not allocate the source frame.";return 1;}
+    Demo::Renderer renderer(scene);
     QImage posterFrame;const int count=time?1:scene.frameCount();
     for(int i=0;i<count;++i) {
-        if(!readFrame(decoder,frame,error))return 1;
+        if(!(firstFrameReady && i==0) && !readFrame(decoder,frame,error))return 1;
         QImage rendered=renderer.render(frame,time.value_or(scene.frameTime(i)),&error);if(rendered.isNull())return 1;
         if(i==0)posterFrame=rendered;
         if(time) {if(!rendered.save(movie.temporary.fileName(),"PNG")){error="Could not save the rendered preview.";return 1;}}
@@ -159,6 +199,7 @@ int run(const QString &scenePath,const QString &output,std::optional<double> tim
     if(!waitFinished(decoder,10000,error))return 1;
     if(!time){encoder.process.closeWriteChannel();if(!waitFinished(encoder,60000,error))return 1;if(!posterFrame.save(poster.temporary.fileName(),"PNG")){error="Could not save the export poster.";return 1;}}
     QJsonObject metadata{{"format","tomacco.demo.render"},{"version",1},{"output",output},{"width",scene.width},{"height",scene.height},{"frames",count},{"fps",scene.fps},{"duration",time?0:double(count)/scene.fps},{"requested_duration",scene.duration},{"silent",bool(time) || !scene.sourceAudio},{"audio",scene.sourceAudio && !time ? QJsonObject{{"mode","source"},{"codec","aac"},{"sample_rate",48000},{"channels",2}} : QJsonObject{{"mode","muted"}}},{"source_sha256",scene.sourceDigest},{"source_frame_selection","fixed-rate samples from clip start; repeated frames are held, never interpolated"}};
+    if(scene.sourceAudio && !time)metadata["source_audio_origin"]=audioOrigin;
     if(time)metadata["time"]=*time;
     else {metadata["poster"]=poster.destination;metadata["manifest"]=manifest.destination;if(!manifest.writeJson(metadata,error))return 1;}
     progress({{"phase","publishing"},{"frames",count}});

@@ -1102,7 +1102,9 @@ pub fn finalize(request_path: &str) -> Result<()> {
                 && (renderer_manifest["audio"]["mode"] != "source"
                     || renderer_manifest["audio"]["codec"] != "aac"
                     || renderer_manifest["audio"]["sample_rate"] != 48000
-                    || renderer_manifest["audio"]["channels"] != 2))
+                    || renderer_manifest["audio"]["channels"] != 2
+                    || number(&renderer_manifest["source_audio_origin"])
+                        .is_none_or(|n| !(0.0..=86400.0).contains(&n))))
             || (!scene.audio.source()
                 && !renderer_manifest["audio"].is_null()
                 && renderer_manifest["audio"]["mode"] != "muted")
@@ -1112,6 +1114,9 @@ pub fn finalize(request_path: &str) -> Result<()> {
                 "Renderer manifest disagrees with independently decoded output",
             )
             .details(renderer_manifest));
+        }
+        if scene.audio.source() {
+            report["audio"]["source_origin"] = renderer_manifest["source_audio_origin"].clone();
         }
         report["renderer"] = renderer_manifest;
         let manifest = json!({"format":"tomacco.demo.export","version":1,"scene":scene,"scene_path":r["scene_path"],"output":out,"poster":r["poster"],"validation":report});
