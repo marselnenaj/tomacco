@@ -2278,5 +2278,6 @@
     "cache": "python3 tools/benchmark_ocr.py mcp --cli build/tomaccoctl --output qa/ocr-fast/mcp-cache-release.json"
   },
   "ignored_raw_evidence": "qa/ocr-fast/baseline-raw.json",
-  "candidate_status": "Release candidate comparison pending. Debug previous-guard results are historical QA only and not used as final performance evidence."
+  "candidate_status": "Final same-binary optimized release comparison complete; see ocr-adaptive-qualification.json. Historical debug data excluded.",
+  "candidate_qualification": "ocr-adaptive-qualification.json"
 }

@@ -1,0 +1,4717 @@
+{
+  "schema": "tomacco-ocr-adaptive-qualification/1",
+  "created_at": "2026-11-08T09:54:43.056648+00:00",
+  "state": "offline_release_qualification_passed",
+  "measured_cli": {
+    "path": "/home/maslos/Work/tomacco-ocr-fast-20261108/build/tomaccoctl",
+    "sha256": "5c458fccf723c343fb7c41a9852941bbfa712239638936704f28d451e4dc096a"
+  },
+  "build_kind": "Optimized release; all modes in this report measured through the same exact binary",
+  "source_sha256": {
+    "native/screen_ocr.rs": "76ca9c40fe9955fed71193f62a086bf7224837126c778a894835be56e9cc4b18",
+    "native/screen.rs": "cf538bb366ecae19ad54f8a8dfec87ad1237f9885908616df4a7306bbeb0f538",
+    "assets/operations.json": "76b7ec2a6510c6c97f7399afffac7cf5a1a026cb8c3e97d34779fad20cf6d71b",
+    "tools/benchmark_ocr.py": "ec05ef2261e16386aa08eec5084e70dab69510a492c63df8e181631046100b70"
+  },
+  "engine": {
+    "tesseract": "tesseract 5.5.3",
+    "installed_languages": [
+      "eng",
+      "osd"
+    ],
+    "language": "eng",
+    "tessdata": {
+      "path": "/usr/share/tessdata",
+      "eng_sha256": "daa0c97d651c19fba3b25e81317cd697e9908c8208090c94c3905381c23fc047"
+    }
+  },
+  "host": {
+    "platform": "Linux-7.2.11-arch1-1-x86_64-with-glibc2.44",
+    "machine": "x86_64",
+    "cpu_count": 32
+  },
+  "corpus": {
+    "manifest": "tests/fixtures/ocr-corpus/manifest.json",
+    "sha256": "4907d2d449bb3cc72f4d7e9328e0a14405ace87796757c7cd7b8a29e7b543b68",
+    "independent_images": 16,
+    "total_cases": 20,
+    "base_images": 16,
+    "positive_base_images": 14,
+    "region_variants": 2,
+    "post_baseline_regression_focus_cases": 2
+  },
+  "protocol": {
+    "modes": [
+      "auto",
+      "never",
+      "adaptive"
+    ],
+    "trials_per_case_mode": 3,
+    "call_count": 180,
+    "order": "Alternate mode order each trial; process-cold CLI; OS page cache not flushed",
+    "min_confidence": 40,
+    "detail": "full",
+    "boundaries": {
+      "measured": "Process-cold one-shot JSON CLI image OCR wall time: startup/guard+PNG I/O/decode+Tesseract+merge+JSON; OS page caches are not flushed",
+      "not_measured": [
+        "Device screenshot/transfer",
+        "MCP/persistent cache",
+        "Tap/action latency",
+        "Agent reasoning",
+        "FPS",
+        "PhoneUse or any competitor"
+      ]
+    },
+    "raw_results": "qa/ocr-fast/candidate-release-raw.json"
+  },
+  "aggregate_independent_images_only": {
+    "auto": {
+      "base_images": 16,
+      "calls": 48,
+      "median_call_wall_ms": 312.78799349999997,
+      "median_of_case_medians_ms": 308.729,
+      "labelled_target_hits_per_corpus": 57,
+      "labelled_target_total_per_corpus": 74,
+      "labelled_target_recall": 0.7702702702702703,
+      "labelled_word_hits_per_corpus": 92,
+      "labelled_word_total_per_corpus": 124,
+      "labelled_word_recall": 0.7419354838709677,
+      "one_pass_calls": 0,
+      "two_pass_calls": 48,
+      "engine_runs": [
+        2,
+        2,
+        2,
+        2,
+        2,
+        2,
+        2,
+        2,
+        2,
+        2,
+        2,
+        2,
+        2,
+        2,
+        2,
+        2,
+        2,
+        2,
+        2,
+        2,
+        2,
+        2,
+        2,
+        2,
+        2,
+        2,
+        2,
+        2,
+        2,
+        2,
+        2,
+        2,
+        2,
+        2,
+        2,
+        2,
+        2,
+        2,
+        2,
+        2,
+        2,
+        2,
+        2,
+        2,
+        2,
+        2,
+        2,
+        2
+      ],
+      "primary_expected_match_counts_correct": 27
+    },
+    "never": {
+      "base_images": 16,
+      "calls": 48,
+      "median_call_wall_ms": 147.605746,
+      "median_of_case_medians_ms": 147.31650000000002,
+      "labelled_target_hits_per_corpus": 55,
+      "labelled_target_total_per_corpus": 74,
+      "labelled_target_recall": 0.7432432432432432,
+      "labelled_word_hits_per_corpus": 90,
+      "labelled_word_total_per_corpus": 124,
+      "labelled_word_recall": 0.7258064516129032,
+      "one_pass_calls": 48,
+      "two_pass_calls": 0,
+      "engine_runs": [
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1
+      ],
+      "primary_expected_match_counts_correct": 27
+    },
+    "adaptive": {
+      "base_images": 16,
+      "calls": 48,
+      "median_call_wall_ms": 275.64928799999996,
+      "median_of_case_medians_ms": 283.5665,
+      "labelled_target_hits_per_corpus": 57,
+      "labelled_target_total_per_corpus": 74,
+      "labelled_target_recall": 0.7702702702702703,
+      "labelled_word_hits_per_corpus": 92,
+      "labelled_word_total_per_corpus": 124,
+      "labelled_word_recall": 0.7419354838709677,
+      "one_pass_calls": 18,
+      "two_pass_calls": 30,
+      "engine_runs": [
+        2,
+        2,
+        2,
+        2,
+        2,
+        2,
+        2,
+        2,
+        2,
+        2,
+        2,
+        2,
+        2,
+        2,
+        2,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        1,
+        2,
+        2,
+        2,
+        2,
+        2,
+        2,
+        2,
+        2,
+        2,
+        1,
+        1,
+        1,
+        2,
+        2,
+        2,
+        2,
+        2,
+        2
+      ],
+      "primary_expected_match_counts_correct": 27
+    }
+  },
+  "adaptive_vs_auto_median_wall_reduction": 0.11873443441491949,
+  "legacy_auto_never_quality_differences": [],
+  "focus_target_recovery": {
+    "real-landscape-inversion-target": {
+      "auto": [
+        1,
+        1,
+        1
+      ],
+      "never": [
+        0,
+        0,
+        0
+      ],
+      "adaptive": [
+        1,
+        1,
+        1
+      ]
+    },
+    "small-text-inversion-target": {
+      "auto": [
+        1,
+        1,
+        1
+      ],
+      "never": [
+        0,
+        0,
+        0
+      ],
+      "adaptive": [
+        1,
+        1,
+        1
+      ]
+    }
+  },
+  "persistent_mcp_probe": {
+    "schema": "tomacco-ocr-mcp-cache-probe/1",
+    "created_at": "2026-11-08T09:51:59.283913+00:00",
+    "rows": [
+      {
+        "label": "light-first",
+        "wall_ms": 146.531193,
+        "text_payload_utf8_bytes": 1922,
+        "envelope_utf8_bytes": 4524,
+        "passes": 1,
+        "engine_runs": 1,
+        "cached": false,
+        "fallback_reason": null,
+        "read_ms": 144.932047,
+        "total_ms": 145.013918,
+        "matches": [
+          {
+            "text": "Continue",
+            "confidence": 90.6,
+            "source": "ocr",
+            "words": 1,
+            "fuzzy": false,
+            "rect": {
+              "left": 41,
+              "top": 334,
+              "right": 144,
+              "bottom": 353,
+              "x": 92,
+              "y": 343,
+              "width": 103,
+              "height": 19
+            }
+          }
+        ],
+        "word_count": 6,
+        "has_full_words": true,
+        "has_full_lines": true
+      },
+      {
+        "label": "light-compact-cached",
+        "wall_ms": 0.394304,
+        "text_payload_utf8_bytes": 699,
+        "envelope_utf8_bytes": 1666,
+        "passes": 1,
+        "engine_runs": 0,
+        "cached": true,
+        "fallback_reason": null,
+        "read_ms": 0.026735000000000002,
+        "total_ms": 0.06683,
+        "matches": [
+          {
+            "text": "Continue",
+            "confidence": 90.6,
+            "source": "ocr",
+            "words": 1,
+            "fuzzy": false,
+            "rect": {
+              "left": 41,
+              "top": 334,
+              "right": 144,
+              "bottom": 353,
+              "x": 92,
+              "y": 343,
+              "width": 103,
+              "height": 19
+            }
+          }
+        ],
+        "word_count": 6,
+        "has_full_words": false,
+        "has_full_lines": false
+      },
+      {
+        "label": "light-other-query-cached",
+        "wall_ms": 4.569644,
+        "text_payload_utf8_bytes": 703,
+        "envelope_utf8_bytes": 1674,
+        "passes": 1,
+        "engine_runs": 0,
+        "cached": true,
+        "fallback_reason": null,
+        "read_ms": 4.297892999999999,
+        "total_ms": 4.330225,
+        "matches": [
+          {
+            "text": "Account settings",
+            "confidence": 91.9,
+            "source": "ocr",
+            "words": 2,
+            "fuzzy": false,
+            "rect": {
+              "left": 40,
+              "top": 39,
+              "right": 232,
+              "bottom": 62,
+              "x": 136,
+              "y": 50,
+              "width": 192,
+              "height": 23
+            }
+          }
+        ],
+        "word_count": 6,
+        "has_full_words": false,
+        "has_full_lines": false
+      },
+      {
+        "label": "light-auto-adds-one-inverted-pass",
+        "wall_ms": 202.714331,
+        "text_payload_utf8_bytes": 1916,
+        "envelope_utf8_bytes": 4512,
+        "passes": 2,
+        "engine_runs": 1,
+        "cached": false,
+        "fallback_reason": null,
+        "read_ms": 202.211509,
+        "total_ms": 202.28975,
+        "matches": [
+          {
+            "text": "Continue",
+            "confidence": 90.6,
+            "source": "ocr",
+            "words": 1,
+            "fuzzy": false,
+            "rect": {
+              "left": 41,
+              "top": 334,
+              "right": 144,
+              "bottom": 353,
+              "x": 92,
+              "y": 343,
+              "width": 103,
+              "height": 19
+            }
+          }
+        ],
+        "word_count": 6,
+        "has_full_words": true,
+        "has_full_lines": true
+      },
+      {
+        "label": "light-auto-both-cached",
+        "wall_ms": 0.364819,
+        "text_payload_utf8_bytes": 696,
+        "envelope_utf8_bytes": 1660,
+        "passes": 2,
+        "engine_runs": 0,
+        "cached": true,
+        "fallback_reason": null,
+        "read_ms": 0.024117999999999997,
+        "total_ms": 0.064187,
+        "matches": [
+          {
+            "text": "Continue",
+            "confidence": 90.6,
+            "source": "ocr",
+            "words": 1,
+            "fuzzy": false,
+            "rect": {
+              "left": 41,
+              "top": 334,
+              "right": 144,
+              "bottom": 353,
+              "x": 92,
+              "y": 343,
+              "width": 103,
+              "height": 19
+            }
+          }
+        ],
+        "word_count": 6,
+        "has_full_words": false,
+        "has_full_lines": false
+      },
+      {
+        "label": "landscape-normal-seed",
+        "wall_ms": 134.80624,
+        "text_payload_utf8_bytes": 2373,
+        "envelope_utf8_bytes": 5614,
+        "passes": 1,
+        "engine_runs": 1,
+        "cached": false,
+        "fallback_reason": null,
+        "read_ms": 134.285661,
+        "total_ms": 134.38193900000002,
+        "matches": [],
+        "word_count": 9,
+        "has_full_words": true,
+        "has_full_lines": true
+      },
+      {
+        "label": "landscape-target-miss-fallback",
+        "wall_ms": 162.441094,
+        "text_payload_utf8_bytes": 726,
+        "envelope_utf8_bytes": 1722,
+        "passes": 2,
+        "engine_runs": 1,
+        "cached": false,
+        "fallback_reason": "target_not_found",
+        "read_ms": 162.00557500000002,
+        "total_ms": 162.05134099999998,
+        "matches": [
+          {
+            "text": "Progress",
+            "confidence": 41.8,
+            "source": "ocr",
+            "words": 1,
+            "fuzzy": false,
+            "rect": {
+              "left": 113,
+              "top": 214,
+              "right": 156,
+              "bottom": 225,
+              "x": 134,
+              "y": 219,
+              "width": 43,
+              "height": 11
+            }
+          }
+        ],
+        "word_count": 10,
+        "has_full_words": false,
+        "has_full_lines": false
+      },
+      {
+        "label": "landscape-target-cached",
+        "wall_ms": 0.443303,
+        "text_payload_utf8_bytes": 727,
+        "envelope_utf8_bytes": 1724,
+        "passes": 2,
+        "engine_runs": 0,
+        "cached": true,
+        "fallback_reason": "target_not_found",
+        "read_ms": 0.053663999999999996,
+        "total_ms": 0.10104300000000001,
+        "matches": [
+          {
+            "text": "Progress",
+            "confidence": 41.8,
+            "source": "ocr",
+            "words": 1,
+            "fuzzy": false,
+            "rect": {
+              "left": 113,
+              "top": 214,
+              "right": 156,
+              "bottom": 225,
+              "x": 134,
+              "y": 219,
+              "width": 43,
+              "height": 11
+            }
+          }
+        ],
+        "word_count": 10,
+        "has_full_words": false,
+        "has_full_lines": false
+      },
+      {
+        "label": "duplicate-targets-remain-ambiguous",
+        "wall_ms": 106.19153,
+        "text_payload_utf8_bytes": 869,
+        "envelope_utf8_bytes": 2066,
+        "passes": 1,
+        "engine_runs": 1,
+        "cached": false,
+        "fallback_reason": null,
+        "read_ms": 105.71999799999999,
+        "total_ms": 105.765917,
+        "matches": [
+          {
+            "text": "Continue",
+            "confidence": 91.1,
+            "source": "ocr",
+            "words": 1,
+            "fuzzy": false,
+            "rect": {
+              "left": 61,
+              "top": 65,
+              "right": 156,
+              "bottom": 82,
+              "x": 108,
+              "y": 73,
+              "width": 95,
+              "height": 17
+            }
+          },
+          {
+            "text": "Continue",
+            "confidence": 91.1,
+            "source": "ocr",
+            "words": 1,
+            "fuzzy": false,
+            "rect": {
+              "left": 61,
+              "top": 265,
+              "right": 156,
+              "bottom": 282,
+              "x": 108,
+              "y": 273,
+              "width": 95,
+              "height": 17
+            }
+          }
+        ],
+        "word_count": 2,
+        "has_full_words": false,
+        "has_full_lines": false
+      },
+      {
+        "label": "small-text-exhausted-fallback",
+        "wall_ms": 293.10749,
+        "text_payload_utf8_bytes": 547,
+        "envelope_utf8_bytes": 1307,
+        "passes": 2,
+        "engine_runs": 2,
+        "cached": false,
+        "fallback_reason": "target_not_found",
+        "read_ms": 292.59133599999996,
+        "total_ms": 292.647804,
+        "matches": [],
+        "word_count": 7,
+        "has_full_words": false,
+        "has_full_lines": false
+      }
+    ],
+    "failures": [],
+    "passed": true,
+    "forbidden_tool_calls": 0,
+    "compact_payload_reduction": 0.6363163371488033,
+    "boundaries": "One persistent local MCP server, image-only OCR; times include MCP transport+OCR/cache+JSON, exclude device capture, input and agent reasoning. One sequence is a functional/cache observation, not a3-run performance distribution."
+  },
+  "cases": [
+    {
+      "id": "real-portrait",
+      "source_type": "real_app_frame_crop",
+      "evaluation_role": "base",
+      "targets": [
+        "tomatoes",
+        "Make room",
+        "for today",
+        "Today",
+        "Progress",
+        "Settings",
+        "Task title",
+        "Save task",
+        "Ship the demo"
+      ],
+      "primary_target": "Save task",
+      "modes": {
+        "auto": {
+          "case": "real-portrait",
+          "mode": "auto",
+          "trials": 3,
+          "errors": 0,
+          "wall_median_ms": 377.039,
+          "target_recall": 0.8888888888888888,
+          "labelled_word_recall": 0.7333333333333333,
+          "primary_hits": [
+            0,
+            0,
+            0
+          ],
+          "passes": [
+            2,
+            2,
+            2
+          ],
+          "false_positive_words": null,
+          "wall_ms_trials": [
+            419.100733,
+            344.750683,
+            377.038567
+          ],
+          "engine_runs": [
+            2,
+            2,
+            2
+          ],
+          "fallback_reasons": [
+            null,
+            null,
+            null
+          ],
+          "quality": {
+            "target_hits": 8,
+            "target_total": 9,
+            "target_hits_by_label": {
+              "tomatoes": 1,
+              "Make room": 1,
+              "for today": 1,
+              "Today": 1,
+              "Progress": 1,
+              "Settings": 1,
+              "Task title": 1,
+              "Save task": 0,
+              "Ship the demo": 1
+            },
+            "labelled_word_hits": 11,
+            "labelled_word_total": 15,
+            "primary_target": "Save task",
+            "primary_api_matches": 0,
+            "expected_primary_matches": 1,
+            "primary_centres_in_labelled_region": [],
+            "negative_control": false,
+            "false_positive_words": null
+          },
+          "quality_stable_across_three": true,
+          "representative_lines": [
+            "1450 &",
+            "]",
+            "tomatoes",
+            "Make room",
+            "for today.",
+            "Today",
+            "Progress.",
+            "Settings",
+            "WHAT MATTERS NEXT",
+            "Tasktitle",
+            "(=",
+            "saven Tasks",
+            "(1",
+            "Ship the demo"
+          ]
+        },
+        "never": {
+          "case": "real-portrait",
+          "mode": "never",
+          "trials": 3,
+          "errors": 0,
+          "wall_median_ms": 148.678,
+          "target_recall": 0.8888888888888888,
+          "labelled_word_recall": 0.7333333333333333,
+          "primary_hits": [
+            0,
+            0,
+            0
+          ],
+          "passes": [
+            1,
+            1,
+            1
+          ],
+          "false_positive_words": null,
+          "wall_ms_trials": [
+            169.21281,
+            146.340739,
+            148.677652
+          ],
+          "engine_runs": [
+            1,
+            1,
+            1
+          ],
+          "fallback_reasons": [
+            null,
+            null,
+            null
+          ],
+          "quality": {
+            "target_hits": 8,
+            "target_total": 9,
+            "target_hits_by_label": {
+              "tomatoes": 1,
+              "Make room": 1,
+              "for today": 1,
+              "Today": 1,
+              "Progress": 1,
+              "Settings": 1,
+              "Task title": 1,
+              "Save task": 0,
+              "Ship the demo": 1
+            },
+            "labelled_word_hits": 11,
+            "labelled_word_total": 15,
+            "primary_target": "Save task",
+            "primary_api_matches": 0,
+            "expected_primary_matches": 1,
+            "primary_centres_in_labelled_region": [],
+            "negative_control": false,
+            "false_positive_words": null
+          },
+          "quality_stable_across_three": true,
+          "representative_lines": [
+            "1450 &",
+            "]",
+            "tomatoes",
+            "Make room",
+            "for today.",
+            "Today",
+            "Progress.",
+            "Settings",
+            "WHAT MATTERS NEXT",
+            "Tasktitle",
+            "(=",
+            "saven Tasks",
+            "Ship the demo"
+          ]
+        },
+        "adaptive": {
+          "case": "real-portrait",
+          "mode": "adaptive",
+          "trials": 3,
+          "errors": 0,
+          "wall_median_ms": 355.284,
+          "target_recall": 0.8888888888888888,
+          "labelled_word_recall": 0.7333333333333333,
+          "primary_hits": [
+            0,
+            0,
+            0
+          ],
+          "passes": [
+            2,
+            2,
+            2
+          ],
+          "false_positive_words": null,
+          "wall_ms_trials": [
+            355.28425,
+            326.582552,
+            362.634603
+          ],
+          "engine_runs": [
+            2,
+            2,
+            2
+          ],
+          "fallback_reasons": [
+            "target_not_found",
+            "target_not_found",
+            "target_not_found"
+          ],
+          "quality": {
+            "target_hits": 8,
+            "target_total": 9,
+            "target_hits_by_label": {
+              "tomatoes": 1,
+              "Make room": 1,
+              "for today": 1,
+              "Today": 1,
+              "Progress": 1,
+              "Settings": 1,
+              "Task title": 1,
+              "Save task": 0,
+              "Ship the demo": 1
+            },
+            "labelled_word_hits": 11,
+            "labelled_word_total": 15,
+            "primary_target": "Save task",
+            "primary_api_matches": 0,
+            "expected_primary_matches": 1,
+            "primary_centres_in_labelled_region": [],
+            "negative_control": false,
+            "false_positive_words": null
+          },
+          "quality_stable_across_three": true,
+          "representative_lines": [
+            "1450 &",
+            "]",
+            "tomatoes",
+            "Make room",
+            "for today.",
+            "Today",
+            "Progress.",
+            "Settings",
+            "WHAT MATTERS NEXT",
+            "Tasktitle",
+            "(=",
+            "saven Tasks",
+            "(1",
+            "Ship the demo"
+          ]
+        }
+      }
+    },
+    {
+      "id": "real-landscape",
+      "source_type": "real_app_frame_crop",
+      "evaluation_role": "base",
+      "targets": [
+        "tomatoes",
+        "Make room",
+        "for today",
+        "Today",
+        "Progress",
+        "Settings"
+      ],
+      "primary_target": "Settings",
+      "modes": {
+        "auto": {
+          "case": "real-landscape",
+          "mode": "auto",
+          "trials": 3,
+          "errors": 0,
+          "wall_median_ms": 315.381,
+          "target_recall": 1.0,
+          "labelled_word_recall": 1.0,
+          "primary_hits": [
+            1,
+            1,
+            1
+          ],
+          "passes": [
+            2,
+            2,
+            2
+          ],
+          "false_positive_words": null,
+          "wall_ms_trials": [
+            301.599205,
+            315.380543,
+            345.758806
+          ],
+          "engine_runs": [
+            2,
+            2,
+            2
+          ],
+          "fallback_reasons": [
+            null,
+            null,
+            null
+          ],
+          "quality": {
+            "target_hits": 6,
+            "target_total": 6,
+            "target_hits_by_label": {
+              "tomatoes": 1,
+              "Make room": 1,
+              "for today": 1,
+              "Today": 1,
+              "Progress": 1,
+              "Settings": 1
+            },
+            "labelled_word_hits": 8,
+            "labelled_word_total": 8,
+            "primary_target": "Settings",
+            "primary_api_matches": 1,
+            "expected_primary_matches": 1,
+            "primary_centres_in_labelled_region": [
+              true
+            ],
+            "negative_control": false,
+            "false_positive_words": null
+          },
+          "quality_stable_across_three": true,
+          "representative_lines": [
+            "1",
+            "469",
+            "tomatoes",
+            "Make room",
+            "«for today.",
+            "Today",
+            "Progress",
+            "Settings"
+          ]
+        },
+        "never": {
+          "case": "real-landscape",
+          "mode": "never",
+          "trials": 3,
+          "errors": 0,
+          "wall_median_ms": 145.955,
+          "target_recall": 0.8333333333333334,
+          "labelled_word_recall": 0.875,
+          "primary_hits": [
+            1,
+            1,
+            1
+          ],
+          "passes": [
+            1,
+            1,
+            1
+          ],
+          "false_positive_words": null,
+          "wall_ms_trials": [
+            146.075928,
+            138.622904,
+            145.954905
+          ],
+          "engine_runs": [
+            1,
+            1,
+            1
+          ],
+          "fallback_reasons": [
+            null,
+            null,
+            null
+          ],
+          "quality": {
+            "target_hits": 5,
+            "target_total": 6,
+            "target_hits_by_label": {
+              "tomatoes": 1,
+              "Make room": 1,
+              "for today": 1,
+              "Today": 1,
+              "Progress": 0,
+              "Settings": 1
+            },
+            "labelled_word_hits": 7,
+            "labelled_word_total": 8,
+            "primary_target": "Settings",
+            "primary_api_matches": 1,
+            "expected_primary_matches": 1,
+            "primary_centres_in_labelled_region": [
+              true
+            ],
+            "negative_control": false,
+            "false_positive_words": null
+          },
+          "quality_stable_across_three": true,
+          "representative_lines": [
+            "1",
+            "469",
+            "tomatoes",
+            "Make room",
+            "«for today.",
+            "Today",
+            "Settings"
+          ]
+        },
+        "adaptive": {
+          "case": "real-landscape",
+          "mode": "adaptive",
+          "trials": 3,
+          "errors": 0,
+          "wall_median_ms": 352.962,
+          "target_recall": 1.0,
+          "labelled_word_recall": 1.0,
+          "primary_hits": [
+            1,
+            1,
+            1
+          ],
+          "passes": [
+            2,
+            2,
+            2
+          ],
+          "false_positive_words": null,
+          "wall_ms_trials": [
+            352.961813,
+            317.796433,
+            355.609274
+          ],
+          "engine_runs": [
+            2,
+            2,
+            2
+          ],
+          "fallback_reasons": [
+            "low_confidence",
+            "low_confidence",
+            "low_confidence"
+          ],
+          "quality": {
+            "target_hits": 6,
+            "target_total": 6,
+            "target_hits_by_label": {
+              "tomatoes": 1,
+              "Make room": 1,
+              "for today": 1,
+              "Today": 1,
+              "Progress": 1,
+              "Settings": 1
+            },
+            "labelled_word_hits": 8,
+            "labelled_word_total": 8,
+            "primary_target": "Settings",
+            "primary_api_matches": 1,
+            "expected_primary_matches": 1,
+            "primary_centres_in_labelled_region": [
+              true
+            ],
+            "negative_control": false,
+            "false_positive_words": null
+          },
+          "quality_stable_across_three": true,
+          "representative_lines": [
+            "1",
+            "469",
+            "tomatoes",
+            "Make room",
+            "«for today.",
+            "Today",
+            "Progress",
+            "Settings"
+          ]
+        }
+      }
+    },
+    {
+      "id": "real-project-header",
+      "source_type": "real_app_frame_crop",
+      "evaluation_role": "base",
+      "targets": [
+        "Project",
+        "Toolchain",
+        "Open your app"
+      ],
+      "primary_target": "Toolchain",
+      "modes": {
+        "auto": {
+          "case": "real-project-header",
+          "mode": "auto",
+          "trials": 3,
+          "errors": 0,
+          "wall_median_ms": 302.077,
+          "target_recall": 0.6666666666666666,
+          "labelled_word_recall": 0.8,
+          "primary_hits": [
+            0,
+            0,
+            0
+          ],
+          "passes": [
+            2,
+            2,
+            2
+          ],
+          "false_positive_words": null,
+          "wall_ms_trials": [
+            264.483281,
+            302.077193,
+            303.177152
+          ],
+          "engine_runs": [
+            2,
+            2,
+            2
+          ],
+          "fallback_reasons": [
+            null,
+            null,
+            null
+          ],
+          "quality": {
+            "target_hits": 2,
+            "target_total": 3,
+            "target_hits_by_label": {
+              "Project": 1,
+              "Toolchain": 0,
+              "Open your app": 1
+            },
+            "labelled_word_hits": 4,
+            "labelled_word_total": 5,
+            "primary_target": "Toolchain",
+            "primary_api_matches": 0,
+            "expected_primary_matches": 1,
+            "primary_centres_in_labelled_region": [],
+            "negative_control": false,
+            "false_positive_words": null
+          },
+          "quality_stable_across_three": true,
+          "representative_lines": [
+            "Project",
+            "Open your app, build it and run it on a device."
+          ]
+        },
+        "never": {
+          "case": "real-project-header",
+          "mode": "never",
+          "trials": 3,
+          "errors": 0,
+          "wall_median_ms": 136.538,
+          "target_recall": 0.6666666666666666,
+          "labelled_word_recall": 0.8,
+          "primary_hits": [
+            0,
+            0,
+            0
+          ],
+          "passes": [
+            1,
+            1,
+            1
+          ],
+          "false_positive_words": null,
+          "wall_ms_trials": [
+            116.123871,
+            136.538239,
+            155.800888
+          ],
+          "engine_runs": [
+            1,
+            1,
+            1
+          ],
+          "fallback_reasons": [
+            null,
+            null,
+            null
+          ],
+          "quality": {
+            "target_hits": 2,
+            "target_total": 3,
+            "target_hits_by_label": {
+              "Project": 1,
+              "Toolchain": 0,
+              "Open your app": 1
+            },
+            "labelled_word_hits": 4,
+            "labelled_word_total": 5,
+            "primary_target": "Toolchain",
+            "primary_api_matches": 0,
+            "expected_primary_matches": 1,
+            "primary_centres_in_labelled_region": [],
+            "negative_control": false,
+            "false_positive_words": null
+          },
+          "quality_stable_across_three": true,
+          "representative_lines": [
+            "Project",
+            "Open your app, build it and run it on a device."
+          ]
+        },
+        "adaptive": {
+          "case": "real-project-header",
+          "mode": "adaptive",
+          "trials": 3,
+          "errors": 0,
+          "wall_median_ms": 291.061,
+          "target_recall": 0.6666666666666666,
+          "labelled_word_recall": 0.8,
+          "primary_hits": [
+            0,
+            0,
+            0
+          ],
+          "passes": [
+            2,
+            2,
+            2
+          ],
+          "false_positive_words": null,
+          "wall_ms_trials": [
+            272.711195,
+            291.061142,
+            291.757154
+          ],
+          "engine_runs": [
+            2,
+            2,
+            2
+          ],
+          "fallback_reasons": [
+            "target_not_found",
+            "target_not_found",
+            "target_not_found"
+          ],
+          "quality": {
+            "target_hits": 2,
+            "target_total": 3,
+            "target_hits_by_label": {
+              "Project": 1,
+              "Toolchain": 0,
+              "Open your app": 1
+            },
+            "labelled_word_hits": 4,
+            "labelled_word_total": 5,
+            "primary_target": "Toolchain",
+            "primary_api_matches": 0,
+            "expected_primary_matches": 1,
+            "primary_centres_in_labelled_region": [],
+            "negative_control": false,
+            "false_positive_words": null
+          },
+          "quality_stable_across_three": true,
+          "representative_lines": [
+            "Project",
+            "Open your app, build it and run it on a device."
+          ]
+        }
+      }
+    },
+    {
+      "id": "real-build-controls",
+      "source_type": "real_app_frame_crop",
+      "evaluation_role": "base",
+      "targets": [
+        "Build",
+        "Android",
+        "Debug",
+        "APK",
+        "Tests",
+        "Check code",
+        "Show build steps",
+        "Run on device",
+        "Manage devices",
+        "Build & run"
+      ],
+      "primary_target": "Check code",
+      "modes": {
+        "auto": {
+          "case": "real-build-controls",
+          "mode": "auto",
+          "trials": 3,
+          "errors": 0,
+          "wall_median_ms": 406.675,
+          "target_recall": 0.5,
+          "labelled_word_recall": 0.29411764705882354,
+          "primary_hits": [
+            0,
+            0,
+            0
+          ],
+          "passes": [
+            2,
+            2,
+            2
+          ],
+          "false_positive_words": null,
+          "wall_ms_trials": [
+            406.67516,
+            413.881904,
+            406.099037
+          ],
+          "engine_runs": [
+            2,
+            2,
+            2
+          ],
+          "fallback_reasons": [
+            null,
+            null,
+            null
+          ],
+          "quality": {
+            "target_hits": 5,
+            "target_total": 10,
+            "target_hits_by_label": {
+              "Build": 1,
+              "Android": 1,
+              "Debug": 0,
+              "APK": 1,
+              "Tests": 0,
+              "Check code": 0,
+              "Show build steps": 0,
+              "Run on device": 1,
+              "Manage devices": 1,
+              "Build & run": 0
+            },
+            "labelled_word_hits": 5,
+            "labelled_word_total": 17,
+            "primary_target": "Check code",
+            "primary_api_matches": 0,
+            "expected_primary_matches": 1,
+            "primary_centres_in_labelled_region": [],
+            "negative_control": false,
+            "false_positive_words": null
+          },
+          "quality_stable_across_three": true,
+          "representative_lines": [
+            "Build",
+            "Android",
+            "APK",
+            "|",
+            "|",
+            "Runondevice",
+            "1 - NoteFindrMelodyQA",
+            "Manage devices",
+            "Launch. tonatoes tonatoes",
+            "dev."
+          ]
+        },
+        "never": {
+          "case": "real-build-controls",
+          "mode": "never",
+          "trials": 3,
+          "errors": 0,
+          "wall_median_ms": 230.213,
+          "target_recall": 0.5,
+          "labelled_word_recall": 0.29411764705882354,
+          "primary_hits": [
+            0,
+            0,
+            0
+          ],
+          "passes": [
+            1,
+            1,
+            1
+          ],
+          "false_positive_words": null,
+          "wall_ms_trials": [
+            219.920494,
+            239.583689,
+            230.212991
+          ],
+          "engine_runs": [
+            1,
+            1,
+            1
+          ],
+          "fallback_reasons": [
+            null,
+            null,
+            null
+          ],
+          "quality": {
+            "target_hits": 5,
+            "target_total": 10,
+            "target_hits_by_label": {
+              "Build": 1,
+              "Android": 1,
+              "Debug": 0,
+              "APK": 1,
+              "Tests": 0,
+              "Check code": 0,
+              "Show build steps": 0,
+              "Run on device": 1,
+              "Manage devices": 1,
+              "Build & run": 0
+            },
+            "labelled_word_hits": 5,
+            "labelled_word_total": 17,
+            "primary_target": "Check code",
+            "primary_api_matches": 0,
+            "expected_primary_matches": 1,
+            "primary_centres_in_labelled_region": [],
+            "negative_control": false,
+            "false_positive_words": null
+          },
+          "quality_stable_across_three": true,
+          "representative_lines": [
+            "Build",
+            "Android",
+            "APK",
+            "|",
+            "|",
+            "Runondevice",
+            "1 - NoteFindrMelodyQA",
+            "Manage devices",
+            "dev. tomacco. Launch. tonatoes"
+          ]
+        },
+        "adaptive": {
+          "case": "real-build-controls",
+          "mode": "adaptive",
+          "trials": 3,
+          "errors": 0,
+          "wall_median_ms": 416.803,
+          "target_recall": 0.5,
+          "labelled_word_recall": 0.29411764705882354,
+          "primary_hits": [
+            0,
+            0,
+            0
+          ],
+          "passes": [
+            2,
+            2,
+            2
+          ],
+          "false_positive_words": null,
+          "wall_ms_trials": [
+            425.953107,
+            413.81814,
+            416.802909
+          ],
+          "engine_runs": [
+            2,
+            2,
+            2
+          ],
+          "fallback_reasons": [
+            "target_not_found",
+            "target_not_found",
+            "target_not_found"
+          ],
+          "quality": {
+            "target_hits": 5,
+            "target_total": 10,
+            "target_hits_by_label": {
+              "Build": 1,
+              "Android": 1,
+              "Debug": 0,
+              "APK": 1,
+              "Tests": 0,
+              "Check code": 0,
+              "Show build steps": 0,
+              "Run on device": 1,
+              "Manage devices": 1,
+              "Build & run": 0
+            },
+            "labelled_word_hits": 5,
+            "labelled_word_total": 17,
+            "primary_target": "Check code",
+            "primary_api_matches": 0,
+            "expected_primary_matches": 1,
+            "primary_centres_in_labelled_region": [],
+            "negative_control": false,
+            "false_positive_words": null
+          },
+          "quality_stable_across_three": true,
+          "representative_lines": [
+            "Build",
+            "Android",
+            "APK",
+            "|",
+            "|",
+            "Runondevice",
+            "1 - NoteFindrMelodyQA",
+            "Manage devices",
+            "Launch. tonatoes tonatoes",
+            "dev."
+          ]
+        }
+      }
+    },
+    {
+      "id": "derived-dark-portrait",
+      "source_type": "derived_stress",
+      "evaluation_role": "base",
+      "targets": [
+        "tomatoes",
+        "Make room",
+        "for today",
+        "Today",
+        "Progress",
+        "Settings",
+        "Task title",
+        "Save task",
+        "Ship the demo"
+      ],
+      "primary_target": "Save task",
+      "modes": {
+        "auto": {
+          "case": "derived-dark-portrait",
+          "mode": "auto",
+          "trials": 3,
+          "errors": 0,
+          "wall_median_ms": 379.37,
+          "target_recall": 0.8888888888888888,
+          "labelled_word_recall": 0.7333333333333333,
+          "primary_hits": [
+            0,
+            0,
+            0
+          ],
+          "passes": [
+            2,
+            2,
+            2
+          ],
+          "false_positive_words": null,
+          "wall_ms_trials": [
+            396.702256,
+            357.239184,
+            379.369833
+          ],
+          "engine_runs": [
+            2,
+            2,
+            2
+          ],
+          "fallback_reasons": [
+            null,
+            null,
+            null
+          ],
+          "quality": {
+            "target_hits": 8,
+            "target_total": 9,
+            "target_hits_by_label": {
+              "tomatoes": 1,
+              "Make room": 1,
+              "for today": 1,
+              "Today": 1,
+              "Progress": 1,
+              "Settings": 1,
+              "Task title": 1,
+              "Save task": 0,
+              "Ship the demo": 1
+            },
+            "labelled_word_hits": 11,
+            "labelled_word_total": 15,
+            "primary_target": "Save task",
+            "primary_api_matches": 0,
+            "expected_primary_matches": 1,
+            "primary_centres_in_labelled_region": [],
+            "negative_control": false,
+            "false_positive_words": null
+          },
+          "quality_stable_across_three": true,
+          "representative_lines": [
+            "1450 &",
+            "]",
+            "tomatoes",
+            "Make room",
+            "for today.",
+            "Today",
+            "Progress.",
+            "Settings",
+            "WHAT MATTERS NEXT",
+            "Tasktitle",
+            "(=",
+            "saven Tasks",
+            "(1",
+            "Ship the demo"
+          ]
+        },
+        "never": {
+          "case": "derived-dark-portrait",
+          "mode": "never",
+          "trials": 3,
+          "errors": 0,
+          "wall_median_ms": 219.34,
+          "target_recall": 0.8888888888888888,
+          "labelled_word_recall": 0.7333333333333333,
+          "primary_hits": [
+            0,
+            0,
+            0
+          ],
+          "passes": [
+            1,
+            1,
+            1
+          ],
+          "false_positive_words": null,
+          "wall_ms_trials": [
+            229.282776,
+            206.933566,
+            219.339911
+          ],
+          "engine_runs": [
+            1,
+            1,
+            1
+          ],
+          "fallback_reasons": [
+            null,
+            null,
+            null
+          ],
+          "quality": {
+            "target_hits": 8,
+            "target_total": 9,
+            "target_hits_by_label": {
+              "tomatoes": 1,
+              "Make room": 1,
+              "for today": 1,
+              "Today": 1,
+              "Progress": 1,
+              "Settings": 1,
+              "Task title": 1,
+              "Save task": 0,
+              "Ship the demo": 1
+            },
+            "labelled_word_hits": 11,
+            "labelled_word_total": 15,
+            "primary_target": "Save task",
+            "primary_api_matches": 0,
+            "expected_primary_matches": 1,
+            "primary_centres_in_labelled_region": [],
+            "negative_control": false,
+            "false_positive_words": null
+          },
+          "quality_stable_across_three": true,
+          "representative_lines": [
+            "1450 &",
+            "]",
+            "tomatoes",
+            "Make room",
+            "for today.",
+            "Today",
+            "Progress.",
+            "Settings",
+            "WHAT MATTERS NEXT",
+            "Tasktitle",
+            "=N",
+            "saven Tasks",
+            "(1",
+            "Ship the demo"
+          ]
+        },
+        "adaptive": {
+          "case": "derived-dark-portrait",
+          "mode": "adaptive",
+          "trials": 3,
+          "errors": 0,
+          "wall_median_ms": 393.48,
+          "target_recall": 0.8888888888888888,
+          "labelled_word_recall": 0.7333333333333333,
+          "primary_hits": [
+            0,
+            0,
+            0
+          ],
+          "passes": [
+            2,
+            2,
+            2
+          ],
+          "false_positive_words": null,
+          "wall_ms_trials": [
+            393.479792,
+            399.875949,
+            366.031644
+          ],
+          "engine_runs": [
+            2,
+            2,
+            2
+          ],
+          "fallback_reasons": [
+            "target_not_found",
+            "target_not_found",
+            "target_not_found"
+          ],
+          "quality": {
+            "target_hits": 8,
+            "target_total": 9,
+            "target_hits_by_label": {
+              "tomatoes": 1,
+              "Make room": 1,
+              "for today": 1,
+              "Today": 1,
+              "Progress": 1,
+              "Settings": 1,
+              "Task title": 1,
+              "Save task": 0,
+              "Ship the demo": 1
+            },
+            "labelled_word_hits": 11,
+            "labelled_word_total": 15,
+            "primary_target": "Save task",
+            "primary_api_matches": 0,
+            "expected_primary_matches": 1,
+            "primary_centres_in_labelled_region": [],
+            "negative_control": false,
+            "false_positive_words": null
+          },
+          "quality_stable_across_three": true,
+          "representative_lines": [
+            "1450 &",
+            "]",
+            "tomatoes",
+            "Make room",
+            "for today.",
+            "Today",
+            "Progress.",
+            "Settings",
+            "WHAT MATTERS NEXT",
+            "Tasktitle",
+            "(=",
+            "saven Tasks",
+            "(1",
+            "Ship the demo"
+          ]
+        }
+      }
+    },
+    {
+      "id": "light-panel",
+      "source_type": "synthetic",
+      "evaluation_role": "base",
+      "targets": [
+        "Account settings",
+        "Email address",
+        "hello@example.test",
+        "Continue"
+      ],
+      "primary_target": "Continue",
+      "modes": {
+        "auto": {
+          "case": "light-panel",
+          "mode": "auto",
+          "trials": 3,
+          "errors": 0,
+          "wall_median_ms": 322.54,
+          "target_recall": 1.0,
+          "labelled_word_recall": 1.0,
+          "primary_hits": [
+            1,
+            1,
+            1
+          ],
+          "passes": [
+            2,
+            2,
+            2
+          ],
+          "false_positive_words": null,
+          "wall_ms_trials": [
+            325.513217,
+            307.988352,
+            322.539569
+          ],
+          "engine_runs": [
+            2,
+            2,
+            2
+          ],
+          "fallback_reasons": [
+            null,
+            null,
+            null
+          ],
+          "quality": {
+            "target_hits": 4,
+            "target_total": 4,
+            "target_hits_by_label": {
+              "Account settings": 1,
+              "Email address": 1,
+              "hello@example.test": 1,
+              "Continue": 1
+            },
+            "labelled_word_hits": 6,
+            "labelled_word_total": 6,
+            "primary_target": "Continue",
+            "primary_api_matches": 1,
+            "expected_primary_matches": 1,
+            "primary_centres_in_labelled_region": [
+              true
+            ],
+            "negative_control": false,
+            "false_positive_words": null
+          },
+          "quality_stable_across_three": true,
+          "representative_lines": [
+            "Account settings",
+            "Email address",
+            "hello@example.test",
+            "Continue"
+          ]
+        },
+        "never": {
+          "case": "light-panel",
+          "mode": "never",
+          "trials": 3,
+          "errors": 0,
+          "wall_median_ms": 137.768,
+          "target_recall": 1.0,
+          "labelled_word_recall": 1.0,
+          "primary_hits": [
+            1,
+            1,
+            1
+          ],
+          "passes": [
+            1,
+            1,
+            1
+          ],
+          "false_positive_words": null,
+          "wall_ms_trials": [
+            137.767989,
+            131.312911,
+            148.442929
+          ],
+          "engine_runs": [
+            1,
+            1,
+            1
+          ],
+          "fallback_reasons": [
+            null,
+            null,
+            null
+          ],
+          "quality": {
+            "target_hits": 4,
+            "target_total": 4,
+            "target_hits_by_label": {
+              "Account settings": 1,
+              "Email address": 1,
+              "hello@example.test": 1,
+              "Continue": 1
+            },
+            "labelled_word_hits": 6,
+            "labelled_word_total": 6,
+            "primary_target": "Continue",
+            "primary_api_matches": 1,
+            "expected_primary_matches": 1,
+            "primary_centres_in_labelled_region": [
+              true
+            ],
+            "negative_control": false,
+            "false_positive_words": null
+          },
+          "quality_stable_across_three": true,
+          "representative_lines": [
+            "Account settings",
+            "Email address",
+            "hello@example.test",
+            "Continue"
+          ]
+        },
+        "adaptive": {
+          "case": "light-panel",
+          "mode": "adaptive",
+          "trials": 3,
+          "errors": 0,
+          "wall_median_ms": 147.06,
+          "target_recall": 1.0,
+          "labelled_word_recall": 1.0,
+          "primary_hits": [
+            1,
+            1,
+            1
+          ],
+          "passes": [
+            1,
+            1,
+            1
+          ],
+          "false_positive_words": null,
+          "wall_ms_trials": [
+            147.060475,
+            141.243932,
+            147.770838
+          ],
+          "engine_runs": [
+            1,
+            1,
+            1
+          ],
+          "fallback_reasons": [
+            null,
+            null,
+            null
+          ],
+          "quality": {
+            "target_hits": 4,
+            "target_total": 4,
+            "target_hits_by_label": {
+              "Account settings": 1,
+              "Email address": 1,
+              "hello@example.test": 1,
+              "Continue": 1
+            },
+            "labelled_word_hits": 6,
+            "labelled_word_total": 6,
+            "primary_target": "Continue",
+            "primary_api_matches": 1,
+            "expected_primary_matches": 1,
+            "primary_centres_in_labelled_region": [
+              true
+            ],
+            "negative_control": false,
+            "false_positive_words": null
+          },
+          "quality_stable_across_three": true,
+          "representative_lines": [
+            "Account settings",
+            "Email address",
+            "hello@example.test",
+            "Continue"
+          ]
+        }
+      }
+    },
+    {
+      "id": "dark-panel",
+      "source_type": "synthetic",
+      "evaluation_role": "base",
+      "targets": [
+        "Account settings",
+        "Email address",
+        "hello@example.test",
+        "Continue"
+      ],
+      "primary_target": "Continue",
+      "modes": {
+        "auto": {
+          "case": "dark-panel",
+          "mode": "auto",
+          "trials": 3,
+          "errors": 0,
+          "wall_median_ms": 297.984,
+          "target_recall": 1.0,
+          "labelled_word_recall": 1.0,
+          "primary_hits": [
+            1,
+            1,
+            1
+          ],
+          "passes": [
+            2,
+            2,
+            2
+          ],
+          "false_positive_words": null,
+          "wall_ms_trials": [
+            297.984293,
+            293.250445,
+            303.118227
+          ],
+          "engine_runs": [
+            2,
+            2,
+            2
+          ],
+          "fallback_reasons": [
+            null,
+            null,
+            null
+          ],
+          "quality": {
+            "target_hits": 4,
+            "target_total": 4,
+            "target_hits_by_label": {
+              "Account settings": 1,
+              "Email address": 1,
+              "hello@example.test": 1,
+              "Continue": 1
+            },
+            "labelled_word_hits": 6,
+            "labelled_word_total": 6,
+            "primary_target": "Continue",
+            "primary_api_matches": 1,
+            "expected_primary_matches": 1,
+            "primary_centres_in_labelled_region": [
+              true
+            ],
+            "negative_control": false,
+            "false_positive_words": null
+          },
+          "quality_stable_across_three": true,
+          "representative_lines": [
+            "Account settings",
+            "Email address",
+            "hello@example.test",
+            "Continue"
+          ]
+        },
+        "never": {
+          "case": "dark-panel",
+          "mode": "never",
+          "trials": 3,
+          "errors": 0,
+          "wall_median_ms": 171.645,
+          "target_recall": 1.0,
+          "labelled_word_recall": 1.0,
+          "primary_hits": [
+            1,
+            1,
+            1
+          ],
+          "passes": [
+            1,
+            1,
+            1
+          ],
+          "false_positive_words": null,
+          "wall_ms_trials": [
+            170.888886,
+            189.672264,
+            171.645354
+          ],
+          "engine_runs": [
+            1,
+            1,
+            1
+          ],
+          "fallback_reasons": [
+            null,
+            null,
+            null
+          ],
+          "quality": {
+            "target_hits": 4,
+            "target_total": 4,
+            "target_hits_by_label": {
+              "Account settings": 1,
+              "Email address": 1,
+              "hello@example.test": 1,
+              "Continue": 1
+            },
+            "labelled_word_hits": 6,
+            "labelled_word_total": 6,
+            "primary_target": "Continue",
+            "primary_api_matches": 1,
+            "expected_primary_matches": 1,
+            "primary_centres_in_labelled_region": [
+              true
+            ],
+            "negative_control": false,
+            "false_positive_words": null
+          },
+          "quality_stable_across_three": true,
+          "representative_lines": [
+            "Account settings",
+            "Email address",
+            "hello@example.test",
+            "Continue"
+          ]
+        },
+        "adaptive": {
+          "case": "dark-panel",
+          "mode": "adaptive",
+          "trials": 3,
+          "errors": 0,
+          "wall_median_ms": 167.361,
+          "target_recall": 1.0,
+          "labelled_word_recall": 1.0,
+          "primary_hits": [
+            1,
+            1,
+            1
+          ],
+          "passes": [
+            1,
+            1,
+            1
+          ],
+          "false_positive_words": null,
+          "wall_ms_trials": [
+            167.360887,
+            169.686344,
+            167.019075
+          ],
+          "engine_runs": [
+            1,
+            1,
+            1
+          ],
+          "fallback_reasons": [
+            null,
+            null,
+            null
+          ],
+          "quality": {
+            "target_hits": 4,
+            "target_total": 4,
+            "target_hits_by_label": {
+              "Account settings": 1,
+              "Email address": 1,
+              "hello@example.test": 1,
+              "Continue": 1
+            },
+            "labelled_word_hits": 6,
+            "labelled_word_total": 6,
+            "primary_target": "Continue",
+            "primary_api_matches": 1,
+            "expected_primary_matches": 1,
+            "primary_centres_in_labelled_region": [
+              true
+            ],
+            "negative_control": false,
+            "false_positive_words": null
+          },
+          "quality_stable_across_three": true,
+          "representative_lines": [
+            "Account settings",
+            "Email address",
+            "hello@example.test",
+            "Continue"
+          ]
+        }
+      }
+    },
+    {
+      "id": "minority-dark",
+      "source_type": "synthetic",
+      "evaluation_role": "base",
+      "targets": [
+        "Device settings",
+        "Choose a connection",
+        "Nearby devices",
+        "No recent errors",
+        "Reconnect"
+      ],
+      "primary_target": "Reconnect",
+      "modes": {
+        "auto": {
+          "case": "minority-dark",
+          "mode": "auto",
+          "trials": 3,
+          "errors": 0,
+          "wall_median_ms": 361.529,
+          "target_recall": 1.0,
+          "labelled_word_recall": 1.0,
+          "primary_hits": [
+            1,
+            1,
+            1
+          ],
+          "passes": [
+            2,
+            2,
+            2
+          ],
+          "false_positive_words": null,
+          "wall_ms_trials": [
+            339.446775,
+            368.297349,
+            361.528649
+          ],
+          "engine_runs": [
+            2,
+            2,
+            2
+          ],
+          "fallback_reasons": [
+            null,
+            null,
+            null
+          ],
+          "quality": {
+            "target_hits": 5,
+            "target_total": 5,
+            "target_hits_by_label": {
+              "Device settings": 1,
+              "Choose a connection": 1,
+              "Nearby devices": 1,
+              "No recent errors": 1,
+              "Reconnect": 1
+            },
+            "labelled_word_hits": 11,
+            "labelled_word_total": 11,
+            "primary_target": "Reconnect",
+            "primary_api_matches": 1,
+            "expected_primary_matches": 1,
+            "primary_centres_in_labelled_region": [
+              true
+            ],
+            "negative_control": false,
+            "false_positive_words": null
+          },
+          "quality_stable_across_three": true,
+          "representative_lines": [
+            "Device settings",
+            "Choose a connection",
+            "Nearby devices",
+            "No recent errors",
+            "Reconnect"
+          ]
+        },
+        "never": {
+          "case": "minority-dark",
+          "mode": "never",
+          "trials": 3,
+          "errors": 0,
+          "wall_median_ms": 169.202,
+          "target_recall": 1.0,
+          "labelled_word_recall": 1.0,
+          "primary_hits": [
+            1,
+            1,
+            1
+          ],
+          "passes": [
+            1,
+            1,
+            1
+          ],
+          "false_positive_words": null,
+          "wall_ms_trials": [
+            192.951619,
+            165.450219,
+            169.201828
+          ],
+          "engine_runs": [
+            1,
+            1,
+            1
+          ],
+          "fallback_reasons": [
+            null,
+            null,
+            null
+          ],
+          "quality": {
+            "target_hits": 5,
+            "target_total": 5,
+            "target_hits_by_label": {
+              "Device settings": 1,
+              "Choose a connection": 1,
+              "Nearby devices": 1,
+              "No recent errors": 1,
+              "Reconnect": 1
+            },
+            "labelled_word_hits": 11,
+            "labelled_word_total": 11,
+            "primary_target": "Reconnect",
+            "primary_api_matches": 1,
+            "expected_primary_matches": 1,
+            "primary_centres_in_labelled_region": [
+              true
+            ],
+            "negative_control": false,
+            "false_positive_words": null
+          },
+          "quality_stable_across_three": true,
+          "representative_lines": [
+            "Device settings",
+            "Choose a connection",
+            "Nearby devices",
+            "No recent errors",
+            "Reconnect"
+          ]
+        },
+        "adaptive": {
+          "case": "minority-dark",
+          "mode": "adaptive",
+          "trials": 3,
+          "errors": 0,
+          "wall_median_ms": 150.538,
+          "target_recall": 1.0,
+          "labelled_word_recall": 1.0,
+          "primary_hits": [
+            1,
+            1,
+            1
+          ],
+          "passes": [
+            1,
+            1,
+            1
+          ],
+          "false_positive_words": null,
+          "wall_ms_trials": [
+            180.524296,
+            150.53769,
+            150.364612
+          ],
+          "engine_runs": [
+            1,
+            1,
+            1
+          ],
+          "fallback_reasons": [
+            null,
+            null,
+            null
+          ],
+          "quality": {
+            "target_hits": 5,
+            "target_total": 5,
+            "target_hits_by_label": {
+              "Device settings": 1,
+              "Choose a connection": 1,
+              "Nearby devices": 1,
+              "No recent errors": 1,
+              "Reconnect": 1
+            },
+            "labelled_word_hits": 11,
+            "labelled_word_total": 11,
+            "primary_target": "Reconnect",
+            "primary_api_matches": 1,
+            "expected_primary_matches": 1,
+            "primary_centres_in_labelled_region": [
+              true
+            ],
+            "negative_control": false,
+            "false_positive_words": null
+          },
+          "quality_stable_across_three": true,
+          "representative_lines": [
+            "Device settings",
+            "Choose a connection",
+            "Nearby devices",
+            "No recent errors",
+            "Reconnect"
+          ]
+        }
+      }
+    },
+    {
+      "id": "minority-light",
+      "source_type": "synthetic",
+      "evaluation_role": "base",
+      "targets": [
+        "Device settings",
+        "Choose a connection",
+        "Nearby devices",
+        "No recent errors",
+        "Reconnect"
+      ],
+      "primary_target": "Reconnect",
+      "modes": {
+        "auto": {
+          "case": "minority-light",
+          "mode": "auto",
+          "trials": 3,
+          "errors": 0,
+          "wall_median_ms": 336.683,
+          "target_recall": 1.0,
+          "labelled_word_recall": 1.0,
+          "primary_hits": [
+            1,
+            1,
+            1
+          ],
+          "passes": [
+            2,
+            2,
+            2
+          ],
+          "false_positive_words": null,
+          "wall_ms_trials": [
+            407.526021,
+            336.683338,
+            328.720831
+          ],
+          "engine_runs": [
+            2,
+            2,
+            2
+          ],
+          "fallback_reasons": [
+            null,
+            null,
+            null
+          ],
+          "quality": {
+            "target_hits": 5,
+            "target_total": 5,
+            "target_hits_by_label": {
+              "Device settings": 1,
+              "Choose a connection": 1,
+              "Nearby devices": 1,
+              "No recent errors": 1,
+              "Reconnect": 1
+            },
+            "labelled_word_hits": 11,
+            "labelled_word_total": 11,
+            "primary_target": "Reconnect",
+            "primary_api_matches": 1,
+            "expected_primary_matches": 1,
+            "primary_centres_in_labelled_region": [
+              true
+            ],
+            "negative_control": false,
+            "false_positive_words": null
+          },
+          "quality_stable_across_three": true,
+          "representative_lines": [
+            "Device settings",
+            "Choose a connection",
+            "Nearby devices",
+            "No recent errors",
+            "Reconnect"
+          ]
+        },
+        "never": {
+          "case": "minority-light",
+          "mode": "never",
+          "trials": 3,
+          "errors": 0,
+          "wall_median_ms": 186.375,
+          "target_recall": 1.0,
+          "labelled_word_recall": 1.0,
+          "primary_hits": [
+            1,
+            1,
+            1
+          ],
+          "passes": [
+            1,
+            1,
+            1
+          ],
+          "false_positive_words": null,
+          "wall_ms_trials": [
+            186.375455,
+            189.439978,
+            180.533681
+          ],
+          "engine_runs": [
+            1,
+            1,
+            1
+          ],
+          "fallback_reasons": [
+            null,
+            null,
+            null
+          ],
+          "quality": {
+            "target_hits": 5,
+            "target_total": 5,
+            "target_hits_by_label": {
+              "Device settings": 1,
+              "Choose a connection": 1,
+              "Nearby devices": 1,
+              "No recent errors": 1,
+              "Reconnect": 1
+            },
+            "labelled_word_hits": 11,
+            "labelled_word_total": 11,
+            "primary_target": "Reconnect",
+            "primary_api_matches": 1,
+            "expected_primary_matches": 1,
+            "primary_centres_in_labelled_region": [
+              true
+            ],
+            "negative_control": false,
+            "false_positive_words": null
+          },
+          "quality_stable_across_three": true,
+          "representative_lines": [
+            "Device settings",
+            "Choose a connection",
+            "Nearby devices",
+            "No recent errors",
+            "Reconnect"
+          ]
+        },
+        "adaptive": {
+          "case": "minority-light",
+          "mode": "adaptive",
+          "trials": 3,
+          "errors": 0,
+          "wall_median_ms": 191.485,
+          "target_recall": 1.0,
+          "labelled_word_recall": 1.0,
+          "primary_hits": [
+            1,
+            1,
+            1
+          ],
+          "passes": [
+            1,
+            1,
+            1
+          ],
+          "false_positive_words": null,
+          "wall_ms_trials": [
+            193.573306,
+            188.941498,
+            191.484937
+          ],
+          "engine_runs": [
+            1,
+            1,
+            1
+          ],
+          "fallback_reasons": [
+            null,
+            null,
+            null
+          ],
+          "quality": {
+            "target_hits": 5,
+            "target_total": 5,
+            "target_hits_by_label": {
+              "Device settings": 1,
+              "Choose a connection": 1,
+              "Nearby devices": 1,
+              "No recent errors": 1,
+              "Reconnect": 1
+            },
+            "labelled_word_hits": 11,
+            "labelled_word_total": 11,
+            "primary_target": "Reconnect",
+            "primary_api_matches": 1,
+            "expected_primary_matches": 1,
+            "primary_centres_in_labelled_region": [
+              true
+            ],
+            "negative_control": false,
+            "false_positive_words": null
+          },
+          "quality_stable_across_three": true,
+          "representative_lines": [
+            "Device settings",
+            "Choose a connection",
+            "Nearby devices",
+            "No recent errors",
+            "Reconnect"
+          ]
+        }
+      }
+    },
+    {
+      "id": "small-low-contrast",
+      "source_type": "synthetic",
+      "evaluation_role": "base",
+      "targets": [
+        "Account settings",
+        "Email address",
+        "hello@example.test",
+        "Continue"
+      ],
+      "primary_target": "Continue",
+      "modes": {
+        "auto": {
+          "case": "small-low-contrast",
+          "mode": "auto",
+          "trials": 3,
+          "errors": 0,
+          "wall_median_ms": 284.358,
+          "target_recall": 1.0,
+          "labelled_word_recall": 1.0,
+          "primary_hits": [
+            1,
+            1,
+            1
+          ],
+          "passes": [
+            2,
+            2,
+            2
+          ],
+          "false_positive_words": null,
+          "wall_ms_trials": [
+            263.555984,
+            318.808025,
+            284.358295
+          ],
+          "engine_runs": [
+            2,
+            2,
+            2
+          ],
+          "fallback_reasons": [
+            null,
+            null,
+            null
+          ],
+          "quality": {
+            "target_hits": 4,
+            "target_total": 4,
+            "target_hits_by_label": {
+              "Account settings": 1,
+              "Email address": 1,
+              "hello@example.test": 1,
+              "Continue": 1
+            },
+            "labelled_word_hits": 6,
+            "labelled_word_total": 6,
+            "primary_target": "Continue",
+            "primary_api_matches": 1,
+            "expected_primary_matches": 1,
+            "primary_centres_in_labelled_region": [
+              true
+            ],
+            "negative_control": false,
+            "false_positive_words": null
+          },
+          "quality_stable_across_three": true,
+          "representative_lines": [
+            "Account settings",
+            "Email address",
+            "hello@example.test",
+            "Continue"
+          ]
+        },
+        "never": {
+          "case": "small-low-contrast",
+          "mode": "never",
+          "trials": 3,
+          "errors": 0,
+          "wall_median_ms": 151.464,
+          "target_recall": 1.0,
+          "labelled_word_recall": 1.0,
+          "primary_hits": [
+            1,
+            1,
+            1
+          ],
+          "passes": [
+            1,
+            1,
+            1
+          ],
+          "false_positive_words": null,
+          "wall_ms_trials": [
+            151.463915,
+            131.351982,
+            191.261658
+          ],
+          "engine_runs": [
+            1,
+            1,
+            1
+          ],
+          "fallback_reasons": [
+            null,
+            null,
+            null
+          ],
+          "quality": {
+            "target_hits": 4,
+            "target_total": 4,
+            "target_hits_by_label": {
+              "Account settings": 1,
+              "Email address": 1,
+              "hello@example.test": 1,
+              "Continue": 1
+            },
+            "labelled_word_hits": 6,
+            "labelled_word_total": 6,
+            "primary_target": "Continue",
+            "primary_api_matches": 1,
+            "expected_primary_matches": 1,
+            "primary_centres_in_labelled_region": [
+              true
+            ],
+            "negative_control": false,
+            "false_positive_words": null
+          },
+          "quality_stable_across_three": true,
+          "representative_lines": [
+            "Account settings",
+            "Email address",
+            "hello@example.test",
+            "Continue"
+          ]
+        },
+        "adaptive": {
+          "case": "small-low-contrast",
+          "mode": "adaptive",
+          "trials": 3,
+          "errors": 0,
+          "wall_median_ms": 127.314,
+          "target_recall": 1.0,
+          "labelled_word_recall": 1.0,
+          "primary_hits": [
+            1,
+            1,
+            1
+          ],
+          "passes": [
+            1,
+            1,
+            1
+          ],
+          "false_positive_words": null,
+          "wall_ms_trials": [
+            128.939109,
+            127.313695,
+            127.21615
+          ],
+          "engine_runs": [
+            1,
+            1,
+            1
+          ],
+          "fallback_reasons": [
+            null,
+            null,
+            null
+          ],
+          "quality": {
+            "target_hits": 4,
+            "target_total": 4,
+            "target_hits_by_label": {
+              "Account settings": 1,
+              "Email address": 1,
+              "hello@example.test": 1,
+              "Continue": 1
+            },
+            "labelled_word_hits": 6,
+            "labelled_word_total": 6,
+            "primary_target": "Continue",
+            "primary_api_matches": 1,
+            "expected_primary_matches": 1,
+            "primary_centres_in_labelled_region": [
+              true
+            ],
+            "negative_control": false,
+            "false_positive_words": null
+          },
+          "quality_stable_across_three": true,
+          "representative_lines": [
+            "Account settings",
+            "Email address",
+            "hello@example.test",
+            "Continue"
+          ]
+        }
+      }
+    },
+    {
+      "id": "small-text",
+      "source_type": "synthetic",
+      "evaluation_role": "base",
+      "targets": [
+        "Account settings",
+        "Email address",
+        "hello@example.test",
+        "Continue"
+      ],
+      "primary_target": "Continue",
+      "modes": {
+        "auto": {
+          "case": "small-text",
+          "mode": "auto",
+          "trials": 3,
+          "errors": 0,
+          "wall_median_ms": 278.648,
+          "target_recall": 0.5,
+          "labelled_word_recall": 0.6666666666666666,
+          "primary_hits": [
+            0,
+            0,
+            0
+          ],
+          "passes": [
+            2,
+            2,
+            2
+          ],
+          "false_positive_words": null,
+          "wall_ms_trials": [
+            287.855278,
+            278.647719,
+            273.81635
+          ],
+          "engine_runs": [
+            2,
+            2,
+            2
+          ],
+          "fallback_reasons": [
+            null,
+            null,
+            null
+          ],
+          "quality": {
+            "target_hits": 2,
+            "target_total": 4,
+            "target_hits_by_label": {
+              "Account settings": 1,
+              "Email address": 1,
+              "hello@example.test": 0,
+              "Continue": 0
+            },
+            "labelled_word_hits": 4,
+            "labelled_word_total": 6,
+            "primary_target": "Continue",
+            "primary_api_matches": 0,
+            "expected_primary_matches": 1,
+            "primary_centres_in_labelled_region": [],
+            "negative_control": false,
+            "false_positive_words": null
+          },
+          "quality_stable_across_three": true,
+          "representative_lines": [
+            "Account settings",
+            "Email address",
+            "hello@example test",
+            "Cortinue"
+          ]
+        },
+        "never": {
+          "case": "small-text",
+          "mode": "never",
+          "trials": 3,
+          "errors": 0,
+          "wall_median_ms": 140.123,
+          "target_recall": 0.25,
+          "labelled_word_recall": 0.5,
+          "primary_hits": [
+            0,
+            0,
+            0
+          ],
+          "passes": [
+            1,
+            1,
+            1
+          ],
+          "false_positive_words": null,
+          "wall_ms_trials": [
+            140.122524,
+            140.917882,
+            130.591971
+          ],
+          "engine_runs": [
+            1,
+            1,
+            1
+          ],
+          "fallback_reasons": [
+            null,
+            null,
+            null
+          ],
+          "quality": {
+            "target_hits": 1,
+            "target_total": 4,
+            "target_hits_by_label": {
+              "Account settings": 0,
+              "Email address": 1,
+              "hello@example.test": 0,
+              "Continue": 0
+            },
+            "labelled_word_hits": 3,
+            "labelled_word_total": 6,
+            "primary_target": "Continue",
+            "primary_api_matches": 0,
+            "expected_primary_matches": 1,
+            "primary_centres_in_labelled_region": [],
+            "negative_control": false,
+            "false_positive_words": null
+          },
+          "quality_stable_across_three": true,
+          "representative_lines": [
+            "settings",
+            "Email address",
+            "hello@example test",
+            "Cortinue"
+          ]
+        },
+        "adaptive": {
+          "case": "small-text",
+          "mode": "adaptive",
+          "trials": 3,
+          "errors": 0,
+          "wall_median_ms": 288.546,
+          "target_recall": 0.5,
+          "labelled_word_recall": 0.6666666666666666,
+          "primary_hits": [
+            0,
+            0,
+            0
+          ],
+          "passes": [
+            2,
+            2,
+            2
+          ],
+          "false_positive_words": null,
+          "wall_ms_trials": [
+            268.684921,
+            288.545573,
+            294.355688
+          ],
+          "engine_runs": [
+            2,
+            2,
+            2
+          ],
+          "fallback_reasons": [
+            "target_not_found",
+            "target_not_found",
+            "target_not_found"
+          ],
+          "quality": {
+            "target_hits": 2,
+            "target_total": 4,
+            "target_hits_by_label": {
+              "Account settings": 1,
+              "Email address": 1,
+              "hello@example.test": 0,
+              "Continue": 0
+            },
+            "labelled_word_hits": 4,
+            "labelled_word_total": 6,
+            "primary_target": "Continue",
+            "primary_api_matches": 0,
+            "expected_primary_matches": 1,
+            "primary_centres_in_labelled_region": [],
+            "negative_control": false,
+            "false_positive_words": null
+          },
+          "quality_stable_across_three": true,
+          "representative_lines": [
+            "Account settings",
+            "Email address",
+            "hello@example test",
+            "Cortinue"
+          ]
+        }
+      }
+    },
+    {
+      "id": "blurred-text",
+      "source_type": "synthetic",
+      "evaluation_role": "base",
+      "targets": [
+        "Account settings",
+        "Email address",
+        "hello@example.test",
+        "Continue"
+      ],
+      "primary_target": "Continue",
+      "modes": {
+        "auto": {
+          "case": "blurred-text",
+          "mode": "auto",
+          "trials": 3,
+          "errors": 0,
+          "wall_median_ms": 296.823,
+          "target_recall": 0.5,
+          "labelled_word_recall": 0.6666666666666666,
+          "primary_hits": [
+            0,
+            0,
+            0
+          ],
+          "passes": [
+            2,
+            2,
+            2
+          ],
+          "false_positive_words": null,
+          "wall_ms_trials": [
+            289.507416,
+            296.822792,
+            312.631835
+          ],
+          "engine_runs": [
+            2,
+            2,
+            2
+          ],
+          "fallback_reasons": [
+            null,
+            null,
+            null
+          ],
+          "quality": {
+            "target_hits": 2,
+            "target_total": 4,
+            "target_hits_by_label": {
+              "Account settings": 1,
+              "Email address": 1,
+              "hello@example.test": 0,
+              "Continue": 0
+            },
+            "labelled_word_hits": 4,
+            "labelled_word_total": 6,
+            "primary_target": "Continue",
+            "primary_api_matches": 0,
+            "expected_primary_matches": 1,
+            "primary_centres_in_labelled_region": [],
+            "negative_control": false,
+            "false_positive_words": null
+          },
+          "quality_stable_across_three": true,
+          "representative_lines": [
+            "Account settings",
+            "Email address",
+            "hello@example test"
+          ]
+        },
+        "never": {
+          "case": "blurred-text",
+          "mode": "never",
+          "trials": 3,
+          "errors": 0,
+          "wall_median_ms": 131.608,
+          "target_recall": 0.5,
+          "labelled_word_recall": 0.6666666666666666,
+          "primary_hits": [
+            0,
+            0,
+            0
+          ],
+          "passes": [
+            1,
+            1,
+            1
+          ],
+          "false_positive_words": null,
+          "wall_ms_trials": [
+            141.419857,
+            131.608361,
+            127.529569
+          ],
+          "engine_runs": [
+            1,
+            1,
+            1
+          ],
+          "fallback_reasons": [
+            null,
+            null,
+            null
+          ],
+          "quality": {
+            "target_hits": 2,
+            "target_total": 4,
+            "target_hits_by_label": {
+              "Account settings": 1,
+              "Email address": 1,
+              "hello@example.test": 0,
+              "Continue": 0
+            },
+            "labelled_word_hits": 4,
+            "labelled_word_total": 6,
+            "primary_target": "Continue",
+            "primary_api_matches": 0,
+            "expected_primary_matches": 1,
+            "primary_centres_in_labelled_region": [],
+            "negative_control": false,
+            "false_positive_words": null
+          },
+          "quality_stable_across_three": true,
+          "representative_lines": [
+            "Account settings",
+            "Email address",
+            "hello@example test"
+          ]
+        },
+        "adaptive": {
+          "case": "blurred-text",
+          "mode": "adaptive",
+          "trials": 3,
+          "errors": 0,
+          "wall_median_ms": 306.269,
+          "target_recall": 0.5,
+          "labelled_word_recall": 0.6666666666666666,
+          "primary_hits": [
+            0,
+            0,
+            0
+          ],
+          "passes": [
+            2,
+            2,
+            2
+          ],
+          "false_positive_words": null,
+          "wall_ms_trials": [
+            320.445256,
+            306.269265,
+            297.623584
+          ],
+          "engine_runs": [
+            2,
+            2,
+            2
+          ],
+          "fallback_reasons": [
+            "target_not_found",
+            "target_not_found",
+            "target_not_found"
+          ],
+          "quality": {
+            "target_hits": 2,
+            "target_total": 4,
+            "target_hits_by_label": {
+              "Account settings": 1,
+              "Email address": 1,
+              "hello@example.test": 0,
+              "Continue": 0
+            },
+            "labelled_word_hits": 4,
+            "labelled_word_total": 6,
+            "primary_target": "Continue",
+            "primary_api_matches": 0,
+            "expected_primary_matches": 1,
+            "primary_centres_in_labelled_region": [],
+            "negative_control": false,
+            "false_positive_words": null
+          },
+          "quality_stable_across_three": true,
+          "representative_lines": [
+            "Account settings",
+            "Email address",
+            "hello@example test"
+          ]
+        }
+      }
+    },
+    {
+      "id": "localized-latin-eng-model",
+      "source_type": "synthetic",
+      "evaluation_role": "base",
+      "targets": [
+        "Überblick",
+        "Änderungen speichern",
+        "Fermer la fenêtre",
+        "Español: Configuración",
+        "Português: Ações"
+      ],
+      "primary_target": "Änderungen speichern",
+      "modes": {
+        "auto": {
+          "case": "localized-latin-eng-model",
+          "mode": "auto",
+          "trials": 3,
+          "errors": 0,
+          "wall_median_ms": 376.965,
+          "target_recall": 0.0,
+          "labelled_word_recall": 0.3,
+          "primary_hits": [
+            0,
+            0,
+            0
+          ],
+          "passes": [
+            2,
+            2,
+            2
+          ],
+          "false_positive_words": null,
+          "wall_ms_trials": [
+            399.004022,
+            367.275379,
+            376.965492
+          ],
+          "engine_runs": [
+            2,
+            2,
+            2
+          ],
+          "fallback_reasons": [
+            null,
+            null,
+            null
+          ],
+          "quality": {
+            "target_hits": 0,
+            "target_total": 5,
+            "target_hits_by_label": {
+              "Überblick": 0,
+              "Änderungen speichern": 0,
+              "Fermer la fenêtre": 0,
+              "Español: Configuración": 0,
+              "Português: Ações": 0
+            },
+            "labelled_word_hits": 3,
+            "labelled_word_total": 10,
+            "primary_target": "Änderungen speichern",
+            "primary_api_matches": 0,
+            "expected_primary_matches": 1,
+            "primary_centres_in_labelled_region": [],
+            "negative_control": false,
+            "false_positive_words": null
+          },
+          "quality_stable_across_three": true,
+          "representative_lines": [
+            "Uberblick",
+            "Anderungen speichern",
+            "Fermer la fenétre",
+            "Espanol: Configuraciéon",
+            "Portugués: Agoes"
+          ]
+        },
+        "never": {
+          "case": "localized-latin-eng-model",
+          "mode": "never",
+          "trials": 3,
+          "errors": 0,
+          "wall_median_ms": 173.632,
+          "target_recall": 0.0,
+          "labelled_word_recall": 0.3,
+          "primary_hits": [
+            0,
+            0,
+            0
+          ],
+          "passes": [
+            1,
+            1,
+            1
+          ],
+          "false_positive_words": null,
+          "wall_ms_trials": [
+            170.110842,
+            191.041062,
+            173.632347
+          ],
+          "engine_runs": [
+            1,
+            1,
+            1
+          ],
+          "fallback_reasons": [
+            null,
+            null,
+            null
+          ],
+          "quality": {
+            "target_hits": 0,
+            "target_total": 5,
+            "target_hits_by_label": {
+              "Überblick": 0,
+              "Änderungen speichern": 0,
+              "Fermer la fenêtre": 0,
+              "Español: Configuración": 0,
+              "Português: Ações": 0
+            },
+            "labelled_word_hits": 3,
+            "labelled_word_total": 10,
+            "primary_target": "Änderungen speichern",
+            "primary_api_matches": 0,
+            "expected_primary_matches": 1,
+            "primary_centres_in_labelled_region": [],
+            "negative_control": false,
+            "false_positive_words": null
+          },
+          "quality_stable_across_three": true,
+          "representative_lines": [
+            "Uberblick",
+            "Anderungen speichern",
+            "Fermer la fenétre",
+            "Espanol:",
+            "Portugués: Agoes"
+          ]
+        },
+        "adaptive": {
+          "case": "localized-latin-eng-model",
+          "mode": "adaptive",
+          "trials": 3,
+          "errors": 0,
+          "wall_median_ms": 380.754,
+          "target_recall": 0.0,
+          "labelled_word_recall": 0.3,
+          "primary_hits": [
+            0,
+            0,
+            0
+          ],
+          "passes": [
+            2,
+            2,
+            2
+          ],
+          "false_positive_words": null,
+          "wall_ms_trials": [
+            379.056251,
+            381.129872,
+            380.754156
+          ],
+          "engine_runs": [
+            2,
+            2,
+            2
+          ],
+          "fallback_reasons": [
+            "target_not_found",
+            "target_not_found",
+            "target_not_found"
+          ],
+          "quality": {
+            "target_hits": 0,
+            "target_total": 5,
+            "target_hits_by_label": {
+              "Überblick": 0,
+              "Änderungen speichern": 0,
+              "Fermer la fenêtre": 0,
+              "Español: Configuración": 0,
+              "Português: Ações": 0
+            },
+            "labelled_word_hits": 3,
+            "labelled_word_total": 10,
+            "primary_target": "Änderungen speichern",
+            "primary_api_matches": 0,
+            "expected_primary_matches": 1,
+            "primary_centres_in_labelled_region": [],
+            "negative_control": false,
+            "false_positive_words": null
+          },
+          "quality_stable_across_three": true,
+          "representative_lines": [
+            "Uberblick",
+            "Anderungen speichern",
+            "Fermer la fenétre",
+            "Espanol: Configuraciéon",
+            "Portugués: Agoes"
+          ]
+        }
+      }
+    },
+    {
+      "id": "duplicate-targets",
+      "source_type": "synthetic",
+      "evaluation_role": "base",
+      "targets": [
+        "Continue",
+        "Continue"
+      ],
+      "primary_target": "Continue",
+      "modes": {
+        "auto": {
+          "case": "duplicate-targets",
+          "mode": "auto",
+          "trials": 3,
+          "errors": 0,
+          "wall_median_ms": 242.074,
+          "target_recall": 1.0,
+          "labelled_word_recall": 1.0,
+          "primary_hits": [
+            2,
+            2,
+            2
+          ],
+          "passes": [
+            2,
+            2,
+            2
+          ],
+          "false_positive_words": null,
+          "wall_ms_trials": [
+            242.074431,
+            229.08884,
+            251.382469
+          ],
+          "engine_runs": [
+            2,
+            2,
+            2
+          ],
+          "fallback_reasons": [
+            null,
+            null,
+            null
+          ],
+          "quality": {
+            "target_hits": 2,
+            "target_total": 2,
+            "target_hits_by_label": {
+              "Continue": 2
+            },
+            "labelled_word_hits": 2,
+            "labelled_word_total": 2,
+            "primary_target": "Continue",
+            "primary_api_matches": 2,
+            "expected_primary_matches": 2,
+            "primary_centres_in_labelled_region": [
+              true,
+              true
+            ],
+            "negative_control": false,
+            "false_positive_words": null
+          },
+          "quality_stable_across_three": true,
+          "representative_lines": [
+            "Continue",
+            "Continue"
+          ]
+        },
+        "never": {
+          "case": "duplicate-targets",
+          "mode": "never",
+          "trials": 3,
+          "errors": 0,
+          "wall_median_ms": 119.164,
+          "target_recall": 1.0,
+          "labelled_word_recall": 1.0,
+          "primary_hits": [
+            2,
+            2,
+            2
+          ],
+          "passes": [
+            1,
+            1,
+            1
+          ],
+          "false_positive_words": null,
+          "wall_ms_trials": [
+            118.64843,
+            119.163971,
+            127.604243
+          ],
+          "engine_runs": [
+            1,
+            1,
+            1
+          ],
+          "fallback_reasons": [
+            null,
+            null,
+            null
+          ],
+          "quality": {
+            "target_hits": 2,
+            "target_total": 2,
+            "target_hits_by_label": {
+              "Continue": 2
+            },
+            "labelled_word_hits": 2,
+            "labelled_word_total": 2,
+            "primary_target": "Continue",
+            "primary_api_matches": 2,
+            "expected_primary_matches": 2,
+            "primary_centres_in_labelled_region": [
+              true,
+              true
+            ],
+            "negative_control": false,
+            "false_positive_words": null
+          },
+          "quality_stable_across_three": true,
+          "representative_lines": [
+            "Continue",
+            "Continue"
+          ]
+        },
+        "adaptive": {
+          "case": "duplicate-targets",
+          "mode": "adaptive",
+          "trials": 3,
+          "errors": 0,
+          "wall_median_ms": 116.216,
+          "target_recall": 1.0,
+          "labelled_word_recall": 1.0,
+          "primary_hits": [
+            2,
+            2,
+            2
+          ],
+          "passes": [
+            1,
+            1,
+            1
+          ],
+          "false_positive_words": null,
+          "wall_ms_trials": [
+            115.99877,
+            126.165337,
+            116.215865
+          ],
+          "engine_runs": [
+            1,
+            1,
+            1
+          ],
+          "fallback_reasons": [
+            null,
+            null,
+            null
+          ],
+          "quality": {
+            "target_hits": 2,
+            "target_total": 2,
+            "target_hits_by_label": {
+              "Continue": 2
+            },
+            "labelled_word_hits": 2,
+            "labelled_word_total": 2,
+            "primary_target": "Continue",
+            "primary_api_matches": 2,
+            "expected_primary_matches": 2,
+            "primary_centres_in_labelled_region": [
+              true,
+              true
+            ],
+            "negative_control": false,
+            "false_positive_words": null
+          },
+          "quality_stable_across_three": true,
+          "representative_lines": [
+            "Continue",
+            "Continue"
+          ]
+        }
+      }
+    },
+    {
+      "id": "empty",
+      "source_type": "synthetic",
+      "evaluation_role": "base",
+      "targets": [],
+      "primary_target": null,
+      "modes": {
+        "auto": {
+          "case": "empty",
+          "mode": "auto",
+          "trials": 3,
+          "errors": 0,
+          "wall_median_ms": 209.454,
+          "target_recall": null,
+          "labelled_word_recall": null,
+          "primary_hits": [
+            0,
+            0,
+            0
+          ],
+          "passes": [
+            2,
+            2,
+            2
+          ],
+          "false_positive_words": [
+            0,
+            0,
+            0
+          ],
+          "wall_ms_trials": [
+            205.180564,
+            209.453852,
+            235.629529
+          ],
+          "engine_runs": [
+            2,
+            2,
+            2
+          ],
+          "fallback_reasons": [
+            null,
+            null,
+            null
+          ],
+          "quality": {
+            "target_hits": 0,
+            "target_total": 0,
+            "target_hits_by_label": {},
+            "labelled_word_hits": 0,
+            "labelled_word_total": 0,
+            "primary_target": "Continue",
+            "primary_api_matches": 0,
+            "expected_primary_matches": 0,
+            "primary_centres_in_labelled_region": [],
+            "negative_control": true,
+            "false_positive_words": 0
+          },
+          "quality_stable_across_three": true,
+          "representative_lines": []
+        },
+        "never": {
+          "case": "empty",
+          "mode": "never",
+          "trials": 3,
+          "errors": 0,
+          "wall_median_ms": 97.041,
+          "target_recall": null,
+          "labelled_word_recall": null,
+          "primary_hits": [
+            0,
+            0,
+            0
+          ],
+          "passes": [
+            1,
+            1,
+            1
+          ],
+          "false_positive_words": [
+            0,
+            0,
+            0
+          ],
+          "wall_ms_trials": [
+            97.041,
+            119.129365,
+            95.503528
+          ],
+          "engine_runs": [
+            1,
+            1,
+            1
+          ],
+          "fallback_reasons": [
+            null,
+            null,
+            null
+          ],
+          "quality": {
+            "target_hits": 0,
+            "target_total": 0,
+            "target_hits_by_label": {},
+            "labelled_word_hits": 0,
+            "labelled_word_total": 0,
+            "primary_target": "Continue",
+            "primary_api_matches": 0,
+            "expected_primary_matches": 0,
+            "primary_centres_in_labelled_region": [],
+            "negative_control": true,
+            "false_positive_words": 0
+          },
+          "quality_stable_across_three": true,
+          "representative_lines": []
+        },
+        "adaptive": {
+          "case": "empty",
+          "mode": "adaptive",
+          "trials": 3,
+          "errors": 0,
+          "wall_median_ms": 201.668,
+          "target_recall": null,
+          "labelled_word_recall": null,
+          "primary_hits": [
+            0,
+            0,
+            0
+          ],
+          "passes": [
+            2,
+            2,
+            2
+          ],
+          "false_positive_words": [
+            0,
+            0,
+            0
+          ],
+          "wall_ms_trials": [
+            203.708679,
+            201.668267,
+            191.40965
+          ],
+          "engine_runs": [
+            2,
+            2,
+            2
+          ],
+          "fallback_reasons": [
+            "empty",
+            "empty",
+            "empty"
+          ],
+          "quality": {
+            "target_hits": 0,
+            "target_total": 0,
+            "target_hits_by_label": {},
+            "labelled_word_hits": 0,
+            "labelled_word_total": 0,
+            "primary_target": "Continue",
+            "primary_api_matches": 0,
+            "expected_primary_matches": 0,
+            "primary_centres_in_labelled_region": [],
+            "negative_control": true,
+            "false_positive_words": 0
+          },
+          "quality_stable_across_three": true,
+          "representative_lines": []
+        }
+      }
+    },
+    {
+      "id": "noise-no-text",
+      "source_type": "synthetic",
+      "evaluation_role": "base",
+      "targets": [],
+      "primary_target": null,
+      "modes": {
+        "auto": {
+          "case": "noise-no-text",
+          "mode": "auto",
+          "trials": 3,
+          "errors": 0,
+          "wall_median_ms": 282.287,
+          "target_recall": null,
+          "labelled_word_recall": null,
+          "primary_hits": [
+            0,
+            0,
+            0
+          ],
+          "passes": [
+            2,
+            2,
+            2
+          ],
+          "false_positive_words": [
+            2,
+            2,
+            2
+          ],
+          "wall_ms_trials": [
+            279.194459,
+            312.944152,
+            282.287339
+          ],
+          "engine_runs": [
+            2,
+            2,
+            2
+          ],
+          "fallback_reasons": [
+            null,
+            null,
+            null
+          ],
+          "quality": {
+            "target_hits": 0,
+            "target_total": 0,
+            "target_hits_by_label": {},
+            "labelled_word_hits": 0,
+            "labelled_word_total": 0,
+            "primary_target": "Continue",
+            "primary_api_matches": 0,
+            "expected_primary_matches": 0,
+            "primary_centres_in_labelled_region": [],
+            "negative_control": true,
+            "false_positive_words": 2
+          },
+          "quality_stable_across_three": true,
+          "representative_lines": [
+            "i",
+            "35"
+          ]
+        },
+        "never": {
+          "case": "noise-no-text",
+          "mode": "never",
+          "trials": 3,
+          "errors": 0,
+          "wall_median_ms": 127.11,
+          "target_recall": null,
+          "labelled_word_recall": null,
+          "primary_hits": [
+            0,
+            0,
+            0
+          ],
+          "passes": [
+            1,
+            1,
+            1
+          ],
+          "false_positive_words": [
+            2,
+            2,
+            2
+          ],
+          "wall_ms_trials": [
+            127.109621,
+            146.768563,
+            126.74405
+          ],
+          "engine_runs": [
+            1,
+            1,
+            1
+          ],
+          "fallback_reasons": [
+            null,
+            null,
+            null
+          ],
+          "quality": {
+            "target_hits": 0,
+            "target_total": 0,
+            "target_hits_by_label": {},
+            "labelled_word_hits": 0,
+            "labelled_word_total": 0,
+            "primary_target": "Continue",
+            "primary_api_matches": 0,
+            "expected_primary_matches": 0,
+            "primary_centres_in_labelled_region": [],
+            "negative_control": true,
+            "false_positive_words": 2
+          },
+          "quality_stable_across_three": true,
+          "representative_lines": [
+            "i",
+            "35"
+          ]
+        },
+        "adaptive": {
+          "case": "noise-no-text",
+          "mode": "adaptive",
+          "trials": 3,
+          "errors": 0,
+          "wall_median_ms": 278.587,
+          "target_recall": null,
+          "labelled_word_recall": null,
+          "primary_hits": [
+            0,
+            0,
+            0
+          ],
+          "passes": [
+            2,
+            2,
+            2
+          ],
+          "false_positive_words": [
+            2,
+            2,
+            2
+          ],
+          "wall_ms_trials": [
+            278.587381,
+            287.044862,
+            269.741058
+          ],
+          "engine_runs": [
+            2,
+            2,
+            2
+          ],
+          "fallback_reasons": [
+            "target_not_found",
+            "target_not_found",
+            "target_not_found"
+          ],
+          "quality": {
+            "target_hits": 0,
+            "target_total": 0,
+            "target_hits_by_label": {},
+            "labelled_word_hits": 0,
+            "labelled_word_total": 0,
+            "primary_target": "Continue",
+            "primary_api_matches": 0,
+            "expected_primary_matches": 0,
+            "primary_centres_in_labelled_region": [],
+            "negative_control": true,
+            "false_positive_words": 2
+          },
+          "quality_stable_across_three": true,
+          "representative_lines": [
+            "i",
+            "35"
+          ]
+        }
+      }
+    },
+    {
+      "id": "minority-dark-region",
+      "source_type": "synthetic",
+      "evaluation_role": "region_variant",
+      "targets": [
+        "Reconnect"
+      ],
+      "primary_target": "Reconnect",
+      "modes": {
+        "auto": {
+          "case": "minority-dark-region",
+          "mode": "auto",
+          "trials": 3,
+          "errors": 0,
+          "wall_median_ms": 210.438,
+          "target_recall": 1.0,
+          "labelled_word_recall": 1.0,
+          "primary_hits": [
+            1,
+            1,
+            1
+          ],
+          "passes": [
+            2,
+            2,
+            2
+          ],
+          "false_positive_words": null,
+          "wall_ms_trials": [
+            191.768005,
+            210.437696,
+            222.761231
+          ],
+          "engine_runs": [
+            2,
+            2,
+            2
+          ],
+          "fallback_reasons": [
+            null,
+            null,
+            null
+          ],
+          "quality": {
+            "target_hits": 1,
+            "target_total": 1,
+            "target_hits_by_label": {
+              "Reconnect": 1
+            },
+            "labelled_word_hits": 1,
+            "labelled_word_total": 1,
+            "primary_target": "Reconnect",
+            "primary_api_matches": 1,
+            "expected_primary_matches": 1,
+            "primary_centres_in_labelled_region": [
+              true
+            ],
+            "negative_control": false,
+            "false_positive_words": null
+          },
+          "quality_stable_across_three": true,
+          "representative_lines": [
+            "Reconnect"
+          ]
+        },
+        "never": {
+          "case": "minority-dark-region",
+          "mode": "never",
+          "trials": 3,
+          "errors": 0,
+          "wall_median_ms": 104.137,
+          "target_recall": 1.0,
+          "labelled_word_recall": 1.0,
+          "primary_hits": [
+            1,
+            1,
+            1
+          ],
+          "passes": [
+            1,
+            1,
+            1
+          ],
+          "false_positive_words": null,
+          "wall_ms_trials": [
+            104.137358,
+            100.63721,
+            116.72956
+          ],
+          "engine_runs": [
+            1,
+            1,
+            1
+          ],
+          "fallback_reasons": [
+            null,
+            null,
+            null
+          ],
+          "quality": {
+            "target_hits": 1,
+            "target_total": 1,
+            "target_hits_by_label": {
+              "Reconnect": 1
+            },
+            "labelled_word_hits": 1,
+            "labelled_word_total": 1,
+            "primary_target": "Reconnect",
+            "primary_api_matches": 1,
+            "expected_primary_matches": 1,
+            "primary_centres_in_labelled_region": [
+              true
+            ],
+            "negative_control": false,
+            "false_positive_words": null
+          },
+          "quality_stable_across_three": true,
+          "representative_lines": [
+            "Reconnect"
+          ]
+        },
+        "adaptive": {
+          "case": "minority-dark-region",
+          "mode": "adaptive",
+          "trials": 3,
+          "errors": 0,
+          "wall_median_ms": 109.505,
+          "target_recall": 1.0,
+          "labelled_word_recall": 1.0,
+          "primary_hits": [
+            1,
+            1,
+            1
+          ],
+          "passes": [
+            1,
+            1,
+            1
+          ],
+          "false_positive_words": null,
+          "wall_ms_trials": [
+            112.958089,
+            101.809707,
+            109.505407
+          ],
+          "engine_runs": [
+            1,
+            1,
+            1
+          ],
+          "fallback_reasons": [
+            null,
+            null,
+            null
+          ],
+          "quality": {
+            "target_hits": 1,
+            "target_total": 1,
+            "target_hits_by_label": {
+              "Reconnect": 1
+            },
+            "labelled_word_hits": 1,
+            "labelled_word_total": 1,
+            "primary_target": "Reconnect",
+            "primary_api_matches": 1,
+            "expected_primary_matches": 1,
+            "primary_centres_in_labelled_region": [
+              true
+            ],
+            "negative_control": false,
+            "false_positive_words": null
+          },
+          "quality_stable_across_three": true,
+          "representative_lines": [
+            "Reconnect"
+          ]
+        }
+      }
+    },
+    {
+      "id": "minority-light-region",
+      "source_type": "synthetic",
+      "evaluation_role": "region_variant",
+      "targets": [
+        "Reconnect"
+      ],
+      "primary_target": "Reconnect",
+      "modes": {
+        "auto": {
+          "case": "minority-light-region",
+          "mode": "auto",
+          "trials": 3,
+          "errors": 0,
+          "wall_median_ms": 208.494,
+          "target_recall": 1.0,
+          "labelled_word_recall": 1.0,
+          "primary_hits": [
+            1,
+            1,
+            1
+          ],
+          "passes": [
+            2,
+            2,
+            2
+          ],
+          "false_positive_words": null,
+          "wall_ms_trials": [
+            200.945035,
+            208.494405,
+            212.744589
+          ],
+          "engine_runs": [
+            2,
+            2,
+            2
+          ],
+          "fallback_reasons": [
+            null,
+            null,
+            null
+          ],
+          "quality": {
+            "target_hits": 1,
+            "target_total": 1,
+            "target_hits_by_label": {
+              "Reconnect": 1
+            },
+            "labelled_word_hits": 1,
+            "labelled_word_total": 1,
+            "primary_target": "Reconnect",
+            "primary_api_matches": 1,
+            "expected_primary_matches": 1,
+            "primary_centres_in_labelled_region": [
+              true
+            ],
+            "negative_control": false,
+            "false_positive_words": null
+          },
+          "quality_stable_across_three": true,
+          "representative_lines": [
+            "Reconnect"
+          ]
+        },
+        "never": {
+          "case": "minority-light-region",
+          "mode": "never",
+          "trials": 3,
+          "errors": 0,
+          "wall_median_ms": 106.998,
+          "target_recall": 1.0,
+          "labelled_word_recall": 1.0,
+          "primary_hits": [
+            1,
+            1,
+            1
+          ],
+          "passes": [
+            1,
+            1,
+            1
+          ],
+          "false_positive_words": null,
+          "wall_ms_trials": [
+            106.997997,
+            96.218725,
+            121.246425
+          ],
+          "engine_runs": [
+            1,
+            1,
+            1
+          ],
+          "fallback_reasons": [
+            null,
+            null,
+            null
+          ],
+          "quality": {
+            "target_hits": 1,
+            "target_total": 1,
+            "target_hits_by_label": {
+              "Reconnect": 1
+            },
+            "labelled_word_hits": 1,
+            "labelled_word_total": 1,
+            "primary_target": "Reconnect",
+            "primary_api_matches": 1,
+            "expected_primary_matches": 1,
+            "primary_centres_in_labelled_region": [
+              true
+            ],
+            "negative_control": false,
+            "false_positive_words": null
+          },
+          "quality_stable_across_three": true,
+          "representative_lines": [
+            "Reconnect"
+          ]
+        },
+        "adaptive": {
+          "case": "minority-light-region",
+          "mode": "adaptive",
+          "trials": 3,
+          "errors": 0,
+          "wall_median_ms": 102.529,
+          "target_recall": 1.0,
+          "labelled_word_recall": 1.0,
+          "primary_hits": [
+            1,
+            1,
+            1
+          ],
+          "passes": [
+            1,
+            1,
+            1
+          ],
+          "false_positive_words": null,
+          "wall_ms_trials": [
+            102.529219,
+            90.770865,
+            115.892304
+          ],
+          "engine_runs": [
+            1,
+            1,
+            1
+          ],
+          "fallback_reasons": [
+            null,
+            null,
+            null
+          ],
+          "quality": {
+            "target_hits": 1,
+            "target_total": 1,
+            "target_hits_by_label": {
+              "Reconnect": 1
+            },
+            "labelled_word_hits": 1,
+            "labelled_word_total": 1,
+            "primary_target": "Reconnect",
+            "primary_api_matches": 1,
+            "expected_primary_matches": 1,
+            "primary_centres_in_labelled_region": [
+              true
+            ],
+            "negative_control": false,
+            "false_positive_words": null
+          },
+          "quality_stable_across_three": true,
+          "representative_lines": [
+            "Reconnect"
+          ]
+        }
+      }
+    },
+    {
+      "id": "real-landscape-inversion-target",
+      "source_type": "real_app_frame_crop",
+      "evaluation_role": "regression_focus",
+      "targets": [
+        "tomatoes",
+        "Make room",
+        "for today",
+        "Today",
+        "Progress",
+        "Settings"
+      ],
+      "primary_target": "Progress",
+      "modes": {
+        "auto": {
+          "case": "real-landscape-inversion-target",
+          "mode": "auto",
+          "trials": 3,
+          "errors": 0,
+          "wall_median_ms": 346.561,
+          "target_recall": 1.0,
+          "labelled_word_recall": 1.0,
+          "primary_hits": [
+            1,
+            1,
+            1
+          ],
+          "passes": [
+            2,
+            2,
+            2
+          ],
+          "false_positive_words": null,
+          "wall_ms_trials": [
+            358.399588,
+            346.560632,
+            336.524613
+          ],
+          "engine_runs": [
+            2,
+            2,
+            2
+          ],
+          "fallback_reasons": [
+            null,
+            null,
+            null
+          ],
+          "quality": {
+            "target_hits": 6,
+            "target_total": 6,
+            "target_hits_by_label": {
+              "tomatoes": 1,
+              "Make room": 1,
+              "for today": 1,
+              "Today": 1,
+              "Progress": 1,
+              "Settings": 1
+            },
+            "labelled_word_hits": 8,
+            "labelled_word_total": 8,
+            "primary_target": "Progress",
+            "primary_api_matches": 1,
+            "expected_primary_matches": 1,
+            "primary_centres_in_labelled_region": [
+              true
+            ],
+            "negative_control": false,
+            "false_positive_words": null
+          },
+          "quality_stable_across_three": true,
+          "representative_lines": [
+            "1",
+            "469",
+            "tomatoes",
+            "Make room",
+            "«for today.",
+            "Today",
+            "Progress",
+            "Settings"
+          ]
+        },
+        "never": {
+          "case": "real-landscape-inversion-target",
+          "mode": "never",
+          "trials": 3,
+          "errors": 0,
+          "wall_median_ms": 156.915,
+          "target_recall": 0.8333333333333334,
+          "labelled_word_recall": 0.875,
+          "primary_hits": [
+            0,
+            0,
+            0
+          ],
+          "passes": [
+            1,
+            1,
+            1
+          ],
+          "false_positive_words": null,
+          "wall_ms_trials": [
+            156.915315,
+            139.152878,
+            169.132288
+          ],
+          "engine_runs": [
+            1,
+            1,
+            1
+          ],
+          "fallback_reasons": [
+            null,
+            null,
+            null
+          ],
+          "quality": {
+            "target_hits": 5,
+            "target_total": 6,
+            "target_hits_by_label": {
+              "tomatoes": 1,
+              "Make room": 1,
+              "for today": 1,
+              "Today": 1,
+              "Progress": 0,
+              "Settings": 1
+            },
+            "labelled_word_hits": 7,
+            "labelled_word_total": 8,
+            "primary_target": "Progress",
+            "primary_api_matches": 0,
+            "expected_primary_matches": 1,
+            "primary_centres_in_labelled_region": [],
+            "negative_control": false,
+            "false_positive_words": null
+          },
+          "quality_stable_across_three": true,
+          "representative_lines": [
+            "1",
+            "469",
+            "tomatoes",
+            "Make room",
+            "«for today.",
+            "Today",
+            "Settings"
+          ]
+        },
+        "adaptive": {
+          "case": "real-landscape-inversion-target",
+          "mode": "adaptive",
+          "trials": 3,
+          "errors": 0,
+          "wall_median_ms": 324.735,
+          "target_recall": 1.0,
+          "labelled_word_recall": 1.0,
+          "primary_hits": [
+            1,
+            1,
+            1
+          ],
+          "passes": [
+            2,
+            2,
+            2
+          ],
+          "false_positive_words": null,
+          "wall_ms_trials": [
+            323.600798,
+            326.714512,
+            324.734595
+          ],
+          "engine_runs": [
+            2,
+            2,
+            2
+          ],
+          "fallback_reasons": [
+            "target_not_found",
+            "target_not_found",
+            "target_not_found"
+          ],
+          "quality": {
+            "target_hits": 6,
+            "target_total": 6,
+            "target_hits_by_label": {
+              "tomatoes": 1,
+              "Make room": 1,
+              "for today": 1,
+              "Today": 1,
+              "Progress": 1,
+              "Settings": 1
+            },
+            "labelled_word_hits": 8,
+            "labelled_word_total": 8,
+            "primary_target": "Progress",
+            "primary_api_matches": 1,
+            "expected_primary_matches": 1,
+            "primary_centres_in_labelled_region": [
+              true
+            ],
+            "negative_control": false,
+            "false_positive_words": null
+          },
+          "quality_stable_across_three": true,
+          "representative_lines": [
+            "1",
+            "469",
+            "tomatoes",
+            "Make room",
+            "«for today.",
+            "Today",
+            "Progress",
+            "Settings"
+          ]
+        }
+      }
+    },
+    {
+      "id": "small-text-inversion-target",
+      "source_type": "synthetic",
+      "evaluation_role": "regression_focus",
+      "targets": [
+        "Account settings",
+        "Email address",
+        "hello@example.test",
+        "Continue"
+      ],
+      "primary_target": "Account settings",
+      "modes": {
+        "auto": {
+          "case": "small-text-inversion-target",
+          "mode": "auto",
+          "trials": 3,
+          "errors": 0,
+          "wall_median_ms": 288.055,
+          "target_recall": 0.5,
+          "labelled_word_recall": 0.6666666666666666,
+          "primary_hits": [
+            1,
+            1,
+            1
+          ],
+          "passes": [
+            2,
+            2,
+            2
+          ],
+          "false_positive_words": null,
+          "wall_ms_trials": [
+            288.879638,
+            265.19466,
+            288.054749
+          ],
+          "engine_runs": [
+            2,
+            2,
+            2
+          ],
+          "fallback_reasons": [
+            null,
+            null,
+            null
+          ],
+          "quality": {
+            "target_hits": 2,
+            "target_total": 4,
+            "target_hits_by_label": {
+              "Account settings": 1,
+              "Email address": 1,
+              "hello@example.test": 0,
+              "Continue": 0
+            },
+            "labelled_word_hits": 4,
+            "labelled_word_total": 6,
+            "primary_target": "Account settings",
+            "primary_api_matches": 1,
+            "expected_primary_matches": 1,
+            "primary_centres_in_labelled_region": [
+              true
+            ],
+            "negative_control": false,
+            "false_positive_words": null
+          },
+          "quality_stable_across_three": true,
+          "representative_lines": [
+            "Account settings",
+            "Email address",
+            "hello@example test",
+            "Cortinue"
+          ]
+        },
+        "never": {
+          "case": "small-text-inversion-target",
+          "mode": "never",
+          "trials": 3,
+          "errors": 0,
+          "wall_median_ms": 131.106,
+          "target_recall": 0.25,
+          "labelled_word_recall": 0.5,
+          "primary_hits": [
+            0,
+            0,
+            0
+          ],
+          "passes": [
+            1,
+            1,
+            1
+          ],
+          "false_positive_words": null,
+          "wall_ms_trials": [
+            117.333557,
+            131.106354,
+            151.447443
+          ],
+          "engine_runs": [
+            1,
+            1,
+            1
+          ],
+          "fallback_reasons": [
+            null,
+            null,
+            null
+          ],
+          "quality": {
+            "target_hits": 1,
+            "target_total": 4,
+            "target_hits_by_label": {
+              "Account settings": 0,
+              "Email address": 1,
+              "hello@example.test": 0,
+              "Continue": 0
+            },
+            "labelled_word_hits": 3,
+            "labelled_word_total": 6,
+            "primary_target": "Account settings",
+            "primary_api_matches": 0,
+            "expected_primary_matches": 1,
+            "primary_centres_in_labelled_region": [],
+            "negative_control": false,
+            "false_positive_words": null
+          },
+          "quality_stable_across_three": true,
+          "representative_lines": [
+            "settings",
+            "Email address",
+            "hello@example test",
+            "Cortinue"
+          ]
+        },
+        "adaptive": {
+          "case": "small-text-inversion-target",
+          "mode": "adaptive",
+          "trials": 3,
+          "errors": 0,
+          "wall_median_ms": 266.523,
+          "target_recall": 0.5,
+          "labelled_word_recall": 0.6666666666666666,
+          "primary_hits": [
+            1,
+            1,
+            1
+          ],
+          "passes": [
+            2,
+            2,
+            2
+          ],
+          "false_positive_words": null,
+          "wall_ms_trials": [
+            266.522777,
+            263.397036,
+            271.992018
+          ],
+          "engine_runs": [
+            2,
+            2,
+            2
+          ],
+          "fallback_reasons": [
+            "target_not_found",
+            "target_not_found",
+            "target_not_found"
+          ],
+          "quality": {
+            "target_hits": 2,
+            "target_total": 4,
+            "target_hits_by_label": {
+              "Account settings": 1,
+              "Email address": 1,
+              "hello@example.test": 0,
+              "Continue": 0
+            },
+            "labelled_word_hits": 4,
+            "labelled_word_total": 6,
+            "primary_target": "Account settings",
+            "primary_api_matches": 1,
+            "expected_primary_matches": 1,
+            "primary_centres_in_labelled_region": [
+              true
+            ],
+            "negative_control": false,
+            "false_positive_words": null
+          },
+          "quality_stable_across_three": true,
+          "representative_lines": [
+            "Account settings",
+            "Email address",
+            "hello@example test",
+            "Cortinue"
+          ]
+        }
+      }
+    }
+  ],
+  "gates": {
+    "zero_errors": true,
+    "zero_hardware_traps": true,
+    "legacy_auto_two_passes": true,
+    "legacy_never_one_pass": true,
+    "legacy_quality_unchanged": true,
+    "adaptive_target_and_labelled_word_recall_matches_auto_on_corpus": true,
+    "inversion_recovery_targets_preserved": true,
+    "compact_matches_identical": true,
+    "polarity_cache_reuse_verified": true,
+    "duplicates_not_collapsed": true
+  },
+  "source_review": {
+    "scope": [
+      "read_selected pass cache and adaptive fallback",
+      "screen.ocr detail/selector/timing construction"
+    ],
+    "findings_open": 0,
+    "observations": [
+      "Auto remains exhaustive/default; never/always remain named one-polarity reads.",
+      "Adaptive fallback is selector-specific; a found confident target can legitimately skip inversion and miss unrelated text.",
+      "Adaptive response cache includes selector/index/fuzzy; polarity caches retain complete raw words until merge to preserve legacy auto quality.",
+      "No testing.find/action, runtime input or screen.marks defaults were switched to adaptive."
+    ]
+  },
+  "limits": [
+    "Selected hand-labelled target subset, not a random production distribution or exhaustive transcription",
+    "Only installed eng language model; accented Latin targets remain difficult and were not accent-normalized into apparent successes",
+    "Three timing trials per case/mode; normal OS caching and concurrent host load are uncontrolled",
+    "Equality of labelled recall on these16images does not prove equal recognition coverage on other screens",
+    "MCP microsequence is a functional/cache observation, not a3-run latency distribution",
+    "Payload savings describe this target query, not arbitrary screenshots",
+    "No device capture/transfer, input latency, agent reasoning, PhoneUse or FPS comparison"
+  ],
+  "recommendations": [
+    "Keep auto default for broad text/ambiguity-sensitive tasks; expose adaptive only as an explicit target-query speed tradeoff.",
+    "Never treat a confident single-pass target as evidence that all other labels or duplicate controls were seen.",
+    "Use fresh image/ROI and explicit selector; keep all matches and refuse ambiguous input rather than choosing index0 implicitly.",
+    "Retain target-miss/empty/low-confidence fallback and keep recognizer invocation counters separate from logical pass counts.",
+    "Document local read timings separately from capture/transport; judge speed and full labelled recall together."
+  ],
+  "historical_only": [
+    "qa/ocr-fast/candidate-debug-raw.json used an earlier all-words confidence guard and a debug build; it is excluded from final performance evidence"
+  ],
+  "forbidden_tool_calls": 0,
+  "physical_device_access": false
+}
