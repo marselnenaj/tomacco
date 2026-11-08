@@ -1,0 +1,267 @@
+{
+  "schema": "tomacco-native-build-type-check/1",
+  "date": "2026-11-08",
+  "scope": "Same unchanged NativeView/test sources and same encoded local packets; explicit empty CMake build type vs Release. No product/CMake policy changes in this worktree.",
+  "proof": {
+    "raw_path": "/home/maslos/Work/tomacco-perf-bench-20261108/qa/performance/native-build-compare.json",
+    "raw_sha256": "72ecda00e81fb0ffb9dcc4fb8ef711e0a6e0d350bce2bf82d8dd0dcb40135c21",
+    "runner_path": "/home/maslos/Work/tomacco-perf-bench-20261108/qa/performance/native_build_compare.py",
+    "runner_sha256": "c0b6575406c2fbee67de7a7768a0149ea4d6419ace30b3b4eed3661324b63fd6"
+  },
+  "source_sha256": "857a19a70a63625acf45b2c0feb91435cb690ea15a129518d1efdcb3fb78b979",
+  "test_sha256": "05c3593012bbe040253bf1c3cd4db0e89ca807cb1025b982a3113c28d5c17e05",
+  "sequence": [
+    "empty",
+    "release",
+    "release",
+    "empty"
+  ],
+  "compiler_flags": {
+    "empty": "FLAGS = -std=gnu++20 -mno-direct-extern-access",
+    "Release": "FLAGS = -O3 -DNDEBUG -std=gnu++20 -mno-direct-extern-access"
+  },
+  "runs": [
+    {
+      "build_type": "",
+      "order": 0,
+      "binary_sha256": "42201c8f2f140d0c93c3eb82e3c35a550b0be25d8ad90e5069fa9b902477279d",
+      "load_start": [
+        28.53466796875,
+        37.7294921875,
+        42.75146484375
+      ],
+      "started_utc": "2026-11-08T11:04:04Z",
+      "exit_code": 0,
+      "load_end": [
+        32.0869140625,
+        38.01904296875,
+        42.7431640625
+      ],
+      "raw_path": "/home/maslos/Work/tomacco-perf-bench-20261108/qa/performance/native-empty-0.json",
+      "raw_sha256": "abaa330f167e82ff6ff2bb0b881676be2394c71fec7bfa828f595d4797fc7fff",
+      "trapped_helpers": ""
+    },
+    {
+      "build_type": "Release",
+      "order": 1,
+      "binary_sha256": "f941e9dadd70079b48c30ff66c0bd85fa67aa8e939329448cd08df6a40f1fc78",
+      "load_start": [
+        32.0869140625,
+        38.01904296875,
+        42.7431640625
+      ],
+      "started_utc": "2026-11-08T11:04:20Z",
+      "exit_code": 0,
+      "load_end": [
+        38.03271484375,
+        39.07275390625,
+        43.013671875
+      ],
+      "raw_path": "/home/maslos/Work/tomacco-perf-bench-20261108/qa/performance/native-release-1.json",
+      "raw_sha256": "57955848f6856acd241beba0c4258d400db83deac3001e8d12914744b7e6d32a",
+      "trapped_helpers": ""
+    },
+    {
+      "build_type": "Release",
+      "order": 2,
+      "binary_sha256": "f941e9dadd70079b48c30ff66c0bd85fa67aa8e939329448cd08df6a40f1fc78",
+      "load_start": [
+        38.03271484375,
+        39.07275390625,
+        43.013671875
+      ],
+      "started_utc": "2026-11-08T11:04:36Z",
+      "exit_code": 0,
+      "load_end": [
+        41.71435546875,
+        39.8505859375,
+        43.20556640625
+      ],
+      "raw_path": "/home/maslos/Work/tomacco-perf-bench-20261108/qa/performance/native-release-2.json",
+      "raw_sha256": "17a03c72508849545a2ee5bd5cbdc966eabb188585dc17fe139ff57e4144a762",
+      "trapped_helpers": ""
+    },
+    {
+      "build_type": "",
+      "order": 3,
+      "binary_sha256": "42201c8f2f140d0c93c3eb82e3c35a550b0be25d8ad90e5069fa9b902477279d",
+      "load_start": [
+        41.71435546875,
+        39.8505859375,
+        43.20556640625
+      ],
+      "started_utc": "2026-11-08T11:04:51Z",
+      "exit_code": 0,
+      "load_end": [
+        40.56591796875,
+        39.7197265625,
+        43.1103515625
+      ],
+      "raw_path": "/home/maslos/Work/tomacco-perf-bench-20261108/qa/performance/native-empty-3.json",
+      "raw_sha256": "1b3348d2962aefdc0e58e23c1edace6059d4b10d1bab90543d174f66e82d15f5",
+      "trapped_helpers": ""
+    }
+  ],
+  "summary": [
+    {
+      "width": 1080,
+      "height": 1920,
+      "codec": "mjpeg",
+      "same_encoded_packets": true,
+      "per_run_p50_ms": [
+        2.2409715000000006,
+        2.1240509999999944,
+        2.1354660000000223,
+        2.1007945000000063
+      ],
+      "empty": {
+        "n": 40,
+        "p50_ms": 2.193328000000008,
+        "p95_ms": 5.106372999999962
+      },
+      "release": {
+        "n": 40,
+        "p50_ms": 2.1354660000000223,
+        "p95_ms": 4.684706999999996
+      },
+      "release_over_empty_p50_ratio": 0.9736190847880547
+    },
+    {
+      "width": 1080,
+      "height": 1920,
+      "codec": "h264",
+      "same_encoded_packets": true,
+      "per_run_p50_ms": [
+        1.0846954999999525,
+        1.044491999999991,
+        1.1104849999999828,
+        1.039426500000026
+      ],
+      "empty": {
+        "n": 40,
+        "p50_ms": 1.0550445000000082,
+        "p95_ms": 3.233216
+      },
+      "release": {
+        "n": 40,
+        "p50_ms": 1.071059500000004,
+        "p95_ms": 2.9424199999999985
+      },
+      "release_over_empty_p50_ratio": 1.0151794545158956
+    },
+    {
+      "width": 1440,
+      "height": 3120,
+      "codec": "mjpeg",
+      "same_encoded_packets": true,
+      "per_run_p50_ms": [
+        4.402310000000028,
+        4.363667499999963,
+        4.341291000000069,
+        4.381191999999942
+      ],
+      "empty": {
+        "n": 40,
+        "p50_ms": 4.385559999999998,
+        "p95_ms": 7.420798000000104
+      },
+      "release": {
+        "n": 40,
+        "p50_ms": 4.355703500000061,
+        "p95_ms": 6.418817000000004
+      },
+      "release_over_empty_p50_ratio": 0.9931920894937164
+    },
+    {
+      "width": 1440,
+      "height": 3120,
+      "codec": "h264",
+      "same_encoded_packets": true,
+      "per_run_p50_ms": [
+        1.9606299999999237,
+        2.281040500000074,
+        2.488356500000009,
+        2.195721500000076
+      ],
+      "empty": {
+        "n": 40,
+        "p50_ms": 2.014086500000076,
+        "p95_ms": 5.454289
+      },
+      "release": {
+        "n": 40,
+        "p50_ms": 2.3980619999999817,
+        "p95_ms": 5.458889
+      },
+      "release_over_empty_p50_ratio": 1.1906449896764073
+    },
+    {
+      "width": 3840,
+      "height": 2160,
+      "codec": "mjpeg",
+      "same_encoded_packets": true,
+      "per_run_p50_ms": [
+        8.404074999999693,
+        8.877889000000096,
+        8.530240999999933,
+        8.022804500000007
+      ],
+      "empty": {
+        "n": 40,
+        "p50_ms": 8.116463500000009,
+        "p95_ms": 12.767882
+      },
+      "release": {
+        "n": 40,
+        "p50_ms": 8.678089,
+        "p95_ms": 12.55186
+      },
+      "release_over_empty_p50_ratio": 1.0691958388034382
+    },
+    {
+      "width": 3840,
+      "height": 2160,
+      "codec": "h264",
+      "same_encoded_packets": true,
+      "per_run_p50_ms": [
+        3.980712500000209,
+        3.9342079999999555,
+        3.7532279999999787,
+        3.9376044999999635
+      ],
+      "empty": {
+        "n": 40,
+        "p50_ms": 3.958448500000145,
+        "p95_ms": 8.62469999999999
+      },
+      "release": {
+        "n": 40,
+        "p50_ms": 3.7895054999999616,
+        "p95_ms": 11.705512999999996
+      },
+      "release_over_empty_p50_ratio": 0.9573209048948907
+    }
+  ],
+  "validation": {
+    "passed_runs": 4,
+    "sequential_frames": 480,
+    "burst_packets": 216,
+    "recovery_frames": 24,
+    "all_packet_hashes_match": true,
+    "trapped_helpers": false
+  },
+  "interpretation": [
+    "No consistent Release benefit is established in this packet-feed\u2192GUI-image-availability boundary. Shared libavcodec/libswscale does the bulk of decode/convert work and is the same optimized system build in both variants.",
+    "Pooled Release/empty medians range0.957\u20131.191; absolute differences are below0.6ms. Pixel H264 and4K MJPEG were slower in both Release rounds here; report these observations without assigning a general causal regression.",
+    "ABBA balances coarse order drift but has only2 runs per build,20frames/case/run, synthetic patterns and loaded shared host. Do not infer other UI CPU/startup, upload/presentation or device performance.",
+    "An explicit Release build is appropriate build-policy hygiene; this experiment provides no justification to advertise video latency improvement from that policy alone."
+  ],
+  "boundaries": "before QLocalSocket::write/flush to NativeView::frameChanged on GUI thread, after its image assignment; monotonic event timestamps, no QTRY polling",
+  "excluded": [
+    "frame encoding and PNG correctness-save time",
+    "texture creation/upload and GPU memory",
+    "frameSwapped/display presentation and monitor latency",
+    "device capture, USB/AirPlay/network and touch",
+    "realistic content complexity or device FPS"
+  ]
+}

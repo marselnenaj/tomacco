@@ -1,0 +1,760 @@
+{
+  "schema": "tomacco-worker-performance-qualification/1",
+  "date": "2026-11-08",
+  "candidate": {
+    "path": "/home/maslos/Work/tomacco-perf-bench-20261108/qa/performance/candidates/b075f3/tomaccoctl",
+    "sha256": "b075f3ea08ea28d40cd0f5796c276c0f765fc3639530f0ce6f705cb8ce5ad8d9"
+  },
+  "baseline": {
+    "path": "/home/maslos/Work/tomacco-ocr-fast-20261108/build/tomaccoctl",
+    "sha256": "5c458fccf723c343fb7c41a9852941bbfa712239638936704f28d451e4dc096a"
+  },
+  "tool_sha256": "af57c7d7d652727cabeab073b3daa4fa4e8105070ce11abd2b016a0f5f9bed20",
+  "scope": "Independent frozen b075f3 prototype qualification. Not a claim about a later integrated binary, installation, devices, competitors or display FPS.",
+  "proofs": {
+    "performance": {
+      "path": "/home/maslos/Work/tomacco-perf-bench-20261108/qa/performance/ocr-worker-candidate.json",
+      "sha256": "05c3539ec4b583a7d5894cc6f0f8b5f79d6712978fd20712fcd310edc76e5de4"
+    },
+    "baseline": {
+      "path": "/home/maslos/Work/tomacco-perf-bench-20261108/qa/performance/baseline-worker-compatible.json",
+      "sha256": "4b69c27a9b8d5fc92c08880e433e73194afcbf533a7a936ede39fe1532937d1e"
+    },
+    "full_mcp_quality": {
+      "path": "/home/maslos/Work/tomacco-perf-bench-20261108/qa/performance/worker-quality.json",
+      "sha256": "a9a3f52e23c28cdf8dad806866173014b9cefa1ef38aaf6722c7b57ba0b2e417"
+    },
+    "cold_custom_cli_quality": {
+      "path": "/home/maslos/Work/tomacco-perf-bench-20261108/qa/performance/ocr-worker-cold-cli.json",
+      "sha256": "9d0f64c8aee87029a714fa801d5695c4174c1f7f330b6b13ee9ca26fbfd56ca2"
+    },
+    "quality_runner": {
+      "path": "/home/maslos/Work/tomacco-perf-bench-20261108/qa/performance/worker_quality.py",
+      "sha256": "7d068b39d6080f49dad80b913bb5cc0bbaa9f0a5f702ace8a0519efeaaae4a32"
+    }
+  },
+  "counts": {
+    "performance_records": 417,
+    "performance_failures": 0,
+    "performance_skips": [],
+    "persistent_quality_calls": 540,
+    "persistent_old_to_new_comparisons": 360,
+    "persistent_quality_errors": 0,
+    "persistent_metric_differences": 0,
+    "persistent_word_text_rectangle_differences": 0,
+    "cold_custom_cli_calls": 180,
+    "cold_custom_cli_errors": 0,
+    "all_hardware_traps_empty": true
+  },
+  "method": {
+    "performance_command": "python3 tools/benchmark_performance.py --cli qa/performance/candidates/b075f3/tomaccoctl --desktop /home/maslos/Work/tomacco-ocr-fast-20261108/build/tomacco --trials 20 --cold-trials 3 --ocr-trials 3 --changing-trials 5 --compare qa/performance/baseline-worker-compatible.json --output qa/performance/ocr-worker-candidate.json",
+    "quality": "20 cases \u00d7 auto/never/adaptive \u00d73 trials \u00d7old standard/new standard/new explicit-system-override, persistent MCP. Full word inventories+rectangles and independent target/word recall compared; mode/route order rotated. Separate180 cold explicit-system-override CLI calls match persistent custom quality.",
+    "cache_bypass": {
+      "pillow_version": "13.0.0",
+      "transform": "RGB conversion and one top-left pixel changed per call, outside all labelled primary target rectangles; same dimensions and text. PNG preparation excluded from timing.",
+      "limit": "Deliberate cache-bypass recognition workload; not a moving-camera/video distribution."
+    },
+    "routes": "Standard PATH /usr/bin/tesseract with TOMACCO_TESSERACT unset exercises worker. Exact same executable selected explicitly exercises custom/CLI contract. OMP_THREAD_LIMIT and OMP_NUM_THREADS absent in caller for both baseline and candidate.",
+    "cold_cli_limit": "Existing benchmark_ocr.py sets TOMACCO_TESSERACT explicitly; these180 calls qualify cold custom CLI, not default-PATH CLI speed.",
+    "environment": {
+      "platform": "Linux-7.2.11-arch1-1-x86_64-with-glibc2.44",
+      "python": "3.14.8",
+      "cpus": 32,
+      "load_start": [
+        36.40673828125,
+        41.2119140625,
+        44.63134765625
+      ],
+      "started_utc": "2026-11-08T11:00:00Z",
+      "load_end": [
+        44.6767578125,
+        42.74658203125,
+        45.06201171875
+      ]
+    },
+    "baseline_environment": {
+      "platform": "Linux-7.2.11-arch1-1-x86_64-with-glibc2.44",
+      "python": "3.14.8",
+      "cpus": 32,
+      "load_start": [
+        57.9384765625,
+        53.298828125,
+        47.662109375
+      ],
+      "started_utc": "2026-11-08T10:32:54Z",
+      "load_end": [
+        60.11865234375,
+        54.380859375,
+        48.2353515625
+      ]
+    },
+    "engine": {
+      "standard_path": "/usr/bin/tesseract",
+      "executable_sha256": "9c19bce33d5408d82d691e9827862da3276814033b32f5e5e3263175a3d8b917",
+      "eng_traineddata_sha256": "daa0c97d651c19fba3b25e81317cd697e9908c8208090c94c3905381c23fc047",
+      "standard_route": "TOMACCO_TESSERACT absent; PATH resolves /usr/bin/tesseract after hardware traps",
+      "custom_route": "same executable explicitly selected with TOMACCO_TESSERACT",
+      "OMP_THREAD_LIMIT": null,
+      "OMP_NUM_THREADS": null
+    }
+  },
+  "findings": [
+    {
+      "topic": "Fresh-pixel recognition",
+      "result": "Standard-route persistent warm recognition p50 improves about2.8\u20133.6\u00d7 over old run on these3 cases; full accuracy corpus remains unchanged. Exact ratios below. Each changed PNG asserted cached=false and engine_runs>0.",
+      "limit": "Unpaired runs on a loaded host,4 warm samples/case; not a stable p95, general speed guarantee, or video/camera distribution."
+    },
+    {
+      "topic": "Full output correctness",
+      "result": "All360 persistent old\u2192new quality and word-text/rectangle comparisons identical across modes,20 labelled cases and3 trials. No existing miss was fixed.",
+      "limit": "Subset-labelled offline corpus,eng data only; not universal OCR accuracy or localization qualification."
+    },
+    {
+      "topic": "Memory tradeoff",
+      "result": "Fresh-recognition sampled process-tree peak falls modestly from ~100MiB to ~87\u201389MiB in these workloads. Cached-call resident process-tree memory instead grows ~10MiB\u2192~86MiB because the worker retains its engine/model. Cached response latency remains sub-millisecond.",
+      "limit": "RSS sums shared pages per process, sampled10ms; no GPU memory, complete high-water mark, or long-lived leak/idle-bound measurement here."
+    },
+    {
+      "topic": "Explicit executable compatibility",
+      "result": "Explicit /usr/bin/tesseract output and quality remain identical. This run does not demonstrate an additional cold/custom CLI latency gain.",
+      "independent_policy_observation": "Backend agent independently observed OMP_THREAD_LIMIT=1 in an actual forced-system CLI child (/home/maslos/Work/tomacco-perf-ocr-20261108/qa/perf-ocr/actual-cli-omp-environment.json). Policy execution and timing benefit are separate claims."
+    }
+  ],
+  "independent_base_image_recall": [
+    {
+      "variant": "old_standard",
+      "mode": "auto",
+      "target_hits": 57,
+      "target_total": 74,
+      "labelled_word_hits": 92,
+      "labelled_word_total": 124
+    },
+    {
+      "variant": "old_standard",
+      "mode": "never",
+      "target_hits": 55,
+      "target_total": 74,
+      "labelled_word_hits": 90,
+      "labelled_word_total": 124
+    },
+    {
+      "variant": "old_standard",
+      "mode": "adaptive",
+      "target_hits": 57,
+      "target_total": 74,
+      "labelled_word_hits": 92,
+      "labelled_word_total": 124
+    },
+    {
+      "variant": "new_standard",
+      "mode": "auto",
+      "target_hits": 57,
+      "target_total": 74,
+      "labelled_word_hits": 92,
+      "labelled_word_total": 124
+    },
+    {
+      "variant": "new_standard",
+      "mode": "never",
+      "target_hits": 55,
+      "target_total": 74,
+      "labelled_word_hits": 90,
+      "labelled_word_total": 124
+    },
+    {
+      "variant": "new_standard",
+      "mode": "adaptive",
+      "target_hits": 57,
+      "target_total": 74,
+      "labelled_word_hits": 92,
+      "labelled_word_total": 124
+    },
+    {
+      "variant": "new_custom",
+      "mode": "auto",
+      "target_hits": 57,
+      "target_total": 74,
+      "labelled_word_hits": 92,
+      "labelled_word_total": 124
+    },
+    {
+      "variant": "new_custom",
+      "mode": "never",
+      "target_hits": 55,
+      "target_total": 74,
+      "labelled_word_hits": 90,
+      "labelled_word_total": 124
+    },
+    {
+      "variant": "new_custom",
+      "mode": "adaptive",
+      "target_hits": 57,
+      "target_total": 74,
+      "labelled_word_hits": 92,
+      "labelled_word_total": 124
+    }
+  ],
+  "changed_pixel_latency": [
+    {
+      "workload": "ocr_changing.real-landscape.auto.standard:warm_fresh_image",
+      "n": 4,
+      "old_wall_ms": {
+        "n": 4,
+        "unit": "ms",
+        "p50": 339.0489015,
+        "p95": 355.768259,
+        "min": 322.70171,
+        "max": 355.768259
+      },
+      "candidate_wall_ms": {
+        "n": 4,
+        "unit": "ms",
+        "p50": 104.1898735,
+        "p95": 109.777484,
+        "min": 101.143087,
+        "max": 109.777484
+      },
+      "p50_ratio": 0.3073004308200067,
+      "candidate_rss_kib_after": {
+        "n": 4,
+        "unit": "KiB",
+        "p50": 86292.0,
+        "p95": 86424.0,
+        "min": 86184.0,
+        "max": 86424.0
+      },
+      "candidate_sampled_peak_rss_kib": {
+        "n": 4,
+        "unit": "KiB",
+        "p50": 88502.0,
+        "p95": 88592.0,
+        "min": 88404.0,
+        "max": 88592.0
+      }
+    },
+    {
+      "workload": "ocr_changing.real-landscape.adaptive.standard:warm_fresh_image",
+      "n": 4,
+      "old_wall_ms": {
+        "n": 4,
+        "unit": "ms",
+        "p50": 355.21531949999996,
+        "p95": 372.868637,
+        "min": 343.653263,
+        "max": 372.868637
+      },
+      "candidate_wall_ms": {
+        "n": 4,
+        "unit": "ms",
+        "p50": 114.434867,
+        "p95": 135.052731,
+        "min": 100.297699,
+        "max": 135.052731
+      },
+      "p50_ratio": 0.32215633931858056,
+      "candidate_rss_kib_after": {
+        "n": 4,
+        "unit": "KiB",
+        "p50": 86826.0,
+        "p95": 86988.0,
+        "min": 86392.0,
+        "max": 86988.0
+      },
+      "candidate_sampled_peak_rss_kib": {
+        "n": 4,
+        "unit": "KiB",
+        "p50": 88976.0,
+        "p95": 89172.0,
+        "min": 88576.0,
+        "max": 89172.0
+      }
+    },
+    {
+      "workload": "ocr_changing.real-landscape.auto.custom_override:warm_fresh_image",
+      "n": 4,
+      "old_wall_ms": {
+        "n": 4,
+        "unit": "ms",
+        "p50": 359.339924,
+        "p95": 400.996169,
+        "min": 334.163471,
+        "max": 400.996169
+      },
+      "candidate_wall_ms": {
+        "n": 4,
+        "unit": "ms",
+        "p50": 313.5432405,
+        "p95": 401.425119,
+        "min": 279.076631,
+        "max": 401.425119
+      },
+      "p50_ratio": 0.8725533111093997,
+      "candidate_rss_kib_after": {
+        "n": 4,
+        "unit": "KiB",
+        "p50": 14194.0,
+        "p95": 14436.0,
+        "min": 13848.0,
+        "max": 14436.0
+      },
+      "candidate_sampled_peak_rss_kib": {
+        "n": 4,
+        "unit": "KiB",
+        "p50": 106178.0,
+        "p95": 106692.0,
+        "min": 103768.0,
+        "max": 106692.0
+      }
+    },
+    {
+      "workload": "ocr_changing.real-landscape.adaptive.custom_override:warm_fresh_image",
+      "n": 4,
+      "old_wall_ms": {
+        "n": 4,
+        "unit": "ms",
+        "p50": 333.3835375,
+        "p95": 351.955318,
+        "min": 320.818476,
+        "max": 351.955318
+      },
+      "candidate_wall_ms": {
+        "n": 4,
+        "unit": "ms",
+        "p50": 343.9941465,
+        "p95": 353.451547,
+        "min": 284.190841,
+        "max": 353.451547
+      },
+      "p50_ratio": 1.0318270334509243,
+      "candidate_rss_kib_after": {
+        "n": 4,
+        "unit": "KiB",
+        "p50": 14552.0,
+        "p95": 14668.0,
+        "min": 14376.0,
+        "max": 14668.0
+      },
+      "candidate_sampled_peak_rss_kib": {
+        "n": 4,
+        "unit": "KiB",
+        "p50": 105966.0,
+        "p95": 106748.0,
+        "min": 99288.0,
+        "max": 106748.0
+      }
+    },
+    {
+      "workload": "ocr_changing.light-panel.auto.standard:warm_fresh_image",
+      "n": 4,
+      "old_wall_ms": {
+        "n": 4,
+        "unit": "ms",
+        "p50": 336.6173545,
+        "p95": 372.437873,
+        "min": 321.843823,
+        "max": 372.437873
+      },
+      "candidate_wall_ms": {
+        "n": 4,
+        "unit": "ms",
+        "p50": 93.983367,
+        "p95": 94.930147,
+        "min": 92.470171,
+        "max": 94.930147
+      },
+      "p50_ratio": 0.2791994106768491,
+      "candidate_rss_kib_after": {
+        "n": 4,
+        "unit": "KiB",
+        "p50": 87310.0,
+        "p95": 87508.0,
+        "min": 87024.0,
+        "max": 87508.0
+      },
+      "candidate_sampled_peak_rss_kib": {
+        "n": 4,
+        "unit": "KiB",
+        "p50": 91032.0,
+        "p95": 91260.0,
+        "min": 90560.0,
+        "max": 91260.0
+      }
+    },
+    {
+      "workload": "ocr_changing.light-panel.adaptive.standard:warm_fresh_image",
+      "n": 4,
+      "old_wall_ms": {
+        "n": 4,
+        "unit": "ms",
+        "p50": 158.784931,
+        "p95": 159.402084,
+        "min": 149.000566,
+        "max": 159.402084
+      },
+      "candidate_wall_ms": {
+        "n": 4,
+        "unit": "ms",
+        "p50": 46.4086975,
+        "p95": 58.425694,
+        "min": 37.504602,
+        "max": 58.425694
+      },
+      "p50_ratio": 0.29227394065498574,
+      "candidate_rss_kib_after": {
+        "n": 4,
+        "unit": "KiB",
+        "p50": 87192.0,
+        "p95": 87304.0,
+        "min": 87068.0,
+        "max": 87304.0
+      },
+      "candidate_sampled_peak_rss_kib": {
+        "n": 4,
+        "unit": "KiB",
+        "p50": 90938.0,
+        "p95": 91044.0,
+        "min": 90820.0,
+        "max": 91044.0
+      }
+    },
+    {
+      "workload": "ocr_changing.light-panel.auto.custom_override:warm_fresh_image",
+      "n": 4,
+      "old_wall_ms": {
+        "n": 4,
+        "unit": "ms",
+        "p50": 329.109242,
+        "p95": 353.78309,
+        "min": 314.536244,
+        "max": 353.78309
+      },
+      "candidate_wall_ms": {
+        "n": 4,
+        "unit": "ms",
+        "p50": 300.50722900000005,
+        "p95": 353.048946,
+        "min": 271.259779,
+        "max": 353.048946
+      },
+      "p50_ratio": 0.913092647212867,
+      "candidate_rss_kib_after": {
+        "n": 4,
+        "unit": "KiB",
+        "p50": 14048.0,
+        "p95": 14292.0,
+        "min": 13860.0,
+        "max": 14292.0
+      },
+      "candidate_sampled_peak_rss_kib": {
+        "n": 4,
+        "unit": "KiB",
+        "p50": 107520.0,
+        "p95": 108168.0,
+        "min": 104712.0,
+        "max": 108168.0
+      }
+    },
+    {
+      "workload": "ocr_changing.light-panel.adaptive.custom_override:warm_fresh_image",
+      "n": 4,
+      "old_wall_ms": {
+        "n": 4,
+        "unit": "ms",
+        "p50": 149.09305,
+        "p95": 159.28846,
+        "min": 138.03463,
+        "max": 159.28846
+      },
+      "candidate_wall_ms": {
+        "n": 4,
+        "unit": "ms",
+        "p50": 132.432532,
+        "p95": 157.068995,
+        "min": 116.590345,
+        "max": 157.068995
+      },
+      "p50_ratio": 0.8882542278127653,
+      "candidate_rss_kib_after": {
+        "n": 4,
+        "unit": "KiB",
+        "p50": 14650.0,
+        "p95": 14724.0,
+        "min": 14548.0,
+        "max": 14724.0
+      },
+      "candidate_sampled_peak_rss_kib": {
+        "n": 4,
+        "unit": "KiB",
+        "p50": 104202.0,
+        "p95": 108172.0,
+        "min": 96160.0,
+        "max": 108172.0
+      }
+    },
+    {
+      "workload": "ocr_changing.real-landscape-inversion-target.auto.standard:warm_fresh_image",
+      "n": 4,
+      "old_wall_ms": {
+        "n": 4,
+        "unit": "ms",
+        "p50": 341.51191900000003,
+        "p95": 373.054384,
+        "min": 330.374646,
+        "max": 373.054384
+      },
+      "candidate_wall_ms": {
+        "n": 4,
+        "unit": "ms",
+        "p50": 122.61276649999999,
+        "p95": 145.426106,
+        "min": 103.685624,
+        "max": 145.426106
+      },
+      "p50_ratio": 0.3590292451842654,
+      "candidate_rss_kib_after": {
+        "n": 4,
+        "unit": "KiB",
+        "p50": 87250.0,
+        "p95": 87436.0,
+        "min": 87144.0,
+        "max": 87436.0
+      },
+      "candidate_sampled_peak_rss_kib": {
+        "n": 4,
+        "unit": "KiB",
+        "p50": 89450.0,
+        "p95": 89528.0,
+        "min": 89324.0,
+        "max": 89528.0
+      }
+    },
+    {
+      "workload": "ocr_changing.real-landscape-inversion-target.adaptive.standard:warm_fresh_image",
+      "n": 4,
+      "old_wall_ms": {
+        "n": 4,
+        "unit": "ms",
+        "p50": 349.73549549999996,
+        "p95": 383.409706,
+        "min": 335.464854,
+        "max": 383.409706
+      },
+      "candidate_wall_ms": {
+        "n": 4,
+        "unit": "ms",
+        "p50": 119.90442999999999,
+        "p95": 145.754819,
+        "min": 99.563025,
+        "max": 145.754819
+      },
+      "p50_ratio": 0.3428431816123737,
+      "candidate_rss_kib_after": {
+        "n": 4,
+        "unit": "KiB",
+        "p50": 87232.0,
+        "p95": 87372.0,
+        "min": 87148.0,
+        "max": 87372.0
+      },
+      "candidate_sampled_peak_rss_kib": {
+        "n": 4,
+        "unit": "KiB",
+        "p50": 89408.0,
+        "p95": 89516.0,
+        "min": 89196.0,
+        "max": 89516.0
+      }
+    },
+    {
+      "workload": "ocr_changing.real-landscape-inversion-target.auto.custom_override:warm_fresh_image",
+      "n": 4,
+      "old_wall_ms": {
+        "n": 4,
+        "unit": "ms",
+        "p50": 338.94450900000004,
+        "p95": 375.721513,
+        "min": 332.616518,
+        "max": 375.721513
+      },
+      "candidate_wall_ms": {
+        "n": 4,
+        "unit": "ms",
+        "p50": 348.454875,
+        "p95": 390.855256,
+        "min": 283.764672,
+        "max": 390.855256
+      },
+      "p50_ratio": 1.0280587699386508,
+      "candidate_rss_kib_after": {
+        "n": 4,
+        "unit": "KiB",
+        "p50": 14746.0,
+        "p95": 14864.0,
+        "min": 14548.0,
+        "max": 14864.0
+      },
+      "candidate_sampled_peak_rss_kib": {
+        "n": 4,
+        "unit": "KiB",
+        "p50": 106932.0,
+        "p95": 107060.0,
+        "min": 106616.0,
+        "max": 107060.0
+      }
+    },
+    {
+      "workload": "ocr_changing.real-landscape-inversion-target.adaptive.custom_override:warm_fresh_image",
+      "n": 4,
+      "old_wall_ms": {
+        "n": 4,
+        "unit": "ms",
+        "p50": 340.564811,
+        "p95": 361.92082,
+        "min": 324.952189,
+        "max": 361.92082
+      },
+      "candidate_wall_ms": {
+        "n": 4,
+        "unit": "ms",
+        "p50": 299.77875700000004,
+        "p95": 323.46275,
+        "min": 284.156015,
+        "max": 323.46275
+      },
+      "p50_ratio": 0.8802399640754429,
+      "candidate_rss_kib_after": {
+        "n": 4,
+        "unit": "KiB",
+        "p50": 13546.0,
+        "p95": 13768.0,
+        "min": 13360.0,
+        "max": 13768.0
+      },
+      "candidate_sampled_peak_rss_kib": {
+        "n": 4,
+        "unit": "KiB",
+        "p50": 105292.0,
+        "p95": 105864.0,
+        "min": 103400.0,
+        "max": 105864.0
+      }
+    }
+  ],
+  "cache_memory_example": {
+    "workload": "ocr.light-panel.auto.full:warm_cached",
+    "old": {
+      "wall_ms": {
+        "n": 3,
+        "unit": "ms",
+        "p50": 0.453136,
+        "p95": 0.462693,
+        "min": 0.42038,
+        "max": 0.462693
+      },
+      "wire_utf8_bytes": {
+        "n": 3,
+        "unit": "bytes",
+        "p50": 4263,
+        "p95": 4285,
+        "min": 4239,
+        "max": 4285
+      },
+      "text_utf8_bytes": {
+        "n": 3,
+        "unit": "bytes",
+        "p50": 1924,
+        "p95": 1935,
+        "min": 1912,
+        "max": 1935
+      },
+      "cpu_ms": {
+        "n": 3,
+        "unit": "ms",
+        "p50": 0,
+        "p95": 0,
+        "min": 0,
+        "max": 0
+      },
+      "rss_kib_after": {
+        "n": 3,
+        "unit": "KiB",
+        "p50": 10596.0,
+        "p95": 10940.0,
+        "min": 10536.0,
+        "max": 10940.0
+      },
+      "sampled_peak_rss_kib": {
+        "n": 3,
+        "unit": "KiB",
+        "p50": 10596.0,
+        "p95": 10940.0,
+        "min": 10536.0,
+        "max": 10940.0
+      },
+      "correct": 3
+    },
+    "candidate": {
+      "wall_ms": {
+        "n": 3,
+        "unit": "ms",
+        "p50": 0.489386,
+        "p95": 0.507345,
+        "min": 0.470692,
+        "max": 0.507345
+      },
+      "wire_utf8_bytes": {
+        "n": 3,
+        "unit": "bytes",
+        "p50": 4239,
+        "p95": 4263,
+        "min": 4237,
+        "max": 4263
+      },
+      "text_utf8_bytes": {
+        "n": 3,
+        "unit": "bytes",
+        "p50": 1912,
+        "p95": 1924,
+        "min": 1911,
+        "max": 1924
+      },
+      "cpu_ms": {
+        "n": 3,
+        "unit": "ms",
+        "p50": 0,
+        "p95": 0,
+        "min": 0,
+        "max": 0
+      },
+      "rss_kib_after": {
+        "n": 3,
+        "unit": "KiB",
+        "p50": 88084.0,
+        "p95": 88248.0,
+        "min": 87644.0,
+        "max": 88248.0
+      },
+      "sampled_peak_rss_kib": {
+        "n": 3,
+        "unit": "KiB",
+        "p50": 88084.0,
+        "p95": 88248.0,
+        "min": 87644.0,
+        "max": 88248.0
+      },
+      "correct": 3
+    }
+  },
+  "delegated_limits_not_measured_here": [
+    "128-read recycle",
+    "60-second idle process exit",
+    "worker init cancellation/process death",
+    "custom wrappers/config/concurrent streams",
+    "9MP above-cap fallback"
+  ],
+  "remaining": [
+    "Repeat with final integrated immutable binary after worker spawn-path and process API integration.",
+    "Default-PATH one-shot CLI timing needs a separate standard-route measurement if claimed.",
+    "Real device capture/transport/action/agent reasoning and competitor comparisons remain unmeasured."
+  ]
+}
