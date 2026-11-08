@@ -22,7 +22,7 @@
     },
     "full_mcp_quality": {
       "path": "/home/maslos/Work/tomacco-perf-bench-20261108/qa/performance/worker-quality.json",
-      "sha256": "a9a3f52e23c28cdf8dad806866173014b9cefa1ef38aaf6722c7b57ba0b2e417"
+      "sha256": "c3c140e4c5905114810a674aa293a5b1283f8798759a76c2bd7c5022f377f4f7"
     },
     "cold_custom_cli_quality": {
       "path": "/home/maslos/Work/tomacco-perf-bench-20261108/qa/performance/ocr-worker-cold-cli.json",
@@ -756,5 +756,22 @@
     "Repeat with final integrated immutable binary after worker spawn-path and process API integration.",
     "Default-PATH one-shot CLI timing needs a separate standard-route measurement if claimed.",
     "Real device capture/transport/action/agent reasoning and competitor comparisons remain unmeasured."
-  ]
+  ],
+  "quality_proof_reproduction": {
+    "reason": "Final integrated quality runner initially reused the prototype raw output name. Final data was preserved intact at final-worker-quality.json; the exact b075 prototype quality-only run was reproduced to restore a valid raw reference. Original latency measurements and baseline417/cold180 files were not changed.",
+    "original_raw_proof": {
+      "path": "/home/maslos/Work/tomacco-perf-bench-20261108/qa/performance/worker-quality.json",
+      "sha256": "a9a3f52e23c28cdf8dad806866173014b9cefa1ef38aaf6722c7b57ba0b2e417"
+    },
+    "reproduced_started_utc": "2026-11-08T11:31:29Z",
+    "reproduced_binary": {
+      "path": "/home/maslos/Work/tomacco-perf-bench-20261108/qa/performance/candidates/b075f3/tomaccoctl",
+      "sha256": "b075f3ea08ea28d40cd0f5796c276c0f765fc3639530f0ce6f705cb8ce5ad8d9"
+    },
+    "calls": 540,
+    "quality_errors": [],
+    "quality_differences": 0,
+    "word_text_rectangle_differences": 0,
+    "timings": "Incidental recognition timings in this reproduced quality sequence are not substituted into historical performance metrics."
+  }
 }

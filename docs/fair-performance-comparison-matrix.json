@@ -111,7 +111,7 @@
       "name": "Tomacco",
       "native_adapter": "persistent MCP plus direct CLI; local NativeView stream harness is a separate component test",
       "measurements": "offline_components_only",
-      "release_to_pin": "final integrated ELF pending; old5c458f/b075f3 artifacts independently fingerprinted in qualification files",
+      "release_to_pin": "Final integrated20aba421f40b4e55a8c8192237f7b5910a71f809d97ef3c5c061a3a9194242da independently qualified_offline; hardware/competitor rows remain unmeasured",
       "cohorts_to_attempt": [
         "offline-image",
         "android-linux-usb",
@@ -122,7 +122,8 @@
       "sources": [
         "docs/performance-baseline-qualification.json",
         "docs/ocr-worker-performance-qualification.json",
-        "docs/nativeview-performance-qualification.json"
+        "docs/nativeview-performance-qualification.json",
+        "docs/performance-final-qualification.json"
       ]
     },
     {
@@ -1302,6 +1303,12 @@
         "explicit compiler flags",
         "all correctness checks pass"
       ]
+    },
+    {
+      "record": "docs/performance-final-qualification.json",
+      "status": "Exact final20aba4 CLI qualified_offline:417 matrix records,90 live-paired changed-pixel reads,540 corpus calls and360 identical non-timing output comparisons",
+      "scope": "Same frozen ELF; no new device/UI/GPU/competitor evidence",
+      "memory_tradeoff": "Standard worker retains~85.6MiB process-tree RSS vs old~11.2MiB; fresh sampled peak modestly lower; idle lifecycle evidence separate"
     }
   ],
   "execution_state": {
@@ -1311,6 +1318,6 @@
     "remote_connections": 0,
     "paid_license_activations": 0,
     "allowed_now": "Public primary docs/HTML reads and offline Tomacco fixtures only",
-    "next": "Root supplies final integrated immutable CLI, then rerun exact existing matrix; hardware/competitor execution remains a separately authorized future step."
+    "next": "Final integrated CLI independently qualified_offline in performance-final-qualification.json; hardware/competitor execution remains separately authorized and unqualified."
   }
 }
