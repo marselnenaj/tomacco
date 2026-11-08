@@ -1,0 +1,222 @@
+{
+  "scope": "Independent read-only correctness review of process-isolated warm OCR candidate; local images/processes only",
+  "candidate_base_commit": "337489885c4be82b182aa5b14730e4885b269d32",
+  "candidate_source_state": "Frozen committed candidate4199344, with exact source-exact release artifact and file hashes. No product changes made by reviewer.",
+  "source_sha256": {
+    "native/main.rs": "7d5c922af0609c4f28cc01b0a5416e26d3e1a984ba6236b3852ba1bb756ba404",
+    "native/screen_ocr.rs": "f45b46af4de2df931f5d77f32956cc2bad848de642fcaf5e58dd8c3190de8f12",
+    "native/screen_ocr_engine.rs": "029f980d8f50a7d641d99e03986c538c13932ec77bee862f808392cc570602b5",
+    "native/screen_ocr_worker.rs": "7c64c574cc1c779aadd13c1629f577d1a2acc72d6cc8f2bab26679f378259f1c",
+    "native/toolchain.rs": "1728b90b81645714a684df2b141a0699115928d6130de514fa6d55b5a759cc83",
+    "native/visual.rs": "bbcb1f621fca813b874a5f774af035ecf755758bba46bb997d76d2efdbb38fe8"
+  },
+  "status": "complete",
+  "open_findings": [],
+  "resolved_findings": [
+    {
+      "id": "OW01",
+      "severity": "medium",
+      "issue": "A retained worker that exits after idle could be used once more and permanently disable warm OCR on EPIPE/EOF.",
+      "resolution": "Parent retires after55s, checks/reaps an exited child before dispatch, and can initialize a new worker. Drop does not signal an already-reaped PID.",
+      "anchor": "native/screen_ocr_engine.rs:295",
+      "validation": "Source verified; independent private-model replacement and missing-language recovery prove retirement/rewarm paths. Final backend receipt separately qualifies actual61.5s idle PID removal and rewarm."
+    },
+    {
+      "id": "OW02",
+      "severity": "medium",
+      "issue": "The first idle-timeout patch used transfer on blocking child stdin, so its read could block past the deadline.",
+      "resolution": "Child sets its own stdin read descriptor O_NONBLOCK before API startup and before bounded header/body reads.",
+      "anchor": "native/screen_ocr_worker.rs:228",
+      "validation": "Independently inspected actual live worker fdinfo flags for O_NONBLOCK; backend separately reported real idle and partial-header timeout integration."
+    },
+    {
+      "id": "OW03",
+      "severity": "medium",
+      "identified_by": "Backend and independent review",
+      "issue": "An unknown failure after dispatch could silently run CLI recognition again and under-report work or double a timeout budget.",
+      "resolution": "Post-dispatch crash/protocol failure now returns ocr_failed for that request, retires the worker and disables warm mode for future calls. Known pre-recognition unsupported inputs/models may still fall back; cancellation/timeout/output-limit errors are preserved.",
+      "anchor": "native/screen_ocr_engine.rs:339",
+      "validation": "Independently confirmed90framed bytes queued in an owned stopped worker before SIGKILL. Current request failed; only the next explicit request used CLI and succeeded."
+    },
+    {
+      "id": "OW04",
+      "severity": "medium",
+      "identified_by": "Backend real-MCP smoke",
+      "issue": "Linux PDEATHSIG follows the creating thread; a worker spawned in a short-lived MCP request thread died when that request returned.",
+      "resolution": "One persistent process-owner thread creates workers through a capacity1 channel. Spawned RAII stops/reaps abandoned handoffs; receiver waits remain bounded and cancellable. No foreign OCR code runs in that thread.",
+      "anchor": "native/screen_ocr_engine.rs:163",
+      "validation": "Independently observed the same owned worker PID across fresh Alpha/Omega images in real persistent MCP.150 abandoned handoffs exercised separately with no child or fd leak."
+    },
+    {
+      "id": "OW05",
+      "severity": "low",
+      "issue": "Automatic OMP_THREAD_LIMIT1 initially overrode the effect of an explicitly supplied OMP_NUM_THREADS.",
+      "resolution": "Either explicit OMP setting suppresses the automatic limit; both values belong to the model key.",
+      "anchor": "native/screen_ocr_engine.rs:69",
+      "validation": "Independent live worker environment preserved OMP_NUM_THREADS2 without injecting a limit; a custom executable preserved OMP_NUM_THREADS3 and was called once."
+    },
+    {
+      "id": "OW06",
+      "severity": "low",
+      "identified_by": "Root integration review",
+      "issue": "A live MCP whose executable pathname was unlinked could no longer create the same private worker protocol through current_exe().",
+      "resolution": "On Linux, host_executable selects /proc/self/exe when available, retaining the running image inode; portable current_exe fallback remains.",
+      "anchor": "native/screen_ocr_engine.rs:380",
+      "validation": "Independent before/after unlink probe: b075 read succeeded only throughCLI with no warm child. Final1e000 release created a worker after unlink; after that worker was killed before dispatch, the next fresh read recreated a new worker and succeeded. Shutdown reaped both owned worker PIDs."
+    },
+    {
+      "id": "OW07",
+      "severity": "low",
+      "identified_by": "Root integration review",
+      "issue": "A child that self-exited while an idle MCP received no later OCR call could remain unreaped in the pool until shutdown.",
+      "resolution": "The existing owner uses recv_timeout1s and pool.try_lock to retire/reap idle or exited workers. It never blocks on the pool lock held by a caller waiting for a spawn reply; no extra thread or process-wide SIGCHLD reaper.",
+      "anchor": "native/screen_ocr_engine.rs:185",
+      "validation": "Independent exact-loop facade test held PoolMutex across owner timeout and still completed owned_spawn; an aged actual owned child was removed/reaped without another request. Final backend integration separately exercised the real61.5s timer and checked PID removal, not just zombie state."
+    }
+  ],
+  "source_review": [
+    {
+      "anchor": "native/main.rs:425",
+      "checks": "MCP enables only the Rust parent machinery; the private _ocr_engine entry executes native-library code only in a separate process. Normal host code does not call C ABI functions."
+    },
+    {
+      "anchor": "native/screen_ocr_worker.rs:57",
+      "checks": "C ABI signatures checked against installed tesseract/capi.h and leptonica/allheaders.h. Dynamic library handles outlive engine/function pointers; engine/Pix/text/monitor cleanup paths are balanced. Leptonica symbols resolve through Tesseract dependency handle. CLI/CAPI exact5.x version agreement required."
+    },
+    {
+      "anchor": "native/screen_ocr_engine.rs:50",
+      "checks": "Standard executable eligibility uses fixed system path, regular/non-group-or-world-writable ELF with lib5 dependency marker, and startup version comparison. Explicit/custom TOMACCO_TESSERACT and PATH wrappers bypass the worker; no global environment mutation."
+    },
+    {
+      "anchor": "native/screen_ocr_engine.rs:96",
+      "checks": "Pool key covers language, TESSDATA_PREFIX, explicit OpenMP settings, binary inode/size/mtime/mode and candidate traineddata metadata. Each native read gets frozen image pixels; API Clear and ClearAdaptiveClassifier run before recognition."
+    },
+    {
+      "anchor": "native/screen_ocr_engine.rs:169",
+      "checks": "Spawned RAII owns Child until successful take. SendError, queued reply destruction and cancellation after receive all trigger stop/reap. One owner thread/capacity1 job queue, reply capacity1, polling cancellation/deadline waits."
+    },
+    {
+      "anchor": "native/screen_ocr_engine.rs:272",
+      "checks": "Pool try_lock avoids queuing unrelated OCR; at most one retained native worker and one in-flight framed request. Init/model unavailability selects CLI before recognition; unknown post-dispatch errors fail explicitly. Cache/adaptive pass selection remains in existing screen_ocr code."
+    },
+    {
+      "anchor": "native/screen_ocr_engine.rs:452",
+      "checks": "Framed requests<=16KiB, replies<=8MiB, startup reply<=4096bytes, parent pipe reads/writes nonblocking, partial transfers preserve offsets and inspect cancellation/deadline/RSS; closed/error descriptors terminate rather than busy-loop."
+    },
+    {
+      "anchor": "native/screen_ocr_worker.rs:218",
+      "checks": "Child address-space cap512MiB; parent RSS threshold256MiB,128read retirement,55s parent retirement/60s child idle deadline. Warm image cap9,000,000pixels selects CLI above that bound; public visual decode limit64*1024*1024 remains unchanged."
+    },
+    {
+      "anchor": "native/screen_ocr_engine.rs:185",
+      "checks": "Owner idle timeout takes Pool only with try_lock, preserving lock ordering while Worker::start holds the guard awaiting owner delivery. Worker Drop waits only its owned process. All idle/abandonment cleanup avoids a global reaper and does not consume unrelated child statuses."
+    }
+  ],
+  "independent_actual_release": {
+    "binary": "/tmp/tomacco-ocr-worker-review/tomaccoctl-final",
+    "binary_sha256": "1e000447e06564aaaa1e5a61ab305ecb52f62b852c9444ad0f0fc464d4806273",
+    "checks": [
+      "Raw C API TSV rows equal CLI across fresh Alpha/Omega/Alpha images (CLI header excluded); unsupported image does not poison next raw read",
+      "Zero/oversized request framing and invalid JSON terminate cleanly",
+      "Missing model uses explicit startup unsupported status",
+      "Persistent MCP owns one warm child; fresh-image read reuses model; child stdin is nonblocking; default OMP limit is child-local1",
+      "9.9MP fresh PNG remains supported through public CLI fallback; warm child retained, public64MP decode cap unchanged in source",
+      "Post-dispatch child crash fails current request, no silent duplicate recognition; next explicit request succeeds through CLI",
+      "Cancellation stops/reaps the owned worker, suppresses cancelled MCP reply per existing contract, and later read succeeds",
+      "Explicit OMP_NUM_THREADS2 reaches worker without injected OMP_THREAD_LIMIT",
+      "Private model timestamp change retires/rewarms worker; missing-language startup falls back to legacy language error and later eng read rewarms",
+      "Custom TOMACCO_TESSERACT wrapper is called once, no warm worker, no added OMP limit"
+    ],
+    "crash_queued_frame_bytes": 90,
+    "cancel_queued_frame_bytes": 90,
+    "cancel_cleanup_ms": 2028.8732610060833,
+    "unexpected_helper_calls": "",
+    "passed": true
+  },
+  "independent_handoff_stress": {
+    "method": "Disposable Rust harness embeds exact final owner/handoff and Worker Drop source plus reviewed stop/CompletionWait/cancellation code. Environment/USBMUX are stubbed; a small pool facade exposes child/last_used for timeout logic. It tests150 abandoned handoffs, owner timeout while caller holds PoolMutex, and reaping an actual child with a deliberately aged test-pool timestamp; not a complete application build or55s wall-clock test.",
+    "result": {
+      "iterations": 50,
+      "dropped_receivers": 50,
+      "queued_results_dropped": 50,
+      "cancelled_receivers": 50,
+      "remaining_children": [],
+      "caller_held_pool_did_not_deadlock": true,
+      "idle_child_reaped_without_request": true,
+      "fd_before": 4,
+      "fd_after": 4
+    },
+    "passed": 1,
+    "failed": 0,
+    "harness_sha256": "b803029a0e27f4cb21b697c5bc74d26c2293af61a046916ec201adc617a85d8f"
+  },
+  "probe_provenance": {
+    "script": "/tmp/tomacco-ocr-worker-review/probe.py",
+    "script_sha256": "2399aeb3c08cf74ed35287b215bcf6f6ed589e48a5e3bfd4859fdb41979158ab",
+    "environment": "Private HOME/XDG/TOMACCO_HOME/TMPDIR with device helper traps. Local generated PNGs and private copied English model. Signals were sent only to a worker enumerated as a child of our own MCP process. FIONREAD inspected queued frame length without consuming bytes.",
+    "runtime_binary": "Immutable copy of final source-exact release1e000447 from4199344; backend confirmation and current artifact SHA both match. All10 short actual-runtime groups were rerun on this final artifact after path/idle-owner changes. No product writes or builds by reviewer.",
+    "harness_corrections": "Initial probe setup assumed an absent system font; switched to Pillow bundled default. Raw CAPI comparison excludes the CLI-only TSV header. Cancellation probe follows the existing MCP contract of suppressing cancelled replies. These were harness assumptions, not product findings."
+  },
+  "backend_reported_validation": {
+    "performed_by": "/root/demo_audio_backend; receipt read by reviewer, not rerun as the full suite",
+    "receipt": "qa/perf-ocr/implementation-validation.json",
+    "receipt_sha256": "5ffa80ebacf4df3d829552ec0bd54e32eb308402e489c2842c5eb1489a78dcb6",
+    "source_exact_rust_ocr_tests": {
+      "passed": 32,
+      "command": "cargo test --bin tomaccoctl ocr -- --nocapture"
+    },
+    "source_exact_debug_integration": {
+      "passed": 10,
+      "seconds": 78.297,
+      "command": "python3 -u tests/ocr_engine_integration.py --cli target/debug/tomaccoctl",
+      "scope": [
+        "140 fresh frames with cached:false/engine_runs1 and one128-read recycle",
+        "busy concurrent calls\u22641nativeworker",
+        "cancel during initialization and active recognition, clean recovery",
+        "custom and PATH wrappers/explicitOMP preservation",
+        "complete fresh-frame word/line/match parity",
+        "clean MCP shutdown reaps; hostdeath kills model",
+        "61.5s actual idle/partial-header timer; idleMCP PID fully reaped thenrewarm",
+        "missing-language CLIerror thenvalid recovery",
+        "unlinked MCP binary restarts same-image/protocol worker"
+      ]
+    },
+    "review_closure": "Receipt marked final lifecycle review pending; final independent release probes, unlink red/green and exact-owner lock/reap harness above close that review here."
+  },
+  "nonblocking_observations": [
+    {
+      "anchor": "native/screen_ocr_engine.rs:157",
+      "note": "shutdown retires the pool before try_send(Stop), but does not join the owner thread; a full job queue can drop Stop. PDEATHSIG still protects process exit and RAII protects abandoned handoffs. No surviving-child repro found; normal actual MCP shutdown and150 abandoned handoffs completed cleanly."
+    }
+  ],
+  "limitations": [
+    "No hardware, device discovery, installed state, Bogen or UI changes.",
+    "Only the listed local fixtures/configurations were executed; no all-language OCR accuracy claim.",
+    "9.9MP public fallback was executed; the unchanged64Mi-pixel public limit was source-reviewed, not an actual64Mi-pixel recognition run.",
+    "RSS/address-space/counter limits were source-reviewed; reviewer did not force an OOM,128-read recycle, signal storm, or actual90s recognition timeout.",
+    "Exact byte-level output parity covers TSV rows for the generated Alpha/Omega cases, not arbitrary OCR documents.",
+    "Existing image-result cache assumes stable recognizer configuration for identical cached pixels; worker keys do not change that preexisting cache contract.",
+    "No performance, FPS, hardware speedup, competitor, or general cancellation-latency claim."
+  ],
+  "candidate_commit": "41993446708c4567910be962ad7ec8500ab167ca",
+  "unlinked_host_probe": {
+    "script_sha256": "d3f31db6b8ce8a6e277a22cfbe1ae32d3a5b1766404852374d941ffbcc24277b",
+    "before": {
+      "binary_sha256": "b075f3ea08ea28d40cd0f5796c276c0f765fc3639530f0ce6f705cb8ce5ad8d9",
+      "expected_warm": false,
+      "first_read_succeeded": true,
+      "warm_child_after_unlink": false,
+      "unexpected_helper_calls": "",
+      "shutdown_reaped_owned_workers": true
+    },
+    "final": {
+      "binary_sha256": "1e000447e06564aaaa1e5a61ab305ecb52f62b852c9444ad0f0fc464d4806273",
+      "expected_warm": true,
+      "first_read_succeeded": true,
+      "warm_child_after_unlink": true,
+      "worker_recreated_after_unlinked_host": true,
+      "unexpected_helper_calls": "",
+      "shutdown_reaped_owned_workers": true
+    }
+  }
+}
