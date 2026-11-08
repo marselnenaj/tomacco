@@ -1,0 +1,2009 @@
+{
+  "schema": "tomacco-ocr-paired-build-check/1",
+  "created_at": "2026-11-08T10:15:11.687833+00:00",
+  "state": "paired_local_measurement_complete",
+  "binaries": {
+    "old": {
+      "path": "/home/maslos/Work/tomacco-demo-audio-20261108/build/tomaccoctl",
+      "sha256": "508d2f261060c3d44106783e1887c527a789b0b73c7e1fe7341cf10bf82f1243"
+    },
+    "new": {
+      "path": "/home/maslos/Work/tomacco-ocr-fast-20261108/build/tomaccoctl",
+      "sha256": "5c458fccf723c343fb7c41a9852941bbfa712239638936704f28d451e4dc096a"
+    }
+  },
+  "model": {
+    "language": "eng",
+    "sha256": "daa0c97d651c19fba3b25e81317cd697e9908c8208090c94c3905381c23fc047",
+    "tesseract": "tesseract 5.5.3"
+  },
+  "corpus_manifest_sha256": "4907d2d449bb3cc72f4d7e9328e0a14405ace87796757c7cd7b8a29e7b543b68",
+  "host": {
+    "platform": "Linux-7.2.11-arch1-1-x86_64-with-glibc2.44",
+    "cpu_count": 32,
+    "load_average_after": [
+      31.7431640625,
+      37.083984375,
+      38.82080078125
+    ]
+  },
+  "protocol": "16 independent base images x3trials x3variants; rotate oldauto/newauto/newadaptive order each trial; freshCLI percall; one shared isolatedHOME; model pinned; OS page caches not flushed",
+  "boundaries": {
+    "includes": "Fresh CLI process, guard/operation dispatch, image I/O/decode, Tesseract, merge and JSON response",
+    "excludes": [
+      "Device screenshot/capture/transfer",
+      "MCP persistent cache",
+      "Input/actions",
+      "Agent reasoning",
+      "PhoneUse/competitor comparison",
+      "FPS"
+    ],
+    "builds": "Two optimized release binaries; exact SHA256s pinned before/after measurement",
+    "order": "Each variant occupies first/second/third position once per image across3trials",
+    "settings": {
+      "language": "eng",
+      "min_confidence": 40,
+      "max_words": 5000,
+      "detail": "full(default)",
+      "selector": "Each base image's identical primary_target or negative_target as text_contains"
+    },
+    "timing_trials_per_image_variant": 3,
+    "independent_base_images": 16,
+    "calls": 144,
+    "os_page_caches": "Not flushed",
+    "host_load": "Uncontrolled concurrent host activity; see post-run load_average_after"
+  },
+  "aggregate": {
+    "old_auto": {
+      "calls": 48,
+      "wall_median_ms": 276.2444165,
+      "wall_min_ms": 191.812955,
+      "wall_max_ms": 394.057212,
+      "labelled_target_hits_across_trials": 171,
+      "labelled_target_total_across_trials": 222,
+      "labelled_word_hits_across_trials": 276,
+      "labelled_word_total_across_trials": 372,
+      "passes": [
+        2
+      ],
+      "cached_calls": 0
+    },
+    "new_auto": {
+      "calls": 48,
+      "wall_median_ms": 287.538952,
+      "wall_min_ms": 180.620378,
+      "wall_max_ms": 389.113817,
+      "labelled_target_hits_across_trials": 171,
+      "labelled_target_total_across_trials": 222,
+      "labelled_word_hits_across_trials": 276,
+      "labelled_word_total_across_trials": 372,
+      "passes": [
+        2
+      ],
+      "cached_calls": 0
+    },
+    "new_adaptive": {
+      "calls": 48,
+      "wall_median_ms": 236.734937,
+      "wall_min_ms": 97.95323,
+      "wall_max_ms": 390.254199,
+      "labelled_target_hits_across_trials": 171,
+      "labelled_target_total_across_trials": 222,
+      "labelled_word_hits_across_trials": 276,
+      "labelled_word_total_across_trials": 372,
+      "passes": [
+        1,
+        2
+      ],
+      "cached_calls": 0
+    }
+  },
+  "paired_comparison": {
+    "new_auto_vs_old_auto_median_of_call_medians_ratio": 1.0408860227587622,
+    "new_auto_vs_old_auto_median_paired_ratio": 1.0200589748752025,
+    "new_auto_slower_pairs": 29,
+    "pair_count": 48,
+    "new_auto_slower_all_three_cases": [
+      "real-landscape",
+      "derived-dark-portrait",
+      "minority-light"
+    ],
+    "case_count": 16,
+    "new_adaptive_vs_old_auto_median_call_reduction": 0.14302363103147098,
+    "new_adaptive_vs_new_auto_median_call_reduction": 0.1766856790936624,
+    "new_adaptive_vs_old_auto_median_paired_ratio": 0.9528634535105833,
+    "median_per_case_three_trial_range_over_median": {
+      "old_auto": 0.08257771768545022,
+      "new_auto": 0.069791486413188,
+      "new_adaptive": 0.08206430002287377
+    }
+  },
+  "quality_differences": [],
+  "cases": [
+    {
+      "case": "real-portrait",
+      "variants": {
+        "old_auto": {
+          "wall_median_ms": 359.444151,
+          "wall_ms_trials": [
+            359.444151,
+            383.099055,
+            312.325407
+          ],
+          "range_over_median": 0.19689748130023138,
+          "passes": [
+            2,
+            2,
+            2
+          ],
+          "quality": {
+            "target_hits": 8,
+            "target_total": 9,
+            "target_hits_by_label": {
+              "tomatoes": 1,
+              "Make room": 1,
+              "for today": 1,
+              "Today": 1,
+              "Progress": 1,
+              "Settings": 1,
+              "Task title": 1,
+              "Save task": 0,
+              "Ship the demo": 1
+            },
+            "labelled_word_hits": 11,
+            "labelled_word_total": 15,
+            "primary_target": "Save task",
+            "primary_api_matches": 0,
+            "expected_primary_matches": 1,
+            "primary_centres_in_labelled_region": [],
+            "negative_control": false,
+            "false_positive_words": null
+          }
+        },
+        "new_auto": {
+          "wall_median_ms": 346.266627,
+          "wall_ms_trials": [
+            346.266627,
+            349.455727,
+            325.904022
+          ],
+          "range_over_median": 0.06801609847315729,
+          "passes": [
+            2,
+            2,
+            2
+          ],
+          "quality": {
+            "target_hits": 8,
+            "target_total": 9,
+            "target_hits_by_label": {
+              "tomatoes": 1,
+              "Make room": 1,
+              "for today": 1,
+              "Today": 1,
+              "Progress": 1,
+              "Settings": 1,
+              "Task title": 1,
+              "Save task": 0,
+              "Ship the demo": 1
+            },
+            "labelled_word_hits": 11,
+            "labelled_word_total": 15,
+            "primary_target": "Save task",
+            "primary_api_matches": 0,
+            "expected_primary_matches": 1,
+            "primary_centres_in_labelled_region": [],
+            "negative_control": false,
+            "false_positive_words": null
+          }
+        },
+        "new_adaptive": {
+          "wall_median_ms": 349.110842,
+          "wall_ms_trials": [
+            349.110842,
+            339.514078,
+            356.327866
+          ],
+          "range_over_median": 0.04816174686433826,
+          "passes": [
+            2,
+            2,
+            2
+          ],
+          "quality": {
+            "target_hits": 8,
+            "target_total": 9,
+            "target_hits_by_label": {
+              "tomatoes": 1,
+              "Make room": 1,
+              "for today": 1,
+              "Today": 1,
+              "Progress": 1,
+              "Settings": 1,
+              "Task title": 1,
+              "Save task": 0,
+              "Ship the demo": 1
+            },
+            "labelled_word_hits": 11,
+            "labelled_word_total": 15,
+            "primary_target": "Save task",
+            "primary_api_matches": 0,
+            "expected_primary_matches": 1,
+            "primary_centres_in_labelled_region": [],
+            "negative_control": false,
+            "false_positive_words": null
+          }
+        }
+      },
+      "new_auto_over_old_auto_ratios": [
+        0.9633391614153711,
+        0.9121811250617676,
+        1.043475857857443
+      ],
+      "new_adaptive_over_old_auto_ratios": [
+        0.9712519762214743,
+        0.8862305285508991,
+        1.140886581795121
+      ],
+      "new_auto_slower_pairs": 1,
+      "quality_differences": []
+    },
+    {
+      "case": "real-landscape",
+      "variants": {
+        "old_auto": {
+          "wall_median_ms": 274.198523,
+          "wall_ms_trials": [
+            282.705462,
+            272.172334,
+            274.198523
+          ],
+          "range_over_median": 0.03841424047349822,
+          "passes": [
+            2,
+            2,
+            2
+          ],
+          "quality": {
+            "target_hits": 6,
+            "target_total": 6,
+            "target_hits_by_label": {
+              "tomatoes": 1,
+              "Make room": 1,
+              "for today": 1,
+              "Today": 1,
+              "Progress": 1,
+              "Settings": 1
+            },
+            "labelled_word_hits": 8,
+            "labelled_word_total": 8,
+            "primary_target": "Settings",
+            "primary_api_matches": 1,
+            "expected_primary_matches": 1,
+            "primary_centres_in_labelled_region": [
+              true
+            ],
+            "negative_control": false,
+            "false_positive_words": null
+          }
+        },
+        "new_auto": {
+          "wall_median_ms": 296.795948,
+          "wall_ms_trials": [
+            294.95424,
+            296.795948,
+            313.347095
+          ],
+          "range_over_median": 0.06197138176562975,
+          "passes": [
+            2,
+            2,
+            2
+          ],
+          "quality": {
+            "target_hits": 6,
+            "target_total": 6,
+            "target_hits_by_label": {
+              "tomatoes": 1,
+              "Make room": 1,
+              "for today": 1,
+              "Today": 1,
+              "Progress": 1,
+              "Settings": 1
+            },
+            "labelled_word_hits": 8,
+            "labelled_word_total": 8,
+            "primary_target": "Settings",
+            "primary_api_matches": 1,
+            "expected_primary_matches": 1,
+            "primary_centres_in_labelled_region": [
+              true
+            ],
+            "negative_control": false,
+            "false_positive_words": null
+          }
+        },
+        "new_adaptive": {
+          "wall_median_ms": 303.950136,
+          "wall_ms_trials": [
+            283.612166,
+            303.950136,
+            315.868066
+          ],
+          "range_over_median": 0.10612234106715451,
+          "passes": [
+            2,
+            2,
+            2
+          ],
+          "quality": {
+            "target_hits": 6,
+            "target_total": 6,
+            "target_hits_by_label": {
+              "tomatoes": 1,
+              "Make room": 1,
+              "for today": 1,
+              "Today": 1,
+              "Progress": 1,
+              "Settings": 1
+            },
+            "labelled_word_hits": 8,
+            "labelled_word_total": 8,
+            "primary_target": "Settings",
+            "primary_api_matches": 1,
+            "expected_primary_matches": 1,
+            "primary_centres_in_labelled_region": [
+              true
+            ],
+            "negative_control": false,
+            "false_positive_words": null
+          }
+        }
+      },
+      "new_auto_over_old_auto_ratios": [
+        1.0433269945099257,
+        1.0904706721587656,
+        1.1427745546244243
+      ],
+      "new_adaptive_over_old_auto_ratios": [
+        1.0032072390592863,
+        1.1167561799282657,
+        1.1519685173504746
+      ],
+      "new_auto_slower_pairs": 3,
+      "quality_differences": []
+    },
+    {
+      "case": "real-project-header",
+      "variants": {
+        "old_auto": {
+          "wall_median_ms": 253.343776,
+          "wall_ms_trials": [
+            263.206914,
+            253.343776,
+            243.089307
+          ],
+          "range_over_median": 0.07940833328386167,
+          "passes": [
+            2,
+            2,
+            2
+          ],
+          "quality": {
+            "target_hits": 2,
+            "target_total": 3,
+            "target_hits_by_label": {
+              "Project": 1,
+              "Toolchain": 0,
+              "Open your app": 1
+            },
+            "labelled_word_hits": 4,
+            "labelled_word_total": 5,
+            "primary_target": "Toolchain",
+            "primary_api_matches": 0,
+            "expected_primary_matches": 1,
+            "primary_centres_in_labelled_region": [],
+            "negative_control": false,
+            "false_positive_words": null
+          }
+        },
+        "new_auto": {
+          "wall_median_ms": 252.564765,
+          "wall_ms_trials": [
+            251.530743,
+            252.564765,
+            261.264867
+          ],
+          "range_over_median": 0.038541100537123535,
+          "passes": [
+            2,
+            2,
+            2
+          ],
+          "quality": {
+            "target_hits": 2,
+            "target_total": 3,
+            "target_hits_by_label": {
+              "Project": 1,
+              "Toolchain": 0,
+              "Open your app": 1
+            },
+            "labelled_word_hits": 4,
+            "labelled_word_total": 5,
+            "primary_target": "Toolchain",
+            "primary_api_matches": 0,
+            "expected_primary_matches": 1,
+            "primary_centres_in_labelled_region": [],
+            "negative_control": false,
+            "false_positive_words": null
+          }
+        },
+        "new_adaptive": {
+          "wall_median_ms": 251.974305,
+          "wall_ms_trials": [
+            252.579007,
+            250.517063,
+            251.974305
+          ],
+          "range_over_median": 0.008183151849550622,
+          "passes": [
+            2,
+            2,
+            2
+          ],
+          "quality": {
+            "target_hits": 2,
+            "target_total": 3,
+            "target_hits_by_label": {
+              "Project": 1,
+              "Toolchain": 0,
+              "Open your app": 1
+            },
+            "labelled_word_hits": 4,
+            "labelled_word_total": 5,
+            "primary_target": "Toolchain",
+            "primary_api_matches": 0,
+            "expected_primary_matches": 1,
+            "primary_centres_in_labelled_region": [],
+            "negative_control": false,
+            "false_positive_words": null
+          }
+        }
+      },
+      "new_auto_over_old_auto_ratios": [
+        0.9556388135001652,
+        0.9969250833302492,
+        1.074769064194173
+      ],
+      "new_adaptive_over_old_auto_ratios": [
+        0.9596214748370934,
+        0.9888423822971677,
+        1.0365503448491875
+      ],
+      "new_auto_slower_pairs": 1,
+      "quality_differences": []
+    },
+    {
+      "case": "real-build-controls",
+      "variants": {
+        "old_auto": {
+          "wall_median_ms": 365.656221,
+          "wall_ms_trials": [
+            394.057212,
+            365.656221,
+            363.481257
+          ],
+          "range_over_median": 0.0836194032645761,
+          "passes": [
+            2,
+            2,
+            2
+          ],
+          "quality": {
+            "target_hits": 5,
+            "target_total": 10,
+            "target_hits_by_label": {
+              "Build": 1,
+              "Android": 1,
+              "Debug": 0,
+              "APK": 1,
+              "Tests": 0,
+              "Check code": 0,
+              "Show build steps": 0,
+              "Run on device": 1,
+              "Manage devices": 1,
+              "Build & run": 0
+            },
+            "labelled_word_hits": 5,
+            "labelled_word_total": 17,
+            "primary_target": "Check code",
+            "primary_api_matches": 0,
+            "expected_primary_matches": 1,
+            "primary_centres_in_labelled_region": [],
+            "negative_control": false,
+            "false_positive_words": null
+          }
+        },
+        "new_auto": {
+          "wall_median_ms": 364.657524,
+          "wall_ms_trials": [
+            364.657524,
+            352.767366,
+            387.633406
+          ],
+          "range_over_median": 0.09561311012466589,
+          "passes": [
+            2,
+            2,
+            2
+          ],
+          "quality": {
+            "target_hits": 5,
+            "target_total": 10,
+            "target_hits_by_label": {
+              "Build": 1,
+              "Android": 1,
+              "Debug": 0,
+              "APK": 1,
+              "Tests": 0,
+              "Check code": 0,
+              "Show build steps": 0,
+              "Run on device": 1,
+              "Manage devices": 1,
+              "Build & run": 0
+            },
+            "labelled_word_hits": 5,
+            "labelled_word_total": 17,
+            "primary_target": "Check code",
+            "primary_api_matches": 0,
+            "expected_primary_matches": 1,
+            "primary_centres_in_labelled_region": [],
+            "negative_control": false,
+            "false_positive_words": null
+          }
+        },
+        "new_adaptive": {
+          "wall_median_ms": 368.431658,
+          "wall_ms_trials": [
+            390.254199,
+            345.949337,
+            368.431658
+          ],
+          "range_over_median": 0.12025259240887495,
+          "passes": [
+            2,
+            2,
+            2
+          ],
+          "quality": {
+            "target_hits": 5,
+            "target_total": 10,
+            "target_hits_by_label": {
+              "Build": 1,
+              "Android": 1,
+              "Debug": 0,
+              "APK": 1,
+              "Tests": 0,
+              "Check code": 0,
+              "Show build steps": 0,
+              "Run on device": 1,
+              "Manage devices": 1,
+              "Build & run": 0
+            },
+            "labelled_word_hits": 5,
+            "labelled_word_total": 17,
+            "primary_target": "Check code",
+            "primary_api_matches": 0,
+            "expected_primary_matches": 1,
+            "primary_centres_in_labelled_region": [],
+            "negative_control": false,
+            "false_positive_words": null
+          }
+        }
+      },
+      "new_auto_over_old_auto_ratios": [
+        0.9253923361768088,
+        0.9647514406708261,
+        1.0664467521636196
+      ],
+      "new_adaptive_over_old_auto_ratios": [
+        0.9903490841324839,
+        0.9461054321840733,
+        1.0136194120182653
+      ],
+      "new_auto_slower_pairs": 1,
+      "quality_differences": []
+    },
+    {
+      "case": "derived-dark-portrait",
+      "variants": {
+        "old_auto": {
+          "wall_median_ms": 363.984396,
+          "wall_ms_trials": [
+            375.928294,
+            363.984396,
+            339.383165
+          ],
+          "range_over_median": 0.10040301013343433,
+          "passes": [
+            2,
+            2,
+            2
+          ],
+          "quality": {
+            "target_hits": 8,
+            "target_total": 9,
+            "target_hits_by_label": {
+              "tomatoes": 1,
+              "Make room": 1,
+              "for today": 1,
+              "Today": 1,
+              "Progress": 1,
+              "Settings": 1,
+              "Task title": 1,
+              "Save task": 0,
+              "Ship the demo": 1
+            },
+            "labelled_word_hits": 11,
+            "labelled_word_total": 15,
+            "primary_target": "Save task",
+            "primary_api_matches": 0,
+            "expected_primary_matches": 1,
+            "primary_centres_in_labelled_region": [],
+            "negative_control": false,
+            "false_positive_words": null
+          }
+        },
+        "new_auto": {
+          "wall_median_ms": 376.941829,
+          "wall_ms_trials": [
+            388.489427,
+            376.941829,
+            366.524063
+          ],
+          "range_over_median": 0.058272556426737045,
+          "passes": [
+            2,
+            2,
+            2
+          ],
+          "quality": {
+            "target_hits": 8,
+            "target_total": 9,
+            "target_hits_by_label": {
+              "tomatoes": 1,
+              "Make room": 1,
+              "for today": 1,
+              "Today": 1,
+              "Progress": 1,
+              "Settings": 1,
+              "Task title": 1,
+              "Save task": 0,
+              "Ship the demo": 1
+            },
+            "labelled_word_hits": 11,
+            "labelled_word_total": 15,
+            "primary_target": "Save task",
+            "primary_api_matches": 0,
+            "expected_primary_matches": 1,
+            "primary_centres_in_labelled_region": [],
+            "negative_control": false,
+            "false_positive_words": null
+          }
+        },
+        "new_adaptive": {
+          "wall_median_ms": 369.024506,
+          "wall_ms_trials": [
+            379.707474,
+            367.496583,
+            369.024506
+          ],
+          "range_over_median": 0.03308964798126443,
+          "passes": [
+            2,
+            2,
+            2
+          ],
+          "quality": {
+            "target_hits": 8,
+            "target_total": 9,
+            "target_hits_by_label": {
+              "tomatoes": 1,
+              "Make room": 1,
+              "for today": 1,
+              "Today": 1,
+              "Progress": 1,
+              "Settings": 1,
+              "Task title": 1,
+              "Save task": 0,
+              "Ship the demo": 1
+            },
+            "labelled_word_hits": 11,
+            "labelled_word_total": 15,
+            "primary_target": "Save task",
+            "primary_api_matches": 0,
+            "expected_primary_matches": 1,
+            "primary_centres_in_labelled_region": [],
+            "negative_control": false,
+            "false_positive_words": null
+          }
+        }
+      },
+      "new_auto_over_old_auto_ratios": [
+        1.0334136408471557,
+        1.0355988694636238,
+        1.0799712560874963
+      ],
+      "new_adaptive_over_old_auto_ratios": [
+        1.0100529278064927,
+        1.0096492790311813,
+        1.087338866675959
+      ],
+      "new_auto_slower_pairs": 3,
+      "quality_differences": []
+    },
+    {
+      "case": "light-panel",
+      "variants": {
+        "old_auto": {
+          "wall_median_ms": 282.573654,
+          "wall_ms_trials": [
+            282.573654,
+            276.501634,
+            284.23745
+          ],
+          "range_over_median": 0.027376281866673957,
+          "passes": [
+            2,
+            2,
+            2
+          ],
+          "quality": {
+            "target_hits": 4,
+            "target_total": 4,
+            "target_hits_by_label": {
+              "Account settings": 1,
+              "Email address": 1,
+              "hello@example.test": 1,
+              "Continue": 1
+            },
+            "labelled_word_hits": 6,
+            "labelled_word_total": 6,
+            "primary_target": "Continue",
+            "primary_api_matches": 1,
+            "expected_primary_matches": 1,
+            "primary_centres_in_labelled_region": [
+              true
+            ],
+            "negative_control": false,
+            "false_positive_words": null
+          }
+        },
+        "new_auto": {
+          "wall_median_ms": 283.952264,
+          "wall_ms_trials": [
+            294.360692,
+            283.952264,
+            274.039116
+          ],
+          "range_over_median": 0.07156687435321872,
+          "passes": [
+            2,
+            2,
+            2
+          ],
+          "quality": {
+            "target_hits": 4,
+            "target_total": 4,
+            "target_hits_by_label": {
+              "Account settings": 1,
+              "Email address": 1,
+              "hello@example.test": 1,
+              "Continue": 1
+            },
+            "labelled_word_hits": 6,
+            "labelled_word_total": 6,
+            "primary_target": "Continue",
+            "primary_api_matches": 1,
+            "expected_primary_matches": 1,
+            "primary_centres_in_labelled_region": [
+              true
+            ],
+            "negative_control": false,
+            "false_positive_words": null
+          }
+        },
+        "new_adaptive": {
+          "wall_median_ms": 121.211836,
+          "wall_ms_trials": [
+            116.913014,
+            121.211836,
+            127.168093
+          ],
+          "range_over_median": 0.08460460082462569,
+          "passes": [
+            1,
+            1,
+            1
+          ],
+          "quality": {
+            "target_hits": 4,
+            "target_total": 4,
+            "target_hits_by_label": {
+              "Account settings": 1,
+              "Email address": 1,
+              "hello@example.test": 1,
+              "Continue": 1
+            },
+            "labelled_word_hits": 6,
+            "labelled_word_total": 6,
+            "primary_target": "Continue",
+            "primary_api_matches": 1,
+            "expected_primary_matches": 1,
+            "primary_centres_in_labelled_region": [
+              true
+            ],
+            "negative_control": false,
+            "false_positive_words": null
+          }
+        }
+      },
+      "new_auto_over_old_auto_ratios": [
+        1.0417131527767978,
+        1.0269460613748127,
+        0.9641203718932884
+      ],
+      "new_adaptive_over_old_auto_ratios": [
+        0.4137435049058042,
+        0.43837656308389117,
+        0.44740090723442666
+      ],
+      "new_auto_slower_pairs": 2,
+      "quality_differences": []
+    },
+    {
+      "case": "dark-panel",
+      "variants": {
+        "old_auto": {
+          "wall_median_ms": 275.987199,
+          "wall_ms_trials": [
+            275.987199,
+            286.533276,
+            262.659371
+          ],
+          "range_over_median": 0.0865036678748277,
+          "passes": [
+            2,
+            2,
+            2
+          ],
+          "quality": {
+            "target_hits": 4,
+            "target_total": 4,
+            "target_hits_by_label": {
+              "Account settings": 1,
+              "Email address": 1,
+              "hello@example.test": 1,
+              "Continue": 1
+            },
+            "labelled_word_hits": 6,
+            "labelled_word_total": 6,
+            "primary_target": "Continue",
+            "primary_api_matches": 1,
+            "expected_primary_matches": 1,
+            "primary_centres_in_labelled_region": [
+              true
+            ],
+            "negative_control": false,
+            "false_positive_words": null
+          }
+        },
+        "new_auto": {
+          "wall_median_ms": 285.439563,
+          "wall_ms_trials": [
+            289.638341,
+            285.439563,
+            274.780416
+          ],
+          "range_over_median": 0.05205278779101838,
+          "passes": [
+            2,
+            2,
+            2
+          ],
+          "quality": {
+            "target_hits": 4,
+            "target_total": 4,
+            "target_hits_by_label": {
+              "Account settings": 1,
+              "Email address": 1,
+              "hello@example.test": 1,
+              "Continue": 1
+            },
+            "labelled_word_hits": 6,
+            "labelled_word_total": 6,
+            "primary_target": "Continue",
+            "primary_api_matches": 1,
+            "expected_primary_matches": 1,
+            "primary_centres_in_labelled_region": [
+              true
+            ],
+            "negative_control": false,
+            "false_positive_words": null
+          }
+        },
+        "new_adaptive": {
+          "wall_median_ms": 157.67831,
+          "wall_ms_trials": [
+            157.67831,
+            167.620527,
+            157.377435
+          ],
+          "range_over_median": 0.06496195957452879,
+          "passes": [
+            1,
+            1,
+            1
+          ],
+          "quality": {
+            "target_hits": 4,
+            "target_total": 4,
+            "target_hits_by_label": {
+              "Account settings": 1,
+              "Email address": 1,
+              "hello@example.test": 1,
+              "Continue": 1
+            },
+            "labelled_word_hits": 6,
+            "labelled_word_total": 6,
+            "primary_target": "Continue",
+            "primary_api_matches": 1,
+            "expected_primary_matches": 1,
+            "primary_centres_in_labelled_region": [
+              true
+            ],
+            "negative_control": false,
+            "false_positive_words": null
+          }
+        }
+      },
+      "new_auto_over_old_auto_ratios": [
+        1.0494629535335807,
+        0.9961829459556384,
+        1.0461473921674775
+      ],
+      "new_adaptive_over_old_auto_ratios": [
+        0.5713247229267326,
+        0.5849949762902931,
+        0.5991693134755888
+      ],
+      "new_auto_slower_pairs": 2,
+      "quality_differences": []
+    },
+    {
+      "case": "minority-dark",
+      "variants": {
+        "old_auto": {
+          "wall_median_ms": 313.053898,
+          "wall_ms_trials": [
+            308.236796,
+            313.053898,
+            352.48575
+          ],
+          "range_over_median": 0.14134612053289292,
+          "passes": [
+            2,
+            2,
+            2
+          ],
+          "quality": {
+            "target_hits": 5,
+            "target_total": 5,
+            "target_hits_by_label": {
+              "Device settings": 1,
+              "Choose a connection": 1,
+              "Nearby devices": 1,
+              "No recent errors": 1,
+              "Reconnect": 1
+            },
+            "labelled_word_hits": 11,
+            "labelled_word_total": 11,
+            "primary_target": "Reconnect",
+            "primary_api_matches": 1,
+            "expected_primary_matches": 1,
+            "primary_centres_in_labelled_region": [
+              true
+            ],
+            "negative_control": false,
+            "false_positive_words": null
+          }
+        },
+        "new_auto": {
+          "wall_median_ms": 317.177409,
+          "wall_ms_trials": [
+            310.743099,
+            317.177409,
+            319.512472
+          ],
+          "range_over_median": 0.027648163933390445,
+          "passes": [
+            2,
+            2,
+            2
+          ],
+          "quality": {
+            "target_hits": 5,
+            "target_total": 5,
+            "target_hits_by_label": {
+              "Device settings": 1,
+              "Choose a connection": 1,
+              "Nearby devices": 1,
+              "No recent errors": 1,
+              "Reconnect": 1
+            },
+            "labelled_word_hits": 11,
+            "labelled_word_total": 11,
+            "primary_target": "Reconnect",
+            "primary_api_matches": 1,
+            "expected_primary_matches": 1,
+            "primary_centres_in_labelled_region": [
+              true
+            ],
+            "negative_control": false,
+            "false_positive_words": null
+          }
+        },
+        "new_adaptive": {
+          "wall_median_ms": 153.301192,
+          "wall_ms_trials": [
+            159.59804,
+            146.030029,
+            153.301192
+          ],
+          "range_over_median": 0.08850558056978439,
+          "passes": [
+            1,
+            1,
+            1
+          ],
+          "quality": {
+            "target_hits": 5,
+            "target_total": 5,
+            "target_hits_by_label": {
+              "Device settings": 1,
+              "Choose a connection": 1,
+              "Nearby devices": 1,
+              "No recent errors": 1,
+              "Reconnect": 1
+            },
+            "labelled_word_hits": 11,
+            "labelled_word_total": 11,
+            "primary_target": "Reconnect",
+            "primary_api_matches": 1,
+            "expected_primary_matches": 1,
+            "primary_centres_in_labelled_region": [
+              true
+            ],
+            "negative_control": false,
+            "false_positive_words": null
+          }
+        }
+      },
+      "new_auto_over_old_auto_ratios": [
+        1.008131096068102,
+        1.0131718883755922,
+        0.9064550042093901
+      ],
+      "new_adaptive_over_old_auto_ratios": [
+        0.5177773778832038,
+        0.46646928830127526,
+        0.4349145802348038
+      ],
+      "new_auto_slower_pairs": 2,
+      "quality_differences": []
+    },
+    {
+      "case": "minority-light",
+      "variants": {
+        "old_auto": {
+          "wall_median_ms": 320.924895,
+          "wall_ms_trials": [
+            320.924895,
+            319.629485,
+            338.846555
+          ],
+          "range_over_median": 0.05988027198700193,
+          "passes": [
+            2,
+            2,
+            2
+          ],
+          "quality": {
+            "target_hits": 5,
+            "target_total": 5,
+            "target_hits_by_label": {
+              "Device settings": 1,
+              "Choose a connection": 1,
+              "Nearby devices": 1,
+              "No recent errors": 1,
+              "Reconnect": 1
+            },
+            "labelled_word_hits": 11,
+            "labelled_word_total": 11,
+            "primary_target": "Reconnect",
+            "primary_api_matches": 1,
+            "expected_primary_matches": 1,
+            "primary_centres_in_labelled_region": [
+              true
+            ],
+            "negative_control": false,
+            "false_positive_words": null
+          }
+        },
+        "new_auto": {
+          "wall_median_ms": 341.556705,
+          "wall_ms_trials": [
+            341.556705,
+            333.139689,
+            342.08787
+          ],
+          "range_over_median": 0.026198229661455578,
+          "passes": [
+            2,
+            2,
+            2
+          ],
+          "quality": {
+            "target_hits": 5,
+            "target_total": 5,
+            "target_hits_by_label": {
+              "Device settings": 1,
+              "Choose a connection": 1,
+              "Nearby devices": 1,
+              "No recent errors": 1,
+              "Reconnect": 1
+            },
+            "labelled_word_hits": 11,
+            "labelled_word_total": 11,
+            "primary_target": "Reconnect",
+            "primary_api_matches": 1,
+            "expected_primary_matches": 1,
+            "primary_centres_in_labelled_region": [
+              true
+            ],
+            "negative_control": false,
+            "false_positive_words": null
+          }
+        },
+        "new_adaptive": {
+          "wall_median_ms": 194.676633,
+          "wall_ms_trials": [
+            227.355507,
+            164.666429,
+            194.676633
+          ],
+          "range_over_median": 0.32201644868185075,
+          "passes": [
+            1,
+            1,
+            1
+          ],
+          "quality": {
+            "target_hits": 5,
+            "target_total": 5,
+            "target_hits_by_label": {
+              "Device settings": 1,
+              "Choose a connection": 1,
+              "Nearby devices": 1,
+              "No recent errors": 1,
+              "Reconnect": 1
+            },
+            "labelled_word_hits": 11,
+            "labelled_word_total": 11,
+            "primary_target": "Reconnect",
+            "primary_api_matches": 1,
+            "expected_primary_matches": 1,
+            "primary_centres_in_labelled_region": [
+              true
+            ],
+            "negative_control": false,
+            "false_positive_words": null
+          }
+        }
+      },
+      "new_auto_over_old_auto_ratios": [
+        1.0642885931301778,
+        1.0422683282801648,
+        1.0095657310135557
+      ],
+      "new_adaptive_over_old_auto_ratios": [
+        0.7084383621906303,
+        0.5151790955706105,
+        0.5745274081361105
+      ],
+      "new_auto_slower_pairs": 3,
+      "quality_differences": []
+    },
+    {
+      "case": "small-low-contrast",
+      "variants": {
+        "old_auto": {
+          "wall_median_ms": 257.422201,
+          "wall_ms_trials": [
+            262.157721,
+            257.422201,
+            245.953412
+          ],
+          "range_over_median": 0.06294837406040203,
+          "passes": [
+            2,
+            2,
+            2
+          ],
+          "quality": {
+            "target_hits": 4,
+            "target_total": 4,
+            "target_hits_by_label": {
+              "Account settings": 1,
+              "Email address": 1,
+              "hello@example.test": 1,
+              "Continue": 1
+            },
+            "labelled_word_hits": 6,
+            "labelled_word_total": 6,
+            "primary_target": "Continue",
+            "primary_api_matches": 1,
+            "expected_primary_matches": 1,
+            "primary_centres_in_labelled_region": [
+              true
+            ],
+            "negative_control": false,
+            "false_positive_words": null
+          }
+        },
+        "new_auto": {
+          "wall_median_ms": 245.692557,
+          "wall_ms_trials": [
+            243.050185,
+            245.692557,
+            266.165166
+          ],
+          "range_over_median": 0.09408091674506852,
+          "passes": [
+            2,
+            2,
+            2
+          ],
+          "quality": {
+            "target_hits": 4,
+            "target_total": 4,
+            "target_hits_by_label": {
+              "Account settings": 1,
+              "Email address": 1,
+              "hello@example.test": 1,
+              "Continue": 1
+            },
+            "labelled_word_hits": 6,
+            "labelled_word_total": 6,
+            "primary_target": "Continue",
+            "primary_api_matches": 1,
+            "expected_primary_matches": 1,
+            "primary_centres_in_labelled_region": [
+              true
+            ],
+            "negative_control": false,
+            "false_positive_words": null
+          }
+        },
+        "new_adaptive": {
+          "wall_median_ms": 108.824642,
+          "wall_ms_trials": [
+            106.881249,
+            108.824642,
+            130.944679
+          ],
+          "range_over_median": 0.2211211501159821,
+          "passes": [
+            1,
+            1,
+            1
+          ],
+          "quality": {
+            "target_hits": 4,
+            "target_total": 4,
+            "target_hits_by_label": {
+              "Account settings": 1,
+              "Email address": 1,
+              "hello@example.test": 1,
+              "Continue": 1
+            },
+            "labelled_word_hits": 6,
+            "labelled_word_total": 6,
+            "primary_target": "Continue",
+            "primary_api_matches": 1,
+            "expected_primary_matches": 1,
+            "primary_centres_in_labelled_region": [
+              true
+            ],
+            "negative_control": false,
+            "false_positive_words": null
+          }
+        }
+      },
+      "new_auto_over_old_auto_ratios": [
+        0.9271143496094094,
+        0.9544342175832768,
+        1.0821771645111393
+      ],
+      "new_adaptive_over_old_auto_ratios": [
+        0.4076982687837754,
+        0.4227476945549075,
+        0.5323962694203243
+      ],
+      "new_auto_slower_pairs": 1,
+      "quality_differences": []
+    },
+    {
+      "case": "small-text",
+      "variants": {
+        "old_auto": {
+          "wall_median_ms": 231.297483,
+          "wall_ms_trials": [
+            244.200887,
+            231.297483,
+            225.341808
+          ],
+          "range_over_median": 0.08153603210632435,
+          "passes": [
+            2,
+            2,
+            2
+          ],
+          "quality": {
+            "target_hits": 2,
+            "target_total": 4,
+            "target_hits_by_label": {
+              "Account settings": 1,
+              "Email address": 1,
+              "hello@example.test": 0,
+              "Continue": 0
+            },
+            "labelled_word_hits": 4,
+            "labelled_word_total": 6,
+            "primary_target": "Continue",
+            "primary_api_matches": 0,
+            "expected_primary_matches": 1,
+            "primary_centres_in_labelled_region": [],
+            "negative_control": false,
+            "false_positive_words": null
+          }
+        },
+        "new_auto": {
+          "wall_median_ms": 226.531766,
+          "wall_ms_trials": [
+            221.401442,
+            256.203536,
+            226.531766
+          ],
+          "range_over_median": 0.15363008294386396,
+          "passes": [
+            2,
+            2,
+            2
+          ],
+          "quality": {
+            "target_hits": 2,
+            "target_total": 4,
+            "target_hits_by_label": {
+              "Account settings": 1,
+              "Email address": 1,
+              "hello@example.test": 0,
+              "Continue": 0
+            },
+            "labelled_word_hits": 4,
+            "labelled_word_total": 6,
+            "primary_target": "Continue",
+            "primary_api_matches": 0,
+            "expected_primary_matches": 1,
+            "primary_centres_in_labelled_region": [],
+            "negative_control": false,
+            "false_positive_words": null
+          }
+        },
+        "new_adaptive": {
+          "wall_median_ms": 235.161231,
+          "wall_ms_trials": [
+            237.076597,
+            234.916742,
+            235.161231
+          ],
+          "range_over_median": 0.009184570904036446,
+          "passes": [
+            2,
+            2,
+            2
+          ],
+          "quality": {
+            "target_hits": 2,
+            "target_total": 4,
+            "target_hits_by_label": {
+              "Account settings": 1,
+              "Email address": 1,
+              "hello@example.test": 0,
+              "Continue": 0
+            },
+            "labelled_word_hits": 4,
+            "labelled_word_total": 6,
+            "primary_target": "Continue",
+            "primary_api_matches": 0,
+            "expected_primary_matches": 1,
+            "primary_centres_in_labelled_region": [],
+            "negative_control": false,
+            "false_positive_words": null
+          }
+        }
+      },
+      "new_auto_over_old_auto_ratios": [
+        0.9066365184824247,
+        1.1076797407259291,
+        1.0052806800946588
+      ],
+      "new_adaptive_over_old_auto_ratios": [
+        0.9708261092434115,
+        1.015647636770868,
+        1.0435756821477176
+      ],
+      "new_auto_slower_pairs": 2,
+      "quality_differences": []
+    },
+    {
+      "case": "blurred-text",
+      "variants": {
+        "old_auto": {
+          "wall_median_ms": 256.430937,
+          "wall_ms_trials": [
+            232.768876,
+            256.662562,
+            256.430937
+          ],
+          "range_over_median": 0.09317786020490959,
+          "passes": [
+            2,
+            2,
+            2
+          ],
+          "quality": {
+            "target_hits": 2,
+            "target_total": 4,
+            "target_hits_by_label": {
+              "Account settings": 1,
+              "Email address": 1,
+              "hello@example.test": 0,
+              "Continue": 0
+            },
+            "labelled_word_hits": 4,
+            "labelled_word_total": 6,
+            "primary_target": "Continue",
+            "primary_api_matches": 0,
+            "expected_primary_matches": 1,
+            "primary_centres_in_labelled_region": [],
+            "negative_control": false,
+            "false_positive_words": null
+          }
+        },
+        "new_auto": {
+          "wall_median_ms": 254.744592,
+          "wall_ms_trials": [
+            254.744592,
+            258.498455,
+            243.52967
+          ],
+          "range_over_median": 0.05875997163464796,
+          "passes": [
+            2,
+            2,
+            2
+          ],
+          "quality": {
+            "target_hits": 2,
+            "target_total": 4,
+            "target_hits_by_label": {
+              "Account settings": 1,
+              "Email address": 1,
+              "hello@example.test": 0,
+              "Continue": 0
+            },
+            "labelled_word_hits": 4,
+            "labelled_word_total": 6,
+            "primary_target": "Continue",
+            "primary_api_matches": 0,
+            "expected_primary_matches": 1,
+            "primary_centres_in_labelled_region": [],
+            "negative_control": false,
+            "false_positive_words": null
+          }
+        },
+        "new_adaptive": {
+          "wall_median_ms": 252.871197,
+          "wall_ms_trials": [
+            253.231978,
+            252.871197,
+            238.280428
+          ],
+          "range_over_median": 0.05912713736234656,
+          "passes": [
+            2,
+            2,
+            2
+          ],
+          "quality": {
+            "target_hits": 2,
+            "target_total": 4,
+            "target_hits_by_label": {
+              "Account settings": 1,
+              "Email address": 1,
+              "hello@example.test": 0,
+              "Continue": 0
+            },
+            "labelled_word_hits": 4,
+            "labelled_word_total": 6,
+            "primary_target": "Continue",
+            "primary_api_matches": 0,
+            "expected_primary_matches": 1,
+            "primary_centres_in_labelled_region": [],
+            "negative_control": false,
+            "false_positive_words": null
+          }
+        }
+      },
+      "new_auto_over_old_auto_ratios": [
+        1.0944100275674313,
+        1.0071529442615008,
+        0.949689116489092
+      ],
+      "new_adaptive_over_old_auto_ratios": [
+        1.0879116759579146,
+        0.985228211818442,
+        0.929218723714292
+      ],
+      "new_auto_slower_pairs": 2,
+      "quality_differences": []
+    },
+    {
+      "case": "localized-latin-eng-model",
+      "variants": {
+        "old_auto": {
+          "wall_median_ms": 340.363701,
+          "wall_ms_trials": [
+            329.891695,
+            340.363701,
+            351.129046
+          ],
+          "range_over_median": 0.062396051452031864,
+          "passes": [
+            2,
+            2,
+            2
+          ],
+          "quality": {
+            "target_hits": 0,
+            "target_total": 5,
+            "target_hits_by_label": {
+              "Überblick": 0,
+              "Änderungen speichern": 0,
+              "Fermer la fenêtre": 0,
+              "Español: Configuración": 0,
+              "Português: Ações": 0
+            },
+            "labelled_word_hits": 3,
+            "labelled_word_total": 10,
+            "primary_target": "Änderungen speichern",
+            "primary_api_matches": 0,
+            "expected_primary_matches": 1,
+            "primary_centres_in_labelled_region": [],
+            "negative_control": false,
+            "false_positive_words": null
+          }
+        },
+        "new_auto": {
+          "wall_median_ms": 320.211506,
+          "wall_ms_trials": [
+            320.211506,
+            317.219147,
+            389.113817
+          ],
+          "range_over_median": 0.22452244423721604,
+          "passes": [
+            2,
+            2,
+            2
+          ],
+          "quality": {
+            "target_hits": 0,
+            "target_total": 5,
+            "target_hits_by_label": {
+              "Überblick": 0,
+              "Änderungen speichern": 0,
+              "Fermer la fenêtre": 0,
+              "Español: Configuración": 0,
+              "Português: Ações": 0
+            },
+            "labelled_word_hits": 3,
+            "labelled_word_total": 10,
+            "primary_target": "Änderungen speichern",
+            "primary_api_matches": 0,
+            "expected_primary_matches": 1,
+            "primary_centres_in_labelled_region": [],
+            "negative_control": false,
+            "false_positive_words": null
+          }
+        },
+        "new_adaptive": {
+          "wall_median_ms": 330.455952,
+          "wall_ms_trials": [
+            337.06046,
+            320.858335,
+            330.455952
+          ],
+          "range_over_median": 0.0490296056159399,
+          "passes": [
+            2,
+            2,
+            2
+          ],
+          "quality": {
+            "target_hits": 0,
+            "target_total": 5,
+            "target_hits_by_label": {
+              "Überblick": 0,
+              "Änderungen speichern": 0,
+              "Fermer la fenêtre": 0,
+              "Español: Configuración": 0,
+              "Português: Ações": 0
+            },
+            "labelled_word_hits": 3,
+            "labelled_word_total": 10,
+            "primary_target": "Änderungen speichern",
+            "primary_api_matches": 0,
+            "expected_primary_matches": 1,
+            "primary_centres_in_labelled_region": [],
+            "negative_control": false,
+            "false_positive_words": null
+          }
+        }
+      },
+      "new_auto_over_old_auto_ratios": [
+        0.9706564634796276,
+        0.9320005219945591,
+        1.1081789485453162
+      ],
+      "new_adaptive_over_old_auto_ratios": [
+        1.021730662240527,
+        0.9426925787247801,
+        0.941123942221516
+      ],
+      "new_auto_slower_pairs": 1,
+      "quality_differences": []
+    },
+    {
+      "case": "duplicate-targets",
+      "variants": {
+        "old_auto": {
+          "wall_median_ms": 219.525567,
+          "wall_ms_trials": [
+            219.525567,
+            230.646197,
+            202.361052
+          ],
+          "range_over_median": 0.12884670057588327,
+          "passes": [
+            2,
+            2,
+            2
+          ],
+          "quality": {
+            "target_hits": 2,
+            "target_total": 2,
+            "target_hits_by_label": {
+              "Continue": 2
+            },
+            "labelled_word_hits": 2,
+            "labelled_word_total": 2,
+            "primary_target": "Continue",
+            "primary_api_matches": 2,
+            "expected_primary_matches": 2,
+            "primary_centres_in_labelled_region": [
+              true,
+              true
+            ],
+            "negative_control": false,
+            "false_positive_words": null
+          }
+        },
+        "new_auto": {
+          "wall_median_ms": 214.355572,
+          "wall_ms_trials": [
+            214.355572,
+            213.527454,
+            251.658074
+          ],
+          "range_over_median": 0.17788490238079743,
+          "passes": [
+            2,
+            2,
+            2
+          ],
+          "quality": {
+            "target_hits": 2,
+            "target_total": 2,
+            "target_hits_by_label": {
+              "Continue": 2
+            },
+            "labelled_word_hits": 2,
+            "labelled_word_total": 2,
+            "primary_target": "Continue",
+            "primary_api_matches": 2,
+            "expected_primary_matches": 2,
+            "primary_centres_in_labelled_region": [
+              true,
+              true
+            ],
+            "negative_control": false,
+            "false_positive_words": null
+          }
+        },
+        "new_adaptive": {
+          "wall_median_ms": 105.654533,
+          "wall_ms_trials": [
+            97.95323,
+            106.355301,
+            105.654533
+          ],
+          "range_over_median": 0.07952399922112184,
+          "passes": [
+            1,
+            1,
+            1
+          ],
+          "quality": {
+            "target_hits": 2,
+            "target_total": 2,
+            "target_hits_by_label": {
+              "Continue": 2
+            },
+            "labelled_word_hits": 2,
+            "labelled_word_total": 2,
+            "primary_target": "Continue",
+            "primary_api_matches": 2,
+            "expected_primary_matches": 2,
+            "primary_centres_in_labelled_region": [
+              true,
+              true
+            ],
+            "negative_control": false,
+            "false_positive_words": null
+          }
+        }
+      },
+      "new_auto_over_old_auto_ratios": [
+        0.9764492351817955,
+        0.9257792097911764,
+        1.2436092395882583
+      ],
+      "new_adaptive_over_old_auto_ratios": [
+        0.44620419998732996,
+        0.46111881480534445,
+        0.5221090321273878
+      ],
+      "new_auto_slower_pairs": 1,
+      "quality_differences": []
+    },
+    {
+      "case": "empty",
+      "variants": {
+        "old_auto": {
+          "wall_median_ms": 193.137289,
+          "wall_ms_trials": [
+            193.137289,
+            191.812955,
+            201.453694
+          ],
+          "range_over_median": 0.04991650783707555,
+          "passes": [
+            2,
+            2,
+            2
+          ],
+          "quality": {
+            "target_hits": 0,
+            "target_total": 0,
+            "target_hits_by_label": {},
+            "labelled_word_hits": 0,
+            "labelled_word_total": 0,
+            "primary_target": "Continue",
+            "primary_api_matches": 0,
+            "expected_primary_matches": 0,
+            "primary_centres_in_labelled_region": [],
+            "negative_control": true,
+            "false_positive_words": 0
+          }
+        },
+        "new_auto": {
+          "wall_median_ms": 204.955415,
+          "wall_ms_trials": [
+            180.620378,
+            204.955415,
+            225.085437
+          ],
+          "range_over_median": 0.21694991078913445,
+          "passes": [
+            2,
+            2,
+            2
+          ],
+          "quality": {
+            "target_hits": 0,
+            "target_total": 0,
+            "target_hits_by_label": {},
+            "labelled_word_hits": 0,
+            "labelled_word_total": 0,
+            "primary_target": "Continue",
+            "primary_api_matches": 0,
+            "expected_primary_matches": 0,
+            "primary_centres_in_labelled_region": [],
+            "negative_control": true,
+            "false_positive_words": 0
+          }
+        },
+        "new_adaptive": {
+          "wall_median_ms": 224.477571,
+          "wall_ms_trials": [
+            235.707007,
+            211.94057,
+            224.477571
+          ],
+          "range_over_median": 0.10587443945569062,
+          "passes": [
+            2,
+            2,
+            2
+          ],
+          "quality": {
+            "target_hits": 0,
+            "target_total": 0,
+            "target_hits_by_label": {},
+            "labelled_word_hits": 0,
+            "labelled_word_total": 0,
+            "primary_target": "Continue",
+            "primary_api_matches": 0,
+            "expected_primary_matches": 0,
+            "primary_centres_in_labelled_region": [],
+            "negative_control": true,
+            "false_positive_words": 0
+          }
+        }
+      },
+      "new_auto_over_old_auto_ratios": [
+        0.9351916397666739,
+        1.0685170613215358,
+        1.1173060792819218
+      ],
+      "new_adaptive_over_old_auto_ratios": [
+        1.2204116989547265,
+        1.1049335536278038,
+        1.1142886811497237
+      ],
+      "new_auto_slower_pairs": 2,
+      "quality_differences": []
+    },
+    {
+      "case": "noise-no-text",
+      "variants": {
+        "old_auto": {
+          "wall_median_ms": 239.926733,
+          "wall_ms_trials": [
+            297.011905,
+            239.926733,
+            236.477595
+          ],
+          "range_over_median": 0.25230331461229877,
+          "passes": [
+            2,
+            2,
+            2
+          ],
+          "quality": {
+            "target_hits": 0,
+            "target_total": 0,
+            "target_hits_by_label": {},
+            "labelled_word_hits": 0,
+            "labelled_word_total": 0,
+            "primary_target": "Continue",
+            "primary_api_matches": 0,
+            "expected_primary_matches": 0,
+            "primary_centres_in_labelled_region": [],
+            "negative_control": true,
+            "false_positive_words": 2
+          }
+        },
+        "new_auto": {
+          "wall_median_ms": 281.782372,
+          "wall_ms_trials": [
+            281.782372,
+            257.135003,
+            307.606469
+          ],
+          "range_over_median": 0.1791150583401293,
+          "passes": [
+            2,
+            2,
+            2
+          ],
+          "quality": {
+            "target_hits": 0,
+            "target_total": 0,
+            "target_hits_by_label": {},
+            "labelled_word_hits": 0,
+            "labelled_word_total": 0,
+            "primary_target": "Continue",
+            "primary_api_matches": 0,
+            "expected_primary_matches": 0,
+            "primary_centres_in_labelled_region": [],
+            "negative_control": true,
+            "false_positive_words": 2
+          }
+        },
+        "new_adaptive": {
+          "wall_median_ms": 247.119888,
+          "wall_ms_trials": [
+            270.831121,
+            236.393277,
+            247.119888
+          ],
+          "range_over_median": 0.1393568291031274,
+          "passes": [
+            2,
+            2,
+            2
+          ],
+          "quality": {
+            "target_hits": 0,
+            "target_total": 0,
+            "target_hits_by_label": {},
+            "labelled_word_hits": 0,
+            "labelled_word_total": 0,
+            "primary_target": "Continue",
+            "primary_api_matches": 0,
+            "expected_primary_matches": 0,
+            "primary_centres_in_labelled_region": [],
+            "negative_control": true,
+            "false_positive_words": 2
+          }
+        }
+      },
+      "new_auto_over_old_auto_ratios": [
+        0.9487241664606003,
+        1.0717230205439423,
+        1.3007848333369594
+      ],
+      "new_adaptive_over_old_auto_ratios": [
+        0.9118527454311974,
+        0.985272770750394,
+        1.045003388164532
+      ],
+      "new_auto_slower_pairs": 2,
+      "quality_differences": []
+    }
+  ],
+  "conclusion": {
+    "default_auto": "In this paired run newauto median is4.09%aboveoldauto; median matchedpair ratio is2.01%aboveold,29/48pairs slower, with mixed per-case directions. The earlier unpaired~12%default-auto difference did not reproduce at that magnitude. A modest cost or host/run noise remains possible;3trials do not establish causality or a universal regression.",
+    "adaptive_net": "Newadaptive median is14.30%belowOLDauto and17.67%belowNEWauto in this paired corpus run. This is local CLI image-reading time, not device or agent-loop speed.",
+    "quality": "All144calls preserve the same labelled-target/word quality per corresponding image/trial acrossvariants; labelled corpus equality does not prove equal coverage on other screens.",
+    "claim_guard": "Use the paired baseline for net comparisons; do not present same-build~11.9%adaptive-vs-auto from an earlier run as a universal speedup over the oldproduct. Keep the sampled2–4%default-auto timing difference visible rather than claiming no overhead."
+  },
+  "raw_evidence": "qa/ocr-fast/paired-build-raw.json",
+  "raw_evidence_sha256": "f507f52068db9c15c5a7d916141255c5bcc4554df20b5d2e6a2c15fdd03d7390",
+  "forbidden_tool_calls": 0,
+  "physical_device_access": false,
+  "product_changes_performed": false
+}
