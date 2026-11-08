@@ -219,3 +219,71 @@ _ocr['sources'].extend([
 
 _ocr['notes'].append('Lokaler optimierter PNG-Korpus: 16 unabhängige Bilder, 20 Fälle, 180 CLI-Aufrufe. Median über die unabhängigen Bilder: auto 312.79 ms, adaptive 275.65 ms (11.87 % geringer); dieselbe gemessene Ziel- und Worttrefferquote in diesem Korpus. Kein Geräte-Capture, Transport, Tap oder Konkurrenzprodukt gemessen. Eine einzelne MCP-Zielabfrage schrumpfte von 1,922 auf 699 UTF-8-Bytes; dies ist kein allgemeiner Payload-Mittelwert.')
 _ocr['sources'].append('docs/ocr-adaptive-qualification.json: optimierter CLI-Korpus, gleiche Binary, begrenzte handgelabelte Targets; kompakte MCP-Einzelabfrage separat')
+
+# Performance backend: independent of the auto/adaptive polarity policy above.
+# The installer receipt pins the final qualified source before live application.
+_ocr['source_label'] = 'Kern 4584d6b · Performance e0b79fe'
+_ocr['lanes'].extend([
+    {'label': 'Je nicht gecachter Polarität · Worker oder CLI', 'y': 2740, 'h': 24},
+    {'label': 'Begrenzte Lebensdauer · Freigabe und Wiederanlauf', 'y': 3940, 'h': 24},
+])
+_ocr['nodes'].extend([
+    N('p0', 'start', 0, 0, 'Nicht gecachte OCR-Lesung', 'eine Polarität', y=2840),
+    N('p1', 'decision', 1, 0, 'Dauerhafte MCP-Sitzung?', y=2840),
+    N('p2', 'decision', 2, 0, 'Standard-Tess5 und Bild bis 9 MP?', 'keine eigene Binary oder PATH-Wrapper', y=2840),
+    N('p3', 'decision', 3, 0, 'Worker frei und verfügbar?', y=2840),
+    N('p4', 'step', 4, 0, 'Worker starten oder wiederverwenden', 'CAPI5 · isolierter Kindprozess', y=2840),
+    N('pcli', 'step', 1, 0, 'CLI-Prozess pro Lesung', 'bestehender Tesseract-Aufruf', y=3100),
+    N('pconf', 'note', 0, 0, 'Eigene Binaries und explizites OMP bleiben erhalten. Automatisch ein Thread nur für erkanntes System-Tesseract.', y=3100),
+    N('ppre', 'decision', 4, 0, 'Start und Modell nutzbar?', 'Init höchstens 10 s', y=3100),
+    N('pclires', 'step', 1, 0, 'CLI-Antwort oder bestehender Fehler', 'z. B. ocr_language_missing', y=3360),
+    N('prec', 'step', 4, 0, 'Bild setzen, erkennen, TSV lesen', 'Clear · ClearAdaptiveClassifier je Bild', y=3360),
+    N('pstat', 'decision', 3, 0, 'Antwort vollständig?', y=3360),
+    N('pout', 'ok', 3, 0, 'Unveränderte Wörter, Linien und Treffer', 'je Polarität ein Engine-Aufruf', y=3620),
+    N('perror', 'error', 2, 0, 'Kein Ergebnis, kein stiller Zweitlauf', 'ocr_failed · tool_timeout · request_cancelled · response_too_large', y=3620),
+    N('pbusy', 'note', 0, 0, 'Höchstens ein warmer Worker. Bei Belegung geht die andere Anfrage direkt zum CLI; sie wartet nicht auf das Modell.', y=3360),
+    N('plimits', 'note', 0, 0, 'Workerbudget 90 s je Polarität; Init höchstens 10 s. CLI separat höchstens 90 s. TSV bis 8 MiB; Kindprozess bis 512 MiB Adressraum und 256 MiB RSS.', span=2, y=3620),
+    N('l0', 'start', 0, 0, 'Worker bleibt bereit', 'ein behaltenes Modell', y=4096),
+    N('l1', 'decision', 1, 0, 'Leerlauf, Budget oder Ende?', '55 s · 128 Lesungen · Konfigwechsel', y=4096),
+    N('l2', 'step', 2, 0, 'Prozess beenden und reapen', 'Owner prüft jede Sekunde · Kind endet nach 60 s', y=4096),
+    N('l3', 'step', 3, 0, 'Passende nächste Anfrage startet frisch', 'auch nach Leerlauf und normalem Abbruch', y=4096),
+    N('l4', 'note', 4, 0, 'Serverende räumt auf; Hosttod beendet den Kindprozess. Ein dauerhafter Owner hält ihn zwischen Anfrage-Threads am Leben.', y=4096),
+    N('lkeep', 'state', 1, 0, 'Modell bleibt warm', 'bereit für das nächste Bild', y=4356),
+    N('lkey', 'note', 0, 0, 'Worker-Schlüssel: Sprache, Datenpfad, Modell-/Binary-Stand und Thread-Konfiguration. Nach Paket-/Datenwechseln neu verbinden.', y=4356),
+    N('lcancel', 'note', 2, 0, 'Cancel beendet und reapet den eigenen Worker; MCP unterdrückt die abgesagte Antwort. Ein unbekannter Fehler nach dem Senden scheitert jetzt und schaltet spätere Anfragen auf CLI. Es folgt kein ungezählter zweiter Erkennungslauf.', span=3, y=4356),
+])
+_ocr['edges'].extend([
+    E('p0', 'p1'), E('p1', 'p2', 'ja'), E('p2', 'p3', 'ja'), E('p3', 'p4', 'ja'),
+    E('p1', 'pcli', 'nein'),
+    E('p2', 'pcli', 'nein', s1='b', s2='t', via=[(792,3064),(464,3064)]),
+    E('p3', 'pcli', 'nein', s1='b', s2='t', via=[(1120,3064),(464,3064)]),
+    E('p4', 'ppre'),
+    E('ppre', 'pcli', 'unverfügbar', s1='l', s2='r', via=[(1248,3172),(1248,3296),(624,3296),(624,3160)]),
+    E('ppre', 'prec', 'ja'),
+    E('ppre', 'perror', 'Timeout / Abbruch', s1='l', s2='b', via=[(1288,3172),(1288,3864),(792,3864)], style='err'),
+    E('pcli', 'pclires'), E('prec', 'pstat'),
+    E('pstat', 'pout', 'ja', style='ok'),
+    E('pstat', 'perror', 'nein', s1='l', s2='t', via=[(960,3432),(792,3432)], style='err'),
+    E('l0', 'l1'), E('l1', 'l2', 'ja'), E('l2', 'l3'), E('l1', 'lkeep', 'nein'),
+])
+_ocr['notes'] = [
+    'AirPlay liefert weiterhin keinen visuellen Agentenkreis: runtime.observe und screen.* antworten airplay_runtime. BLE-Eingabe mit bekannten Koordinaten bleibt möglich; die Wirkung prüft hier eine Person.',
+    'Reservierungen schützen kooperierende Tomacco-Clients, nicht fremde adb-/SSH-/Flash-Werkzeuge. Kein Weg verspricht genau-einmal-Ausführung auf dem Gerät; eine neue Beobachtung prüft die Wirkung.',
+    'auto bleibt der Standard mit beiden Polaritäten; adaptive ist ausdrücklich optional und kann andere Wörter oder Duplikate übersehen. Leere Lesung, fehlender Text/Index oder ein ausgewähltes Wort unter 80 Konfidenz lösen Inversion aus; ohne Zielabfrage zählt jedes beibehaltene Wort unter 80.',
+    'detail:matches braucht text oder text_contains und lässt words/lines weg. max_words begrenzt nur ausgegebene Details. engine_runs zählt echte Erkennungen, ein Cachetreffer kann 0 liefern. capture_ms ist bei PNG null; read_ms und total_ms bleiben getrennt. Eingabe-, Find-, Warte- und Abwesenheitsprüfungen behalten auto.',
+    'Warmwiederverwendung betrifft dauerhafte MCP-Sitzungen mit erkanntem System-Tesseract5 und Bildern bis 9 MP. Kalter CLI, eigene Binaries, PATH-Wrapper, große Bilder und belegte Worker behalten den Unterprozesspfad. Explizites OMP_THREAD_LIMIT/OMP_NUM_THREADS bleibt erhalten; ohne Vorgabe bekommt nur erkanntes System-Tesseract einen lokalen Thread.',
+    'Die Tesseract-CAPI läuft ausschließlich im isolierten Kindprozess. Ein dauerhafter Owner startet den begrenzten Kindprozess; gleiche Host-Datei über /proc/self/exe erhält das private Protokoll auch nach einem App-Update. Nach Start-/Modell-Unverfügbarkeit darf CLI übernehmen. Cancel, Timeout und unbekannte Fehler nach dem Senden führen zu keinem stillen zweiten Lauf.',
+    'Das warme Sprachmodell hält zusätzlichen residenten Speicher. Der Owner räumt nach 55 s Leerlauf oder beim Ende auf. Nach 128 Lesungen wird das Modell vor weiterem Einsatz erneuert; der Kindprozess hat zusätzlich 60 s Leerlaufgrenze. Die öffentliche Bildgrenze bleibt 64 MP; größere Worker-Bilder gehen zum CLI. Eine allgemeine Speicherersparnis wird nicht behauptet.',
+    'USB-WDA-Kontext: App, Tastatur und Fokus werden auf derselben Sitzung parallel frisch gelesen. Alle drei Ergebnisse einschließlich Fehler werden abgewartet; Eingaben bleiben seriell. Es wird kein alter Kontext zwischengespeichert.',
+    'Installierte CLI cfad72c / Quellstand c2e2326: offline gegen den privaten Vorgänger 1caa172 qualifiziert, 417 Matrixfälle und 540 Korpusaufrufe. 360 Vergleiche vollständiger Nicht-Zeit-Daten stimmen überein; bekannte OCR-Fehltreffer bleiben. Warme Frischbilder, kalter/eigener CLI, Cache und GUI-Frame-Verfügbarkeit bleiben getrennte Messgrößen; keine Hardware- oder Konkurrenz-Rangliste.',
+]
+_ocr['sources'].extend([
+    'native/screen_ocr_engine.rs recognize, standard_binary, thread_overrides, spawn_owner, Worker: Auswahl, Grenzen, Fehler und Leerlauf',
+    'native/screen_ocr_worker.rs Api, Engine, run: CAPI nur im Kind, Clear/Classifier, begrenztes TSV, Eingabe-Timeout',
+    'native/main.rs mcp und _ocr_engine: dauerhafte Sitzung, Aufräumen und privater Kind-Einstieg',
+    'native/toolchain.rs run_with_env, CompletionWait: Kind-Umgebung und Exit-Bereitschaft; vorhandener Polling-Fallback',
+    'native/runtime/iphone.rs context: tokio::join! für App/Tastatur/Fokus, alle Ergebnisse frisch, keine parallelen Eingaben',
+    'tests/ocr_engine_integration.py: wechselnde Bilder, Recycling, Grenzen, Cancel/Idle/Unlink, Wrapper, Prozessende',
+    'docs/performance-final-qualification.json: exakte installierte cfad72c-Binary, privater 1caa172-Vergleich, gleiche Nicht-Zeit-Ausgaben und Speichertradeoff',
+    'docs/performance-ocr-worker-review.json und docs/agent-observe-performance.json: unabhängiger Quell-/Fixture-Nachweis, keine Hardwarequalifikation',
+])

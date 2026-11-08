@@ -1,0 +1,8 @@
+{
+  "epoch": "qualified adaptive OCR desktop1caa172/runtimee552e6f",
+  "historical": true,
+  "captured_before": "performance worker/WDA delta",
+  "previous_product": "1caa17221161c2dc4c5c6eedb92ed9277772c57a",
+  "previous_runtime": "e552e6f643632182dfc8531effd8bc5916c206a3",
+  "source_snapshot_commit": "f53147adbe4126d26818cbac868a15c7ba58e184"
+}

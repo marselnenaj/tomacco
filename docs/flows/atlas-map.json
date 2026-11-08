@@ -1,9 +1,9 @@
 {
   "schema": "tomacco-flow-atlas/1",
-  "product_source": "1caa17221161c2dc4c5c6eedb92ed9277772c57a",
+  "product_source": "c2e2326f66879a595d27f476bf7964b49faf8c33",
   "core_source_baseline": "4584d6bca3a07840e81683d99cd0adb386aeff35",
   "date": "2026-11-08",
-  "runtime_code_commit": "e552e6f643632182dfc8531effd8bc5916c206a3",
+  "runtime_code_commit": "e0b79fe4207a50c7f7416af8392ee4a0a5648906",
   "source_keys": 1898,
   "i18n_digest": "47ea5c3a1e0f",
   "registry_sha256": "76b7ec2a6510c6c97f7399afffac7cf5a1a026cb8c3e97d34779fad20cf6d71b",
@@ -6553,7 +6553,7 @@
         "canvas": "5ifjz84xb1",
         "footer": "crygqeg566"
       },
-      "spec_sha256": "673501c3ab9cae1cc85bd2e1b8cf2e253bac39cf10163a635f4d50c5b527e25e"
+      "spec_sha256": "96f1e64975581c491dcbcdbaaf640d4e98b6b76609b166799dfff699d8e60803"
     },
     {
       "id": "D09",
@@ -6760,7 +6760,7 @@
         {
           "id": "nomac",
           "kind": "note",
-          "title": "Kein Mac nötig. Status 4584d6b: keine echte iPhone-Gesten- oder A/V-Qualifikation",
+          "title": "Kein Mac nötig. Echte iPhone-Gesten und A/V sind weiterhin nicht auf Hardware qualifiziert",
           "op": "",
           "tag": "HINWEIS",
           "box": [
@@ -7030,12 +7030,15 @@
         "native/iphone_setup.rs ios.prepare, ios.wda_prepare, ios.doctor",
         "native/iphone_device.rs ios.signing, ios.device_status",
         "native/runtime/iphone.rs:1-2, 102 USB-Forwards (nur Loopback) + WDA MJPEG",
-        "native/runtime/iphone.rs:854 verifiziertes Füllen: Loopback-Double, nicht auf Hardware"
+        "native/runtime/iphone.rs:854 verifiziertes Füllen: Kern4584-Loopback-Double, nicht auf Hardware",
+        "native/runtime/iphone.rs context: tokio::join! aller drei frischen Reads, Fehler je Kontextteil",
+        "docs/agent-observe-performance.json: frischer Kontext und serialisierte Eingabe, verzögerter und unverzögerter Loopback"
       ],
       "notes": [
         "Tomacco lädt das WebDriverAgent-Geräte-Build als fest gepinntes offizielles GitHub-Artefakt (SHA-256 geprüft). Apple-SDKs werden nicht mitgeliefert; ios.prepare lässt go-ios das passende Developer-Image selbst laden (image auto).",
         "Logins öffnen ein lokales Terminal; Geheimnisse laufen nie über MCP oder in Job-Logs.",
-        "Gesten auf dem USB-iPhone sind atomar: der ganze Trace geht beim Loslassen als eine WDA-Anfrage."
+        "Gesten auf dem USB-iPhone sind atomar: der ganze Trace geht beim Loslassen als eine WDA-Anfrage.",
+        "Kontextbeobachtung liest App, Tastatur und Fokus auf derselben WDA-Sitzung parallel frisch und wartet alle drei Ergebnisse einschließlich Fehler ab. Einzelne Fehler behalten available:false; Eingaben bleiben seriell. Die Beschleunigung wurde im verzögerten Loopback gemessen, nicht am echten iPhone."
       ],
       "links": [
         [
@@ -7065,14 +7068,14 @@
       ],
       "height": 850,
       "spec_file": "docs/flows/specs/04_devices.py",
-      "source_baseline_label": "Kern 4584d6b",
+      "source_baseline_label": "Kern 4584d6b · Performance e0b79fe",
       "bogen": {
         "artboard": "9yeeati9yf",
         "header": "3di10uhg0v",
         "canvas": "4030a103fc",
-        "footer": "i386edx1m8"
+        "footer": "qpqq4nk2mm"
       },
-      "spec_sha256": "673501c3ab9cae1cc85bd2e1b8cf2e253bac39cf10163a635f4d50c5b527e25e"
+      "spec_sha256": "96f1e64975581c491dcbcdbaaf640d4e98b6b76609b166799dfff699d8e60803"
     },
     {
       "id": "D10",
@@ -7909,7 +7912,7 @@
         "canvas": "2ek7fh33nn",
         "footer": "23x4ch0dzp"
       },
-      "spec_sha256": "673501c3ab9cae1cc85bd2e1b8cf2e253bac39cf10163a635f4d50c5b527e25e"
+      "spec_sha256": "96f1e64975581c491dcbcdbaaf640d4e98b6b76609b166799dfff699d8e60803"
     },
     {
       "id": "D11",
@@ -8570,7 +8573,7 @@
         "canvas": "rm1xyg13kv",
         "footer": "e5jrdpf69h"
       },
-      "spec_sha256": "673501c3ab9cae1cc85bd2e1b8cf2e253bac39cf10163a635f4d50c5b527e25e"
+      "spec_sha256": "96f1e64975581c491dcbcdbaaf640d4e98b6b76609b166799dfff699d8e60803"
     },
     {
       "id": "D12",
@@ -8590,7 +8593,7 @@
             272,
             144
           ],
-          "bogen_id": "6vtzuguta4"
+          "bogen_id": "s5s89xefqv"
         },
         {
           "id": "caps",
@@ -8604,7 +8607,7 @@
             272,
             144
           ],
-          "bogen_id": "n0zi4dbjq9"
+          "bogen_id": "5ybkjxpd85"
         },
         {
           "id": "obs",
@@ -8618,7 +8621,7 @@
             272,
             144
           ],
-          "bogen_id": "qmhnhya9je"
+          "bogen_id": "f193dzjq28"
         },
         {
           "id": "avail",
@@ -8632,7 +8635,7 @@
             272,
             144
           ],
-          "bogen_id": "fq0pnv8aq5"
+          "bogen_id": "kn4jk76wf7"
         },
         {
           "id": "noframe",
@@ -8646,7 +8649,7 @@
             272,
             144
           ],
-          "bogen_id": "8px68ybcjk"
+          "bogen_id": "jw7w7a6gjt"
         },
         {
           "id": "alt",
@@ -8660,7 +8663,7 @@
             272,
             156
           ],
-          "bogen_id": "4bbg7u98e5"
+          "bogen_id": "ahjh8thhxy"
         },
         {
           "id": "target",
@@ -8674,7 +8677,7 @@
             272,
             156
           ],
-          "bogen_id": "0smqqt2zr6"
+          "bogen_id": "na8nt99yh9"
         },
         {
           "id": "geo",
@@ -8688,7 +8691,7 @@
             272,
             144
           ],
-          "bogen_id": "tmp5ygc4rg"
+          "bogen_id": "x8fc7u4d4y"
         },
         {
           "id": "res",
@@ -8702,7 +8705,7 @@
             272,
             144
           ],
-          "bogen_id": "7tuaw20h29"
+          "bogen_id": "b1sh42ah62"
         },
         {
           "id": "send",
@@ -8716,7 +8719,7 @@
             272,
             156
           ],
-          "bogen_id": "rydsd5nt4j"
+          "bogen_id": "64a4w1z51g"
         },
         {
           "id": "how",
@@ -8730,7 +8733,7 @@
             272,
             144
           ],
-          "bogen_id": "1kq6ccm4mx"
+          "bogen_id": "uzbpun809p"
         },
         {
           "id": "refused",
@@ -8744,7 +8747,7 @@
             272,
             176
           ],
-          "bogen_id": "6auch8gyev"
+          "bogen_id": "9c5kz302q5"
         },
         {
           "id": "geonote",
@@ -8758,7 +8761,7 @@
             272,
             192
           ],
-          "bogen_id": "qe6kzrbayq"
+          "bogen_id": "kjgg370cji"
         },
         {
           "id": "fillnote",
@@ -8772,7 +8775,7 @@
             272,
             120
           ],
-          "bogen_id": "pxavkaqf6x"
+          "bogen_id": "cf0z0q60aq"
         },
         {
           "id": "done",
@@ -8786,7 +8789,7 @@
             272,
             176
           ],
-          "bogen_id": "huqujp4brc"
+          "bogen_id": "srubssa331"
         },
         {
           "id": "android",
@@ -8800,7 +8803,7 @@
             272,
             144
           ],
-          "bogen_id": "ewjnya0cge"
+          "bogen_id": "4c62rr2d4f"
         },
         {
           "id": "wda",
@@ -8814,7 +8817,7 @@
             272,
             144
           ],
-          "bogen_id": "m3r296m0n3"
+          "bogen_id": "rav1q6q56f"
         },
         {
           "id": "ble",
@@ -8828,7 +8831,7 @@
             272,
             144
           ],
-          "bogen_id": "vqbjacdxdc"
+          "bogen_id": "i9h32cj02z"
         },
         {
           "id": "answer",
@@ -8842,7 +8845,7 @@
             272,
             144
           ],
-          "bogen_id": "x8j6xfr4fc"
+          "bogen_id": "90u98je2km"
         },
         {
           "id": "verify",
@@ -8856,7 +8859,7 @@
             272,
             144
           ],
-          "bogen_id": "rd12e356zb"
+          "bogen_id": "mgcahajc7u"
         },
         {
           "id": "unknown",
@@ -8870,7 +8873,7 @@
             272,
             204
           ],
-          "bogen_id": "agb5vs43j1"
+          "bogen_id": "n6ygktc7a0"
         },
         {
           "id": "rid",
@@ -8884,7 +8887,7 @@
             272,
             168
           ],
-          "bogen_id": "ccig96547p"
+          "bogen_id": "0f7ezxe5jy"
         },
         {
           "id": "qstart",
@@ -8898,7 +8901,7 @@
             272,
             120
           ],
-          "bogen_id": "072g2rfr9b"
+          "bogen_id": "6s8y4qqyay"
         },
         {
           "id": "qmode",
@@ -8912,7 +8915,7 @@
             272,
             144
           ],
-          "bogen_id": "9xfpqbf4kt"
+          "bogen_id": "ufrtu35zre"
         },
         {
           "id": "qauto",
@@ -8926,7 +8929,7 @@
             272,
             124
           ],
-          "bogen_id": "4pkmggmch5"
+          "bogen_id": "hq4ru45i2u"
         },
         {
           "id": "qend",
@@ -8940,7 +8943,7 @@
             272,
             120
           ],
-          "bogen_id": "j725wkcr1i"
+          "bogen_id": "f5dpxa3e3r"
         },
         {
           "id": "qnormal",
@@ -8954,7 +8957,7 @@
             272,
             120
           ],
-          "bogen_id": "5tzyd12uye"
+          "bogen_id": "vhjwz6b643"
         },
         {
           "id": "qneed",
@@ -8968,7 +8971,7 @@
             272,
             176
           ],
-          "bogen_id": "twvgn8ms8h"
+          "bogen_id": "326i1sbax7"
         },
         {
           "id": "qinv",
@@ -8982,7 +8985,7 @@
             272,
             124
           ],
-          "bogen_id": "4adej9hdqq"
+          "bogen_id": "00tvh7kpwp"
         },
         {
           "id": "qfast",
@@ -8996,7 +8999,7 @@
             272,
             120
           ],
-          "bogen_id": "ipq1cz3x8v"
+          "bogen_id": "iwxr94gs4e"
         },
         {
           "id": "qfrozen",
@@ -9010,7 +9013,7 @@
             272,
             124
           ],
-          "bogen_id": "b2ah6bph51"
+          "bogen_id": "h3eb2a8qfg"
         },
         {
           "id": "qlimit",
@@ -9024,7 +9027,7 @@
             600,
             120
           ],
-          "bogen_id": "npgd89h51i"
+          "bogen_id": "9516ccqrwv"
         },
         {
           "id": "qcache",
@@ -9038,7 +9041,7 @@
             928,
             120
           ],
-          "bogen_id": "p0bp6w8kdj"
+          "bogen_id": "1t9uqy43w9"
         },
         {
           "id": "qd",
@@ -9052,7 +9055,7 @@
             272,
             144
           ],
-          "bogen_id": "1hi0351igh"
+          "bogen_id": "xaj0qwjscj"
         },
         {
           "id": "qselector",
@@ -9066,7 +9069,7 @@
             272,
             144
           ],
-          "bogen_id": "6g3b6dxhu2"
+          "bogen_id": "e0z86nncpw"
         },
         {
           "id": "qcompact",
@@ -9080,7 +9083,7 @@
             272,
             120
           ],
-          "bogen_id": "c2u19b7j1y"
+          "bogen_id": "egisw4g4gc"
         },
         {
           "id": "qfull",
@@ -9094,7 +9097,7 @@
             272,
             120
           ],
-          "bogen_id": "jysv939chi"
+          "bogen_id": "ubs22h5d72"
         },
         {
           "id": "qbad",
@@ -9108,7 +9111,7 @@
             272,
             124
           ],
-          "bogen_id": "e1nxj5gw0r"
+          "bogen_id": "9j2x348pgd"
         },
         {
           "id": "qstats",
@@ -9122,7 +9125,7 @@
             272,
             168
           ],
-          "bogen_id": "z4dbdhi7ci"
+          "bogen_id": "k1gzaxwd3h"
         },
         {
           "id": "qtimes",
@@ -9136,7 +9139,7 @@
             600,
             120
           ],
-          "bogen_id": "6b5x6bfiw5"
+          "bogen_id": "rkj11ademv"
         },
         {
           "id": "qguard",
@@ -9150,7 +9153,329 @@
             272,
             216
           ],
-          "bogen_id": "655f5f9qin"
+          "bogen_id": "twn3dta93q"
+        },
+        {
+          "id": "p0",
+          "kind": "start",
+          "title": "Nicht gecachte OCR-Lesung",
+          "op": "eine Polarität",
+          "tag": "START",
+          "box": [
+            0,
+            2854,
+            272,
+            124
+          ],
+          "bogen_id": "hkr8je9bqa"
+        },
+        {
+          "id": "p1",
+          "kind": "decision",
+          "title": "Dauerhafte MCP-Sitzung?",
+          "op": "",
+          "tag": "",
+          "box": [
+            328,
+            2856,
+            272,
+            144
+          ],
+          "bogen_id": "srr40ax9ub"
+        },
+        {
+          "id": "p2",
+          "kind": "decision",
+          "title": "Standard-Tess5 und Bild bis 9 MP?",
+          "op": "keine eigene Binary oder PATH-Wrapper",
+          "tag": "",
+          "box": [
+            656,
+            2816,
+            272,
+            224
+          ],
+          "bogen_id": "39r6ecf00m"
+        },
+        {
+          "id": "p3",
+          "kind": "decision",
+          "title": "Worker frei und verfügbar?",
+          "op": "",
+          "tag": "",
+          "box": [
+            984,
+            2856,
+            272,
+            144
+          ],
+          "bogen_id": "1hbirdkh4j"
+        },
+        {
+          "id": "p4",
+          "kind": "step",
+          "title": "Worker starten oder wiederverwenden",
+          "op": "CAPI5 · isolierter Kindprozess",
+          "tag": "SCHRITT",
+          "box": [
+            1312,
+            2846,
+            272,
+            140
+          ],
+          "bogen_id": "rnq8w4hamj"
+        },
+        {
+          "id": "pcli",
+          "kind": "step",
+          "title": "CLI-Prozess pro Lesung",
+          "op": "bestehender Tesseract-Aufruf",
+          "tag": "SCHRITT",
+          "box": [
+            328,
+            3116,
+            272,
+            120
+          ],
+          "bogen_id": "k7i206e529"
+        },
+        {
+          "id": "pconf",
+          "kind": "note",
+          "title": "Eigene Binaries und explizites OMP bleiben erhalten. Automatisch ein Thread nur für erkanntes System-Tesseract.",
+          "op": "",
+          "tag": "HINWEIS",
+          "box": [
+            0,
+            3092,
+            272,
+            168
+          ],
+          "bogen_id": "w7ax3yj8iu"
+        },
+        {
+          "id": "ppre",
+          "kind": "decision",
+          "title": "Start und Modell nutzbar?",
+          "op": "Init höchstens 10 s",
+          "tag": "",
+          "box": [
+            1312,
+            3092,
+            272,
+            192
+          ],
+          "bogen_id": "3m1f7rxn3k"
+        },
+        {
+          "id": "pclires",
+          "kind": "step",
+          "title": "CLI-Antwort oder bestehender Fehler",
+          "op": "z. B. ocr_language_missing",
+          "tag": "SCHRITT",
+          "box": [
+            328,
+            3374,
+            272,
+            124
+          ],
+          "bogen_id": "nfjr2ruj2g"
+        },
+        {
+          "id": "prec",
+          "kind": "step",
+          "title": "Bild setzen, erkennen, TSV lesen",
+          "op": "Clear · ClearAdaptiveClassifier je Bild",
+          "tag": "SCHRITT",
+          "box": [
+            1312,
+            3356,
+            272,
+            160
+          ],
+          "bogen_id": "g37hjz5eex"
+        },
+        {
+          "id": "pstat",
+          "kind": "decision",
+          "title": "Antwort vollständig?",
+          "op": "",
+          "tag": "",
+          "box": [
+            984,
+            3376,
+            272,
+            144
+          ],
+          "bogen_id": "hzgvn5881n"
+        },
+        {
+          "id": "pout",
+          "kind": "ok",
+          "title": "Unveränderte Wörter, Linien und Treffer",
+          "op": "je Polarität ein Engine-Aufruf",
+          "tag": "ENDE · OK",
+          "box": [
+            984,
+            3626,
+            272,
+            140
+          ],
+          "bogen_id": "p2p4bbga0e"
+        },
+        {
+          "id": "perror",
+          "kind": "error",
+          "title": "Kein Ergebnis, kein stiller Zweitlauf",
+          "op": "ocr_failed · tool_timeout · request_cancelled · response_too_large",
+          "tag": "FEHLER",
+          "box": [
+            656,
+            3616,
+            272,
+            160
+          ],
+          "bogen_id": "tm8krruy1q"
+        },
+        {
+          "id": "pbusy",
+          "kind": "note",
+          "title": "Höchstens ein warmer Worker. Bei Belegung geht die andere Anfrage direkt zum CLI; sie wartet nicht auf das Modell.",
+          "op": "",
+          "tag": "HINWEIS",
+          "box": [
+            0,
+            3352,
+            272,
+            168
+          ],
+          "bogen_id": "2yxefbq12w"
+        },
+        {
+          "id": "plimits",
+          "kind": "note",
+          "title": "Workerbudget 90 s je Polarität; Init höchstens 10 s. CLI separat höchstens 90 s. TSV bis 8 MiB; Kindprozess bis 512 MiB Adressraum und 256 MiB RSS.",
+          "op": "",
+          "tag": "HINWEIS",
+          "box": [
+            0,
+            3634,
+            600,
+            124
+          ],
+          "bogen_id": "x8evgareen"
+        },
+        {
+          "id": "l0",
+          "kind": "start",
+          "title": "Worker bleibt bereit",
+          "op": "ein behaltenes Modell",
+          "tag": "START",
+          "box": [
+            0,
+            4112,
+            272,
+            120
+          ],
+          "bogen_id": "z6y58c7rn8"
+        },
+        {
+          "id": "l1",
+          "kind": "decision",
+          "title": "Leerlauf, Budget oder Ende?",
+          "op": "55 s · 128 Lesungen · Konfigwechsel",
+          "tag": "",
+          "box": [
+            328,
+            4064,
+            272,
+            240
+          ],
+          "bogen_id": "bp7rips564"
+        },
+        {
+          "id": "l2",
+          "kind": "step",
+          "title": "Prozess beenden und reapen",
+          "op": "Owner prüft jede Sekunde · Kind endet nach 60 s",
+          "tag": "SCHRITT",
+          "box": [
+            656,
+            4102,
+            272,
+            140
+          ],
+          "bogen_id": "nqubi5ncwm"
+        },
+        {
+          "id": "l3",
+          "kind": "step",
+          "title": "Passende nächste Anfrage startet frisch",
+          "op": "auch nach Leerlauf und normalem Abbruch",
+          "tag": "SCHRITT",
+          "box": [
+            984,
+            4102,
+            272,
+            140
+          ],
+          "bogen_id": "qp3g6a3rtv"
+        },
+        {
+          "id": "l4",
+          "kind": "note",
+          "title": "Serverende räumt auf; Hosttod beendet den Kindprozess. Ein dauerhafter Owner hält ihn zwischen Anfrage-Threads am Leben.",
+          "op": "",
+          "tag": "HINWEIS",
+          "box": [
+            1312,
+            4076,
+            272,
+            192
+          ],
+          "bogen_id": "pd3eidv2zj"
+        },
+        {
+          "id": "lkeep",
+          "kind": "state",
+          "title": "Modell bleibt warm",
+          "op": "bereit für das nächste Bild",
+          "tag": "ZUSTAND",
+          "box": [
+            328,
+            4372,
+            272,
+            120
+          ],
+          "bogen_id": "56kkcp0b6h"
+        },
+        {
+          "id": "lkey",
+          "kind": "note",
+          "title": "Worker-Schlüssel: Sprache, Datenpfad, Modell-/Binary-Stand und Thread-Konfiguration. Nach Paket-/Datenwechseln neu verbinden.",
+          "op": "",
+          "tag": "HINWEIS",
+          "box": [
+            0,
+            4336,
+            272,
+            192
+          ],
+          "bogen_id": "wfdz3j45s1"
+        },
+        {
+          "id": "lcancel",
+          "kind": "note",
+          "title": "Cancel beendet und reapet den eigenen Worker; MCP unterdrückt die abgesagte Antwort. Ein unbekannter Fehler nach dem Senden scheitert jetzt und schaltet spätere Anfragen auf CLI. Es folgt kein ungezählter zweiter Erkennungslauf.",
+          "op": "",
+          "tag": "HINWEIS",
+          "box": [
+            656,
+            4370,
+            928,
+            124
+          ],
+          "bogen_id": "jjci1degmg"
         }
       ],
       "edges": [
@@ -9883,6 +10208,476 @@
             46,
             26
           ]
+        },
+        {
+          "from": "p0",
+          "to": "p1",
+          "label": "",
+          "kind": "flow",
+          "points": [
+            [
+              272,
+              2916
+            ],
+            [
+              300,
+              2916
+            ],
+            [
+              300,
+              2928
+            ],
+            [
+              328,
+              2928
+            ]
+          ]
+        },
+        {
+          "from": "p1",
+          "to": "p2",
+          "label": "ja",
+          "kind": "flow",
+          "points": [
+            [
+              600,
+              2928
+            ],
+            [
+              656,
+              2928
+            ]
+          ],
+          "label_box": [
+            610,
+            2894,
+            27,
+            26
+          ]
+        },
+        {
+          "from": "p2",
+          "to": "p3",
+          "label": "ja",
+          "kind": "flow",
+          "points": [
+            [
+              928,
+              2928
+            ],
+            [
+              984,
+              2928
+            ]
+          ],
+          "label_box": [
+            938,
+            2894,
+            27,
+            26
+          ]
+        },
+        {
+          "from": "p3",
+          "to": "p4",
+          "label": "ja",
+          "kind": "flow",
+          "points": [
+            [
+              1256,
+              2928
+            ],
+            [
+              1284,
+              2928
+            ],
+            [
+              1284,
+              2916
+            ],
+            [
+              1312,
+              2916
+            ]
+          ],
+          "label_box": [
+            1266,
+            2936,
+            27,
+            26
+          ]
+        },
+        {
+          "from": "p1",
+          "to": "pcli",
+          "label": "nein",
+          "kind": "flow",
+          "points": [
+            [
+              464,
+              3000
+            ],
+            [
+              464,
+              3116
+            ]
+          ],
+          "label_box": [
+            474,
+            3008,
+            46,
+            26
+          ]
+        },
+        {
+          "from": "p2",
+          "to": "pcli",
+          "label": "nein",
+          "kind": "flow",
+          "points": [
+            [
+              792,
+              3040
+            ],
+            [
+              792,
+              3080
+            ],
+            [
+              464,
+              3080
+            ],
+            [
+              464,
+              3116
+            ]
+          ],
+          "label_box": [
+            802,
+            3048,
+            46,
+            26
+          ]
+        },
+        {
+          "from": "p3",
+          "to": "pcli",
+          "label": "nein",
+          "kind": "flow",
+          "points": [
+            [
+              1120,
+              3000
+            ],
+            [
+              1120,
+              3080
+            ],
+            [
+              464,
+              3080
+            ],
+            [
+              464,
+              3116
+            ]
+          ],
+          "label_box": [
+            1130,
+            3008,
+            46,
+            26
+          ]
+        },
+        {
+          "from": "p4",
+          "to": "ppre",
+          "label": "",
+          "kind": "flow",
+          "points": [
+            [
+              1448,
+              2986
+            ],
+            [
+              1448,
+              3092
+            ]
+          ]
+        },
+        {
+          "from": "ppre",
+          "to": "pcli",
+          "label": "unverfügbar",
+          "kind": "flow",
+          "points": [
+            [
+              1312,
+              3188
+            ],
+            [
+              1248,
+              3188
+            ],
+            [
+              1248,
+              3312
+            ],
+            [
+              624,
+              3312
+            ],
+            [
+              624,
+              3176
+            ],
+            [
+              600,
+              3176
+            ]
+          ],
+          "label_box": [
+            618,
+            3142,
+            102,
+            26
+          ]
+        },
+        {
+          "from": "ppre",
+          "to": "prec",
+          "label": "ja",
+          "kind": "flow",
+          "points": [
+            [
+              1448,
+              3284
+            ],
+            [
+              1448,
+              3356
+            ]
+          ],
+          "label_box": [
+            1458,
+            3292,
+            27,
+            26
+          ]
+        },
+        {
+          "from": "ppre",
+          "to": "perror",
+          "label": "Timeout / Abbruch",
+          "kind": "error",
+          "points": [
+            [
+              1312,
+              3188
+            ],
+            [
+              1288,
+              3188
+            ],
+            [
+              1288,
+              3880
+            ],
+            [
+              792,
+              3880
+            ],
+            [
+              792,
+              3776
+            ]
+          ],
+          "label_box": [
+            802,
+            3846,
+            147,
+            26
+          ]
+        },
+        {
+          "from": "pcli",
+          "to": "pclires",
+          "label": "",
+          "kind": "flow",
+          "points": [
+            [
+              464,
+              3236
+            ],
+            [
+              464,
+              3374
+            ]
+          ]
+        },
+        {
+          "from": "prec",
+          "to": "pstat",
+          "label": "",
+          "kind": "flow",
+          "points": [
+            [
+              1312,
+              3436
+            ],
+            [
+              1284,
+              3436
+            ],
+            [
+              1284,
+              3448
+            ],
+            [
+              1256,
+              3448
+            ]
+          ]
+        },
+        {
+          "from": "pstat",
+          "to": "pout",
+          "label": "ja",
+          "kind": "success",
+          "points": [
+            [
+              1120,
+              3520
+            ],
+            [
+              1120,
+              3626
+            ]
+          ],
+          "label_box": [
+            1130,
+            3528,
+            27,
+            26
+          ]
+        },
+        {
+          "from": "pstat",
+          "to": "perror",
+          "label": "nein",
+          "kind": "error",
+          "points": [
+            [
+              984,
+              3448
+            ],
+            [
+              792,
+              3448
+            ],
+            [
+              792,
+              3616
+            ]
+          ],
+          "label_box": [
+            928,
+            3414,
+            46,
+            26
+          ]
+        },
+        {
+          "from": "l0",
+          "to": "l1",
+          "label": "",
+          "kind": "flow",
+          "points": [
+            [
+              272,
+              4172
+            ],
+            [
+              300,
+              4172
+            ],
+            [
+              300,
+              4184
+            ],
+            [
+              328,
+              4184
+            ]
+          ]
+        },
+        {
+          "from": "l1",
+          "to": "l2",
+          "label": "ja",
+          "kind": "flow",
+          "points": [
+            [
+              600,
+              4184
+            ],
+            [
+              628,
+              4184
+            ],
+            [
+              628,
+              4172
+            ],
+            [
+              656,
+              4172
+            ]
+          ],
+          "label_box": [
+            610,
+            4192,
+            27,
+            26
+          ]
+        },
+        {
+          "from": "l2",
+          "to": "l3",
+          "label": "",
+          "kind": "flow",
+          "points": [
+            [
+              928,
+              4172
+            ],
+            [
+              984,
+              4172
+            ]
+          ]
+        },
+        {
+          "from": "l1",
+          "to": "lkeep",
+          "label": "nein",
+          "kind": "flow",
+          "points": [
+            [
+              464,
+              4304
+            ],
+            [
+              464,
+              4372
+            ]
+          ],
+          "label_box": [
+            474,
+            4312,
+            46,
+            26
+          ]
         }
       ],
       "operations": [
@@ -9909,17 +10704,26 @@
         "native/screen.rs read_text: detail-Vorabprüfung, einzelner Capture, read_selected, vollständige Zielsuche, getrennte Messzeiten",
         "native/screen_ocr.rs adaptive_fallback, read_selected: opt-in adaptive, ausgewählte Wörter <80, eingefrorenes PNG, begrenzte Polaritäts-/Zielcaches",
         "assets/operations.json screen.ocr: invert auto/never/always/adaptive, detail full/matches; testing/find/wait-Standards bleiben auto",
-        "docs/ocr-adaptive-qualification.json: optimierter CLI-Korpus, gleiche Binary, begrenzte handgelabelte Targets; kompakte MCP-Einzelabfrage separat"
+        "docs/ocr-adaptive-qualification.json: optimierter CLI-Korpus, gleiche Binary, begrenzte handgelabelte Targets; kompakte MCP-Einzelabfrage separat",
+        "native/screen_ocr_engine.rs recognize, standard_binary, thread_overrides, spawn_owner, Worker: Auswahl, Grenzen, Fehler und Leerlauf",
+        "native/screen_ocr_worker.rs Api, Engine, run: CAPI nur im Kind, Clear/Classifier, begrenztes TSV, Eingabe-Timeout",
+        "native/main.rs mcp und _ocr_engine: dauerhafte Sitzung, Aufräumen und privater Kind-Einstieg",
+        "native/toolchain.rs run_with_env, CompletionWait: Kind-Umgebung und Exit-Bereitschaft; vorhandener Polling-Fallback",
+        "native/runtime/iphone.rs context: tokio::join! für App/Tastatur/Fokus, alle Ergebnisse frisch, keine parallelen Eingaben",
+        "tests/ocr_engine_integration.py: wechselnde Bilder, Recycling, Grenzen, Cancel/Idle/Unlink, Wrapper, Prozessende",
+        "docs/performance-final-qualification.json: exakte installierte cfad72c-Binary, privater 1caa172-Vergleich, gleiche Nicht-Zeit-Ausgaben und Speichertradeoff",
+        "docs/performance-ocr-worker-review.json und docs/agent-observe-performance.json: unabhängiger Quell-/Fixture-Nachweis, keine Hardwarequalifikation"
       ],
       "notes": [
-        "AirPlay hat keinen visuellen Agentenkreis: runtime.observe und screen.* antworten airplay_runtime. BLE-Eingabe mit bekannten Koordinaten bleibt möglich, aber ohne automatische Prüfung; prüfen kann nur die Person.",
-        "Eine Reservierung ist kooperativ: sie schützt zwischen Clients, die Tomacco nutzen, nicht gegen adb, SSH oder Flash-Werkzeuge des Nutzers.",
-        "Kein Weg verspricht genau-einmal-Ausführung auf dem Gerät; nur eine frische Beobachtung zeigt die Wirkung.",
-        "screen.ocr invert:auto bleibt die Vorgabe mit normaler und invertierter Lesung. adaptive ist eine ausdrückliche Optimierung für eine bekannte Zielsuche; es ist keine Garantie für Vollständigkeit, Abwesenheit oder Eindeutigkeit. Auch auto bleibt fehleranfällige Pixel-OCR.",
-        "Adaptive Fallbacks: Nach Konfidenzfilter kein Wort, angefragter Text/Index fehlt oder ein Wort des ausgewählten Treffers hat Konfidenz <80. Ohne Zielabfrage zählt jedes beibehaltene Wort <80. Bei Fallback wird dasselbe eingefrorene PNG invertiert gelesen.",
-        "detail:matches verlangt text oder text_contains und lässt words/lines weg. Die Suche wird nicht durch max_words gekürzt. engine_runs zählt echte Engine-Aufrufe, passes die gewählte Lesepolitik; ein kompletter Cachetreffer kann engine_runs:0 liefern.",
-        "capture_ms ist bei einem gespeicherten PNG null. read_ms und total_ms messen getrennte Arbeit. Fixture-Zeiten sind kein Vergleich mit echter Hardware oder anderen Produkten.",
-        "Lokaler optimierter PNG-Korpus: 16 unabhängige Bilder, 20 Fälle, 180 CLI-Aufrufe. Median über die unabhängigen Bilder: auto 312.79 ms, adaptive 275.65 ms (11.87 % geringer); dieselbe gemessene Ziel- und Worttrefferquote in diesem Korpus. Kein Geräte-Capture, Transport, Tap oder Konkurrenzprodukt gemessen. Eine einzelne MCP-Zielabfrage schrumpfte von 1,922 auf 699 UTF-8-Bytes; dies ist kein allgemeiner Payload-Mittelwert."
+        "AirPlay liefert weiterhin keinen visuellen Agentenkreis: runtime.observe und screen.* antworten airplay_runtime. BLE-Eingabe mit bekannten Koordinaten bleibt möglich; die Wirkung prüft hier eine Person.",
+        "Reservierungen schützen kooperierende Tomacco-Clients, nicht fremde adb-/SSH-/Flash-Werkzeuge. Kein Weg verspricht genau-einmal-Ausführung auf dem Gerät; eine neue Beobachtung prüft die Wirkung.",
+        "auto bleibt der Standard mit beiden Polaritäten; adaptive ist ausdrücklich optional und kann andere Wörter oder Duplikate übersehen. Leere Lesung, fehlender Text/Index oder ein ausgewähltes Wort unter 80 Konfidenz lösen Inversion aus; ohne Zielabfrage zählt jedes beibehaltene Wort unter 80.",
+        "detail:matches braucht text oder text_contains und lässt words/lines weg. max_words begrenzt nur ausgegebene Details. engine_runs zählt echte Erkennungen, ein Cachetreffer kann 0 liefern. capture_ms ist bei PNG null; read_ms und total_ms bleiben getrennt. Eingabe-, Find-, Warte- und Abwesenheitsprüfungen behalten auto.",
+        "Warmwiederverwendung betrifft dauerhafte MCP-Sitzungen mit erkanntem System-Tesseract5 und Bildern bis 9 MP. Kalter CLI, eigene Binaries, PATH-Wrapper, große Bilder und belegte Worker behalten den Unterprozesspfad. Explizites OMP_THREAD_LIMIT/OMP_NUM_THREADS bleibt erhalten; ohne Vorgabe bekommt nur erkanntes System-Tesseract einen lokalen Thread.",
+        "Die Tesseract-CAPI läuft ausschließlich im isolierten Kindprozess. Ein dauerhafter Owner startet den begrenzten Kindprozess; gleiche Host-Datei über /proc/self/exe erhält das private Protokoll auch nach einem App-Update. Nach Start-/Modell-Unverfügbarkeit darf CLI übernehmen. Cancel, Timeout und unbekannte Fehler nach dem Senden führen zu keinem stillen zweiten Lauf.",
+        "Das warme Sprachmodell hält zusätzlichen residenten Speicher. Der Owner räumt nach 55 s Leerlauf oder beim Ende auf. Nach 128 Lesungen wird das Modell vor weiterem Einsatz erneuert; der Kindprozess hat zusätzlich 60 s Leerlaufgrenze. Die öffentliche Bildgrenze bleibt 64 MP; größere Worker-Bilder gehen zum CLI. Eine allgemeine Speicherersparnis wird nicht behauptet.",
+        "USB-WDA-Kontext: App, Tastatur und Fokus werden auf derselben Sitzung parallel frisch gelesen. Alle drei Ergebnisse einschließlich Fehler werden abgewartet; Eingaben bleiben seriell. Es wird kein alter Kontext zwischengespeichert.",
+        "Installierte CLI cfad72c / Quellstand c2e2326: offline gegen den privaten Vorgänger 1caa172 qualifiziert, 417 Matrixfälle und 540 Korpusaufrufe. 360 Vergleiche vollständiger Nicht-Zeit-Daten stimmen überein; bekannte OCR-Fehltreffer bleiben. Warme Frischbilder, kalter/eigener CLI, Cache und GUI-Frame-Verfügbarkeit bleiben getrennte Messgrößen; keine Hardware- oder Konkurrenz-Rangliste."
       ],
       "links": [
         [
@@ -9950,16 +10754,16 @@
       "routes": [
         "runtime"
       ],
-      "height": 2644,
+      "height": 4552,
       "spec_file": "docs/flows/specs/05_agent_loop.py",
-      "source_baseline_label": "Kern 4584d6b · OCR e552e6f",
+      "source_baseline_label": "Kern 4584d6b · Performance e0b79fe",
       "bogen": {
         "artboard": "qsrfwt20hy",
         "header": "i6hesxye35",
-        "canvas": "r7yrx876s5",
-        "footer": "ex6d22txbm"
+        "canvas": "nmf7tagsi6",
+        "footer": "yjffieci1g"
       },
-      "spec_sha256": "52017b3e62c570cd2ae62cbb4f27887f5ceddb8f6837085fd5a6fd76f26c64b9"
+      "spec_sha256": "f122e73b5f3332b2c9b6c61773318fde9da5d50719c7a13fffab3df08689dcec"
     },
     {
       "id": "D13",
@@ -10934,7 +11738,7 @@
         "canvas": "g005ec4xz5",
         "footer": "g2hu2czvg7"
       },
-      "spec_sha256": "52017b3e62c570cd2ae62cbb4f27887f5ceddb8f6837085fd5a6fd76f26c64b9"
+      "spec_sha256": "f122e73b5f3332b2c9b6c61773318fde9da5d50719c7a13fffab3df08689dcec"
     },
     {
       "id": "D14",
@@ -11457,7 +12261,7 @@
         "canvas": "hgx0yzctyd",
         "footer": "a48mx5dte1"
       },
-      "spec_sha256": "52017b3e62c570cd2ae62cbb4f27887f5ceddb8f6837085fd5a6fd76f26c64b9"
+      "spec_sha256": "f122e73b5f3332b2c9b6c61773318fde9da5d50719c7a13fffab3df08689dcec"
     },
     {
       "id": "D15",
@@ -35195,7 +35999,9 @@
         "native/iphone_setup.rs ios.prepare, ios.wda_prepare, ios.doctor",
         "native/iphone_device.rs ios.signing, ios.device_status",
         "native/runtime/iphone.rs:1-2, 102 USB-Forwards (nur Loopback) + WDA MJPEG",
-        "native/runtime/iphone.rs:854 verifiziertes Füllen: Loopback-Double, nicht auf Hardware"
+        "native/runtime/iphone.rs:854 verifiziertes Füllen: Kern4584-Loopback-Double, nicht auf Hardware",
+        "native/runtime/iphone.rs context: tokio::join! aller drei frischen Reads, Fehler je Kontextteil",
+        "docs/agent-observe-performance.json: frischer Kontext und serialisierte Eingabe, verzögerter und unverzögerter Loopback"
       ],
       "status": "implemented_source_contract; hardware qualifications see S1",
       "destructive": false,
@@ -35271,12 +36077,20 @@
         "native/screen.rs read_text: detail-Vorabprüfung, einzelner Capture, read_selected, vollständige Zielsuche, getrennte Messzeiten",
         "native/screen_ocr.rs adaptive_fallback, read_selected: opt-in adaptive, ausgewählte Wörter <80, eingefrorenes PNG, begrenzte Polaritäts-/Zielcaches",
         "assets/operations.json screen.ocr: invert auto/never/always/adaptive, detail full/matches; testing/find/wait-Standards bleiben auto",
-        "docs/ocr-adaptive-qualification.json: optimierter CLI-Korpus, gleiche Binary, begrenzte handgelabelte Targets; kompakte MCP-Einzelabfrage separat"
+        "docs/ocr-adaptive-qualification.json: optimierter CLI-Korpus, gleiche Binary, begrenzte handgelabelte Targets; kompakte MCP-Einzelabfrage separat",
+        "native/screen_ocr_engine.rs recognize, standard_binary, thread_overrides, spawn_owner, Worker: Auswahl, Grenzen, Fehler und Leerlauf",
+        "native/screen_ocr_worker.rs Api, Engine, run: CAPI nur im Kind, Clear/Classifier, begrenztes TSV, Eingabe-Timeout",
+        "native/main.rs mcp und _ocr_engine: dauerhafte Sitzung, Aufräumen und privater Kind-Einstieg",
+        "native/toolchain.rs run_with_env, CompletionWait: Kind-Umgebung und Exit-Bereitschaft; vorhandener Polling-Fallback",
+        "native/runtime/iphone.rs context: tokio::join! für App/Tastatur/Fokus, alle Ergebnisse frisch, keine parallelen Eingaben",
+        "tests/ocr_engine_integration.py: wechselnde Bilder, Recycling, Grenzen, Cancel/Idle/Unlink, Wrapper, Prozessende",
+        "docs/performance-final-qualification.json: exakte installierte cfad72c-Binary, privater 1caa172-Vergleich, gleiche Nicht-Zeit-Ausgaben und Speichertradeoff",
+        "docs/performance-ocr-worker-review.json und docs/agent-observe-performance.json: unabhängiger Quell-/Fixture-Nachweis, keine Hardwarequalifikation"
       ],
       "status": "implemented_source_contract; hardware qualifications see S1",
       "destructive": false,
       "bogen_artboard": "qsrfwt20hy",
-      "bogen_node": "0smqqt2zr6"
+      "bogen_node": "na8nt99yh9"
     },
     {
       "operation": "screen.tap",
@@ -35300,12 +36114,20 @@
         "native/screen.rs read_text: detail-Vorabprüfung, einzelner Capture, read_selected, vollständige Zielsuche, getrennte Messzeiten",
         "native/screen_ocr.rs adaptive_fallback, read_selected: opt-in adaptive, ausgewählte Wörter <80, eingefrorenes PNG, begrenzte Polaritäts-/Zielcaches",
         "assets/operations.json screen.ocr: invert auto/never/always/adaptive, detail full/matches; testing/find/wait-Standards bleiben auto",
-        "docs/ocr-adaptive-qualification.json: optimierter CLI-Korpus, gleiche Binary, begrenzte handgelabelte Targets; kompakte MCP-Einzelabfrage separat"
+        "docs/ocr-adaptive-qualification.json: optimierter CLI-Korpus, gleiche Binary, begrenzte handgelabelte Targets; kompakte MCP-Einzelabfrage separat",
+        "native/screen_ocr_engine.rs recognize, standard_binary, thread_overrides, spawn_owner, Worker: Auswahl, Grenzen, Fehler und Leerlauf",
+        "native/screen_ocr_worker.rs Api, Engine, run: CAPI nur im Kind, Clear/Classifier, begrenztes TSV, Eingabe-Timeout",
+        "native/main.rs mcp und _ocr_engine: dauerhafte Sitzung, Aufräumen und privater Kind-Einstieg",
+        "native/toolchain.rs run_with_env, CompletionWait: Kind-Umgebung und Exit-Bereitschaft; vorhandener Polling-Fallback",
+        "native/runtime/iphone.rs context: tokio::join! für App/Tastatur/Fokus, alle Ergebnisse frisch, keine parallelen Eingaben",
+        "tests/ocr_engine_integration.py: wechselnde Bilder, Recycling, Grenzen, Cancel/Idle/Unlink, Wrapper, Prozessende",
+        "docs/performance-final-qualification.json: exakte installierte cfad72c-Binary, privater 1caa172-Vergleich, gleiche Nicht-Zeit-Ausgaben und Speichertradeoff",
+        "docs/performance-ocr-worker-review.json und docs/agent-observe-performance.json: unabhängiger Quell-/Fixture-Nachweis, keine Hardwarequalifikation"
       ],
       "status": "implemented_source_contract; hardware qualifications see S1",
       "destructive": false,
       "bogen_artboard": "qsrfwt20hy",
-      "bogen_node": "qe6kzrbayq"
+      "bogen_node": "kjgg370cji"
     },
     {
       "operation": "screen.tree",
@@ -35329,12 +36151,20 @@
         "native/screen.rs read_text: detail-Vorabprüfung, einzelner Capture, read_selected, vollständige Zielsuche, getrennte Messzeiten",
         "native/screen_ocr.rs adaptive_fallback, read_selected: opt-in adaptive, ausgewählte Wörter <80, eingefrorenes PNG, begrenzte Polaritäts-/Zielcaches",
         "assets/operations.json screen.ocr: invert auto/never/always/adaptive, detail full/matches; testing/find/wait-Standards bleiben auto",
-        "docs/ocr-adaptive-qualification.json: optimierter CLI-Korpus, gleiche Binary, begrenzte handgelabelte Targets; kompakte MCP-Einzelabfrage separat"
+        "docs/ocr-adaptive-qualification.json: optimierter CLI-Korpus, gleiche Binary, begrenzte handgelabelte Targets; kompakte MCP-Einzelabfrage separat",
+        "native/screen_ocr_engine.rs recognize, standard_binary, thread_overrides, spawn_owner, Worker: Auswahl, Grenzen, Fehler und Leerlauf",
+        "native/screen_ocr_worker.rs Api, Engine, run: CAPI nur im Kind, Clear/Classifier, begrenztes TSV, Eingabe-Timeout",
+        "native/main.rs mcp und _ocr_engine: dauerhafte Sitzung, Aufräumen und privater Kind-Einstieg",
+        "native/toolchain.rs run_with_env, CompletionWait: Kind-Umgebung und Exit-Bereitschaft; vorhandener Polling-Fallback",
+        "native/runtime/iphone.rs context: tokio::join! für App/Tastatur/Fokus, alle Ergebnisse frisch, keine parallelen Eingaben",
+        "tests/ocr_engine_integration.py: wechselnde Bilder, Recycling, Grenzen, Cancel/Idle/Unlink, Wrapper, Prozessende",
+        "docs/performance-final-qualification.json: exakte installierte cfad72c-Binary, privater 1caa172-Vergleich, gleiche Nicht-Zeit-Ausgaben und Speichertradeoff",
+        "docs/performance-ocr-worker-review.json und docs/agent-observe-performance.json: unabhängiger Quell-/Fixture-Nachweis, keine Hardwarequalifikation"
       ],
       "status": "implemented_source_contract; hardware qualifications see S1",
       "destructive": false,
       "bogen_artboard": "qsrfwt20hy",
-      "bogen_node": "0smqqt2zr6"
+      "bogen_node": "na8nt99yh9"
     },
     {
       "operation": "screen.ocr",
@@ -35358,12 +36188,20 @@
         "native/screen.rs read_text: detail-Vorabprüfung, einzelner Capture, read_selected, vollständige Zielsuche, getrennte Messzeiten",
         "native/screen_ocr.rs adaptive_fallback, read_selected: opt-in adaptive, ausgewählte Wörter <80, eingefrorenes PNG, begrenzte Polaritäts-/Zielcaches",
         "assets/operations.json screen.ocr: invert auto/never/always/adaptive, detail full/matches; testing/find/wait-Standards bleiben auto",
-        "docs/ocr-adaptive-qualification.json: optimierter CLI-Korpus, gleiche Binary, begrenzte handgelabelte Targets; kompakte MCP-Einzelabfrage separat"
+        "docs/ocr-adaptive-qualification.json: optimierter CLI-Korpus, gleiche Binary, begrenzte handgelabelte Targets; kompakte MCP-Einzelabfrage separat",
+        "native/screen_ocr_engine.rs recognize, standard_binary, thread_overrides, spawn_owner, Worker: Auswahl, Grenzen, Fehler und Leerlauf",
+        "native/screen_ocr_worker.rs Api, Engine, run: CAPI nur im Kind, Clear/Classifier, begrenztes TSV, Eingabe-Timeout",
+        "native/main.rs mcp und _ocr_engine: dauerhafte Sitzung, Aufräumen und privater Kind-Einstieg",
+        "native/toolchain.rs run_with_env, CompletionWait: Kind-Umgebung und Exit-Bereitschaft; vorhandener Polling-Fallback",
+        "native/runtime/iphone.rs context: tokio::join! für App/Tastatur/Fokus, alle Ergebnisse frisch, keine parallelen Eingaben",
+        "tests/ocr_engine_integration.py: wechselnde Bilder, Recycling, Grenzen, Cancel/Idle/Unlink, Wrapper, Prozessende",
+        "docs/performance-final-qualification.json: exakte installierte cfad72c-Binary, privater 1caa172-Vergleich, gleiche Nicht-Zeit-Ausgaben und Speichertradeoff",
+        "docs/performance-ocr-worker-review.json und docs/agent-observe-performance.json: unabhängiger Quell-/Fixture-Nachweis, keine Hardwarequalifikation"
       ],
       "status": "implemented_source_contract; hardware qualifications see S1",
       "destructive": false,
       "bogen_artboard": "qsrfwt20hy",
-      "bogen_node": "072g2rfr9b"
+      "bogen_node": "6s8y4qqyay"
     },
     {
       "operation": "screen.diff",
@@ -35411,12 +36249,20 @@
         "native/screen.rs read_text: detail-Vorabprüfung, einzelner Capture, read_selected, vollständige Zielsuche, getrennte Messzeiten",
         "native/screen_ocr.rs adaptive_fallback, read_selected: opt-in adaptive, ausgewählte Wörter <80, eingefrorenes PNG, begrenzte Polaritäts-/Zielcaches",
         "assets/operations.json screen.ocr: invert auto/never/always/adaptive, detail full/matches; testing/find/wait-Standards bleiben auto",
-        "docs/ocr-adaptive-qualification.json: optimierter CLI-Korpus, gleiche Binary, begrenzte handgelabelte Targets; kompakte MCP-Einzelabfrage separat"
+        "docs/ocr-adaptive-qualification.json: optimierter CLI-Korpus, gleiche Binary, begrenzte handgelabelte Targets; kompakte MCP-Einzelabfrage separat",
+        "native/screen_ocr_engine.rs recognize, standard_binary, thread_overrides, spawn_owner, Worker: Auswahl, Grenzen, Fehler und Leerlauf",
+        "native/screen_ocr_worker.rs Api, Engine, run: CAPI nur im Kind, Clear/Classifier, begrenztes TSV, Eingabe-Timeout",
+        "native/main.rs mcp und _ocr_engine: dauerhafte Sitzung, Aufräumen und privater Kind-Einstieg",
+        "native/toolchain.rs run_with_env, CompletionWait: Kind-Umgebung und Exit-Bereitschaft; vorhandener Polling-Fallback",
+        "native/runtime/iphone.rs context: tokio::join! für App/Tastatur/Fokus, alle Ergebnisse frisch, keine parallelen Eingaben",
+        "tests/ocr_engine_integration.py: wechselnde Bilder, Recycling, Grenzen, Cancel/Idle/Unlink, Wrapper, Prozessende",
+        "docs/performance-final-qualification.json: exakte installierte cfad72c-Binary, privater 1caa172-Vergleich, gleiche Nicht-Zeit-Ausgaben und Speichertradeoff",
+        "docs/performance-ocr-worker-review.json und docs/agent-observe-performance.json: unabhängiger Quell-/Fixture-Nachweis, keine Hardwarequalifikation"
       ],
       "status": "implemented_source_contract; hardware qualifications see S1",
       "destructive": false,
       "bogen_artboard": "qsrfwt20hy",
-      "bogen_node": "rd12e356zb"
+      "bogen_node": "mgcahajc7u"
     },
     {
       "operation": "screen.export",
@@ -36819,7 +37665,9 @@
         "native/iphone_setup.rs ios.prepare, ios.wda_prepare, ios.doctor",
         "native/iphone_device.rs ios.signing, ios.device_status",
         "native/runtime/iphone.rs:1-2, 102 USB-Forwards (nur Loopback) + WDA MJPEG",
-        "native/runtime/iphone.rs:854 verifiziertes Füllen: Loopback-Double, nicht auf Hardware"
+        "native/runtime/iphone.rs:854 verifiziertes Füllen: Kern4584-Loopback-Double, nicht auf Hardware",
+        "native/runtime/iphone.rs context: tokio::join! aller drei frischen Reads, Fehler je Kontextteil",
+        "docs/agent-observe-performance.json: frischer Kontext und serialisierte Eingabe, verzögerter und unverzögerter Loopback"
       ],
       "status": "implemented_source_contract; hardware qualifications see S1",
       "destructive": false,
@@ -39439,12 +40287,20 @@
         "native/screen.rs read_text: detail-Vorabprüfung, einzelner Capture, read_selected, vollständige Zielsuche, getrennte Messzeiten",
         "native/screen_ocr.rs adaptive_fallback, read_selected: opt-in adaptive, ausgewählte Wörter <80, eingefrorenes PNG, begrenzte Polaritäts-/Zielcaches",
         "assets/operations.json screen.ocr: invert auto/never/always/adaptive, detail full/matches; testing/find/wait-Standards bleiben auto",
-        "docs/ocr-adaptive-qualification.json: optimierter CLI-Korpus, gleiche Binary, begrenzte handgelabelte Targets; kompakte MCP-Einzelabfrage separat"
+        "docs/ocr-adaptive-qualification.json: optimierter CLI-Korpus, gleiche Binary, begrenzte handgelabelte Targets; kompakte MCP-Einzelabfrage separat",
+        "native/screen_ocr_engine.rs recognize, standard_binary, thread_overrides, spawn_owner, Worker: Auswahl, Grenzen, Fehler und Leerlauf",
+        "native/screen_ocr_worker.rs Api, Engine, run: CAPI nur im Kind, Clear/Classifier, begrenztes TSV, Eingabe-Timeout",
+        "native/main.rs mcp und _ocr_engine: dauerhafte Sitzung, Aufräumen und privater Kind-Einstieg",
+        "native/toolchain.rs run_with_env, CompletionWait: Kind-Umgebung und Exit-Bereitschaft; vorhandener Polling-Fallback",
+        "native/runtime/iphone.rs context: tokio::join! für App/Tastatur/Fokus, alle Ergebnisse frisch, keine parallelen Eingaben",
+        "tests/ocr_engine_integration.py: wechselnde Bilder, Recycling, Grenzen, Cancel/Idle/Unlink, Wrapper, Prozessende",
+        "docs/performance-final-qualification.json: exakte installierte cfad72c-Binary, privater 1caa172-Vergleich, gleiche Nicht-Zeit-Ausgaben und Speichertradeoff",
+        "docs/performance-ocr-worker-review.json und docs/agent-observe-performance.json: unabhängiger Quell-/Fixture-Nachweis, keine Hardwarequalifikation"
       ],
       "status": "implemented_source_contract; hardware qualifications see S1",
       "destructive": false,
       "bogen_artboard": "qsrfwt20hy",
-      "bogen_node": "6vtzuguta4"
+      "bogen_node": "s5s89xefqv"
     },
     {
       "operation": "runtime.audio",
@@ -39598,12 +40454,20 @@
         "native/screen.rs read_text: detail-Vorabprüfung, einzelner Capture, read_selected, vollständige Zielsuche, getrennte Messzeiten",
         "native/screen_ocr.rs adaptive_fallback, read_selected: opt-in adaptive, ausgewählte Wörter <80, eingefrorenes PNG, begrenzte Polaritäts-/Zielcaches",
         "assets/operations.json screen.ocr: invert auto/never/always/adaptive, detail full/matches; testing/find/wait-Standards bleiben auto",
-        "docs/ocr-adaptive-qualification.json: optimierter CLI-Korpus, gleiche Binary, begrenzte handgelabelte Targets; kompakte MCP-Einzelabfrage separat"
+        "docs/ocr-adaptive-qualification.json: optimierter CLI-Korpus, gleiche Binary, begrenzte handgelabelte Targets; kompakte MCP-Einzelabfrage separat",
+        "native/screen_ocr_engine.rs recognize, standard_binary, thread_overrides, spawn_owner, Worker: Auswahl, Grenzen, Fehler und Leerlauf",
+        "native/screen_ocr_worker.rs Api, Engine, run: CAPI nur im Kind, Clear/Classifier, begrenztes TSV, Eingabe-Timeout",
+        "native/main.rs mcp und _ocr_engine: dauerhafte Sitzung, Aufräumen und privater Kind-Einstieg",
+        "native/toolchain.rs run_with_env, CompletionWait: Kind-Umgebung und Exit-Bereitschaft; vorhandener Polling-Fallback",
+        "native/runtime/iphone.rs context: tokio::join! für App/Tastatur/Fokus, alle Ergebnisse frisch, keine parallelen Eingaben",
+        "tests/ocr_engine_integration.py: wechselnde Bilder, Recycling, Grenzen, Cancel/Idle/Unlink, Wrapper, Prozessende",
+        "docs/performance-final-qualification.json: exakte installierte cfad72c-Binary, privater 1caa172-Vergleich, gleiche Nicht-Zeit-Ausgaben und Speichertradeoff",
+        "docs/performance-ocr-worker-review.json und docs/agent-observe-performance.json: unabhängiger Quell-/Fixture-Nachweis, keine Hardwarequalifikation"
       ],
       "status": "implemented_source_contract; hardware qualifications see S1",
       "destructive": false,
       "bogen_artboard": "qsrfwt20hy",
-      "bogen_node": "0smqqt2zr6"
+      "bogen_node": "na8nt99yh9"
     },
     {
       "operation": "runtime.observe",
@@ -39680,12 +40544,20 @@
         "native/screen.rs read_text: detail-Vorabprüfung, einzelner Capture, read_selected, vollständige Zielsuche, getrennte Messzeiten",
         "native/screen_ocr.rs adaptive_fallback, read_selected: opt-in adaptive, ausgewählte Wörter <80, eingefrorenes PNG, begrenzte Polaritäts-/Zielcaches",
         "assets/operations.json screen.ocr: invert auto/never/always/adaptive, detail full/matches; testing/find/wait-Standards bleiben auto",
-        "docs/ocr-adaptive-qualification.json: optimierter CLI-Korpus, gleiche Binary, begrenzte handgelabelte Targets; kompakte MCP-Einzelabfrage separat"
+        "docs/ocr-adaptive-qualification.json: optimierter CLI-Korpus, gleiche Binary, begrenzte handgelabelte Targets; kompakte MCP-Einzelabfrage separat",
+        "native/screen_ocr_engine.rs recognize, standard_binary, thread_overrides, spawn_owner, Worker: Auswahl, Grenzen, Fehler und Leerlauf",
+        "native/screen_ocr_worker.rs Api, Engine, run: CAPI nur im Kind, Clear/Classifier, begrenztes TSV, Eingabe-Timeout",
+        "native/main.rs mcp und _ocr_engine: dauerhafte Sitzung, Aufräumen und privater Kind-Einstieg",
+        "native/toolchain.rs run_with_env, CompletionWait: Kind-Umgebung und Exit-Bereitschaft; vorhandener Polling-Fallback",
+        "native/runtime/iphone.rs context: tokio::join! für App/Tastatur/Fokus, alle Ergebnisse frisch, keine parallelen Eingaben",
+        "tests/ocr_engine_integration.py: wechselnde Bilder, Recycling, Grenzen, Cancel/Idle/Unlink, Wrapper, Prozessende",
+        "docs/performance-final-qualification.json: exakte installierte cfad72c-Binary, privater 1caa172-Vergleich, gleiche Nicht-Zeit-Ausgaben und Speichertradeoff",
+        "docs/performance-ocr-worker-review.json und docs/agent-observe-performance.json: unabhängiger Quell-/Fixture-Nachweis, keine Hardwarequalifikation"
       ],
       "status": "implemented_source_contract; hardware qualifications see S1",
       "destructive": false,
       "bogen_artboard": "qsrfwt20hy",
-      "bogen_node": "qe6kzrbayq"
+      "bogen_node": "kjgg370cji"
     },
     {
       "operation": "ios.doctor",
@@ -39704,7 +40576,9 @@
         "native/iphone_setup.rs ios.prepare, ios.wda_prepare, ios.doctor",
         "native/iphone_device.rs ios.signing, ios.device_status",
         "native/runtime/iphone.rs:1-2, 102 USB-Forwards (nur Loopback) + WDA MJPEG",
-        "native/runtime/iphone.rs:854 verifiziertes Füllen: Loopback-Double, nicht auf Hardware"
+        "native/runtime/iphone.rs:854 verifiziertes Füllen: Kern4584-Loopback-Double, nicht auf Hardware",
+        "native/runtime/iphone.rs context: tokio::join! aller drei frischen Reads, Fehler je Kontextteil",
+        "docs/agent-observe-performance.json: frischer Kontext und serialisierte Eingabe, verzögerter und unverzögerter Loopback"
       ],
       "status": "implemented_source_contract; hardware qualifications see S1",
       "destructive": false,
@@ -39730,7 +40604,9 @@
         "native/iphone_setup.rs ios.prepare, ios.wda_prepare, ios.doctor",
         "native/iphone_device.rs ios.signing, ios.device_status",
         "native/runtime/iphone.rs:1-2, 102 USB-Forwards (nur Loopback) + WDA MJPEG",
-        "native/runtime/iphone.rs:854 verifiziertes Füllen: Loopback-Double, nicht auf Hardware"
+        "native/runtime/iphone.rs:854 verifiziertes Füllen: Kern4584-Loopback-Double, nicht auf Hardware",
+        "native/runtime/iphone.rs context: tokio::join! aller drei frischen Reads, Fehler je Kontextteil",
+        "docs/agent-observe-performance.json: frischer Kontext und serialisierte Eingabe, verzögerter und unverzögerter Loopback"
       ],
       "status": "implemented_source_contract; hardware qualifications see S1",
       "destructive": false,
@@ -39754,7 +40630,9 @@
         "native/iphone_setup.rs ios.prepare, ios.wda_prepare, ios.doctor",
         "native/iphone_device.rs ios.signing, ios.device_status",
         "native/runtime/iphone.rs:1-2, 102 USB-Forwards (nur Loopback) + WDA MJPEG",
-        "native/runtime/iphone.rs:854 verifiziertes Füllen: Loopback-Double, nicht auf Hardware"
+        "native/runtime/iphone.rs:854 verifiziertes Füllen: Kern4584-Loopback-Double, nicht auf Hardware",
+        "native/runtime/iphone.rs context: tokio::join! aller drei frischen Reads, Fehler je Kontextteil",
+        "docs/agent-observe-performance.json: frischer Kontext und serialisierte Eingabe, verzögerter und unverzögerter Loopback"
       ],
       "status": "implemented_source_contract; hardware qualifications see S1",
       "destructive": false,
@@ -39778,7 +40656,9 @@
         "native/iphone_setup.rs ios.prepare, ios.wda_prepare, ios.doctor",
         "native/iphone_device.rs ios.signing, ios.device_status",
         "native/runtime/iphone.rs:1-2, 102 USB-Forwards (nur Loopback) + WDA MJPEG",
-        "native/runtime/iphone.rs:854 verifiziertes Füllen: Loopback-Double, nicht auf Hardware"
+        "native/runtime/iphone.rs:854 verifiziertes Füllen: Kern4584-Loopback-Double, nicht auf Hardware",
+        "native/runtime/iphone.rs context: tokio::join! aller drei frischen Reads, Fehler je Kontextteil",
+        "docs/agent-observe-performance.json: frischer Kontext und serialisierte Eingabe, verzögerter und unverzögerter Loopback"
       ],
       "status": "implemented_source_contract; hardware qualifications see S1",
       "destructive": false,
@@ -39802,7 +40682,9 @@
         "native/iphone_setup.rs ios.prepare, ios.wda_prepare, ios.doctor",
         "native/iphone_device.rs ios.signing, ios.device_status",
         "native/runtime/iphone.rs:1-2, 102 USB-Forwards (nur Loopback) + WDA MJPEG",
-        "native/runtime/iphone.rs:854 verifiziertes Füllen: Loopback-Double, nicht auf Hardware"
+        "native/runtime/iphone.rs:854 verifiziertes Füllen: Kern4584-Loopback-Double, nicht auf Hardware",
+        "native/runtime/iphone.rs context: tokio::join! aller drei frischen Reads, Fehler je Kontextteil",
+        "docs/agent-observe-performance.json: frischer Kontext und serialisierte Eingabe, verzögerter und unverzögerter Loopback"
       ],
       "status": "implemented_source_contract; hardware qualifications see S1",
       "destructive": false,
@@ -39826,7 +40708,9 @@
         "native/iphone_setup.rs ios.prepare, ios.wda_prepare, ios.doctor",
         "native/iphone_device.rs ios.signing, ios.device_status",
         "native/runtime/iphone.rs:1-2, 102 USB-Forwards (nur Loopback) + WDA MJPEG",
-        "native/runtime/iphone.rs:854 verifiziertes Füllen: Loopback-Double, nicht auf Hardware"
+        "native/runtime/iphone.rs:854 verifiziertes Füllen: Kern4584-Loopback-Double, nicht auf Hardware",
+        "native/runtime/iphone.rs context: tokio::join! aller drei frischen Reads, Fehler je Kontextteil",
+        "docs/agent-observe-performance.json: frischer Kontext und serialisierte Eingabe, verzögerter und unverzögerter Loopback"
       ],
       "status": "implemented_source_contract; hardware qualifications see S1",
       "destructive": false,
@@ -39851,7 +40735,9 @@
         "native/iphone_setup.rs ios.prepare, ios.wda_prepare, ios.doctor",
         "native/iphone_device.rs ios.signing, ios.device_status",
         "native/runtime/iphone.rs:1-2, 102 USB-Forwards (nur Loopback) + WDA MJPEG",
-        "native/runtime/iphone.rs:854 verifiziertes Füllen: Loopback-Double, nicht auf Hardware"
+        "native/runtime/iphone.rs:854 verifiziertes Füllen: Kern4584-Loopback-Double, nicht auf Hardware",
+        "native/runtime/iphone.rs context: tokio::join! aller drei frischen Reads, Fehler je Kontextteil",
+        "docs/agent-observe-performance.json: frischer Kontext und serialisierte Eingabe, verzögerter und unverzögerter Loopback"
       ],
       "status": "implemented_source_contract; hardware qualifications see S1",
       "destructive": false,
@@ -39875,7 +40761,9 @@
         "native/iphone_setup.rs ios.prepare, ios.wda_prepare, ios.doctor",
         "native/iphone_device.rs ios.signing, ios.device_status",
         "native/runtime/iphone.rs:1-2, 102 USB-Forwards (nur Loopback) + WDA MJPEG",
-        "native/runtime/iphone.rs:854 verifiziertes Füllen: Loopback-Double, nicht auf Hardware"
+        "native/runtime/iphone.rs:854 verifiziertes Füllen: Kern4584-Loopback-Double, nicht auf Hardware",
+        "native/runtime/iphone.rs context: tokio::join! aller drei frischen Reads, Fehler je Kontextteil",
+        "docs/agent-observe-performance.json: frischer Kontext und serialisierte Eingabe, verzögerter und unverzögerter Loopback"
       ],
       "status": "implemented_source_contract; hardware qualifications see S1",
       "destructive": false,
@@ -39900,7 +40788,9 @@
         "native/iphone_setup.rs ios.prepare, ios.wda_prepare, ios.doctor",
         "native/iphone_device.rs ios.signing, ios.device_status",
         "native/runtime/iphone.rs:1-2, 102 USB-Forwards (nur Loopback) + WDA MJPEG",
-        "native/runtime/iphone.rs:854 verifiziertes Füllen: Loopback-Double, nicht auf Hardware"
+        "native/runtime/iphone.rs:854 verifiziertes Füllen: Kern4584-Loopback-Double, nicht auf Hardware",
+        "native/runtime/iphone.rs context: tokio::join! aller drei frischen Reads, Fehler je Kontextteil",
+        "docs/agent-observe-performance.json: frischer Kontext und serialisierte Eingabe, verzögerter und unverzögerter Loopback"
       ],
       "status": "implemented_source_contract; hardware qualifications see S1",
       "destructive": false,
@@ -41378,9 +42268,8 @@
     "prototype_evidence": "prototype-validation.json",
     "layout_evidence": "layout-final.json",
     "review_resolutions": "review-resolutions.json",
-    "root_final_acceptance_pending": false,
-    "final_ready": true,
-    "ocr_observations": "reviews/ocr-bogen-observations.json",
-    "root_review": "root-final-review.json"
+    "root_final_acceptance_pending": true,
+    "final_ready": false,
+    "perf_observations": "reviews/perf-bogen-observations.json"
   }
 }

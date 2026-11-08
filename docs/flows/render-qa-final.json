@@ -1,25 +1,26 @@
 {
-  "checked_at": "2026-11-08T10:11:41.300849+00:00",
+  "checked_at": "2026-11-08T12:43:07.388679+00:00",
   "file_id": "u8uvnj33hx",
   "page_id": "f5zgae58fy",
-  "product_source": "1caa17221161c2dc4c5c6eedb92ed9277772c57a",
+  "product_source": "c2e2326f66879a595d27f476bf7964b49faf8c33",
   "artboards": 36,
   "details": 33,
   "lint": {
     "counts": {
       "contrast": 0,
       "overflow": 0,
-      "token": 2951,
-      "grid": 675,
+      "token": 2999,
+      "grid": 688,
       "alt": 0,
       "small-text": 0,
       "target": 0,
       "repeated": 36,
       "spacing": 0,
       "hierarchy": 31,
-      "copy": 166
+      "copy": 169
     },
-    "critical_total": 0
+    "total": 3923,
+    "evidence": "reviews/perf-lint.json"
   },
   "brand": {
     "score": 96,
@@ -27,18 +28,29 @@
       "hard": 0,
       "soft": 0,
       "waived": 0,
-      "layers": 5968
-    }
+      "layers": 6084
+    },
+    "evidence": "reviews/perf-brand-check.json"
   },
-  "visual_review": "D12 canvas, footer and whole board, current00 and S1 screenshots inspected. Readable branches, no clipping or duplicate sections; adaptive limits and current ARM distinction visible.",
+  "visual_review": {
+    "reviewed": [
+      "D12 full and canvas/footer detail",
+      "D09 full",
+      "00 full",
+      "S1 full"
+    ],
+    "findings": [],
+    "status": "Agent screenshots checked; root independent review pending",
+    "criteria": "Visible branch labels, typography, source/candidate/public distinction, lifecycle and hardware limits; fixed1680px canvas, not responsive app screens"
+  },
   "label_placement": {
     "boards": 33,
-    "labels": 478,
+    "labels": 491,
     "issues": [],
     "overlaps": 0,
     "method": "Independent Archivo500@16 measurement and separating-axis polygon checks"
   },
   "top_level_overlap": 0,
-  "unchanged_board_content": "Previous qualified audio-era content retained exceptD12/00/S1; all36 actual bounds and1000 nodes rechecked.",
+  "unchanged_board_content": "Previously accepted1caa172 content retained exceptD09 title/footer,D12 canvas/footer,00 product span andS1 body; all36 actual bounds and1023 nodes rechecked.",
   "advisories": "Measured diagram pixel geometry, token/grid/repetition/hierarchy/arrow-copy suggestions remain advisory. No critical issue was waived."
 }

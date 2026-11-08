@@ -1,0 +1,40 @@
+{
+  "state": "desktop_installed",
+  "version": "1.5.0",
+  "product_commit": "c2e2326f66879a595d27f476bf7964b49faf8c33",
+  "runtime_code_commit": "e0b79fe4207a50c7f7416af8392ee4a0a5648906",
+  "desktop_installed": true,
+  "published": false,
+  "physical_device_access": false,
+  "pixel_installed": false,
+  "final_public_tag_pending_documentation": true,
+  "baseline_desktop_source": "1caa17221161c2dc4c5c6eedb92ed9277772c57a",
+  "root_reviewed_semantic_delta": "/home/maslos/Work/tomacco-release-1.5.0-qualification-20261108/semantic-lint-fixes.patch",
+  "source_worktree": "/home/maslos/Work/tomacco-perf-core-20261108",
+  "created_at": "2026-11-08T11:55:20.860689+00:00",
+  "stages": [],
+  "native_receipt": "/home/maslos/Work/tomacco-release-1.5.0-qualification-20261108/native-final/progress.json",
+  "source_freeze": "/home/maslos/Work/tomacco-release-1.5.0-qualification-20261108/source-freeze.json",
+  "native_qualification": {
+    "groups": 14,
+    "initial_full_run_all_passed": false,
+    "initial_failed_groups": [
+      "backend",
+      "control-plane"
+    ],
+    "initial_receipt": "/home/maslos/Work/tomacco-release-1.5.0-qualification-20261108/native-final/progress.json",
+    "recovery_receipt": "/home/maslos/Work/tomacco-release-1.5.0-qualification-20261108/native-recovery/progress.json",
+    "ui_resource_recheck": "/home/maslos/Work/tomacco-release-1.5.0-qualification-20261108/ui-final-resource/progress.json",
+    "recovered_modules": [
+      "backend",
+      "test_docs_consistency",
+      "test_build_site_docs",
+      "test_build_container"
+    ],
+    "ocr_worker_integration_passed": 10
+  },
+  "performance_report": "/home/maslos/Work/tomacco-perf-core-20261108/docs/performance-final-qualification.json",
+  "documentation_source_commit": "efab94cd0c550a91072aec42bbc1fce3addf4bf1",
+  "qualified_at": "2026-11-08T12:25:25.573232+00:00",
+  "desktop_receipt": "/home/maslos/Work/tomacco-release-1.5.0-qualification-20261108/desktop-update-receipt.json"
+}

@@ -1,0 +1,654 @@
+{
+  "node_id": "bxx82h1gcm",
+  "discipline": "documentation",
+  "version": "2026-11-08.3",
+  "fingerprint": "37082c16df9aaf6b416efc3d9fc32b35cfa7053f36b62426aa1f7b0259c8197c",
+  "checkedAt": 1794141320030,
+  "automated": {
+    "state": "passed",
+    "findings": [
+      {
+        "rule": "lint:repeated",
+        "node_id": "gwh7w824wr",
+        "message": "35 layers share this structure of 3 layers (gwh7w824wr, km5y357fh8, jjn245a5e8, h6g86a3xnx, 45qh6wd2ak, qz1c2pj9qf, kx155bhyxt, gxemb0q53a, 8fjd5055e9, ...). Make one a component with component_create and put instances in the others' place, with props for what differs.",
+        "severity": "warning"
+      },
+      {
+        "rule": "lint:repeated",
+        "node_id": "wgr5h8q3fs",
+        "message": "2 layers share this structure of 24 layers (wgr5h8q3fs, 7bea0p9t2k). Make one a component with component_create and put instances in the others' place, with props for what differs.",
+        "severity": "warning"
+      },
+      {
+        "rule": "lint:repeated",
+        "node_id": "g3stw75051",
+        "message": "2 layers share this structure of 18 layers (g3stw75051, 015yehysr7). Make one a component with component_create and put instances in the others' place, with props for what differs.",
+        "severity": "warning"
+      },
+      {
+        "rule": "lint:token",
+        "node_id": "bxx82h1gcm",
+        "message": "gap is 40px, which equals the token --bar. Use var(--bar).",
+        "severity": "warning"
+      },
+      {
+        "rule": "lint:token",
+        "node_id": "bxx82h1gcm",
+        "message": "padding is 48px, which equals the token --app-gap-xxxl. Use var(--app-gap-xxxl).",
+        "severity": "warning"
+      },
+      {
+        "rule": "lint:token",
+        "node_id": "y9e2ucdftf",
+        "message": "gap is 16px, which equals the token --app-gap-lg. Use var(--app-gap-lg).",
+        "severity": "warning"
+      },
+      {
+        "rule": "lint:token",
+        "node_id": "ayachexbs5",
+        "message": "fontSize is 16px, which equals the token --app-mobile-font-body. Use var(--app-mobile-font-body).",
+        "severity": "warning"
+      },
+      {
+        "rule": "lint:token",
+        "node_id": "j54ug8hw5f",
+        "message": "fontSize is 20px, which equals the token --app-font-title. Use var(--app-font-title).",
+        "severity": "warning"
+      },
+      {
+        "rule": "lint:token",
+        "node_id": "hvd7hee2pu",
+        "message": "gap is 16px, which equals the token --app-gap-lg. Use var(--app-gap-lg).",
+        "severity": "warning"
+      },
+      {
+        "rule": "lint:token",
+        "node_id": "hvd7hee2pu",
+        "message": "fontSize is 16px, which equals the token --app-mobile-font-body. Use var(--app-mobile-font-body).",
+        "severity": "warning"
+      },
+      {
+        "rule": "lint:token",
+        "node_id": "wz9jj3gu53",
+        "message": "gap is 24px, which equals the token --app-gap-xl. Use var(--app-gap-xl).",
+        "severity": "warning"
+      },
+      {
+        "rule": "lint:token",
+        "node_id": "g52j2t3x0i",
+        "message": "fontSize is 40px, which equals the token --app-font-hero. Use var(--app-font-hero).",
+        "severity": "warning"
+      },
+      {
+        "rule": "lint:token",
+        "node_id": "wbjg4ijfaa",
+        "message": "gap is 12px, which equals the token --app-gap-md. Use var(--app-gap-md).",
+        "severity": "warning"
+      },
+      {
+        "rule": "lint:token",
+        "node_id": "qv1913sjyu",
+        "message": "gap is 4px, which equals the token --app-gap-xs. Use var(--app-gap-xs).",
+        "severity": "warning"
+      },
+      {
+        "rule": "lint:token",
+        "node_id": "mdafjngidf",
+        "message": "fontSize is 14px, which equals the token --app-mobile-font-small. Use var(--app-mobile-font-small).",
+        "severity": "warning"
+      },
+      {
+        "rule": "lint:token",
+        "node_id": "kpvw3mdiib",
+        "message": "fontSize is 18px, which equals the token --app-font-large. Use var(--app-font-large).",
+        "severity": "warning"
+      },
+      {
+        "rule": "lint:token",
+        "node_id": "xe03qucstf",
+        "message": "fontSize is 14px, which equals the token --app-mobile-font-small. Use var(--app-mobile-font-small).",
+        "severity": "warning"
+      },
+      {
+        "rule": "lint:token",
+        "node_id": "n6dczswjyw",
+        "message": "fontSize is 16px, which equals the token --app-mobile-font-body. Use var(--app-mobile-font-body).",
+        "severity": "warning"
+      },
+      {
+        "rule": "lint:token",
+        "node_id": "sazc5e2u81",
+        "message": "gap is 12px, which equals the token --app-gap-md. Use var(--app-gap-md).",
+        "severity": "warning"
+      },
+      {
+        "rule": "lint:token",
+        "node_id": "ym3ppbwgde",
+        "message": "gap is 4px, which equals the token --app-gap-xs. Use var(--app-gap-xs).",
+        "severity": "warning"
+      },
+      {
+        "rule": "lint:token",
+        "node_id": "ef8trh0f75",
+        "message": "fontSize is 14px, which equals the token --app-mobile-font-small. Use var(--app-mobile-font-small).",
+        "severity": "warning"
+      },
+      {
+        "rule": "lint:token",
+        "node_id": "h2smk75y12",
+        "message": "fontSize is 18px, which equals the token --app-font-large. Use var(--app-font-large).",
+        "severity": "warning"
+      },
+      {
+        "rule": "lint:token",
+        "node_id": "47iapu8fuw",
+        "message": "fontSize is 14px, which equals the token --app-mobile-font-small. Use var(--app-mobile-font-small).",
+        "severity": "warning"
+      },
+      {
+        "rule": "lint:token",
+        "node_id": "csn80w4eiw",
+        "message": "fontSize is 16px, which equals the token --app-mobile-font-body. Use var(--app-mobile-font-body).",
+        "severity": "warning"
+      },
+      {
+        "rule": "lint:token",
+        "node_id": "nd7wapapxn",
+        "message": "gap is 12px, which equals the token --app-gap-md. Use var(--app-gap-md).",
+        "severity": "warning"
+      },
+      {
+        "rule": "lint:token",
+        "node_id": "96za07d6d4",
+        "message": "gap is 4px, which equals the token --app-gap-xs. Use var(--app-gap-xs).",
+        "severity": "warning"
+      },
+      {
+        "rule": "lint:token",
+        "node_id": "6yvjckq2fj",
+        "message": "fontSize is 18px, which equals the token --app-font-large. Use var(--app-font-large).",
+        "severity": "warning"
+      },
+      {
+        "rule": "lint:token",
+        "node_id": "fmsr6f5ivc",
+        "message": "fontSize is 14px, which equals the token --app-mobile-font-small. Use var(--app-mobile-font-small).",
+        "severity": "warning"
+      },
+      {
+        "rule": "lint:token",
+        "node_id": "1587f4dxr7",
+        "message": "fontSize is 16px, which equals the token --app-mobile-font-body. Use var(--app-mobile-font-body).",
+        "severity": "warning"
+      },
+      {
+        "rule": "lint:token",
+        "node_id": "u7j1t1uwva",
+        "message": "gap is 12px, which equals the token --app-gap-md. Use var(--app-gap-md).",
+        "severity": "warning"
+      },
+      {
+        "rule": "lint:token",
+        "node_id": "9ib1r52vy5",
+        "message": "gap is 4px, which equals the token --app-gap-xs. Use var(--app-gap-xs).",
+        "severity": "warning"
+      },
+      {
+        "rule": "lint:token",
+        "node_id": "43qkuhwxkx",
+        "message": "fontSize is 14px, which equals the token --app-mobile-font-small. Use var(--app-mobile-font-small).",
+        "severity": "warning"
+      },
+      {
+        "rule": "lint:token",
+        "node_id": "qq7kqq6fsj",
+        "message": "fontSize is 18px, which equals the token --app-font-large. Use var(--app-font-large).",
+        "severity": "warning"
+      },
+      {
+        "rule": "lint:token",
+        "node_id": "8v4fwb9ztz",
+        "message": "fontSize is 14px, which equals the token --app-mobile-font-small. Use var(--app-mobile-font-small).",
+        "severity": "warning"
+      },
+      {
+        "rule": "lint:token",
+        "node_id": "2sfk9deamg",
+        "message": "fontSize is 16px, which equals the token --app-mobile-font-body. Use var(--app-mobile-font-body).",
+        "severity": "warning"
+      },
+      {
+        "rule": "lint:token",
+        "node_id": "iv8mh0gunc",
+        "message": "gap is 12px, which equals the token --app-gap-md. Use var(--app-gap-md).",
+        "severity": "warning"
+      },
+      {
+        "rule": "lint:token",
+        "node_id": "q84dpvnuwe",
+        "message": "gap is 4px, which equals the token --app-gap-xs. Use var(--app-gap-xs).",
+        "severity": "warning"
+      },
+      {
+        "rule": "lint:token",
+        "node_id": "529z8d137t",
+        "message": "fontSize is 14px, which equals the token --app-mobile-font-small. Use var(--app-mobile-font-small).",
+        "severity": "warning"
+      },
+      {
+        "rule": "lint:token",
+        "node_id": "jj3xaxh2ci",
+        "message": "fontSize is 18px, which equals the token --app-font-large. Use var(--app-font-large).",
+        "severity": "warning"
+      },
+      {
+        "rule": "lint:token",
+        "node_id": "d0vs7yf9j5",
+        "message": "fontSize is 14px, which equals the token --app-mobile-font-small. Use var(--app-mobile-font-small).",
+        "severity": "warning"
+      },
+      {
+        "rule": "lint:token",
+        "node_id": "gvtk1hw8b3",
+        "message": "fontSize is 16px, which equals the token --app-mobile-font-body. Use var(--app-mobile-font-body).",
+        "severity": "warning"
+      },
+      {
+        "rule": "lint:token",
+        "node_id": "y3vs0uydt2",
+        "message": "gap is 12px, which equals the token --app-gap-md. Use var(--app-gap-md).",
+        "severity": "warning"
+      },
+      {
+        "rule": "lint:token",
+        "node_id": "erfjdg24fe",
+        "message": "gap is 4px, which equals the token --app-gap-xs. Use var(--app-gap-xs).",
+        "severity": "warning"
+      },
+      {
+        "rule": "lint:token",
+        "node_id": "x21z43i0b5",
+        "message": "fontSize is 14px, which equals the token --app-mobile-font-small. Use var(--app-mobile-font-small).",
+        "severity": "warning"
+      },
+      {
+        "rule": "lint:token",
+        "node_id": "7n7suf9rcu",
+        "message": "fontSize is 18px, which equals the token --app-font-large. Use var(--app-font-large).",
+        "severity": "warning"
+      },
+      {
+        "rule": "lint:token",
+        "node_id": "ip3hakfy17",
+        "message": "fontSize is 14px, which equals the token --app-mobile-font-small. Use var(--app-mobile-font-small).",
+        "severity": "warning"
+      },
+      {
+        "rule": "lint:token",
+        "node_id": "afs4itcvem",
+        "message": "fontSize is 16px, which equals the token --app-mobile-font-body. Use var(--app-mobile-font-body).",
+        "severity": "warning"
+      },
+      {
+        "rule": "lint:token",
+        "node_id": "dkfd4cne2e",
+        "message": "gap is 12px, which equals the token --app-gap-md. Use var(--app-gap-md).",
+        "severity": "warning"
+      },
+      {
+        "rule": "lint:token",
+        "node_id": "henqjaqz4y",
+        "message": "gap is 4px, which equals the token --app-gap-xs. Use var(--app-gap-xs).",
+        "severity": "warning"
+      },
+      {
+        "rule": "lint:token",
+        "node_id": "nigm4rd02x",
+        "message": "fontSize is 14px, which equals the token --app-mobile-font-small. Use var(--app-mobile-font-small).",
+        "severity": "warning"
+      },
+      {
+        "rule": "lint:token",
+        "node_id": "rw7hee2bi3",
+        "message": "fontSize is 18px, which equals the token --app-font-large. Use var(--app-font-large).",
+        "severity": "warning"
+      },
+      {
+        "rule": "lint:token",
+        "node_id": "s2ihbnd827",
+        "message": "fontSize is 14px, which equals the token --app-mobile-font-small. Use var(--app-mobile-font-small).",
+        "severity": "warning"
+      },
+      {
+        "rule": "lint:token",
+        "node_id": "uavprtrf16",
+        "message": "fontSize is 16px, which equals the token --app-mobile-font-body. Use var(--app-mobile-font-body).",
+        "severity": "warning"
+      },
+      {
+        "rule": "lint:token",
+        "node_id": "i62f9jhvky",
+        "message": "gap is 12px, which equals the token --app-gap-md. Use var(--app-gap-md).",
+        "severity": "warning"
+      },
+      {
+        "rule": "lint:token",
+        "node_id": "gv8s1dbt48",
+        "message": "gap is 4px, which equals the token --app-gap-xs. Use var(--app-gap-xs).",
+        "severity": "warning"
+      },
+      {
+        "rule": "lint:token",
+        "node_id": "g2r3bvvp3x",
+        "message": "fontSize is 14px, which equals the token --app-mobile-font-small. Use var(--app-mobile-font-small).",
+        "severity": "warning"
+      },
+      {
+        "rule": "lint:token",
+        "node_id": "avzre117hv",
+        "message": "fontSize is 18px, which equals the token --app-font-large. Use var(--app-font-large).",
+        "severity": "warning"
+      },
+      {
+        "rule": "lint:token",
+        "node_id": "t7p512i8r6",
+        "message": "fontSize is 14px, which equals the token --app-mobile-font-small. Use var(--app-mobile-font-small).",
+        "severity": "warning"
+      },
+      {
+        "rule": "lint:token",
+        "node_id": "c4srfmhtjy",
+        "message": "fontSize is 16px, which equals the token --app-mobile-font-body. Use var(--app-mobile-font-body).",
+        "severity": "warning"
+      },
+      {
+        "rule": "lint:token",
+        "node_id": "kt2722e665",
+        "message": "gap is 12px, which equals the token --app-gap-md. Use var(--app-gap-md).",
+        "severity": "warning"
+      },
+      {
+        "rule": "lint:token",
+        "node_id": "qgh73j1t2x",
+        "message": "gap is 4px, which equals the token --app-gap-xs. Use var(--app-gap-xs).",
+        "severity": "warning"
+      },
+      {
+        "rule": "lint:token",
+        "node_id": "jhc96apkpk",
+        "message": "fontSize is 14px, which equals the token --app-mobile-font-small. Use var(--app-mobile-font-small).",
+        "severity": "warning"
+      },
+      {
+        "rule": "lint:token",
+        "node_id": "e69wxsvfz8",
+        "message": "fontSize is 18px, which equals the token --app-font-large. Use var(--app-font-large).",
+        "severity": "warning"
+      },
+      {
+        "rule": "lint:token",
+        "node_id": "zdwsxgx4s2",
+        "message": "fontSize is 14px, which equals the token --app-mobile-font-small. Use var(--app-mobile-font-small).",
+        "severity": "warning"
+      },
+      {
+        "rule": "lint:token",
+        "node_id": "fsszasngm0",
+        "message": "fontSize is 16px, which equals the token --app-mobile-font-body. Use var(--app-mobile-font-body).",
+        "severity": "warning"
+      },
+      {
+        "rule": "lint:token",
+        "node_id": "5riwbbuhjd",
+        "message": "gap is 12px, which equals the token --app-gap-md. Use var(--app-gap-md).",
+        "severity": "warning"
+      },
+      {
+        "rule": "lint:token",
+        "node_id": "hhp486g0vv",
+        "message": "gap is 4px, which equals the token --app-gap-xs. Use var(--app-gap-xs).",
+        "severity": "warning"
+      },
+      {
+        "rule": "lint:token",
+        "node_id": "hhp486g0vv",
+        "message": "paddingLeft is 20px, which equals the token --space-20. Use var(--space-20).",
+        "severity": "warning"
+      },
+      {
+        "rule": "lint:token",
+        "node_id": "ez84e8i9zz",
+        "message": "fontSize is 14px, which equals the token --app-mobile-font-small. Use var(--app-mobile-font-small).",
+        "severity": "warning"
+      },
+      {
+        "rule": "lint:token",
+        "node_id": "cz9qi07rr4",
+        "message": "fontSize is 17px, which equals the token --docs-body. Use var(--docs-body).",
+        "severity": "warning"
+      },
+      {
+        "rule": "lint:token",
+        "node_id": "1c94enurd4",
+        "message": "fontSize is 14px, which equals the token --app-mobile-font-small. Use var(--app-mobile-font-small).",
+        "severity": "warning"
+      },
+      {
+        "rule": "lint:token",
+        "node_id": "nu5fe0eh90",
+        "message": "fontSize is 16px, which equals the token --app-mobile-font-body. Use var(--app-mobile-font-body).",
+        "severity": "warning"
+      },
+      {
+        "rule": "lint:token",
+        "node_id": "63kce95muu",
+        "message": "gap is 40px, which equals the token --bar. Use var(--bar).",
+        "severity": "warning"
+      },
+      {
+        "rule": "lint:token",
+        "node_id": "g3stw75051",
+        "message": "gap is 20px, which equals the token --space-20. Use var(--space-20).",
+        "severity": "warning"
+      },
+      {
+        "rule": "lint:token",
+        "node_id": "ng1bp76evy",
+        "message": "fontSize is 32px, which equals the token --text-docs-section. Use var(--text-docs-section).",
+        "severity": "warning"
+      },
+      {
+        "rule": "lint:token",
+        "node_id": "vjkusr9eq9",
+        "message": "gap is 12px, which equals the token --app-gap-md. Use var(--app-gap-md).",
+        "severity": "warning"
+      },
+      {
+        "rule": "lint:token",
+        "node_id": "gwh7w824wr",
+        "message": "gap is 20px, which equals the token --space-20. Use var(--space-20).",
+        "severity": "warning"
+      },
+      {
+        "rule": "lint:token",
+        "node_id": "gwh7w824wr",
+        "message": "fontSize is 20px, which equals the token --app-font-title. Use var(--app-font-title).",
+        "severity": "warning"
+      },
+      {
+        "rule": "lint:token",
+        "node_id": "w20w41ai0z",
+        "message": "fontSize is 16px, which equals the token --app-mobile-font-body. Use var(--app-mobile-font-body).",
+        "severity": "warning"
+      },
+      {
+        "rule": "lint:token",
+        "node_id": "km5y357fh8",
+        "message": "gap is 20px, which equals the token --space-20. Use var(--space-20).",
+        "severity": "warning"
+      },
+      {
+        "rule": "lint:token",
+        "node_id": "km5y357fh8",
+        "message": "fontSize is 20px, which equals the token --app-font-title. Use var(--app-font-title).",
+        "severity": "warning"
+      },
+      {
+        "rule": "lint:token",
+        "node_id": "83j9dqh4qy",
+        "message": "fontSize is 16px, which equals the token --app-mobile-font-body. Use var(--app-mobile-font-body).",
+        "severity": "warning"
+      },
+      {
+        "rule": "lint:token",
+        "node_id": "jjn245a5e8",
+        "message": "gap is 20px, which equals the token --space-20. Use var(--space-20).",
+        "severity": "warning"
+      },
+      {
+        "rule": "lint:token",
+        "node_id": "jjn245a5e8",
+        "message": "fontSize is 20px, which equals the token --app-font-title. Use var(--app-font-title).",
+        "severity": "warning"
+      },
+      {
+        "rule": "lint:token",
+        "node_id": "9girh023cf",
+        "message": "fontSize is 16px, which equals the token --app-mobile-font-body. Use var(--app-mobile-font-body).",
+        "severity": "warning"
+      },
+      {
+        "rule": "lint:token",
+        "node_id": "h6g86a3xnx",
+        "message": "gap is 20px, which equals the token --space-20. Use var(--space-20).",
+        "severity": "warning"
+      },
+      {
+        "rule": "lint:token",
+        "node_id": "h6g86a3xnx",
+        "message": "fontSize is 20px, which equals the token --app-font-title. Use var(--app-font-title).",
+        "severity": "warning"
+      },
+      {
+        "rule": "lint:token",
+        "node_id": "xxwxd4k2sm",
+        "message": "fontSize is 16px, which equals the token --app-mobile-font-body. Use var(--app-mobile-font-body).",
+        "severity": "warning"
+      },
+      {
+        "rule": "lint:token",
+        "node_id": "45qh6wd2ak",
+        "message": "gap is 20px, which equals the token --space-20. Use var(--space-20).",
+        "severity": "warning"
+      },
+      {
+        "rule": "lint:token",
+        "node_id": "45qh6wd2ak",
+        "message": "fontSize is 20px, which equals the token --app-font-title. Use var(--app-font-title).",
+        "severity": "warning"
+      },
+      {
+        "rule": "lint:token",
+        "node_id": "e99rmqsevs",
+        "message": "fontSize is 16px, which equals the token --app-mobile-font-body. Use var(--app-mobile-font-body).",
+        "severity": "warning"
+      },
+      {
+        "rule": "lint:token",
+        "node_id": "015yehysr7",
+        "message": "gap is 20px, which equals the token --space-20. Use var(--space-20).",
+        "severity": "warning"
+      },
+      {
+        "rule": "lint:token",
+        "node_id": "ij6vnpgwc2",
+        "message": "fontSize is 32px, which equals the token --text-docs-section. Use var(--text-docs-section).",
+        "severity": "warning"
+      },
+      {
+        "rule": "lint:token",
+        "node_id": "y24fcw1k7x",
+        "message": "gap is 12px, which equals the token --app-gap-md. Use var(--app-gap-md).",
+        "severity": "warning"
+      },
+      {
+        "rule": "lint:token",
+        "node_id": "qz1c2pj9qf",
+        "message": "gap is 20px, which equals the token --space-20. Use var(--space-20).",
+        "severity": "warning"
+      },
+      {
+        "rule": "lint:token",
+        "node_id": "qz1c2pj9qf",
+        "message": "fontSize is 20px, which equals the token --app-font-title. Use var(--app-font-title).",
+        "severity": "warning"
+      },
+      {
+        "rule": "lint:token",
+        "node_id": "9jzy5baii5",
+        "message": "fontSize is 16px, which equals the token --app-mobile-font-body. Use var(--app-mobile-font-body).",
+        "severity": "warning"
+      },
+      {
+        "rule": "lint:token",
+        "node_id": "kx155bhyxt",
+        "message": "gap is 20px, which equals the token --space-20. Use var(--space-20).",
+        "severity": "warning"
+      },
+      {
+        "rule": "lint:token",
+        "node_id": "kx155bhyxt",
+        "message": "fontSize is 20px, which equals the token --app-font-title. Use var(--app-font-title).",
+        "severity": "warning"
+      },
+      {
+        "rule": "lint:token",
+        "node_id": "adctiimgj9",
+        "message": "fontSize is 16px, which equals the token --app-mobile-font-body. Use var(--app-mobile-font-body).",
+        "severity": "warning"
+      }
+    ],
+    "total": 268,
+    "note": "268 findings; output limited to 100, errors first. Every measured error is included; remaining heuristic warnings need visual judgement."
+  },
+  "visual": {
+    "state": "self-assessed",
+    "screenshot": true,
+    "observations": [
+      {
+        "criterion": "priority",
+        "verdict": "pass",
+        "evidence": "The final overview screenshot keeps the large atlas title, concise provenance row, ten-state legend and six task group indexes. The longer installed-product span fits without clipping or disturbing the index."
+      },
+      {
+        "criterion": "content",
+        "verdict": "pass",
+        "evidence": "The provenance row visibly says installedc2e/private1.5.0 candidate and separately public1.4.1. The296operations/33domains and current language/source metadata stay consistent with the qualified source."
+      },
+      {
+        "criterion": "context",
+        "verdict": "pass",
+        "evidence": "The existing index/legend composition and all artboard destinations are preserved. Same type, spacing, flat palette and reusable state components connect the overview to the33 detailed diagrams."
+      }
+    ],
+    "criteria": [
+      {
+        "id": "priority",
+        "question": "Which reader need does the page serve?"
+      },
+      {
+        "id": "content",
+        "question": "Can the answer be found from headings and navigation?"
+      },
+      {
+        "id": "context",
+        "question": "Are examples valid and comfortable to read?"
+      }
+    ]
+  },
+  "limitations": [
+    "Visual observations are the agent’s self-assessment, not independent human approval.",
+    "Static rendering does not prove native behavior, screen-reader behavior, real email-client support, data truth or complete WCAG conformance.",
+    "Spacing, aesthetic conventions and intentional two-dimensional overflow require judgement; they are not automatic hard failures."
+  ]
+}

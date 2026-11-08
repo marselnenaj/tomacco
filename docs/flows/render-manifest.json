@@ -1,21 +1,22 @@
 {
-  "created_at": "2026-11-08T10:11:41.300849+00:00",
-  "product_source": "1caa17221161c2dc4c5c6eedb92ed9277772c57a",
+  "created_at": "2026-11-08T12:43:07.388679+00:00",
+  "product_source": "c2e2326f66879a595d27f476bf7964b49faf8c33",
   "count": 36,
   "regenerated": [
     "00",
+    "D09",
     "D12",
     "S1"
   ],
-  "unchanged_exports_from": "history/1713806/render-manifest.json",
+  "unchanged_exports_from": "history/1caa172/render-manifest.json",
   "files": [
     {
       "diagram": "00",
       "path": "renders/00.png",
       "width": 1680,
       "height": 2704,
-      "bytes": 403754,
-      "sha256": "447caef5221ab59464263f073132a38b0f1731f7b02da78f1c8e1e81ed6c3431"
+      "bytes": 405407,
+      "sha256": "68b2ec9db28d3181d383a12e8f3d9fcfbec3e399f7ba3d2b29cff3c2fdaf4af9"
     },
     {
       "diagram": "C1",
@@ -29,9 +30,9 @@
       "diagram": "S1",
       "path": "renders/S1.png",
       "width": 1680,
-      "height": 1651,
-      "bytes": 369236,
-      "sha256": "8eb92b36cd82fa710ccc775c47d158f6e8d72ad23f08fb6a3b6c774ac26972ee"
+      "height": 2050,
+      "bytes": 516284,
+      "sha256": "e2d76b6654a43f10768dce4a057ba0677d2ad558b19152c38e29db84c3051078"
     },
     {
       "diagram": "D01",
@@ -101,9 +102,9 @@
       "diagram": "D09",
       "path": "renders/D09.png",
       "width": 1680,
-      "height": 1542,
-      "bytes": 282863,
-      "sha256": "1b3674ee51e4dc5934df510f5c11ba627e3fd6ba89f002bfe40ca2e1c660a35b"
+      "height": 1659,
+      "bytes": 328992,
+      "sha256": "bd44864aac261f7927b481f5f531669284ed0e61d9a83bb5616e9b92875e63c5"
     },
     {
       "diagram": "D10",
@@ -125,9 +126,9 @@
       "diagram": "D12",
       "path": "renders/D12.png",
       "width": 1680,
-      "height": 3840,
-      "bytes": 728212,
-      "sha256": "2caf8a5354c46108cbe669a32769687c9190d6b191b63af736945f36320b8ff2"
+      "height": 6073,
+      "bytes": 1161181,
+      "sha256": "6287379ae666b09535186bb1a6d6e4093875740191488340663ddc0bec4c473b"
     },
     {
       "diagram": "D13",

@@ -1,0 +1,44 @@
+{
+  "checked_at": "2026-11-08T10:11:41.300849+00:00",
+  "file_id": "u8uvnj33hx",
+  "page_id": "f5zgae58fy",
+  "product_source": "1caa17221161c2dc4c5c6eedb92ed9277772c57a",
+  "artboards": 36,
+  "details": 33,
+  "lint": {
+    "counts": {
+      "contrast": 0,
+      "overflow": 0,
+      "token": 2951,
+      "grid": 675,
+      "alt": 0,
+      "small-text": 0,
+      "target": 0,
+      "repeated": 36,
+      "spacing": 0,
+      "hierarchy": 31,
+      "copy": 166
+    },
+    "critical_total": 0
+  },
+  "brand": {
+    "score": 96,
+    "counts": {
+      "hard": 0,
+      "soft": 0,
+      "waived": 0,
+      "layers": 5968
+    }
+  },
+  "visual_review": "D12 canvas, footer and whole board, current00 and S1 screenshots inspected. Readable branches, no clipping or duplicate sections; adaptive limits and current ARM distinction visible.",
+  "label_placement": {
+    "boards": 33,
+    "labels": 478,
+    "issues": [],
+    "overlaps": 0,
+    "method": "Independent Archivo500@16 measurement and separating-axis polygon checks"
+  },
+  "top_level_overlap": 0,
+  "unchanged_board_content": "Previous qualified audio-era content retained exceptD12/00/S1; all36 actual bounds and1000 nodes rechecked.",
+  "advisories": "Measured diagram pixel geometry, token/grid/repetition/hierarchy/arrow-copy suggestions remain advisory. No critical issue was waived."
+}

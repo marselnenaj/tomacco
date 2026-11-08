@@ -1,0 +1,119 @@
+{
+  "schema": "tomacco-performance-atlas-delta/1",
+  "state": "ready_for_root_final_qa",
+  "file_id": "u8uvnj33hx",
+  "page_id": "f5zgae58fy",
+  "entry_artboard": "bxx82h1gcm",
+  "d12_artboard": "qsrfwt20hy",
+  "expected_product": "c2e2326f66879a595d27f476bf7964b49faf8c33",
+  "expected_runtime": "e0b79fe4207a50c7f7416af8392ee4a0a5648906",
+  "previous_installed_product": "1caa17221161c2dc4c5c6eedb92ed9277772c57a",
+  "previous_runtime": "e552e6f643632182dfc8531effd8bc5916c206a3",
+  "prepared_from": "f53147adbe4126d26818cbac868a15c7ba58e184",
+  "live_writes_started": true,
+  "physical_device_access": false,
+  "canvas_scope": [
+    "D12 canvas and footer",
+    "D09 nomac title property and footer",
+    "00 installed product span",
+    "S1 current status body"
+  ],
+  "retained": [
+    "all33 diagram artboard IDs",
+    "all10 Logic/Node variants",
+    "brand mm6iq5cs67 unchanged",
+    "pages01–03 read-only",
+    "296 operation contracts and schema unchanged",
+    "auto/adaptive OCR policies unchanged",
+    "578819b prior ARM verification/staging proof",
+    "Pixel remains untouched"
+  ],
+  "prepared_counts": {
+    "D12_nodes": 64,
+    "D12_edges": 52,
+    "atlas_nodes": 1023,
+    "diagrams": 33,
+    "artboards": 36,
+    "operations": 296
+  },
+  "live_write_gate": "Only the new1.5.0 release qualification receipt at qualification_receipt can open this gate. Exact product/runtime pins plus desktop_installed:true are required. Public release remains1.4.1 until a separate publication receipt; no current atlas documentation commit is recursively used as installed product source.",
+  "after_gate": [
+    "Archive prior accepted1caa172 proof and changed PNGs on filesystem",
+    "Pin installed/runtime hashes and final benchmark boundaries",
+    "Apply only04 sections preserving artboards/components",
+    "Refresh1023 actual node IDs and all33 spec/source hashes",
+    "Refresh296-row data source and382 exact navigation links/56 targets",
+    "Compute/read back all36 bounds and reflow without overlap",
+    "Screenshot/verify4 affected boards; lint/brand and491-label QA",
+    "Regenerate00/D09/D12/S1 PNGs and verify all36 hashes/dimensions",
+    "Checkpoint and hand current acceptance to root final review"
+  ],
+  "claims_policy": [
+    "Warm persistent-MCP speedup only from exact integrated final qualification",
+    "Cold/custom CLI measured separately",
+    "Model retention raises idle RSS until cleanup; no general memory-reduction claim",
+    "Loopback WDA parallelism is not physical iPhone speed",
+    "No competitor leadership or real-device/GPU qualification claim",
+    "Explicit Release qualification does not change CMake default"
+  ],
+  "candidate_version": "1.5.0",
+  "candidate_visibility": "private",
+  "qualification_receipt": "/home/maslos/Work/tomacco-release-1.5.0-qualification-20261108/progress.json",
+  "public_release_version": "1.4.1",
+  "public_release_tag": "v1.4.1",
+  "public_release_commit": null,
+  "publication_receipt": null,
+  "installed_gate_checked_at": "2026-11-08T12:28:30.121704+00:00",
+  "updated_at": "2026-11-08T12:43:07.388679+00:00",
+  "mutations": [
+    {
+      "board": "D12",
+      "part": "canvas",
+      "old_id": "r7yrx876s5",
+      "new_id": "nmf7tagsi6",
+      "phase": "written"
+    },
+    {
+      "board": "D12",
+      "part": "footer",
+      "old_id": "ex6d22txbm",
+      "new_id": "yjffieci1g",
+      "phase": "written"
+    },
+    {
+      "board": "D09",
+      "part": "footer",
+      "old_id": "i386edx1m8",
+      "new_id": "qpqq4nk2mm",
+      "phase": "written",
+      "nomac_preserved_id": "63ub328m8t"
+    },
+    {
+      "board": "S1",
+      "part": "body",
+      "old_id": "wg8i8iwcd8",
+      "new_id": "mda9r1nqmh",
+      "phase": "written",
+      "product_span_preserved_id": "2sz0tgxg66"
+    }
+  ],
+  "checkpoint": {
+    "id": "mw7tnjfm-6905603f",
+    "at": "2026-11-08T12:41:55.234Z",
+    "message": "Tomacco · 1.5.0-Kandidat · Workerbudget je Polarität präzisiert · 1023 Knoten",
+    "author": "codex-mcp-client",
+    "layers": 4613,
+    "pages": 4
+  },
+  "nodes_verified": 1023,
+  "prototype_links": 382,
+  "png_exports": 36,
+  "regenerated_pngs": [
+    "00",
+    "D09",
+    "D12",
+    "S1"
+  ],
+  "critical_lint": 0,
+  "brand_hard": 0
+}

@@ -1,0 +1,44 @@
+{
+  "state": "passed",
+  "cli_sha256": "cfad72cd172158d4a6711611d1270bcd5abe01ad3cb5e691c1f425eeeb6ab960",
+  "checked_at": "2026-11-08T12:26:28.594330+00:00",
+  "calls": [
+    {
+      "cached": false,
+      "engine_runs": 2,
+      "metrics": {
+        "wall_ms": 268.050828,
+        "wire_utf8_bytes": 10199,
+        "text_utf8_bytes": 4629,
+        "cpu_ms": 250.0,
+        "rss_kib_after": 88988.0,
+        "sampled_peak_rss_kib": 94376.0
+      },
+      "worker_pids": [
+        12
+      ],
+      "words": 22
+    },
+    {
+      "cached": true,
+      "engine_runs": 0,
+      "metrics": {
+        "wall_ms": 0.809035,
+        "wire_utf8_bytes": 10195,
+        "text_utf8_bytes": 4627,
+        "cpu_ms": 0,
+        "rss_kib_after": 88988.0,
+        "sampled_peak_rss_kib": 88988.0
+      },
+      "worker_pids": [
+        12
+      ],
+      "words": 22
+    }
+  ],
+  "worker_reused": true,
+  "worker_reaped_at_shutdown": true,
+  "transport_traps": [],
+  "physical_device_access": false,
+  "existing_mcp_sessions_restarted": false
+}

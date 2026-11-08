@@ -1,0 +1,53 @@
+{
+  "schema": "tomacco-worker-review-carry-forward/1",
+  "original_review": "perf-independent-review.json",
+  "original_review_open_findings": [],
+  "previous_catalogue_complete_source": "2fea9175e86a79c3fb99577a1177295cad99debb",
+  "candidate_product": "c2e2326f66879a595d27f476bf7964b49faf8c33",
+  "candidate_runtime": "e0b79fe4207a50c7f7416af8392ee4a0a5648906",
+  "candidate_visibility": "private1.5.0",
+  "source_pairs": {
+    "native/main.rs": {
+      "reviewed_sha256": "7d5c922af0609c4f28cc01b0a5416e26d3e1a984ba6236b3852ba1bb756ba404",
+      "candidate_sha256": "7d5c922af0609c4f28cc01b0a5416e26d3e1a984ba6236b3852ba1bb756ba404",
+      "unchanged": true,
+      "delta": "byte-identical to independently reviewed implementation"
+    },
+    "native/screen_ocr.rs": {
+      "reviewed_sha256": "f45b46af4de2df931f5d77f32956cc2bad848de642fcaf5e58dd8c3190de8f12",
+      "candidate_sha256": "fe263edcbe063e72de46d8472186ddbbb7371eb9c3d4c3bf45751fac2b4344a9",
+      "unchanged": false,
+      "delta": "rustfmt only; OCR policy, cache and delegation unchanged"
+    },
+    "native/screen_ocr_engine.rs": {
+      "reviewed_sha256": "029f980d8f50a7d641d99e03986c538c13932ec77bee862f808392cc570602b5",
+      "candidate_sha256": "abf5384791d907793007b4f75b4541694b0966c83618c4039d0e665e2e9ea1cb",
+      "unchanged": false,
+      "delta": "ModelIdentity tuple type alias; local large_enum_variant allow and explanatory one-slot queue comment; no allocation/ownership, CAPI, protocol, lifecycle, selection or error-flow change"
+    },
+    "native/screen_ocr_worker.rs": {
+      "reviewed_sha256": "7c64c574cc1c779aadd13c1629f577d1a2acc72d6cc8f2bab26679f378259f1c",
+      "candidate_sha256": "7c64c574cc1c779aadd13c1629f577d1a2acc72d6cc8f2bab26679f378259f1c",
+      "unchanged": true,
+      "delta": "byte-identical to independently reviewed implementation"
+    },
+    "native/toolchain.rs": {
+      "reviewed_sha256": "1728b90b81645714a684df2b141a0699115928d6130de514fa6d55b5a759cc83",
+      "candidate_sha256": "e890fa8d456eaa43b7d7dadcf909eaf03c79480f1c72795c5d4c93ea51a846dd",
+      "unchanged": false,
+      "delta": "rustfmt plus exact-equivalent poll timeout ceiling via as_nanos().div_ceil(1_000_000), capped at i32::MAX;100006 boundary/random equivalence cases recorded in release preparation"
+    },
+    "native/visual.rs": {
+      "reviewed_sha256": "bbcb1f621fca813b874a5f774af035ecf755758bba46bb997d76d2efdbb38fe8",
+      "candidate_sha256": "bbcb1f621fca813b874a5f774af035ecf755758bba46bb997d76d2efdbb38fe8",
+      "unchanged": true,
+      "delta": "byte-identical to independently reviewed implementation"
+    }
+  },
+  "patch": "perf-reviewed-source-delta.patch",
+  "patch_sha256": "6742072bbe3d7ef7687b15b0363cfe33f829bf56cdbc2bb9a0127deb2fcfef17",
+  "scope": "Explicit delta to the original independent worker review. Root accepted release preparation via cherry-pick e0b79fe; this record does not claim a new independent fault-probe run on the versioned1.5.0 binary. CAPI worker and main entry point remain byte-identical. New runtime benchmark, full qualification, installed receipt and root atlas acceptance are separate gates.",
+  "release_preparation_commit": "f2f37e0e4270264353346882afd3613bc9f502c4",
+  "release_semantic_fixes": 7,
+  "worker_semantic_changes": false
+}

@@ -1,0 +1,654 @@
+{
+  "node_id": "qsrfwt20hy",
+  "discipline": "documentation",
+  "version": "2026-11-08.3",
+  "fingerprint": "bc5e588db1e213ac3858bb38b86b0e0a39dce75f16f7b5df97c6f24ed30d2b4b",
+  "checkedAt": 1794141682059,
+  "automated": {
+    "state": "passed",
+    "findings": [
+      {
+        "rule": "lint:token",
+        "node_id": "qsrfwt20hy",
+        "message": "gap is 40px, which equals the token --bar. Use var(--bar).",
+        "severity": "warning"
+      },
+      {
+        "rule": "lint:token",
+        "node_id": "qsrfwt20hy",
+        "message": "padding is 48px, which equals the token --app-gap-xxxl. Use var(--app-gap-xxxl).",
+        "severity": "warning"
+      },
+      {
+        "rule": "lint:token",
+        "node_id": "i6hesxye35",
+        "message": "gap is 48px, which equals the token --app-gap-xxxl. Use var(--app-gap-xxxl).",
+        "severity": "warning"
+      },
+      {
+        "rule": "lint:token",
+        "node_id": "utjj1zuupk",
+        "message": "gap is 12px, which equals the token --app-gap-md. Use var(--app-gap-md).",
+        "severity": "warning"
+      },
+      {
+        "rule": "lint:token",
+        "node_id": "ney6e1thtq",
+        "message": "fontSize is 16px, which equals the token --app-mobile-font-body. Use var(--app-mobile-font-body).",
+        "severity": "warning"
+      },
+      {
+        "rule": "lint:token",
+        "node_id": "c8137apxxu",
+        "message": "fontSize is 20px, which equals the token --app-font-title. Use var(--app-font-title).",
+        "severity": "warning"
+      },
+      {
+        "rule": "lint:token",
+        "node_id": "34izk4vtjs",
+        "message": "fontSize is 16px, which equals the token --app-mobile-font-body. Use var(--app-mobile-font-body).",
+        "severity": "warning"
+      },
+      {
+        "rule": "lint:token",
+        "node_id": "cbac9asquk",
+        "message": "fontSize is 14px, which equals the token --app-mobile-font-small. Use var(--app-mobile-font-small).",
+        "severity": "warning"
+      },
+      {
+        "rule": "lint:token",
+        "node_id": "x1chmsfais",
+        "message": "fontSize is 14px, which equals the token --app-mobile-font-small. Use var(--app-mobile-font-small).",
+        "severity": "warning"
+      },
+      {
+        "rule": "lint:token",
+        "node_id": "fijemw4n8j",
+        "message": "fontSize is 14px, which equals the token --app-mobile-font-small. Use var(--app-mobile-font-small).",
+        "severity": "warning"
+      },
+      {
+        "rule": "lint:token",
+        "node_id": "282ft44nq2",
+        "message": "fontSize is 14px, which equals the token --app-mobile-font-small. Use var(--app-mobile-font-small).",
+        "severity": "warning"
+      },
+      {
+        "rule": "lint:token",
+        "node_id": "s5s89xefqv",
+        "message": "gap is 4px, which equals the token --app-gap-xs. Use var(--app-gap-xs).",
+        "severity": "warning"
+      },
+      {
+        "rule": "lint:token",
+        "node_id": "5ybkjxpd85",
+        "message": "gap is 4px, which equals the token --app-gap-xs. Use var(--app-gap-xs).",
+        "severity": "warning"
+      },
+      {
+        "rule": "lint:token",
+        "node_id": "f193dzjq28",
+        "message": "gap is 4px, which equals the token --app-gap-xs. Use var(--app-gap-xs).",
+        "severity": "warning"
+      },
+      {
+        "rule": "lint:token",
+        "node_id": "kn4jk76wf7",
+        "message": "gap is 4px, which equals the token --app-gap-xs. Use var(--app-gap-xs).",
+        "severity": "warning"
+      },
+      {
+        "rule": "lint:token",
+        "node_id": "jw7w7a6gjt",
+        "message": "gap is 4px, which equals the token --app-gap-xs. Use var(--app-gap-xs).",
+        "severity": "warning"
+      },
+      {
+        "rule": "lint:token",
+        "node_id": "ahjh8thhxy",
+        "message": "gap is 4px, which equals the token --app-gap-xs. Use var(--app-gap-xs).",
+        "severity": "warning"
+      },
+      {
+        "rule": "lint:token",
+        "node_id": "na8nt99yh9",
+        "message": "gap is 4px, which equals the token --app-gap-xs. Use var(--app-gap-xs).",
+        "severity": "warning"
+      },
+      {
+        "rule": "lint:token",
+        "node_id": "x8fc7u4d4y",
+        "message": "gap is 4px, which equals the token --app-gap-xs. Use var(--app-gap-xs).",
+        "severity": "warning"
+      },
+      {
+        "rule": "lint:token",
+        "node_id": "b1sh42ah62",
+        "message": "gap is 4px, which equals the token --app-gap-xs. Use var(--app-gap-xs).",
+        "severity": "warning"
+      },
+      {
+        "rule": "lint:token",
+        "node_id": "64a4w1z51g",
+        "message": "gap is 4px, which equals the token --app-gap-xs. Use var(--app-gap-xs).",
+        "severity": "warning"
+      },
+      {
+        "rule": "lint:token",
+        "node_id": "uzbpun809p",
+        "message": "gap is 4px, which equals the token --app-gap-xs. Use var(--app-gap-xs).",
+        "severity": "warning"
+      },
+      {
+        "rule": "lint:token",
+        "node_id": "9c5kz302q5",
+        "message": "gap is 4px, which equals the token --app-gap-xs. Use var(--app-gap-xs).",
+        "severity": "warning"
+      },
+      {
+        "rule": "lint:token",
+        "node_id": "kjgg370cji",
+        "message": "gap is 4px, which equals the token --app-gap-xs. Use var(--app-gap-xs).",
+        "severity": "warning"
+      },
+      {
+        "rule": "lint:token",
+        "node_id": "kjgg370cji",
+        "message": "paddingLeft is 20px, which equals the token --space-20. Use var(--space-20).",
+        "severity": "warning"
+      },
+      {
+        "rule": "lint:token",
+        "node_id": "cf0z0q60aq",
+        "message": "gap is 4px, which equals the token --app-gap-xs. Use var(--app-gap-xs).",
+        "severity": "warning"
+      },
+      {
+        "rule": "lint:token",
+        "node_id": "cf0z0q60aq",
+        "message": "paddingLeft is 20px, which equals the token --space-20. Use var(--space-20).",
+        "severity": "warning"
+      },
+      {
+        "rule": "lint:token",
+        "node_id": "srubssa331",
+        "message": "gap is 4px, which equals the token --app-gap-xs. Use var(--app-gap-xs).",
+        "severity": "warning"
+      },
+      {
+        "rule": "lint:token",
+        "node_id": "4c62rr2d4f",
+        "message": "gap is 4px, which equals the token --app-gap-xs. Use var(--app-gap-xs).",
+        "severity": "warning"
+      },
+      {
+        "rule": "lint:token",
+        "node_id": "rav1q6q56f",
+        "message": "gap is 4px, which equals the token --app-gap-xs. Use var(--app-gap-xs).",
+        "severity": "warning"
+      },
+      {
+        "rule": "lint:token",
+        "node_id": "i9h32cj02z",
+        "message": "gap is 4px, which equals the token --app-gap-xs. Use var(--app-gap-xs).",
+        "severity": "warning"
+      },
+      {
+        "rule": "lint:token",
+        "node_id": "90u98je2km",
+        "message": "gap is 4px, which equals the token --app-gap-xs. Use var(--app-gap-xs).",
+        "severity": "warning"
+      },
+      {
+        "rule": "lint:token",
+        "node_id": "mgcahajc7u",
+        "message": "gap is 4px, which equals the token --app-gap-xs. Use var(--app-gap-xs).",
+        "severity": "warning"
+      },
+      {
+        "rule": "lint:token",
+        "node_id": "n6ygktc7a0",
+        "message": "gap is 4px, which equals the token --app-gap-xs. Use var(--app-gap-xs).",
+        "severity": "warning"
+      },
+      {
+        "rule": "lint:token",
+        "node_id": "0f7ezxe5jy",
+        "message": "gap is 4px, which equals the token --app-gap-xs. Use var(--app-gap-xs).",
+        "severity": "warning"
+      },
+      {
+        "rule": "lint:token",
+        "node_id": "0f7ezxe5jy",
+        "message": "paddingLeft is 20px, which equals the token --space-20. Use var(--space-20).",
+        "severity": "warning"
+      },
+      {
+        "rule": "lint:token",
+        "node_id": "6s8y4qqyay",
+        "message": "gap is 4px, which equals the token --app-gap-xs. Use var(--app-gap-xs).",
+        "severity": "warning"
+      },
+      {
+        "rule": "lint:token",
+        "node_id": "ufrtu35zre",
+        "message": "gap is 4px, which equals the token --app-gap-xs. Use var(--app-gap-xs).",
+        "severity": "warning"
+      },
+      {
+        "rule": "lint:token",
+        "node_id": "hq4ru45i2u",
+        "message": "gap is 4px, which equals the token --app-gap-xs. Use var(--app-gap-xs).",
+        "severity": "warning"
+      },
+      {
+        "rule": "lint:token",
+        "node_id": "f5dpxa3e3r",
+        "message": "gap is 4px, which equals the token --app-gap-xs. Use var(--app-gap-xs).",
+        "severity": "warning"
+      },
+      {
+        "rule": "lint:token",
+        "node_id": "vhjwz6b643",
+        "message": "gap is 4px, which equals the token --app-gap-xs. Use var(--app-gap-xs).",
+        "severity": "warning"
+      },
+      {
+        "rule": "lint:token",
+        "node_id": "326i1sbax7",
+        "message": "gap is 4px, which equals the token --app-gap-xs. Use var(--app-gap-xs).",
+        "severity": "warning"
+      },
+      {
+        "rule": "lint:token",
+        "node_id": "00tvh7kpwp",
+        "message": "gap is 4px, which equals the token --app-gap-xs. Use var(--app-gap-xs).",
+        "severity": "warning"
+      },
+      {
+        "rule": "lint:token",
+        "node_id": "iwxr94gs4e",
+        "message": "gap is 4px, which equals the token --app-gap-xs. Use var(--app-gap-xs).",
+        "severity": "warning"
+      },
+      {
+        "rule": "lint:token",
+        "node_id": "h3eb2a8qfg",
+        "message": "gap is 4px, which equals the token --app-gap-xs. Use var(--app-gap-xs).",
+        "severity": "warning"
+      },
+      {
+        "rule": "lint:token",
+        "node_id": "h3eb2a8qfg",
+        "message": "paddingLeft is 20px, which equals the token --space-20. Use var(--space-20).",
+        "severity": "warning"
+      },
+      {
+        "rule": "lint:token",
+        "node_id": "9516ccqrwv",
+        "message": "gap is 4px, which equals the token --app-gap-xs. Use var(--app-gap-xs).",
+        "severity": "warning"
+      },
+      {
+        "rule": "lint:token",
+        "node_id": "9516ccqrwv",
+        "message": "paddingLeft is 20px, which equals the token --space-20. Use var(--space-20).",
+        "severity": "warning"
+      },
+      {
+        "rule": "lint:token",
+        "node_id": "1t9uqy43w9",
+        "message": "gap is 4px, which equals the token --app-gap-xs. Use var(--app-gap-xs).",
+        "severity": "warning"
+      },
+      {
+        "rule": "lint:token",
+        "node_id": "1t9uqy43w9",
+        "message": "paddingLeft is 20px, which equals the token --space-20. Use var(--space-20).",
+        "severity": "warning"
+      },
+      {
+        "rule": "lint:token",
+        "node_id": "xaj0qwjscj",
+        "message": "gap is 4px, which equals the token --app-gap-xs. Use var(--app-gap-xs).",
+        "severity": "warning"
+      },
+      {
+        "rule": "lint:token",
+        "node_id": "e0z86nncpw",
+        "message": "gap is 4px, which equals the token --app-gap-xs. Use var(--app-gap-xs).",
+        "severity": "warning"
+      },
+      {
+        "rule": "lint:token",
+        "node_id": "egisw4g4gc",
+        "message": "gap is 4px, which equals the token --app-gap-xs. Use var(--app-gap-xs).",
+        "severity": "warning"
+      },
+      {
+        "rule": "lint:token",
+        "node_id": "ubs22h5d72",
+        "message": "gap is 4px, which equals the token --app-gap-xs. Use var(--app-gap-xs).",
+        "severity": "warning"
+      },
+      {
+        "rule": "lint:token",
+        "node_id": "9j2x348pgd",
+        "message": "gap is 4px, which equals the token --app-gap-xs. Use var(--app-gap-xs).",
+        "severity": "warning"
+      },
+      {
+        "rule": "lint:token",
+        "node_id": "k1gzaxwd3h",
+        "message": "gap is 4px, which equals the token --app-gap-xs. Use var(--app-gap-xs).",
+        "severity": "warning"
+      },
+      {
+        "rule": "lint:token",
+        "node_id": "k1gzaxwd3h",
+        "message": "paddingLeft is 20px, which equals the token --space-20. Use var(--space-20).",
+        "severity": "warning"
+      },
+      {
+        "rule": "lint:token",
+        "node_id": "rkj11ademv",
+        "message": "gap is 4px, which equals the token --app-gap-xs. Use var(--app-gap-xs).",
+        "severity": "warning"
+      },
+      {
+        "rule": "lint:token",
+        "node_id": "rkj11ademv",
+        "message": "paddingLeft is 20px, which equals the token --space-20. Use var(--space-20).",
+        "severity": "warning"
+      },
+      {
+        "rule": "lint:token",
+        "node_id": "twn3dta93q",
+        "message": "gap is 4px, which equals the token --app-gap-xs. Use var(--app-gap-xs).",
+        "severity": "warning"
+      },
+      {
+        "rule": "lint:token",
+        "node_id": "twn3dta93q",
+        "message": "paddingLeft is 20px, which equals the token --space-20. Use var(--space-20).",
+        "severity": "warning"
+      },
+      {
+        "rule": "lint:token",
+        "node_id": "hkr8je9bqa",
+        "message": "gap is 4px, which equals the token --app-gap-xs. Use var(--app-gap-xs).",
+        "severity": "warning"
+      },
+      {
+        "rule": "lint:token",
+        "node_id": "srr40ax9ub",
+        "message": "gap is 4px, which equals the token --app-gap-xs. Use var(--app-gap-xs).",
+        "severity": "warning"
+      },
+      {
+        "rule": "lint:token",
+        "node_id": "39r6ecf00m",
+        "message": "gap is 4px, which equals the token --app-gap-xs. Use var(--app-gap-xs).",
+        "severity": "warning"
+      },
+      {
+        "rule": "lint:token",
+        "node_id": "1hbirdkh4j",
+        "message": "gap is 4px, which equals the token --app-gap-xs. Use var(--app-gap-xs).",
+        "severity": "warning"
+      },
+      {
+        "rule": "lint:token",
+        "node_id": "rnq8w4hamj",
+        "message": "gap is 4px, which equals the token --app-gap-xs. Use var(--app-gap-xs).",
+        "severity": "warning"
+      },
+      {
+        "rule": "lint:token",
+        "node_id": "k7i206e529",
+        "message": "gap is 4px, which equals the token --app-gap-xs. Use var(--app-gap-xs).",
+        "severity": "warning"
+      },
+      {
+        "rule": "lint:token",
+        "node_id": "w7ax3yj8iu",
+        "message": "gap is 4px, which equals the token --app-gap-xs. Use var(--app-gap-xs).",
+        "severity": "warning"
+      },
+      {
+        "rule": "lint:token",
+        "node_id": "w7ax3yj8iu",
+        "message": "paddingLeft is 20px, which equals the token --space-20. Use var(--space-20).",
+        "severity": "warning"
+      },
+      {
+        "rule": "lint:token",
+        "node_id": "3m1f7rxn3k",
+        "message": "gap is 4px, which equals the token --app-gap-xs. Use var(--app-gap-xs).",
+        "severity": "warning"
+      },
+      {
+        "rule": "lint:token",
+        "node_id": "nfjr2ruj2g",
+        "message": "gap is 4px, which equals the token --app-gap-xs. Use var(--app-gap-xs).",
+        "severity": "warning"
+      },
+      {
+        "rule": "lint:token",
+        "node_id": "g37hjz5eex",
+        "message": "gap is 4px, which equals the token --app-gap-xs. Use var(--app-gap-xs).",
+        "severity": "warning"
+      },
+      {
+        "rule": "lint:token",
+        "node_id": "hzgvn5881n",
+        "message": "gap is 4px, which equals the token --app-gap-xs. Use var(--app-gap-xs).",
+        "severity": "warning"
+      },
+      {
+        "rule": "lint:token",
+        "node_id": "p2p4bbga0e",
+        "message": "gap is 4px, which equals the token --app-gap-xs. Use var(--app-gap-xs).",
+        "severity": "warning"
+      },
+      {
+        "rule": "lint:token",
+        "node_id": "tm8krruy1q",
+        "message": "gap is 4px, which equals the token --app-gap-xs. Use var(--app-gap-xs).",
+        "severity": "warning"
+      },
+      {
+        "rule": "lint:token",
+        "node_id": "2yxefbq12w",
+        "message": "gap is 4px, which equals the token --app-gap-xs. Use var(--app-gap-xs).",
+        "severity": "warning"
+      },
+      {
+        "rule": "lint:token",
+        "node_id": "2yxefbq12w",
+        "message": "paddingLeft is 20px, which equals the token --space-20. Use var(--space-20).",
+        "severity": "warning"
+      },
+      {
+        "rule": "lint:token",
+        "node_id": "x8evgareen",
+        "message": "gap is 4px, which equals the token --app-gap-xs. Use var(--app-gap-xs).",
+        "severity": "warning"
+      },
+      {
+        "rule": "lint:token",
+        "node_id": "x8evgareen",
+        "message": "paddingLeft is 20px, which equals the token --space-20. Use var(--space-20).",
+        "severity": "warning"
+      },
+      {
+        "rule": "lint:token",
+        "node_id": "z6y58c7rn8",
+        "message": "gap is 4px, which equals the token --app-gap-xs. Use var(--app-gap-xs).",
+        "severity": "warning"
+      },
+      {
+        "rule": "lint:token",
+        "node_id": "bp7rips564",
+        "message": "gap is 4px, which equals the token --app-gap-xs. Use var(--app-gap-xs).",
+        "severity": "warning"
+      },
+      {
+        "rule": "lint:token",
+        "node_id": "nqubi5ncwm",
+        "message": "gap is 4px, which equals the token --app-gap-xs. Use var(--app-gap-xs).",
+        "severity": "warning"
+      },
+      {
+        "rule": "lint:token",
+        "node_id": "qp3g6a3rtv",
+        "message": "gap is 4px, which equals the token --app-gap-xs. Use var(--app-gap-xs).",
+        "severity": "warning"
+      },
+      {
+        "rule": "lint:token",
+        "node_id": "pd3eidv2zj",
+        "message": "gap is 4px, which equals the token --app-gap-xs. Use var(--app-gap-xs).",
+        "severity": "warning"
+      },
+      {
+        "rule": "lint:token",
+        "node_id": "pd3eidv2zj",
+        "message": "paddingLeft is 20px, which equals the token --space-20. Use var(--space-20).",
+        "severity": "warning"
+      },
+      {
+        "rule": "lint:token",
+        "node_id": "56kkcp0b6h",
+        "message": "gap is 4px, which equals the token --app-gap-xs. Use var(--app-gap-xs).",
+        "severity": "warning"
+      },
+      {
+        "rule": "lint:token",
+        "node_id": "wfdz3j45s1",
+        "message": "gap is 4px, which equals the token --app-gap-xs. Use var(--app-gap-xs).",
+        "severity": "warning"
+      },
+      {
+        "rule": "lint:token",
+        "node_id": "wfdz3j45s1",
+        "message": "paddingLeft is 20px, which equals the token --space-20. Use var(--space-20).",
+        "severity": "warning"
+      },
+      {
+        "rule": "lint:token",
+        "node_id": "jjci1degmg",
+        "message": "gap is 4px, which equals the token --app-gap-xs. Use var(--app-gap-xs).",
+        "severity": "warning"
+      },
+      {
+        "rule": "lint:token",
+        "node_id": "jjci1degmg",
+        "message": "paddingLeft is 20px, which equals the token --space-20. Use var(--space-20).",
+        "severity": "warning"
+      },
+      {
+        "rule": "lint:grid",
+        "node_id": "f6q0tf66c1",
+        "message": "padding is 2px 6px, off the 4px grid (6px).",
+        "severity": "warning"
+      },
+      {
+        "rule": "lint:token",
+        "node_id": "f6q0tf66c1",
+        "message": "fontSize is 16px, which equals the token --app-mobile-font-body. Use var(--app-mobile-font-body).",
+        "severity": "warning"
+      },
+      {
+        "rule": "lint:grid",
+        "node_id": "2wsgaxe4jh",
+        "message": "padding is 2px 6px, off the 4px grid (6px).",
+        "severity": "warning"
+      },
+      {
+        "rule": "lint:token",
+        "node_id": "2wsgaxe4jh",
+        "message": "fontSize is 16px, which equals the token --app-mobile-font-body. Use var(--app-mobile-font-body).",
+        "severity": "warning"
+      },
+      {
+        "rule": "lint:grid",
+        "node_id": "fcq3vkezqe",
+        "message": "padding is 2px 6px, off the 4px grid (6px).",
+        "severity": "warning"
+      },
+      {
+        "rule": "lint:token",
+        "node_id": "fcq3vkezqe",
+        "message": "fontSize is 16px, which equals the token --app-mobile-font-body. Use var(--app-mobile-font-body).",
+        "severity": "warning"
+      },
+      {
+        "rule": "lint:grid",
+        "node_id": "u6h00zkykr",
+        "message": "padding is 2px 6px, off the 4px grid (6px).",
+        "severity": "warning"
+      },
+      {
+        "rule": "lint:token",
+        "node_id": "u6h00zkykr",
+        "message": "fontSize is 16px, which equals the token --app-mobile-font-body. Use var(--app-mobile-font-body).",
+        "severity": "warning"
+      },
+      {
+        "rule": "lint:grid",
+        "node_id": "12v92k052e",
+        "message": "padding is 2px 6px, off the 4px grid (6px).",
+        "severity": "warning"
+      },
+      {
+        "rule": "lint:token",
+        "node_id": "12v92k052e",
+        "message": "fontSize is 16px, which equals the token --app-mobile-font-body. Use var(--app-mobile-font-body).",
+        "severity": "warning"
+      }
+    ],
+    "total": 275,
+    "note": "275 findings; output limited to 100, errors first. Every measured error is included; remaining heuristic warnings need visual judgement."
+  },
+  "visual": {
+    "state": "missing",
+    "screenshot": false,
+    "observations": [
+      {
+        "criterion": "priority",
+        "verdict": "pass",
+        "evidence": "The reviewed full-board screenshot separates the existing observe loop, polarity policy, uncached worker/CLI decisions and worker lifecycle into clearly labelled lanes; the main path stays legible at board scale."
+      },
+      {
+        "criterion": "content",
+        "verdict": "pass",
+        "evidence": "Visible yes/no and unavailable/timeout branches describe actual fallback boundaries. The source footer explicitly names installedcfad/c2e versus private1caa evidence and retains OCR misses, memory cost and hardware limits. The worker note now explicitly says90s per polarity,10s init and a separate90s CLI budget."
+      },
+      {
+        "criterion": "context",
+        "verdict": "pass",
+        "evidence": "The same Archivo/JetBrains typography, flat Logic/Node components and red/green/error semantics are retained. Footer links return to AirPlay, fill, coordination and handoff with actual existing targets."
+      }
+    ],
+    "criteria": [
+      {
+        "id": "priority",
+        "question": "Which reader need does the page serve?"
+      },
+      {
+        "id": "content",
+        "question": "Can the answer be found from headings and navigation?"
+      },
+      {
+        "id": "context",
+        "question": "Are examples valid and comfortable to read?"
+      }
+    ]
+  },
+  "limitations": [
+    "Visual observations are the agent’s self-assessment, not independent human approval.",
+    "Static rendering does not prove native behavior, screen-reader behavior, real email-client support, data truth or complete WCAG conformance.",
+    "Spacing, aesthetic conventions and intentional two-dimensional overflow require judgement; they are not automatic hard failures."
+  ]
+}

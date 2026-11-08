@@ -1,0 +1,1002 @@
+{
+  "total": 3923,
+  "counts": {
+    "contrast": 0,
+    "overflow": 0,
+    "token": 2999,
+    "grid": 688,
+    "alt": 0,
+    "small-text": 0,
+    "target": 0,
+    "repeated": 36,
+    "spacing": 0,
+    "hierarchy": 31,
+    "copy": 169
+  },
+  "issues": [
+    {
+      "rule": "repeated",
+      "nodeId": "81ga3h1aep",
+      "name": "Kopf · D01",
+      "message": "33 layers share this structure of 6 layers (81ga3h1aep, p566apccds, 5ghhb9gg2i, dzk6f04pb4, csc7eeie2g, na36mnys7d, 2imhancze3, mu3892zeq7, 3di10uhg0v, ...). Make one a component with component_create and put instances in the others' place, with props for what differs."
+    },
+    {
+      "rule": "repeated",
+      "nodeId": "gwh7w824wr",
+      "name": "AtlasLink → D01",
+      "message": "42 layers share this structure of 3 layers (gwh7w824wr, km5y357fh8, jjn245a5e8, h6g86a3xnx, 45qh6wd2ak, qz1c2pj9qf, kx155bhyxt, gxemb0q53a, 8fjd5055e9, ...). Make one a component with component_create and put instances in the others' place, with props for what differs."
+    },
+    {
+      "rule": "repeated",
+      "nodeId": "6c66ygs1xg",
+      "name": "Quellen",
+      "message": "10 layers share this structure of 9 layers (6c66ygs1xg, h8p5vy74dh, crr0660dj7, hddj6zq3nq, y26aap5jie, gfjjtcqz0u, 875s0ubmay, edrs0uhg8v, 9crq0eqk24, ...). Make one a component with component_create and put instances in the others' place, with props for what differs."
+    },
+    {
+      "rule": "repeated",
+      "nodeId": "yf1wbzrndp",
+      "name": "Grenzen",
+      "message": "15 layers share this structure of 5 layers (yf1wbzrndp, 1sguab9kpu, 0ae15qzmaq, h94egvztz1, n7dutxrcjm, qvu7z8dtmc, bhg0b378pi, 8wa328jwkb, hpd56w7kvu, ...). Make one a component with component_create and put instances in the others' place, with props for what differs."
+    },
+    {
+      "rule": "repeated",
+      "nodeId": "m37an7q0p6",
+      "name": "Grenzen",
+      "message": "11 layers share this structure of 6 layers (m37an7q0p6, j8jc7iax1k, 2j06vmpzda, x3wn3vufvi, k99g9g5ac8, pukp0psbsy, ecc0q8bbnk, e0f86accxe, qqw6qpk3y1, ...). Make one a component with component_create and put instances in the others' place, with props for what differs."
+    },
+    {
+      "rule": "repeated",
+      "nodeId": "vqrfxhqd2r",
+      "name": "Grid: audit",
+      "message": "13 layers share this structure of 5 layers (vqrfxhqd2r, tt5vj3e5cn, xve4e0sjpd, 0cv1qni64b, v5uqgzg8a7, gx72w0zcgu, yi0e4tukrx, hc98fqjm2h, wd628r0sac, ...). Make one a component with component_create and put instances in the others' place, with props for what differs."
+    },
+    {
+      "rule": "repeated",
+      "nodeId": "ak92ieq3ta",
+      "name": "Weiter",
+      "message": "10 layers share this structure of 6 layers (ak92ieq3ta, 89m45eqre4, z6b0e2ncp9, ugy53n6q3w, vwbvbxk93k, ydd39eq1yd, rcf47susuv, iftb97ebb0, 1n55qkz615, ...). Make one a component with component_create and put instances in the others' place, with props for what differs."
+    },
+    {
+      "rule": "repeated",
+      "nodeId": "23x4ch0dzp",
+      "name": "Fuß · D10",
+      "message": "3 layers share this structure of 20 layers (23x4ch0dzp, e5jrdpf69h, ehnpkcwnd2). Make one a component with component_create and put instances in the others' place, with props for what differs."
+    },
+    {
+      "rule": "repeated",
+      "nodeId": "d7hyf2t5f7",
+      "name": "Quellen",
+      "message": "5 layers share this structure of 10 layers (d7hyf2t5f7, krm1g2bpyz, 88uz61ia8v, zj7czggvip, 4y9pmsu92v). Make one a component with component_create and put instances in the others' place, with props for what differs."
+    },
+    {
+      "rule": "repeated",
+      "nodeId": "wgr5h8q3fs",
+      "name": "Beobachten, handeln, absichern",
+      "message": "2 layers share this structure of 24 layers (wgr5h8q3fs, 7bea0p9t2k). Make one a component with component_create and put instances in the others' place, with props for what differs."
+    },
+    {
+      "rule": "repeated",
+      "nodeId": "g43id2nvg1",
+      "name": "Quellen",
+      "message": "2 layers share this structure of 21 layers (g43id2nvg1, 5xk5gt8ir4). Make one a component with component_create and put instances in the others' place, with props for what differs."
+    },
+    {
+      "rule": "repeated",
+      "nodeId": "ebnxpf6r3d",
+      "name": "Grid: agent",
+      "message": "7 layers share this structure of 6 layers (ebnxpf6r3d, 74cxj2q5iw, 1q4n6j448g, cey1z907t0, qg3e4e9315, p8m9iw2bc8, w1c32vj0ci). Make one a component with component_create and put instances in the others' place, with props for what differs."
+    },
+    {
+      "rule": "repeated",
+      "nodeId": "6hyezd9sja",
+      "name": "Grid: apple",
+      "message": "6 layers share this structure of 7 layers (6hyezd9sja, 76zr4bactz, wh485t4sxu, 42nt2ecvf7, wjt1e849np, jh34484egn). Make one a component with component_create and put instances in the others' place, with props for what differs."
+    },
+    {
+      "rule": "repeated",
+      "nodeId": "mcm3v4d7i2",
+      "name": "Fuß · D04",
+      "message": "2 layers share this structure of 20 layers (mcm3v4d7i2, a48mx5dte1). Make one a component with component_create and put instances in the others' place, with props for what differs."
+    },
+    {
+      "rule": "repeated",
+      "nodeId": "pu10833wqf",
+      "name": "Fuß · D18",
+      "message": "2 layers share this structure of 19 layers (pu10833wqf, r2yn4d8kzh). Make one a component with component_create and put instances in the others' place, with props for what differs."
+    },
+    {
+      "rule": "repeated",
+      "nodeId": "g3stw75051",
+      "name": "Orientierung & Oberfläche",
+      "message": "2 layers share this structure of 18 layers (g3stw75051, 015yehysr7). Make one a component with component_create and put instances in the others' place, with props for what differs."
+    },
+    {
+      "rule": "repeated",
+      "nodeId": "pne1g5z8kf",
+      "name": "Weiter",
+      "message": "5 layers share this structure of 7 layers (pne1g5z8kf, 1b0tjaj0qt, m0ps0sdmp0, m20dhys1su, 3jueh42nks). Make one a component with component_create and put instances in the others' place, with props for what differs."
+    },
+    {
+      "rule": "repeated",
+      "nodeId": "g2hu2czvg7",
+      "name": "Fuß · D13",
+      "message": "2 layers share this structure of 17 layers (g2hu2czvg7, kckj1j484d). Make one a component with component_create and put instances in the others' place, with props for what differs."
+    },
+    {
+      "rule": "repeated",
+      "nodeId": "6z4tb55ef4",
+      "name": "Weiter",
+      "message": "3 layers share this structure of 11 layers (6z4tb55ef4, uh6kbar9fk, ymvke9n78v). Make one a component with component_create and put instances in the others' place, with props for what differs."
+    },
+    {
+      "rule": "repeated",
+      "nodeId": "jj1hv15cnz",
+      "name": "Quellen",
+      "message": "4 layers share this structure of 8 layers (jj1hv15cnz, wapvqfkqhp, 2twxrawq7f, 2kv6jjsyb3). Make one a component with component_create and put instances in the others' place, with props for what differs."
+    },
+    {
+      "rule": "repeated",
+      "nodeId": "b2uv6cg7bb",
+      "name": "Grid: preview",
+      "message": "8 layers share this structure of 4 layers (b2uv6cg7bb, 73c4jh9rhx, wxsfq5cixr, hjq04ub8y5, r5atj6v8tx, rdy565bs3n, rxjqvcfquf, 3ry3gmejfq). Make one a component with component_create and put instances in the others' place, with props for what differs."
+    },
+    {
+      "rule": "repeated",
+      "nodeId": "e5ah5jwcnt",
+      "name": "Quellen",
+      "message": "2 layers share this structure of 15 layers (e5ah5jwcnt, t1zva0j8ix). Make one a component with component_create and put instances in the others' place, with props for what differs."
+    },
+    {
+      "rule": "repeated",
+      "nodeId": "ps51in77h6",
+      "name": "Row: D11",
+      "message": "7 layers share this structure of 4 layers (ps51in77h6, ppxp3vqerh, 2251mab16v, gg02tqnn3h, q9jfuq2y9b, c4kr0me60a, x4cb5hjdpi). Make one a component with component_create and put instances in the others' place, with props for what differs."
+    },
+    {
+      "rule": "repeated",
+      "nodeId": "5fha2b1x3b",
+      "name": "Grenzen",
+      "message": "3 layers share this structure of 9 layers (5fha2b1x3b, h6h68ir4aj, 5b6bcqtwih). Make one a component with component_create and put instances in the others' place, with props for what differs."
+    },
+    {
+      "rule": "repeated",
+      "nodeId": "3gusv0j4ar",
+      "name": "Quellen",
+      "message": "2 layers share this structure of 13 layers (3gusv0j4ar, buf63nyxiw). Make one a component with component_create and put instances in the others' place, with props for what differs."
+    },
+    {
+      "rule": "repeated",
+      "nodeId": "ex3bgb305i",
+      "name": "Weiter",
+      "message": "5 layers share this structure of 5 layers (ex3bgb305i, 0rktb4wr3x, 2w2id0zruc, q1u6rzven0, vkdaj40bta). Make one a component with component_create and put instances in the others' place, with props for what differs."
+    },
+    {
+      "rule": "repeated",
+      "nodeId": "s4wambty4e",
+      "name": "Weiter",
+      "message": "3 layers share this structure of 8 layers (s4wambty4e, syn5xkp512, ez8dta6t09). Make one a component with component_create and put instances in the others' place, with props for what differs."
+    },
+    {
+      "rule": "repeated",
+      "nodeId": "d82zyirtkz",
+      "name": "Weiter",
+      "message": "2 layers share this structure of 9 layers (d82zyirtkz, 7z6bb1ppjs). Make one a component with component_create and put instances in the others' place, with props for what differs."
+    },
+    {
+      "rule": "repeated",
+      "nodeId": "9xd1aamf2j",
+      "name": "Grenzen",
+      "message": "2 layers share this structure of 8 layers (9xd1aamf2j, 9qkwq1hbfy). Make one a component with component_create and put instances in the others' place, with props for what differs."
+    },
+    {
+      "rule": "repeated",
+      "nodeId": "4pe3zzr714",
+      "name": "Weiter",
+      "message": "2 layers share this structure of 8 layers (4pe3zzr714, 63qpfeex5b). Make one a component with component_create and put instances in the others' place, with props for what differs."
+    },
+    {
+      "rule": "repeated",
+      "nodeId": "k874rcxyu1",
+      "name": "Grid: job",
+      "message": "2 layers share this structure of 8 layers (k874rcxyu1, pnvda3v884). Make one a component with component_create and put instances in the others' place, with props for what differs."
+    },
+    {
+      "rule": "repeated",
+      "nodeId": "etvr196pdf",
+      "name": "Row: D07",
+      "message": "3 layers share this structure of 5 layers (etvr196pdf, 4dyu3g93dq, 9iewwuxp9p). Make one a component with component_create and put instances in the others' place, with props for what differs."
+    },
+    {
+      "rule": "repeated",
+      "nodeId": "xs62a4vdgc",
+      "name": "Grid: project",
+      "message": "3 layers share this structure of 5 layers (xs62a4vdgc, abeiyxc4nu, 01fxx5j8ac). Make one a component with component_create and put instances in the others' place, with props for what differs."
+    },
+    {
+      "rule": "repeated",
+      "nodeId": "y9e2ucdftf",
+      "name": "Kopf · 00",
+      "message": "3 layers share this structure of 4 layers (y9e2ucdftf, 3dsvtfh1dd, v9ufh921fc). Make one a component with component_create and put instances in the others' place, with props for what differs."
+    },
+    {
+      "rule": "repeated",
+      "nodeId": "3uxgzuet3c",
+      "name": "Weiter",
+      "message": "3 layers share this structure of 4 layers (3uxgzuet3c, php46tz1ja, ciyg80db1j). Make one a component with component_create and put instances in the others' place, with props for what differs."
+    },
+    {
+      "rule": "repeated",
+      "nodeId": "x9ckpqubf7",
+      "name": "Von Host, Werkzeugen oder Gerät abhängig",
+      "message": "3 layers share this structure of 4 layers (x9ckpqubf7, sfu53qm2ft, d125xwbvug). Make one a component with component_create and put instances in the others' place, with props for what differs."
+    },
+    {
+      "rule": "token",
+      "nodeId": "bxx82h1gcm",
+      "name": "00 · Übersicht, Legende & Index",
+      "message": "gap is 40px, which equals the token --bar. Use var(--bar).",
+      "fix": {
+        "style": {
+          "gap": "var(--bar)"
+        },
+        "safe": true
+      }
+    },
+    {
+      "rule": "token",
+      "nodeId": "bxx82h1gcm",
+      "name": "00 · Übersicht, Legende & Index",
+      "message": "padding is 48px, which equals the token --app-gap-xxxl. Use var(--app-gap-xxxl).",
+      "fix": {
+        "style": {
+          "padding": "var(--app-gap-xxxl)"
+        },
+        "safe": true
+      }
+    },
+    {
+      "rule": "token",
+      "nodeId": "y9e2ucdftf",
+      "name": "Kopf · 00",
+      "message": "gap is 16px, which equals the token --app-gap-lg. Use var(--app-gap-lg).",
+      "fix": {
+        "style": {
+          "gap": "var(--app-gap-lg)"
+        },
+        "safe": true
+      }
+    },
+    {
+      "rule": "token",
+      "nodeId": "ayachexbs5",
+      "name": "00 · TOMACCO / FLOWS & LOGIK",
+      "message": "fontSize is 16px, which equals the token --app-mobile-font-body. Use var(--app-mobile-font-body).",
+      "fix": {
+        "style": {
+          "fontSize": "var(--app-mobile-font-body)"
+        },
+        "safe": true
+      }
+    },
+    {
+      "rule": "token",
+      "nodeId": "j54ug8hw5f",
+      "name": "Vom ersten Start bis zur Wiederherstellu",
+      "message": "fontSize is 20px, which equals the token --app-font-title. Use var(--app-font-title).",
+      "fix": {
+        "style": {
+          "fontSize": "var(--app-font-title)"
+        },
+        "safe": true
+      }
+    },
+    {
+      "rule": "token",
+      "nodeId": "hvd7hee2pu",
+      "name": "Row: Produkt 4584d6b ·…",
+      "message": "gap is 16px, which equals the token --app-gap-lg. Use var(--app-gap-lg).",
+      "fix": {
+        "style": {
+          "gap": "var(--app-gap-lg)"
+        },
+        "safe": true
+      }
+    },
+    {
+      "rule": "token",
+      "nodeId": "hvd7hee2pu",
+      "name": "Row: Produkt 4584d6b ·…",
+      "message": "fontSize is 16px, which equals the token --app-mobile-font-body. Use var(--app-mobile-font-body).",
+      "fix": {
+        "style": {
+          "fontSize": "var(--app-mobile-font-body)"
+        },
+        "safe": true
+      }
+    },
+    {
+      "rule": "token",
+      "nodeId": "wz9jj3gu53",
+      "name": "Legende",
+      "message": "gap is 24px, which equals the token --app-gap-xl. Use var(--app-gap-xl).",
+      "fix": {
+        "style": {
+          "gap": "var(--app-gap-xl)"
+        },
+        "safe": true
+      }
+    },
+    {
+      "rule": "token",
+      "nodeId": "g52j2t3x0i",
+      "name": "Legende · Titel",
+      "message": "fontSize is 40px, which equals the token --app-font-hero. Use var(--app-font-hero).",
+      "fix": {
+        "style": {
+          "fontSize": "var(--app-font-hero)"
+        },
+        "safe": true
+      }
+    },
+    {
+      "rule": "token",
+      "nodeId": "wbjg4ijfaa",
+      "name": "Zelle start",
+      "message": "gap is 12px, which equals the token --app-gap-md. Use var(--app-gap-md).",
+      "fix": {
+        "style": {
+          "gap": "var(--app-gap-md)"
+        },
+        "safe": true
+      }
+    },
+    {
+      "rule": "token",
+      "nodeId": "qv1913sjyu",
+      "name": "Logic / Node / start",
+      "message": "gap is 4px, which equals the token --app-gap-xs. Use var(--app-gap-xs).",
+      "fix": {
+        "style": {
+          "gap": "var(--app-gap-xs)"
+        },
+        "safe": true
+      }
+    },
+    {
+      "rule": "token",
+      "nodeId": "mdafjngidf",
+      "name": "Tag",
+      "message": "fontSize is 14px, which equals the token --app-mobile-font-small. Use var(--app-mobile-font-small).",
+      "fix": {
+        "style": {
+          "fontSize": "var(--app-mobile-font-small)"
+        },
+        "safe": true
+      }
+    },
+    {
+      "rule": "token",
+      "nodeId": "kpvw3mdiib",
+      "name": "Titel",
+      "message": "fontSize is 18px, which equals the token --app-font-large. Use var(--app-font-large).",
+      "fix": {
+        "style": {
+          "fontSize": "var(--app-font-large)"
+        },
+        "safe": true
+      }
+    },
+    {
+      "rule": "token",
+      "nodeId": "xe03qucstf",
+      "name": "Op",
+      "message": "fontSize is 14px, which equals the token --app-mobile-font-small. Use var(--app-mobile-font-small).",
+      "fix": {
+        "style": {
+          "fontSize": "var(--app-mobile-font-small)"
+        },
+        "safe": true
+      }
+    },
+    {
+      "rule": "token",
+      "nodeId": "n6dczswjyw",
+      "name": "Wo ein Flow beginnt: Route, Befehl oder ",
+      "message": "fontSize is 16px, which equals the token --app-mobile-font-body. Use var(--app-mobile-font-body).",
+      "fix": {
+        "style": {
+          "fontSize": "var(--app-mobile-font-body)"
+        },
+        "safe": true
+      }
+    },
+    {
+      "rule": "token",
+      "nodeId": "sazc5e2u81",
+      "name": "Zelle step",
+      "message": "gap is 12px, which equals the token --app-gap-md. Use var(--app-gap-md).",
+      "fix": {
+        "style": {
+          "gap": "var(--app-gap-md)"
+        },
+        "safe": true
+      }
+    },
+    {
+      "rule": "token",
+      "nodeId": "ym3ppbwgde",
+      "name": "Logic / Node / step",
+      "message": "gap is 4px, which equals the token --app-gap-xs. Use var(--app-gap-xs).",
+      "fix": {
+        "style": {
+          "gap": "var(--app-gap-xs)"
+        },
+        "safe": true
+      }
+    },
+    {
+      "rule": "token",
+      "nodeId": "ef8trh0f75",
+      "name": "Tag",
+      "message": "fontSize is 14px, which equals the token --app-mobile-font-small. Use var(--app-mobile-font-small).",
+      "fix": {
+        "style": {
+          "fontSize": "var(--app-mobile-font-small)"
+        },
+        "safe": true
+      }
+    },
+    {
+      "rule": "token",
+      "nodeId": "h2smk75y12",
+      "name": "Titel",
+      "message": "fontSize is 18px, which equals the token --app-font-large. Use var(--app-font-large).",
+      "fix": {
+        "style": {
+          "fontSize": "var(--app-font-large)"
+        },
+        "safe": true
+      }
+    },
+    {
+      "rule": "token",
+      "nodeId": "47iapu8fuw",
+      "name": "Op",
+      "message": "fontSize is 14px, which equals the token --app-mobile-font-small. Use var(--app-mobile-font-small).",
+      "fix": {
+        "style": {
+          "fontSize": "var(--app-mobile-font-small)"
+        },
+        "safe": true
+      }
+    },
+    {
+      "rule": "token",
+      "nodeId": "csn80w4eiw",
+      "name": "Ein Schritt, oft eine typisierte Operati",
+      "message": "fontSize is 16px, which equals the token --app-mobile-font-body. Use var(--app-mobile-font-body).",
+      "fix": {
+        "style": {
+          "fontSize": "var(--app-mobile-font-body)"
+        },
+        "safe": true
+      }
+    },
+    {
+      "rule": "token",
+      "nodeId": "nd7wapapxn",
+      "name": "Zelle decision",
+      "message": "gap is 12px, which equals the token --app-gap-md. Use var(--app-gap-md).",
+      "fix": {
+        "style": {
+          "gap": "var(--app-gap-md)"
+        },
+        "safe": true
+      }
+    },
+    {
+      "rule": "token",
+      "nodeId": "96za07d6d4",
+      "name": "Logic / Node / decision",
+      "message": "gap is 4px, which equals the token --app-gap-xs. Use var(--app-gap-xs).",
+      "fix": {
+        "style": {
+          "gap": "var(--app-gap-xs)"
+        },
+        "safe": true
+      }
+    },
+    {
+      "rule": "token",
+      "nodeId": "6yvjckq2fj",
+      "name": "Titel",
+      "message": "fontSize is 18px, which equals the token --app-font-large. Use var(--app-font-large).",
+      "fix": {
+        "style": {
+          "fontSize": "var(--app-font-large)"
+        },
+        "safe": true
+      }
+    },
+    {
+      "rule": "token",
+      "nodeId": "fmsr6f5ivc",
+      "name": "Op",
+      "message": "fontSize is 14px, which equals the token --app-mobile-font-small. Use var(--app-mobile-font-small).",
+      "fix": {
+        "style": {
+          "fontSize": "var(--app-mobile-font-small)"
+        },
+        "safe": true
+      }
+    },
+    {
+      "rule": "token",
+      "nodeId": "1587f4dxr7",
+      "name": "Entscheidung. Jeder Ausgang trägt ein La",
+      "message": "fontSize is 16px, which equals the token --app-mobile-font-body. Use var(--app-mobile-font-body).",
+      "fix": {
+        "style": {
+          "fontSize": "var(--app-mobile-font-body)"
+        },
+        "safe": true
+      }
+    },
+    {
+      "rule": "token",
+      "nodeId": "u7j1t1uwva",
+      "name": "Zelle state",
+      "message": "gap is 12px, which equals the token --app-gap-md. Use var(--app-gap-md).",
+      "fix": {
+        "style": {
+          "gap": "var(--app-gap-md)"
+        },
+        "safe": true
+      }
+    },
+    {
+      "rule": "token",
+      "nodeId": "9ib1r52vy5",
+      "name": "Logic / Node / state",
+      "message": "gap is 4px, which equals the token --app-gap-xs. Use var(--app-gap-xs).",
+      "fix": {
+        "style": {
+          "gap": "var(--app-gap-xs)"
+        },
+        "safe": true
+      }
+    },
+    {
+      "rule": "token",
+      "nodeId": "43qkuhwxkx",
+      "name": "Tag",
+      "message": "fontSize is 14px, which equals the token --app-mobile-font-small. Use var(--app-mobile-font-small).",
+      "fix": {
+        "style": {
+          "fontSize": "var(--app-mobile-font-small)"
+        },
+        "safe": true
+      }
+    },
+    {
+      "rule": "token",
+      "nodeId": "qq7kqq6fsj",
+      "name": "Titel",
+      "message": "fontSize is 18px, which equals the token --app-font-large. Use var(--app-font-large).",
+      "fix": {
+        "style": {
+          "fontSize": "var(--app-font-large)"
+        },
+        "safe": true
+      }
+    },
+    {
+      "rule": "token",
+      "nodeId": "8v4fwb9ztz",
+      "name": "Op",
+      "message": "fontSize is 14px, which equals the token --app-mobile-font-small. Use var(--app-mobile-font-small).",
+      "fix": {
+        "style": {
+          "fontSize": "var(--app-mobile-font-small)"
+        },
+        "safe": true
+      }
+    },
+    {
+      "rule": "token",
+      "nodeId": "2sfk9deamg",
+      "name": "Zustand einer Zustandsmaschine, Wert aus",
+      "message": "fontSize is 16px, which equals the token --app-mobile-font-body. Use var(--app-mobile-font-body).",
+      "fix": {
+        "style": {
+          "fontSize": "var(--app-mobile-font-body)"
+        },
+        "safe": true
+      }
+    },
+    {
+      "rule": "token",
+      "nodeId": "iv8mh0gunc",
+      "name": "Zelle human",
+      "message": "gap is 12px, which equals the token --app-gap-md. Use var(--app-gap-md).",
+      "fix": {
+        "style": {
+          "gap": "var(--app-gap-md)"
+        },
+        "safe": true
+      }
+    },
+    {
+      "rule": "token",
+      "nodeId": "q84dpvnuwe",
+      "name": "Logic / Node / human",
+      "message": "gap is 4px, which equals the token --app-gap-xs. Use var(--app-gap-xs).",
+      "fix": {
+        "style": {
+          "gap": "var(--app-gap-xs)"
+        },
+        "safe": true
+      }
+    },
+    {
+      "rule": "token",
+      "nodeId": "529z8d137t",
+      "name": "Tag",
+      "message": "fontSize is 14px, which equals the token --app-mobile-font-small. Use var(--app-mobile-font-small).",
+      "fix": {
+        "style": {
+          "fontSize": "var(--app-mobile-font-small)"
+        },
+        "safe": true
+      }
+    },
+    {
+      "rule": "token",
+      "nodeId": "jj3xaxh2ci",
+      "name": "Titel",
+      "message": "fontSize is 18px, which equals the token --app-font-large. Use var(--app-font-large).",
+      "fix": {
+        "style": {
+          "fontSize": "var(--app-font-large)"
+        },
+        "safe": true
+      }
+    },
+    {
+      "rule": "token",
+      "nodeId": "d0vs7yf9j5",
+      "name": "Op",
+      "message": "fontSize is 14px, which equals the token --app-mobile-font-small. Use var(--app-mobile-font-small).",
+      "fix": {
+        "style": {
+          "fontSize": "var(--app-mobile-font-small)"
+        },
+        "safe": true
+      }
+    },
+    {
+      "rule": "token",
+      "nodeId": "gvtk1hw8b3",
+      "name": "Nur eine Person darf das: Freigabe, Pass",
+      "message": "fontSize is 16px, which equals the token --app-mobile-font-body. Use var(--app-mobile-font-body).",
+      "fix": {
+        "style": {
+          "fontSize": "var(--app-mobile-font-body)"
+        },
+        "safe": true
+      }
+    },
+    {
+      "rule": "token",
+      "nodeId": "y3vs0uydt2",
+      "name": "Zelle ok",
+      "message": "gap is 12px, which equals the token --app-gap-md. Use var(--app-gap-md).",
+      "fix": {
+        "style": {
+          "gap": "var(--app-gap-md)"
+        },
+        "safe": true
+      }
+    },
+    {
+      "rule": "token",
+      "nodeId": "erfjdg24fe",
+      "name": "Logic / Node / ok",
+      "message": "gap is 4px, which equals the token --app-gap-xs. Use var(--app-gap-xs).",
+      "fix": {
+        "style": {
+          "gap": "var(--app-gap-xs)"
+        },
+        "safe": true
+      }
+    },
+    {
+      "rule": "token",
+      "nodeId": "x21z43i0b5",
+      "name": "Tag",
+      "message": "fontSize is 14px, which equals the token --app-mobile-font-small. Use var(--app-mobile-font-small).",
+      "fix": {
+        "style": {
+          "fontSize": "var(--app-mobile-font-small)"
+        },
+        "safe": true
+      }
+    },
+    {
+      "rule": "token",
+      "nodeId": "7n7suf9rcu",
+      "name": "Titel",
+      "message": "fontSize is 18px, which equals the token --app-font-large. Use var(--app-font-large).",
+      "fix": {
+        "style": {
+          "fontSize": "var(--app-font-large)"
+        },
+        "safe": true
+      }
+    },
+    {
+      "rule": "token",
+      "nodeId": "ip3hakfy17",
+      "name": "Op",
+      "message": "fontSize is 14px, which equals the token --app-mobile-font-small. Use var(--app-mobile-font-small).",
+      "fix": {
+        "style": {
+          "fontSize": "var(--app-mobile-font-small)"
+        },
+        "safe": true
+      }
+    },
+    {
+      "rule": "token",
+      "nodeId": "afs4itcvem",
+      "name": "Erfolgreiches Ende mit Ergebnis.",
+      "message": "fontSize is 16px, which equals the token --app-mobile-font-body. Use var(--app-mobile-font-body).",
+      "fix": {
+        "style": {
+          "fontSize": "var(--app-mobile-font-body)"
+        },
+        "safe": true
+      }
+    },
+    {
+      "rule": "token",
+      "nodeId": "dkfd4cne2e",
+      "name": "Zelle error",
+      "message": "gap is 12px, which equals the token --app-gap-md. Use var(--app-gap-md).",
+      "fix": {
+        "style": {
+          "gap": "var(--app-gap-md)"
+        },
+        "safe": true
+      }
+    },
+    {
+      "rule": "token",
+      "nodeId": "henqjaqz4y",
+      "name": "Logic / Node / error",
+      "message": "gap is 4px, which equals the token --app-gap-xs. Use var(--app-gap-xs).",
+      "fix": {
+        "style": {
+          "gap": "var(--app-gap-xs)"
+        },
+        "safe": true
+      }
+    },
+    {
+      "rule": "token",
+      "nodeId": "nigm4rd02x",
+      "name": "Tag",
+      "message": "fontSize is 14px, which equals the token --app-mobile-font-small. Use var(--app-mobile-font-small).",
+      "fix": {
+        "style": {
+          "fontSize": "var(--app-mobile-font-small)"
+        },
+        "safe": true
+      }
+    },
+    {
+      "rule": "token",
+      "nodeId": "rw7hee2bi3",
+      "name": "Titel",
+      "message": "fontSize is 18px, which equals the token --app-font-large. Use var(--app-font-large).",
+      "fix": {
+        "style": {
+          "fontSize": "var(--app-font-large)"
+        },
+        "safe": true
+      }
+    },
+    {
+      "rule": "token",
+      "nodeId": "s2ihbnd827",
+      "name": "Op",
+      "message": "fontSize is 14px, which equals the token --app-mobile-font-small. Use var(--app-mobile-font-small).",
+      "fix": {
+        "style": {
+          "fontSize": "var(--app-mobile-font-small)"
+        },
+        "safe": true
+      }
+    },
+    {
+      "rule": "token",
+      "nodeId": "uavprtrf16",
+      "name": "Fehlerende mit Code und Abhilfe.",
+      "message": "fontSize is 16px, which equals the token --app-mobile-font-body. Use var(--app-mobile-font-body).",
+      "fix": {
+        "style": {
+          "fontSize": "var(--app-mobile-font-body)"
+        },
+        "safe": true
+      }
+    },
+    {
+      "rule": "token",
+      "nodeId": "i62f9jhvky",
+      "name": "Zelle stop",
+      "message": "gap is 12px, which equals the token --app-gap-md. Use var(--app-gap-md).",
+      "fix": {
+        "style": {
+          "gap": "var(--app-gap-md)"
+        },
+        "safe": true
+      }
+    },
+    {
+      "rule": "token",
+      "nodeId": "gv8s1dbt48",
+      "name": "Logic / Node / stop",
+      "message": "gap is 4px, which equals the token --app-gap-xs. Use var(--app-gap-xs).",
+      "fix": {
+        "style": {
+          "gap": "var(--app-gap-xs)"
+        },
+        "safe": true
+      }
+    },
+    {
+      "rule": "token",
+      "nodeId": "g2r3bvvp3x",
+      "name": "Tag",
+      "message": "fontSize is 14px, which equals the token --app-mobile-font-small. Use var(--app-mobile-font-small).",
+      "fix": {
+        "style": {
+          "fontSize": "var(--app-mobile-font-small)"
+        },
+        "safe": true
+      }
+    },
+    {
+      "rule": "token",
+      "nodeId": "avzre117hv",
+      "name": "Titel",
+      "message": "fontSize is 18px, which equals the token --app-font-large. Use var(--app-font-large).",
+      "fix": {
+        "style": {
+          "fontSize": "var(--app-font-large)"
+        },
+        "safe": true
+      }
+    },
+    {
+      "rule": "token",
+      "nodeId": "t7p512i8r6",
+      "name": "Op",
+      "message": "fontSize is 14px, which equals the token --app-mobile-font-small. Use var(--app-mobile-font-small).",
+      "fix": {
+        "style": {
+          "fontSize": "var(--app-mobile-font-small)"
+        },
+        "safe": true
+      }
+    },
+    {
+      "rule": "token",
+      "nodeId": "c4srfmhtjy",
+      "name": "Abbruch oder Ablehnung: es folgt keine w",
+      "message": "fontSize is 16px, which equals the token --app-mobile-font-body. Use var(--app-mobile-font-body).",
+      "fix": {
+        "style": {
+          "fontSize": "var(--app-mobile-font-body)"
+        },
+        "safe": true
+      }
+    },
+    {
+      "rule": "token",
+      "nodeId": "kt2722e665",
+      "name": "Zelle unsupported",
+      "message": "gap is 12px, which equals the token --app-gap-md. Use var(--app-gap-md).",
+      "fix": {
+        "style": {
+          "gap": "var(--app-gap-md)"
+        },
+        "safe": true
+      }
+    },
+    {
+      "rule": "token",
+      "nodeId": "qgh73j1t2x",
+      "name": "Logic / Node / unsupported",
+      "message": "gap is 4px, which equals the token --app-gap-xs. Use var(--app-gap-xs).",
+      "fix": {
+        "style": {
+          "gap": "var(--app-gap-xs)"
+        },
+        "safe": true
+      }
+    },
+    {
+      "rule": "token",
+      "nodeId": "jhc96apkpk",
+      "name": "Tag",
+      "message": "fontSize is 14px, which equals the token --app-mobile-font-small. Use var(--app-mobile-font-small).",
+      "fix": {
+        "style": {
+          "fontSize": "var(--app-mobile-font-small)"
+        },
+        "safe": true
+      }
+    },
+    {
+      "rule": "token",
+      "nodeId": "e69wxsvfz8",
+      "name": "Titel",
+      "message": "fontSize is 18px, which equals the token --app-font-large. Use var(--app-font-large).",
+      "fix": {
+        "style": {
+          "fontSize": "var(--app-font-large)"
+        },
+        "safe": true
+      }
+    },
+    {
+      "rule": "token",
+      "nodeId": "zdwsxgx4s2",
+      "name": "Op",
+      "message": "fontSize is 14px, which equals the token --app-mobile-font-small. Use var(--app-mobile-font-small).",
+      "fix": {
+        "style": {
+          "fontSize": "var(--app-mobile-font-small)"
+        },
+        "safe": true
+      }
+    },
+    {
+      "rule": "token",
+      "nodeId": "fsszasngm0",
+      "name": "Gibt es hier nicht. Ehrlich ausgewiesen,",
+      "message": "fontSize is 16px, which equals the token --app-mobile-font-body. Use var(--app-mobile-font-body).",
+      "fix": {
+        "style": {
+          "fontSize": "var(--app-mobile-font-body)"
+        },
+        "safe": true
+      }
+    },
+    {
+      "rule": "token",
+      "nodeId": "5riwbbuhjd",
+      "name": "Zelle note",
+      "message": "gap is 12px, which equals the token --app-gap-md. Use var(--app-gap-md).",
+      "fix": {
+        "style": {
+          "gap": "var(--app-gap-md)"
+        },
+        "safe": true
+      }
+    },
+    {
+      "rule": "token",
+      "nodeId": "hhp486g0vv",
+      "name": "Logic / Node / note",
+      "message": "gap is 4px, which equals the token --app-gap-xs. Use var(--app-gap-xs).",
+      "fix": {
+        "style": {
+          "gap": "var(--app-gap-xs)"
+        },
+        "safe": true
+      }
+    }
+  ]
+}

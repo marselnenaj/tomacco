@@ -1,0 +1,11 @@
+{
+  "boards": {},
+  "review_fixes": {
+    "R26": "D01/D15 Tools UI confirmation",
+    "R27": "D07 explicit remote through Tools",
+    "R28": "D02 Main.showWorkspace special runtime/preview",
+    "R29": "D16 refused stored",
+    "R33": "D01 10 client adapters"
+  },
+  "historical_overlay_merged": true
+}

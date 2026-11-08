@@ -1,0 +1,63 @@
+{
+  "source_commit": "c2e2326f66879a595d27f476bf7964b49faf8c33",
+  "runtime_code_commit": "e0b79fe4207a50c7f7416af8392ee4a0a5648906",
+  "command": [
+    "python3",
+    "/home/maslos/Work/tomacco-perf-core-20261108/install.py",
+    "--binary",
+    "/home/maslos/Work/tomacco-perf-core-20261108/build/tomacco",
+    "--cli",
+    "/home/maslos/Work/tomacco-perf-core-20261108/build/tomaccoctl",
+    "--user-home",
+    "/home/maslos",
+    "--update",
+    "--no-window-rule"
+  ],
+  "exit_code": 0,
+  "installed_at": "2026-11-08T12:25:31.141838+00:00",
+  "physical_device_access": false,
+  "existing_device_sessions_stopped": false,
+  "public_release": false,
+  "restarted_desktop": false,
+  "installer": {
+    "installed": "/home/maslos/.local/bin/tomacco",
+    "cli": "/home/maslos/.local/bin/tomaccoctl",
+    "changed": 26,
+    "backups": "/home/maslos/.local/share/tomacco/install-backups/20261108-132530-151850",
+    "omarchy": false,
+    "agent_skill": {
+      "linked": [
+        "/home/maslos/.claude/skills/tomacco",
+        "/home/maslos/.codex/skills/tomacco",
+        "/home/maslos/.agents/skills/tomacco"
+      ],
+      "skipped": []
+    }
+  },
+  "protected_files_byte_identical": {
+    "/home/maslos/.config/marselnenaj/Tomacco.conf": true,
+    "/home/maslos/.config/omarchy/shell.json": true,
+    "/home/maslos/.config/omarchy/extensions/omarchy-menu.jsonc": true,
+    "/home/maslos/.config/hypr/tomacco.lua": true
+  },
+  "skill_links_preserved": {
+    "/home/maslos/.claude/skills/tomacco": true,
+    "/home/maslos/.codex/skills/tomacco": true,
+    "/home/maslos/.agents/skills/tomacco": true
+  },
+  "binaries": {
+    "tomacco": {
+      "expected": "4be956ea1c848b209e0852d023314cfa7273257ec30272e35f985c1b9342e5ca",
+      "installed": "4be956ea1c848b209e0852d023314cfa7273257ec30272e35f985c1b9342e5ca"
+    },
+    "tomaccoctl": {
+      "expected": "cfad72cd172158d4a6711611d1270bcd5abe01ad3cb5e691c1f425eeeb6ab960",
+      "installed": "cfad72cd172158d4a6711611d1270bcd5abe01ad3cb5e691c1f425eeeb6ab960"
+    },
+    "tomacco-demo-render": {
+      "expected": "5a010938113254868b626002369c1a01e472584279b6b9e00e310e69ab6042e0",
+      "installed": "5a010938113254868b626002369c1a01e472584279b6b9e00e310e69ab6042e0"
+    }
+  },
+  "state": "installed"
+}
