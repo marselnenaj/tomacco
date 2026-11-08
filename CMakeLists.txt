@@ -161,7 +161,7 @@ install(PROGRAMS tools/build_source_release.py tools/build_release_notes.py tool
 install(DIRECTORY tools/site-diagrams DESTINATION share/tomacco/tools)
 # The agent loop benchmark, the phone parity generator and the language registry
 # module that tools/i18n_catalog.py and the tests import.
-install(PROGRAMS tools/benchmark_agent_loop.py tools/benchmark_ocr.py tools/build_mobile_parity.py DESTINATION share/tomacco/tools)
+install(PROGRAMS tools/benchmark_agent_loop.py tools/benchmark_ocr.py tools/benchmark_performance.py tools/benchmark_iphone_observe.py tools/build_mobile_parity.py DESTINATION share/tomacco/tools)
 # Labelled offline OCR corpus for the benchmark in an unpacked package.
 install(DIRECTORY tests/fixtures/ocr-corpus DESTINATION share/tomacco/benchmarks)
 install(FILES tools/tomacco_i18n.py DESTINATION share/tomacco/tools)
