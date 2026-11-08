@@ -274,10 +274,12 @@ class InstallerTests(unittest.TestCase):
             check = subprocess.run(["appstreamcli", "validate", "--no-net", "--pedantic", str(source)], capture_output=True, text=True)
             self.assertEqual(check.returncode, 0, check.stdout + check.stderr)
 
-    def test_the_package_ships_only_text_from_the_source_tree(self):
+    def test_the_package_ships_text_and_declared_ocr_pngs_from_the_source_tree(self):
         # Users supply their own iOS restore image; no Apple firmware, kernel,
         # Mach-O or disk image may reach the package. Everything it copies
-        # from the repository is text: sources, patches, scripts and docs.
+        # from the repository is text, except the declared OCR screenshot
+        # corpus. Its PNG signature and exact manifest hashes are checked;
+        # other binaries remain forbidden.
         root = Path(__file__).resolve().parents[2]
         listed = (root / "CMakeLists.txt").read_text()
         shipped = set()
@@ -291,8 +293,21 @@ class InstallerTests(unittest.TestCase):
                 self.assertTrue(path.exists(), word)
                 shipped.update(p for p in ([path] if path.is_file() else path.rglob("*")) if p.is_file())
         self.assertGreater(len(shipped), 100)
+        import hashlib
+        corpus = root / "tests/fixtures/ocr-corpus"
+        manifest = json.loads((corpus / "manifest.json").read_text())
+        pngs = {case["image"]: case["sha256"] for case in manifest["cases"]}
+        for name, digest in pngs.items():
+            self.assertEqual(Path(name).name, name)
+            self.assertEqual(Path(name).suffix, ".png")
+            data = (corpus / name).read_bytes()
+            self.assertTrue(data.startswith(b"\x89PNG\r\n\x1a\n"), name)
+            self.assertTrue(data.endswith(b"\x00\x00\x00\x00IEND\xaeB`\x82"), name)
+            self.assertEqual(hashlib.sha256(data).hexdigest(), digest, name)
         binary = []
         for path in sorted(shipped):
+            if path.parent == corpus and path.name in pngs:
+                continue
             data = path.read_bytes()
             try:
                 data.decode("utf-8")
