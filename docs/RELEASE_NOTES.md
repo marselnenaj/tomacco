@@ -1,7 +1,6 @@
 # Tomacco 1.5.0
 
-Tomacco 1.5.0 brings the desktop, phone layout and coding agents onto the same
-296-operation workflow. It follows [1.4.1](RELEASE_NOTES_1.4.1.md).
+Tomacco 1.5.0 brings the desktop, phone layout and coding agents onto the same 296-operation workflow. It follows [1.4.1](RELEASE_NOTES_1.4.1.md).
 
 ## Highlights
 
@@ -49,16 +48,14 @@ OpenMP settings are preserved. Cancellation, time/output/memory limits, recyclin
 55-second idle cleanup bound retention; a dispatched failure is not silently retried.
 The warm model uses more resident RAM until cleanup.
 
-With the default two-polarity policy, warm fresh-image OCR reads were about **3.2×
-faster than the published 1.4.1 package** in 36 matched pairs across three real app
+With the default two-polarity policy, warm fresh-image OCR reads were about **3.2× faster than the published 1.4.1 package** in 36 matched pairs across three real app
 crops. All 90 pairs across the default and one-pass policies retained the same word
 text and rectangles, including existing recognition misses. The old package's
 signature and checksum were verified before execution. These are local English-model
 PNG reads under recorded host load, not physical-device or competitor measurements.
 [Public 1.4.1 comparison and exact boundaries](public-v1.4.1-performance.json).
 
-A separate 20-case, 540-call corpus matrix compared the same 1.5.0 CLI with the
-pre-optimization development build. All 360 non-timing output comparisons matched.
+A separate 20-case, 540-call corpus matrix compared the same 1.5.0 CLI with the pre-optimization development build. All 360 non-timing output comparisons matched.
 [Full qualification](performance-final-qualification.json) identifies the measured
 `cfad72cd` CLI, candidate `c2e2326` and runtime source `e0b79fe`; later documentation
 commits do not change that recognition code. The warm model uses more resident RAM.
@@ -87,8 +84,7 @@ Local fixtures cover queue and input behavior; physical sound synchronization, m
 swipes and verified iPhone input remain unqualified. AirPlay still needs the documented
 UxPlay, network, Bluetooth pairing and AssistiveTouch prerequisites.
 
-Pixel/Omarchy Mobile installation and physical parity are pending. Prior ARM/container
-artifacts do not qualify the new 1.5.0 package. The experimental virtual iPhone still
+Pixel/Omarchy Mobile installation and physical parity are pending. Prior ARM/container artifacts do not qualify the new 1.5.0 package. The experimental virtual iPhone still
 needs an x86_64 Linux host, your own Apple images and the documented resources; it is
 not an Apple Simulator replacement. [Runtime limits](virtual-ios/README.md#honest-limits)
 and [host requirements](linux-hosts.md) continue to apply.
