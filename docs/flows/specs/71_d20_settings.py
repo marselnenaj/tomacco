@@ -87,6 +87,7 @@ BOARDS = [{
 }]
 BOARDS[0].update({
     "notes": [
+        "Aktueller Sprachstand: 1.898 Quelltexte, Digest 47ea5c3a1e0f; 50 vollständige Übersetzungen plus Englisch. Neue Demo-Tontexte sind enthalten. Technische Katalogprüfung ist keine muttersprachliche Abnahme.",
         "settings.json liegt unter $TOMACCO_HOME oder ~/.local/share/tomacco/; settings.get liest sie, settings.configure prüft Pfade (absolut, vorhanden; Werkzeuge bekannt und ausführbar) und schreibt atomar unter settings.lock. Es gibt keine settings-Import- oder Export-Operation.",
         "Die GUI-QSettings (auch Telefonlayout; Organisation marselnenaj, App Tomacco) halten appearance, appearance/omarchyAccent, appearance/uiScale, language, device, Notifications/jobs, NativeDisplay/*, NativeAudio/forwardAudio, NativeIphone/runnerBundle sowie Fenster, Verlauf und Ansichtszustände. Diese Darstellungswahl ist keine Laufzeit-Einstellung der Steuerung.",
         "Export nimmt nur portable, geprüfte Werte (Format tomacco-desktop-settings, version 1); Pfade, Fenstergrößen, Projektverlauf, Jobverlauf und Forschungseinstellungen bleiben. Tomacco speichert dort keine Zugangsdaten. Import übernimmt jeden gültigen Schlüssel einzeln und zählt ungültige als ignoriert.",

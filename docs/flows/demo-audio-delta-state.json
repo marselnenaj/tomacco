@@ -1,0 +1,104 @@
+{
+  "state": "ready_for_root_final_qa",
+  "desktop_installed": true,
+  "source_audio_product_expected": "578819be350cc430196fef59a8d07ea91b3c34e4",
+  "file_id": "u8uvnj33hx",
+  "page_id": "f5zgae58fy",
+  "d23_artboard": "373rq1dd4q",
+  "live_writes_started": true,
+  "previous_acceptance": "history/4584d6b/final-acceptance.json",
+  "nodes_expected": 981,
+  "changed_content": [
+    "D23allsections",
+    "D19footer",
+    "D20footer",
+    "00provenance",
+    "S1body",
+    "all33footerbaseline-labels"
+  ],
+  "physical_device_access": false,
+  "updated_at": "2026-11-08T08:58:11.894770+00:00",
+  "product_expected": "1713806db7ef00eda9754bb5bea23cd803179aa0",
+  "audio_runtime_source": "578819be350cc430196fef59a8d07ea91b3c34e4",
+  "product_commit": "1713806db7ef00eda9754bb5bea23cd803179aa0",
+  "mutations": [
+    {
+      "board": "D23",
+      "part": "header",
+      "old_id": "w6xcgapf6d",
+      "phase": "replace_requested"
+    },
+    {
+      "board": "D23",
+      "part": "header",
+      "old_id": "w6xcgapf6d",
+      "new_id": "wn8s1zb6gd",
+      "phase": "written"
+    },
+    {
+      "board": "D23",
+      "part": "canvas",
+      "old_id": "5gtyi5qtc0",
+      "phase": "replace_requested"
+    },
+    {
+      "board": "D23",
+      "part": "canvas",
+      "old_id": "5gtyi5qtc0",
+      "new_id": "xiuy3hny2x",
+      "phase": "written"
+    },
+    {
+      "board": "D23",
+      "part": "canvas",
+      "old_id": "xiuy3hny2x",
+      "new_id": "s9etdpy2dh",
+      "phase": "label_polish"
+    },
+    {
+      "board": "D23",
+      "part": "footer",
+      "old_id": "z16s0zm7h1",
+      "new_id": "fwh1pmvxi8",
+      "phase": "written"
+    },
+    {
+      "board": "D19",
+      "part": "footer",
+      "old_id": "qw87gwfwn2",
+      "new_id": "kn0ki2x5sm",
+      "phase": "written"
+    },
+    {
+      "board": "D20",
+      "part": "footer",
+      "old_id": "71kruhmayc",
+      "new_id": "3893utwnvn",
+      "phase": "written"
+    },
+    {
+      "board": "S1",
+      "part": "body",
+      "old_id": "exi84c870i",
+      "new_id": "8kfte5f4hb",
+      "phase": "written"
+    },
+    {
+      "board": "S1",
+      "part": "body",
+      "old_id": "8kfte5f4hb",
+      "new_id": "5dnw9ci2wn",
+      "phase": "single_wrapper_written"
+    }
+  ],
+  "checkpoint": {
+    "id": "mw7lmw6j-13a28bdc",
+    "name": "Tomacco · Demo Originalton · Produkt1713806 · 33 Flows / 296 Operationen"
+  },
+  "logical_nodes": 981,
+  "actual_nodes_verified": 981,
+  "prototype_links": 382,
+  "png_exports": 36,
+  "critical_lint": 0,
+  "brand_hard": 0
+}

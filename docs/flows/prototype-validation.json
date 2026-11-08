@@ -2,6 +2,7 @@
   "date": "2026-11-08",
   "file_id": "u8uvnj33hx",
   "page_id": "f5zgae58fy",
+  "product_source": "1713806db7ef00eda9754bb5bea23cd803179aa0",
   "links_expected": 382,
   "links_present": 382,
   "unique_targets": 56,
@@ -9,7 +10,8 @@
   "missing_targets": [],
   "interaction_mismatches": [],
   "problems": [],
-  "note": "File's original prototype start preserved on existing app-screen page; atlas entry is 00. All AtlasLink/footer/screen/backlink layers on page04 navigate to actual existing artboards.",
+  "original_start": "eivfth6g13",
+  "note": "Original file start preserved; atlas entry00. Actual existing artboard targets; pages01–03 unchanged.",
   "layers": [
     {
       "id": "gwh7w824wr",
@@ -2364,7 +2366,7 @@
       ]
     },
     {
-      "id": "d827hx2p8e",
+      "id": "hqmuj0n2yh",
       "name": "Link → D04",
       "interactions": [
         {
@@ -2380,7 +2382,7 @@
       ]
     },
     {
-      "id": "grkh2afn1w",
+      "id": "4xikac83rm",
       "name": "Link → D06",
       "interactions": [
         {
@@ -2396,7 +2398,7 @@
       ]
     },
     {
-      "id": "6u1y81eh04",
+      "id": "9n11u3dvt9",
       "name": "Link → D15",
       "interactions": [
         {
@@ -2412,7 +2414,7 @@
       ]
     },
     {
-      "id": "f16j8f7d4b",
+      "id": "3esf8v4rtx",
       "name": "Link → D20",
       "interactions": [
         {
@@ -2428,7 +2430,7 @@
       ]
     },
     {
-      "id": "92zjxx1yi7",
+      "id": "hm0ir1g68f",
       "name": "Link → D23",
       "interactions": [
         {
@@ -2444,7 +2446,7 @@
       ]
     },
     {
-      "id": "s6jinu0yv6",
+      "id": "x17jgh7imz",
       "name": "Link → D24",
       "interactions": [
         {
@@ -2460,7 +2462,7 @@
       ]
     },
     {
-      "id": "4xpedbhxqx",
+      "id": "5xftm5f0dq",
       "name": "Screen → p2a5wkem8q",
       "interactions": [
         {
@@ -2476,7 +2478,7 @@
       ]
     },
     {
-      "id": "4drta0pa6p",
+      "id": "q75eb21qfx",
       "name": "Screen → 7wp3itphp3",
       "interactions": [
         {
@@ -2492,7 +2494,7 @@
       ]
     },
     {
-      "id": "24b5uk7p81",
+      "id": "8t6dwepqhv",
       "name": "Screen → xw5eiqpyd2",
       "interactions": [
         {
@@ -2524,7 +2526,7 @@
       ]
     },
     {
-      "id": "85va1s6rz0",
+      "id": "5hxtbwt907",
       "name": "Link → D02",
       "interactions": [
         {
@@ -2540,7 +2542,7 @@
       ]
     },
     {
-      "id": "7aewiwk243",
+      "id": "vv2sxkraig",
       "name": "Link → D05",
       "interactions": [
         {
@@ -2556,7 +2558,7 @@
       ]
     },
     {
-      "id": "qf5eimf8wx",
+      "id": "g2vmzdhzwq",
       "name": "Link → D14",
       "interactions": [
         {
@@ -2572,7 +2574,7 @@
       ]
     },
     {
-      "id": "ds7n7ny0zj",
+      "id": "iixu6g0t0d",
       "name": "Link → D15",
       "interactions": [
         {
@@ -2588,7 +2590,7 @@
       ]
     },
     {
-      "id": "3rd8ur7pm3",
+      "id": "h9zqkxe7sv",
       "name": "Link → D19",
       "interactions": [
         {
@@ -2604,7 +2606,7 @@
       ]
     },
     {
-      "id": "pz2ewnvzj6",
+      "id": "4vh37ie3kn",
       "name": "Link → D25",
       "interactions": [
         {
@@ -2620,7 +2622,7 @@
       ]
     },
     {
-      "id": "gy08jy9vkf",
+      "id": "h9gmv718em",
       "name": "Screen → n9p6dcd11d",
       "interactions": [
         {
@@ -2636,7 +2638,7 @@
       ]
     },
     {
-      "id": "3n4a1u4b7h",
+      "id": "ib6gsufzzd",
       "name": "Screen → 5t9p52u7cj",
       "interactions": [
         {
@@ -2940,7 +2942,7 @@
       ]
     },
     {
-      "id": "xsvs6128c1",
+      "id": "c2w2af74n8",
       "name": "Link · Übersicht",
       "interactions": [
         {
@@ -2956,7 +2958,7 @@
       ]
     },
     {
-      "id": "bhud4y28yw",
+      "id": "emmtyy5668",
       "name": "Link → D18",
       "interactions": [
         {
@@ -2972,7 +2974,7 @@
       ]
     },
     {
-      "id": "cz13tej00g",
+      "id": "ga0w7aerw5",
       "name": "Link → D19",
       "interactions": [
         {
@@ -2988,7 +2990,7 @@
       ]
     },
     {
-      "id": "i2axjzzr64",
+      "id": "ip1mukf0ax",
       "name": "Link → D15",
       "interactions": [
         {
@@ -3004,7 +3006,7 @@
       ]
     },
     {
-      "id": "nc3462kg89",
+      "id": "dddu2xnfg3",
       "name": "Link → D21",
       "interactions": [
         {
@@ -3820,7 +3822,7 @@
       ]
     },
     {
-      "id": "eu0sj0mzc5",
+      "id": "ytnuctqg9i",
       "name": "AtlasLink → 00",
       "interactions": [
         {
@@ -3836,7 +3838,7 @@
       ]
     },
     {
-      "id": "51vcu8rrct",
+      "id": "s3ipqgr3y0",
       "name": "AtlasLink → C1",
       "interactions": [
         {
@@ -6123,5 +6125,6 @@
         }
       ]
     }
-  ]
+  ],
+  "exact_target_lookup": true
 }

@@ -1,0 +1,93 @@
+{
+  "schema": "tomacco-demo-audio-source-review/1",
+  "reviewed_at": "2026-11-08T08:26:02.929106+00:00",
+  "reviewer": "Codex independent child agent demo_audio_languages; source-read-only review",
+  "baseline": "470c3c6",
+  "reviewed_head": "578819be350cc430196fef59a8d07ea91b3c34e4",
+  "scope": [
+    "native/demo.rs",
+    "src/demo_render_main.cpp",
+    "src/demorenderer.cpp",
+    "src/demorenderer.h",
+    "qml/DemoWorkspace.qml",
+    "assets/operations.json"
+  ],
+  "source_hashes": {
+    "native/demo.rs": "cadedea8fda3772b4ffba5d3c148f94830fb5a55610954d13d0ea713e1a6e569",
+    "src/demo_render_main.cpp": "a29578616c9385bf10bbdeb712596934a384da57b917c851f9072d9ffd322eec",
+    "src/demorenderer.cpp": "0fa265aa9456aa6149c30d7e67a6b03ca298b5e13c8a48feda33448c2da5ae37",
+    "src/demorenderer.h": "6d82e92690cf449fc3f11d1890dc069cfdcf47f377bf2a06dd4e426663126fa5",
+    "qml/DemoWorkspace.qml": "3d050a08cec718cb5aa3229eb7be5c5d50891afe4c39b553097e968fc976285c",
+    "assets/operations.json": "52d2b761a5c73a57c8f28c529d1e36eaa26b3ac1af77ffe34ff9a2536072de97"
+  },
+  "kind": "Bounded correctness review; not a security audit, hardware qualification or exhaustive all-argument proof",
+  "open_findings": 0,
+  "findings": [
+    {
+      "id": "DA01",
+      "severity": "medium",
+      "status": "resolved",
+      "title": "Source audio and rebased video used different timestamp origins",
+      "before": "With video.start_time=0.5 and audio.start_time=0, the decoder rebased first picture to zero while source audio retained the container origin. A pulse at1.35s remained at1.35s instead of0.85s relative to the displayed picture; coarse time bases and non-frame-aligned seeks also require the actual decoded origin.",
+      "source_anchor": "src/demo_render_main.cpp decoderArguments, firstVideoOrigin, run",
+      "reproduction": "qa/demo-audio/positive-video-start-repro.json and result-before-video-origin-fix.json",
+      "fix_commit": "4f4bb0b534dba80b55bd41091aaf113f11368b46",
+      "resolution": "The source-audio decoder uses copyts/start_at_zero and a one-frame showinfo side branch before setpts/fps, computes the actual first video PTS using its time base, and trims audio from that observed origin. Rendering retains the already-read first frame. The renderer and validation records retain source_audio_origin; missing/out-of-bounds origin is refused. Diagnostics are drained and bounded.",
+      "verification": "qa/demo-audio/integration-final.log: positive video start at clip0/0.25/1.0, fine/coarse timebase trim, decoded picture/audio anchors; eight integration tests passed across13exports."
+    },
+    {
+      "id": "DA02",
+      "severity": "low",
+      "status": "resolved",
+      "title": "Missing AAC encoder still allowed enabling source audio in the desktop",
+      "source_anchor": "qml/DemoWorkspace.qml demoSourceAudio enabled binding and following Caption; tests/demo_workspace_test.cpp missing_aac_keeps_silent_exports_available_and_allows_muting_existing_scenes",
+      "resolution": "A false capabilities.audio.source_available prevents enabling source sound, explains the local AAC requirement, and still permits switching an already-enabled scene to muted. Muted exports and PNG previews retain the general render path. The added explanation is translated in all50catalogs."
+    }
+  ],
+  "checked_contracts": [
+    {
+      "topic": "Old version1 scenes and request identity",
+      "conclusion": "Missing audio defaults to muted; new scenes explicitly emit muted. Scene format version stays1. Muted render identity omits only the new audio field from struct-order JSON, preserving the legacy digest rather than reordering via Value."
+    },
+    {
+      "topic": "Saved audio policy",
+      "conclusion": "Only muted/source modes are accepted; source mode requires source.has_audio. Partial update admits audio, verifies revision and immutable media; the queued request freezes its scene revision and copied local source."
+    },
+    {
+      "topic": "Availability",
+      "conclusion": "General ready still means the silent H.264 path is available. AAC availability is separate, and source-audio export refuses missing AAC before starting. PNG preview does not require AAC."
+    },
+    {
+      "topic": "Duration and offsets",
+      "conclusion": "Audio uses the observed first-picture origin, keeps subsequent source gaps, and mixes with a finite silence bed to ceil(duration*fps)/fps. Short or already-ended audio cannot shorten video; no -shortest truncation is introduced."
+    },
+    {
+      "topic": "Independent media and sidecar checks",
+      "conclusion": "Validation enforces expected H.264 dimensions/frame count/FPS/duration, requested audio presence, single AAC48k stereo stream at zero within bounded duration tolerance, and full video plus audio decode. Renderer silent/audio policy, actual media and saved scene policy are cross-checked; inspection rejects covered sidecar contradictions and digest mismatch."
+    },
+    {
+      "topic": "Cancellation and no overwrite",
+      "conclusion": "The change retains owned temporary artifacts, no-clobber hardlink publication, source re-verification, and cancellation checks. New decoder/encoder children use the existing terminating Child lifetime; the first audio-origin read has the same bounded/cancellable frame-read path."
+    },
+    {
+      "topic": "UI and schema",
+      "conclusion": "The same audio.mode is saved through revisioned demo.scene.update. Legacy drafts remain unchanged until a user edit. Dirty-state render gating and the existing operation count are retained. Schema accepts only an audio object with muted/source mode; empty nested updates merge with the existing canonical mode."
+    }
+  ],
+  "verification_evidence": {
+    "integration_summary": "qa/demo-audio/qa-summary.json",
+    "real_integration_tests": 8,
+    "synthetic_exports": 13,
+    "mock_backend_tests": 22,
+    "forbidden_hardware_tool_calls": 0,
+    "final_i18n_source_count": 1898,
+    "final_i18n_digest": "47ea5c3a1e0f",
+    "i18n_tests": "18/18 passed",
+    "ui_test_source": "tests/demo_workspace_test.cpp; runtime/UI approval belongs to root"
+  },
+  "limitations": [
+    "Source review plus supplied synthetic regression results; not every container, codec or timestamp pattern is exhaustively tested.",
+    "No device/AirPlay latency, native audio hardware, Pixel installation or native-speaker review was performed.",
+    "Actual Bogen updates, final whole-product qualification, packaging and installation remain root responsibilities."
+  ]
+}

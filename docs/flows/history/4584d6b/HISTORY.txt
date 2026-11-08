@@ -1,0 +1,1 @@
+Historical 4584d6b core atlas accepted 08.11.2026 before optional source audio. The old 36 PNGs,954-node map and acceptance remain unchanged here. Current live Bogen state is documented by top-level provenance-current.json and current acceptance. No duplicate historical Bogen pages are created.

@@ -1,0 +1,62 @@
+{
+  "state": "desktop_installed",
+  "started_at": "2026-11-08T08:25:27.684775+00:00",
+  "physical_device_access": false,
+  "desktop_installed": true,
+  "published": false,
+  "stages": [
+    {
+      "label": "build",
+      "state": "passed",
+      "command": [
+        "cmake",
+        "--build",
+        "/home/maslos/Work/tomacco-demo-audio-20261108/build",
+        "--parallel",
+        "4"
+      ],
+      "exit_code": 0,
+      "seconds": 0.1
+    },
+    {
+      "label": "ctest",
+      "state": "failed",
+      "command": [
+        "dbus-run-session",
+        "--",
+        "ctest",
+        "--test-dir",
+        "/home/maslos/Work/tomacco-demo-audio-20261108/build",
+        "--output-on-failure",
+        "--parallel",
+        "1"
+      ],
+      "exit_code": 8,
+      "seconds": 741.4
+    },
+    {
+      "label": "control-plane-after-docs-fix",
+      "state": "passed",
+      "command": [
+        "dbus-run-session",
+        "--",
+        "ctest",
+        "--test-dir",
+        "/home/maslos/Work/tomacco-demo-audio-20261108/build",
+        "--output-on-failure",
+        "-R",
+        "^control-plane$"
+      ],
+      "exit_code": 0,
+      "seconds": 376.7
+    }
+  ],
+  "product_commit": "1713806db7ef00eda9754bb5bea23cd803179aa0",
+  "isolated_test_home": "/tmp/tomacco-demo-audio-qa-hflt56qr",
+  "initial_product_commit": "578819be350cc430196fef59a8d07ea91b3c34e4",
+  "runtime_code_commit": "578819be350cc430196fef59a8d07ea91b3c34e4",
+  "corrected_failure": "Public documentation discovery must exclude internal Bogen atlas/history; targeted20docs tests passed.",
+  "finished_at": "2026-11-08T08:46:13.575761+00:00",
+  "qualification_method": "All14groupsrun; onlycontrol-planegroupfailedpublicdocsmapping, thenfixedandrerunentiregroup. Other13passedincludingrust-core.",
+  "desktop_receipt": "/home/maslos/Work/tomacco-demo-audio-qualification-20261108/desktop-update-receipt.json"
+}

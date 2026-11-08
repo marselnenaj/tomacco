@@ -34,6 +34,16 @@ FONTS = REPO / "assets" / "fonts"
 # Product source the anchors are written against (installed desktop).
 SOURCE_BASELINE = "4584d6b"
 
+def provenance():
+    """Current qualified product; footer source anchors keep their own baseline."""
+    path = ROOT / "provenance-current.json"
+    return json.loads(path.read_text()) if path.exists() else {
+        "product_source": "4584d6bca3a07840e81683d99cd0adb386aeff35",
+        "core_source_baseline": "4584d6bca3a07840e81683d99cd0adb386aeff35",
+        "desktop_installed": True, "source_keys": 1894,
+    }
+
+
 # Grid: 5 columns of 272 px with 56 px gaps fill the 1584 px canvas exactly.
 COLW, GAPX, ROWH, GAPY = 272, 56, 120, 64
 PX, PY = COLW + GAPX, ROWH + GAPY
@@ -514,7 +524,7 @@ def build(board):
               "edges": out_edges, "operations": board.get("ops", []), "sources": board.get("sources", []),
               "notes": board.get("notes", []), "links": board.get("links", []), "screens": board.get("screens", []),
               "status": board.get("status", ""), "routes": board.get("routes", []), "height": height,
-              "spec_file": board.get("spec_file", "")}
+              "spec_file": board.get("spec_file", ""), "source_baseline_label": board.get("source_label", "Kern " + SOURCE_BASELINE)}
     return "".join(parts), record
 
 
@@ -542,8 +552,8 @@ def footer_html(b):
     return ('<style>.sl{margin:0}.fl{display:flex;align-items:center;min-height:44px;padding:0 14px;border:2px solid var(--rule);font-family:var(--mono);font-size:15px;color:var(--fg);white-space:nowrap}.kk{font-family:var(--mono);font-size:14px;letter-spacing:.06em;color:var(--at)}</style>'
             '<footer data-name="Fuß · %s" style="display:grid;grid-template-columns:1fr 1fr;gap:24px 56px;padding-top:24px;border-top:2px solid var(--rule);font-family:var(--sans);color:var(--dim)">'
             '<div data-name="Grenzen" style="display:flex;flex-direction:column;gap:12px;font-size:18px;line-height:1.45"><div class="%s">STATUS &amp; GRENZEN</div>%s</div>'
-            '<div data-name="Quellen" style="display:flex;flex-direction:column;gap:12px"><div class="%s">QUELLANKER (PRODUKT %s, INSTALLIERT)</div><ul style="margin:0;padding-left:20px;display:flex;flex-direction:column;gap:4px;font-family:var(--mono);font-size:14px;line-height:1.45;overflow-wrap:anywhere">%s</ul></div>'
-            '<div data-name="Weiter" style="grid-column:1 / span 2;display:flex;flex-wrap:wrap;gap:12px">%s</div></footer>') % (b["id"], k, notes, k, SOURCE_BASELINE, src, links)
+            '<div data-name="Quellen" style="display:flex;flex-direction:column;gap:12px"><div class="%s">QUELLANKER (%s)</div><ul style="margin:0;padding-left:20px;display:flex;flex-direction:column;gap:4px;font-family:var(--mono);font-size:14px;line-height:1.45;overflow-wrap:anywhere">%s</ul></div>'
+            '<div data-name="Weiter" style="grid-column:1 / span 2;display:flex;flex-wrap:wrap;gap:12px">%s</div></footer>') % (b["id"], k, notes, k, b.get("source_label", "Kern " + SOURCE_BASELINE), src, links)
 
 
 def check(board):

@@ -89,7 +89,7 @@ BOARDS[0].update({
         "Telefon: eine Fläche zur Zeit (Liste oder Datei), Zurück führt zur Liste; eine vorhandene Datei öffnet ohne Tastatur, erst Tippen in den Text öffnet sie; neue Dateien bekommen sofort den Fokus.",
         "Projektwechsel parkt offene Tabs und ungespeicherte Texte je Projekt; Fenster schließen oder Gerät abdocken fragt bei Ungespeichertem (D04).",
         "Wahl je Modus: open nimmt eine vorhandene, lesbare Datei; save den Namen im gezeigten Ordner (Ordner muss existieren; Schreibbarkeit prüft erst der Aufrufer); folder den Ordner aus dem Ort. Ein getippter Ordnername wird betreten, nicht gewählt.",
-        "Stand 4584d6b installiert: 23 frühere Qt-FileDialog/FolderDialog-Stellen nutzen FileChooserDialog, ProjectFolderDialog ist seine Projektform. Telefon-Sheet, SafeArea und Tastatur-Inset nur offscreen mit simulierten Insets geprüft, nicht auf dem Pixel.",
+        "Seit Kern 4584d6b: 23 frühere Qt-FileDialog/FolderDialog-Stellen nutzen FileChooserDialog, ProjectFolderDialog ist seine Projektform. Telefon-Sheet, SafeArea und Tastatur-Inset nur offscreen mit simulierten Insets geprüft, nicht auf dem Pixel.",
         "Qt-Darstellung (Größe, Sprache, RTL) kommt aus den GUI-Einstellungen (D20); files.* sind Laufzeit-Operationen. Die Desktop-Ansicht ruft files.write direkt (Kanal desktop, ohne Agenten-Freigabe); ein Agent über MCP durchläuft D15.",
     ],
     "sources": [
@@ -104,5 +104,5 @@ BOARDS[0].update({
     "screens": [["pvcps58bsa", "p2a5wkem8q", "06 Dateien"], ["pvcps58bsa", "7wp3itphp3", "07 Editor OSK"], ["pvcps58bsa", "xw5eiqpyd2", "24 Datei wählen"]],
     "routes": ["files"],
     "ops": ["files.list", "files.read", "files.write", "files.mkdir", "files.search"],
-    "status": "implementiert (4584d6b installiert); Chooser-Telefonlayout nur offscreen qualifiziert",
+    "status": "implementiert seit Kern 4584d6b; Chooser-Telefonlayout nur offscreen qualifiziert",
 })

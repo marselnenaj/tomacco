@@ -1,0 +1,125 @@
+{
+  "reviewer": "root",
+  "date": "2026-11-08",
+  "reviewed_bogen_boards": {
+    "00": {
+      "node_id": "bxx82h1gcm",
+      "result": "Typography, spacing and legend readable in actual canvas render; index still in progress."
+    },
+    "D01": {
+      "node_id": "zsjsa63us8",
+      "result": "Readable connectors, labeled dispatcher and host boundaries, clear experimental status. Current render accepted."
+    },
+    "D02": {
+      "node_id": "vksmw1dgne",
+      "result": "Actual full canvas readable, source note requires corrected scaling arithmetic."
+    },
+    "D03": {
+      "node_id": "j4k0gtc0mn",
+      "result": "Flow and branches readable, but two dense nodes overflow vertically."
+    },
+    "D04": {
+      "node_id": "tvt65zsrkf",
+      "result": "Actual canvas readable; unsaved and AirPlay/session shutdown branches coherent. Pin is only mentioned, not yet modeled as transition."
+    },
+    "D05": {
+      "node_id": "7m8xquxd9i",
+      "result": "Actual render inspected; run operation list is too tight, mandatory all-node overflow check."
+    },
+    "D06": {
+      "node_id": "8fjj1ks7vs",
+      "result": "Actual render inspected, zero overflow/contrast/small-text/target lint. Tall shared project state box visually weak."
+    },
+    "D07": {
+      "node_id": "a4b866ybye",
+      "result": "Actual render readable but abgebrochen label visibly overlaps the stop node/tag. Lint reports0 overflow; generator edge-only check does not detect labels."
+    }
+  },
+  "required_corrections": [
+    {
+      "diagram": "D02",
+      "source_file": "docs/flows/specs/02_navigation.py",
+      "finding": "The note says a 393px phone at 100% and a 1440px window at 200% behave the same. 1440 / 2 = 720 logical px, which is above the 600 phone threshold.",
+      "correction": "Use 786px at 200% versus 393px at 100% for the equal logical width example, or state 1440px at 200% gives 720 logical px and remains above the phone threshold. Apply source and actual Bogen footer correction, render again."
+    },
+    {
+      "diagram": "D03",
+      "source_file": "docs/flows/specs/02_navigation.py",
+      "finding": "Actual full Bogen render: more node MobileNav.moreEntries and pback node property list extend below their 120px frame. Text is outside the node border.",
+      "correction": "Raise these individual node heights or shorten/split copy while preserving minimum readable font size; adjust connectors/neighbor positions as needed. Audit all remaining dense nodes for the same component height problem; rendered bounds must contain actual text."
+    },
+    {
+      "diagram": "D04",
+      "finding": "Pin/always-on-top behavior currently only appears as saved text in the detached state; there is no explicit user-action transition. Original flow brief includes pin.",
+      "correction": "Add small readable pin transition/callout flow using DeviceWindow.qml:36-37,81,174 and NativeWorkspace.qml:279,281,417-418: user toggles stayOnTop, NativeDisplay.windowOnTop persists, Qt flag + delayed Studio.keepOnTop compositor call. No claim that always-on-top overrides unrelated compositor windows universally. Can be compact addendum/connected inset on D04."
+    },
+    {
+      "diagram": "D05 and all diagrams",
+      "finding": "D05 actual render shows run operation list tight against/below bottom border despite height increase. D03 lint confirms four real overflow issues, Tag/Op children,9px and4px.",
+      "correction": "Final design_lint must have zero real overflow across all diagrams. Do not waive text outside node bounds. Shorten dense copy or grow nodes and reroute, retain readable type."
+    },
+    {
+      "diagram": "00, D19, coverage/status and source metadata",
+      "finding": "Root installed fully qualified adaptive dialogs source4584d6b at01:56:40UTC; 23 stock file/folder dialog uses migrated, plus5 new strings and catalog-only bn/bg fixes. Source count1894 digest161b3088e436; operation schema unchanged296.",
+      "correction": "Read docs/adaptive-dialogs-progress.json in canonical final source clone. Reconcile D19 with current FileChooserDialog open/save/folder/overwrite and update current installation wording, translation counts and source provenance accurately. If retaining D4 source anchors, label them reference baseline and current4584 delta; do not keep saying D4 is current installed or adaptive chooser uninstalled. No blanket change public brand copy."
+    },
+    {
+      "diagram": "D06",
+      "finding": "The common Projekt gewählt state is a1040px-tall nearly empty rectangle. This wastes space and hides the convergence logic; replace with normal-size state plus explicit connector bus/join. Also footer still calls adaptive chooser uninstalled, now outdated after root install4584.",
+      "correction": "Use normal state near middle/bottom, route incoming edges through a shared bus in free gap outside existing nodes. Keep labels and source mapping. Update common chooser note to current installed4584 contract."
+    },
+    {
+      "diagram": "D10",
+      "finding": "Source review: HID node incorrectly says relative pointer; current Bluetooth code sends absolute report4, normalized0..1 to0..32767. Desktop capture node incorrectly claims AirPlay video recording: Ctrl+Shift+S is screenshot, ScreenRecorder is Android-only. Observation unsupported wording keine Tastatur conflicts with supported BLE text input.",
+      "correction": "Use absolute BLE-HID pointer, US keyboard. Cite bluetooth.rs:23-26,49-65,318,425-426. Mention re-pair if phone cached old HID report map,120s new-pairing window. Desktop Qt-owned video can save/copy a screenshot (NativeWorkspace.qml:533-542); do NOT claim ScreenRecorder records AirPlay (527-531/1186 Android-only). Agent cannot obtain frames/UI tree/focused-app/keyboard visibility through observe; this does not deny BLE keyboard input. Actual device swipe/A-V quality remains unqualified."
+    },
+    {
+      "diagram": "D05, D09, D11 source/status wording",
+      "finding": "Avoid broad unproven never-downloads-from-Apple claim (ios.prepare developer-image delegates go-ios image auto); brand says no Apple SDK/images ship, not that every delegated tool never downloads from Apple. D11 release-Prüfungen nicht bestanden can wrongly imply executed failed acceptance rather than unqualified.",
+      "correction": "State narrowly: Apple SDK/restore images are not bundled, person supplies their Xcode.xip/images; WDA build downloaded from official pinned GitHub artifact. Virtual runtime remains experimental / not hardware or release qualified; distinguish not run from measured failure."
+    },
+    {
+      "diagram": "D07, D08, D11 and final all-board label audit",
+      "finding": "Independent real-Archivo font advance + polygon intersection review finds5 label/node collisions on11 specs: D07 hot->wstop(abgebrochen), D08 adb/rsa/boot->ready(device,bestätigt,bootet), D11 stage->fail(Fehler). D07 confirmed visually; source geometry check currently only checks edge/node overlaps, despite header mentioning label checks. D08 also uses672px tall mostly-empty state collector.",
+      "correction": "Run /home/maslos/Work/tomacco-flow-logic-handoff-20261108/check-label-placement.py and inspect label-placement-current.json. Move labels fully into free space/above routes; do not place them on destination text/border. Replace giant D08 collector state with normal node + bus as for D06. Re-run this check for final specs and visually inspect reported cases, retaining readable fonts."
+    },
+    {
+      "diagram": "D12 and every AirPlay occurrence",
+      "finding": "D12 repeats incorrect AirPlay BLE-Zeiger relativ. AirPlay runtime.observe no-frame branch also needs to distinguish unavailable visual automation from input unsupported: BLE input remains supported with supplied coordinates, while automated visual verification cannot run via Tomacco observe.",
+      "correction": "Globally audit relativ/relative in atlas AirPlay prose and use actual absolute report4 behavior. Label D12 as visual agent loop and connect no-frame path to D10 manual/known-coordinate BLE input or D17 human handoff; never imply AirPlay input is unsupported just because observe cannot supply a frame. No invented screenshots/verification through MCP."
+    },
+    {
+      "diagram": "Additional actual UI flow coverage (D28/D29 or equivalent readable dedicated flows)",
+      "finding": "Original27-board outline omits actual Web Preview browser automation and agent-client setup + generic Tools form flows. Mapping16preview operations to a generic overview alone does not explain these app flows.",
+      "correction": "Read docs/flows/ROOT-ADDITIONAL-SCOPE.txt before finalizing. Add readable Web Preview flow for all16preview.* operations + GUI serveFolder, and Agent setup/Tools form flow. Source actual10 clients(native/agent_clients.rs CLIENTS): Claude Code,Codex,Gemini CLI,Cursor,VS Code,Zed,OpenCode,Grok CLI,Hermes Agent,omp. Setup uses CLI setup agents, NOT invented agent.setup(only agent.policy exists). Tools form has its OWN confirmingRun for destructiveHint===true despite guard desktop exemption; show this separately. Project.execute/run never auto-route, but remote.* ARE accessible through generic Tools (Workspace.qml:185-264,987; phone Mac hosts at574 shows remote.list). Map canonical CLI preview vs internal mobile web-preview alias accurately. Same page04, existing brand; dedicatedD28/D29 if needed to keep each board readable."
+    }
+  ],
+  "integration_updates": {
+    "adaptive_dialogs_final_head": "4584d6bca3a07840e81683d99cd0adb386aeff35",
+    "integrated_into": "/home/maslos/Work/tomacco-project-picker-final-20261107",
+    "host_qualification": "/home/maslos/Work/tomacco-adaptive-dialogs-qualification-20261108/host-verification.json",
+    "note": "Desktop4584 locally installed after full14 CTest and isolated installer rehearsal. All settings and3 skill links byte/target identical; no session stopped. Registry remains296 unchanged. Flow atlas audited D4 is historical source, update current-status wording and D19 chooser behavior to new installed4584 source before final; include source anchors from new FileChooserDialog and backend helpers. Follow root QA notes; no need product code changes.",
+    "host_qualification_result": "All14 CTest passed,702.48s; normal full build and private HOME/trapped transports.",
+    "desktop_install_receipt": "/home/maslos/Work/tomacco-adaptive-dialogs-qualification-20261108/desktop-update-receipt.json",
+    "desktop_installed_source": "4584d6bca3a07840e81683d99cd0adb386aeff35",
+    "desktop_installed_at": "2026-11-08T01:56:40Z",
+    "arm_candidate_verification": "succeeded; clean ARM64 container verify",
+    "arm_candidate_sha256": "3bd6c7f1506fb868e736292b21e0771b87a4369a303bf15970e417c43adef01a",
+    "macbook_staging": "/home/macbook-air/Work/tomacco-pixel-install-20261107/adaptive-dialogs-4584d6b",
+    "pixel_installed": false
+  },
+  "additional_scope_added_at": "2026-11-08T02:26:30Z",
+  "current_resolution": {
+    "date": "2026-11-08",
+    "status": "resolved_and_finally_accepted",
+    "evidence": [
+      "review-resolutions.json",
+      "ROOT-APPLICATION-STATE.json",
+      "atlas-map.json",
+      "prototype-validation.json"
+    ],
+    "historical_notes_preserved": true,
+    "root_final_acceptance_pending": false,
+    "final_acceptance": "final-acceptance.json"
+  }
+}

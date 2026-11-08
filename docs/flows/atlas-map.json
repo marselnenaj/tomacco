@@ -1,8 +1,12 @@
 {
   "schema": "tomacco-flow-atlas/1",
-  "product_source": "4584d6bca3a07840e81683d99cd0adb386aeff35",
+  "product_source": "1713806db7ef00eda9754bb5bea23cd803179aa0",
+  "core_source_baseline": "4584d6bca3a07840e81683d99cd0adb386aeff35",
   "date": "2026-11-08",
-  "registry_sha256": "bfa7809ea1cee09c9c851cb05fa2d68d19103c9ff5563d8699a9d1f085f84ee4",
+  "runtime_code_commit": "578819be350cc430196fef59a8d07ea91b3c34e4",
+  "source_keys": 1898,
+  "i18n_digest": "47ea5c3a1e0f",
+  "registry_sha256": "52d2b761a5c73a57c8f28c529d1e36eaa26b3ac1af77ffe34ff9a2536072de97",
   "bogen": {
     "file_id": "u8uvnj33hx",
     "page_id": "f5zgae58fy"
@@ -777,6 +781,7 @@
       "routes": [],
       "height": 1102,
       "spec_file": "docs/flows/specs/01_architecture.py",
+      "source_baseline_label": "Kern 4584d6b",
       "bogen": {
         "artboard": "zsjsa63us8",
         "header": "81ga3h1aep",
@@ -1865,6 +1870,7 @@
       ],
       "height": 1889,
       "spec_file": "docs/flows/specs/02_navigation.py",
+      "source_baseline_label": "Kern 4584d6b",
       "bogen": {
         "artboard": "vksmw1dgne",
         "header": "p566apccds",
@@ -2569,6 +2575,7 @@
       ],
       "height": 1266,
       "spec_file": "docs/flows/specs/02_navigation.py",
+      "source_baseline_label": "Kern 4584d6b",
       "bogen": {
         "artboard": "j4k0gtc0mn",
         "header": "5ghhb9gg2i",
@@ -3388,6 +3395,7 @@
       ],
       "height": 1671,
       "spec_file": "docs/flows/specs/02_navigation.py",
+      "source_baseline_label": "Kern 4584d6b",
       "bogen": {
         "artboard": "tvt65zsrkf",
         "header": "dzk6f04pb4",
@@ -4184,6 +4192,7 @@
       "routes": [],
       "height": 1073,
       "spec_file": "docs/flows/specs/03_setup_project.py",
+      "source_baseline_label": "Kern 4584d6b",
       "bogen": {
         "artboard": "7m8xquxd9i",
         "header": "csc7eeie2g",
@@ -5021,6 +5030,7 @@
       ],
       "height": 1708,
       "spec_file": "docs/flows/specs/03_setup_project.py",
+      "source_baseline_label": "Kern 4584d6b",
       "bogen": {
         "artboard": "8fjj1ks7vs",
         "header": "na36mnys7d",
@@ -5852,6 +5862,7 @@
       ],
       "height": 1613,
       "spec_file": "docs/flows/specs/03_setup_project.py",
+      "source_baseline_label": "Kern 4584d6b",
       "bogen": {
         "artboard": "a4b866ybye",
         "header": "2imhancze3",
@@ -6535,6 +6546,7 @@
       ],
       "height": 1082,
       "spec_file": "docs/flows/specs/04_devices.py",
+      "source_baseline_label": "Kern 4584d6b",
       "bogen": {
         "artboard": "hgc0gfj00u",
         "header": "mu3892zeq7",
@@ -7053,6 +7065,7 @@
       ],
       "height": 850,
       "spec_file": "docs/flows/specs/04_devices.py",
+      "source_baseline_label": "Kern 4584d6b",
       "bogen": {
         "artboard": "9yeeati9yf",
         "header": "3di10uhg0v",
@@ -7889,6 +7902,7 @@
       ],
       "height": 1552,
       "spec_file": "docs/flows/specs/04_devices.py",
+      "source_baseline_label": "Kern 4584d6b",
       "bogen": {
         "artboard": "13qr4k97tn",
         "header": "rm2d6s5xh2",
@@ -8549,6 +8563,7 @@
       ],
       "height": 1326,
       "spec_file": "docs/flows/specs/04_devices.py",
+      "source_baseline_label": "Kern 4584d6b",
       "bogen": {
         "artboard": "1hxc9y8dg1",
         "header": "2dqzdr47ux",
@@ -9374,6 +9389,7 @@
       ],
       "height": 1122,
       "spec_file": "docs/flows/specs/05_agent_loop.py",
+      "source_baseline_label": "Kern 4584d6b",
       "bogen": {
         "artboard": "qsrfwt20hy",
         "header": "i6hesxye35",
@@ -10348,6 +10364,7 @@
       ],
       "height": 1780,
       "spec_file": "docs/flows/specs/05_agent_loop.py",
+      "source_baseline_label": "Kern 4584d6b",
       "bogen": {
         "artboard": "8cndx5g5m2",
         "header": "54f0jw1256",
@@ -10870,6 +10887,7 @@
       ],
       "height": 1208,
       "spec_file": "docs/flows/specs/05_agent_loop.py",
+      "source_baseline_label": "Kern 4584d6b",
       "bogen": {
         "artboard": "rr3tz2x3cn",
         "header": "4qezi4j7wx",
@@ -11685,6 +11703,7 @@
       ],
       "height": 1764,
       "spec_file": "docs/flows/specs/06_policy_jobs.py",
+      "source_baseline_label": "Kern 4584d6b",
       "bogen": {
         "artboard": "m7hdtj54wj",
         "header": "dkcvdc6vnh",
@@ -12553,6 +12572,7 @@
       ],
       "height": 1598,
       "spec_file": "docs/flows/specs/06_policy_jobs.py",
+      "source_baseline_label": "Kern 4584d6b",
       "bogen": {
         "artboard": "9bgqanfm9m",
         "header": "zw9dwimwc3",
@@ -12979,6 +12999,7 @@
       ],
       "height": 858,
       "spec_file": "docs/flows/specs/06_policy_jobs.py",
+      "source_baseline_label": "Kern 4584d6b",
       "bogen": {
         "artboard": "cw5en7179g",
         "header": "26yyug5vx7",
@@ -13889,6 +13910,7 @@
       ],
       "height": 1378,
       "spec_file": "docs/flows/specs/06_policy_jobs.py",
+      "source_baseline_label": "Kern 4584d6b",
       "bogen": {
         "artboard": "0dmy7fe25p",
         "header": "0cet9p0huy",
@@ -15283,7 +15305,7 @@
         "Telefon: eine Fläche zur Zeit (Liste oder Datei), Zurück führt zur Liste; eine vorhandene Datei öffnet ohne Tastatur, erst Tippen in den Text öffnet sie; neue Dateien bekommen sofort den Fokus.",
         "Projektwechsel parkt offene Tabs und ungespeicherte Texte je Projekt; Fenster schließen oder Gerät abdocken fragt bei Ungespeichertem (D04).",
         "Wahl je Modus: open nimmt eine vorhandene, lesbare Datei; save den Namen im gezeigten Ordner (Ordner muss existieren; Schreibbarkeit prüft erst der Aufrufer); folder den Ordner aus dem Ort. Ein getippter Ordnername wird betreten, nicht gewählt.",
-        "Stand 4584d6b installiert: 23 frühere Qt-FileDialog/FolderDialog-Stellen nutzen FileChooserDialog, ProjectFolderDialog ist seine Projektform. Telefon-Sheet, SafeArea und Tastatur-Inset nur offscreen mit simulierten Insets geprüft, nicht auf dem Pixel.",
+        "Seit Kern 4584d6b: 23 frühere Qt-FileDialog/FolderDialog-Stellen nutzen FileChooserDialog, ProjectFolderDialog ist seine Projektform. Telefon-Sheet, SafeArea und Tastatur-Inset nur offscreen mit simulierten Insets geprüft, nicht auf dem Pixel.",
         "Qt-Darstellung (Größe, Sprache, RTL) kommt aus den GUI-Einstellungen (D20); files.* sind Laufzeit-Operationen. Die Desktop-Ansicht ruft files.write direkt (Kanal desktop, ohne Agenten-Freigabe); ein Agent über MCP durchläuft D15."
       ],
       "links": [
@@ -15329,20 +15351,21 @@
           "24 Datei wählen"
         ]
       ],
-      "status": "implementiert (4584d6b installiert); Chooser-Telefonlayout nur offscreen qualifiziert",
+      "status": "implementiert seit Kern 4584d6b; Chooser-Telefonlayout nur offscreen qualifiziert",
       "routes": [
         "files"
       ],
       "height": 2636,
       "spec_file": "docs/flows/specs/70_d19_files.py",
+      "source_baseline_label": "Kern 4584d6b",
       "bogen": {
         "artboard": "ymv2hhuqvh",
         "name": "D19 · Dateien, Editor und Dateiwahl",
         "header": "eh6tj7fias",
         "canvas": "2ehw8paci2",
-        "footer": "qw87gwfwn2"
+        "footer": "kn0ki2x5sm"
       },
-      "spec_sha256": "195a34904360a7a86cbe951d01a5f6547c83523790716f0efb33c31826b9084f"
+      "spec_sha256": "2c772e824c89c393dc6b08b54671e6ff5f80fac49c0c9ac491088127d2fc109f"
     },
     {
       "id": "D20",
@@ -16709,6 +16732,7 @@
         "i18n/languages.json (51 Einträge, omarchy:false nur es; aliases)"
       ],
       "notes": [
+        "Aktueller Sprachstand: 1.898 Quelltexte, Digest 47ea5c3a1e0f; 50 vollständige Übersetzungen plus Englisch. Neue Demo-Tontexte sind enthalten. Technische Katalogprüfung ist keine muttersprachliche Abnahme.",
         "settings.json liegt unter $TOMACCO_HOME oder ~/.local/share/tomacco/; settings.get liest sie, settings.configure prüft Pfade (absolut, vorhanden; Werkzeuge bekannt und ausführbar) und schreibt atomar unter settings.lock. Es gibt keine settings-Import- oder Export-Operation.",
         "Die GUI-QSettings (auch Telefonlayout; Organisation marselnenaj, App Tomacco) halten appearance, appearance/omarchyAccent, appearance/uiScale, language, device, Notifications/jobs, NativeDisplay/*, NativeAudio/forwardAudio, NativeIphone/runnerBundle sowie Fenster, Verlauf und Ansichtszustände. Diese Darstellungswahl ist keine Laufzeit-Einstellung der Steuerung.",
         "Export nimmt nur portable, geprüfte Werte (Format tomacco-desktop-settings, version 1); Pfade, Fenstergrößen, Projektverlauf, Jobverlauf und Forschungseinstellungen bleiben. Tomacco speichert dort keine Zugangsdaten. Import übernimmt jeden gültigen Schlüssel einzeln und zählt ungültige als ignoriert.",
@@ -16761,14 +16785,15 @@
       ],
       "height": 2640,
       "spec_file": "docs/flows/specs/71_d20_settings.py",
+      "source_baseline_label": "Kern 4584d6b",
       "bogen": {
         "artboard": "wcz36hxwbw",
         "name": "D20 · Einstellungen, Größe und Sprache",
         "header": "hzbz6h88e3",
         "canvas": "kab7v9w9hq",
-        "footer": "71kruhmayc"
+        "footer": "3893utwnvn"
       },
-      "spec_sha256": "740d4011efcd027cc965e984ac30901458aded13204eb13a9982191cc3d8b92e"
+      "spec_sha256": "84513fa8d57f458d1011b8db0ed6c8f3cdd048b84e62a620fd2af10ba0d29237"
     },
     {
       "id": "D21",
@@ -18252,6 +18277,7 @@
       ],
       "height": 2491,
       "spec_file": "docs/flows/specs/72_d21_testing.py",
+      "source_baseline_label": "Kern 4584d6b",
       "bogen": {
         "artboard": "22keknuk0j",
         "name": "D21 · UI-Tests, QA-Umgebungen, GPX und Aufnahme",
@@ -19431,6 +19457,7 @@
       ],
       "height": 2346,
       "spec_file": "docs/flows/specs/73_d22_debug_profile.py",
+      "source_baseline_label": "Kern 4584d6b",
       "bogen": {
         "artboard": "4ar1tc46sh",
         "name": "D22 · Debuggen und Performance messen",
@@ -19443,8 +19470,8 @@
     {
       "id": "D23",
       "title": "Demo Studio: Szene, Render-Job, geprüfte Datei",
-      "type": "Flowchart",
-      "lead": "Aus einer lokalen Bildschirmaufnahme wird eine versionierte Szene; Vorschau und Export sind dauerhafte Jobs mit stillem H.264. Erfolg heißt: die Ausgabe wurde unabhängig dekodiert und geprüft. Ein angenommener oder laufender Job ist noch kein fertiges Video.",
+      "type": "Swimlane",
+      "lead": "Aus einer lokalen Aufnahme wird eine versionierte Szene. H.264 bleibt standardmäßig stumm; optional folgt der Originalton derselben gespeicherten Szene. PNG-Vorschauen bleiben stumm. Erfolg heißt: fertige Medien wurden unabhängig dekodiert und gegen Szene und Manifest geprüft.",
       "nodes": [
         {
           "id": "s0",
@@ -19454,11 +19481,11 @@
           "tag": "START",
           "box": [
             0,
-            40,
+            76,
             272,
             120
           ],
-          "bogen_id": "a3phie86nk"
+          "bogen_id": "bxvqbmb9mw"
         },
         {
           "id": "s1",
@@ -19468,11 +19495,11 @@
           "tag": "",
           "box": [
             328,
-            28,
+            64,
             272,
             144
           ],
-          "bogen_id": "hmee6e5a03"
+          "bogen_id": "337vf3rh67"
         },
         {
           "id": "s2",
@@ -19482,11 +19509,11 @@
           "tag": "SCHRITT",
           "box": [
             656,
-            40,
+            76,
             272,
             120
           ],
-          "bogen_id": "87u9dnx01z"
+          "bogen_id": "36qdjwr5a6"
         },
         {
           "id": "s3",
@@ -19496,11 +19523,11 @@
           "tag": "",
           "box": [
             984,
-            28,
+            64,
             272,
             144
           ],
-          "bogen_id": "e3d7ggq44e"
+          "bogen_id": "etzsasqee7"
         },
         {
           "id": "s4",
@@ -19510,11 +19537,11 @@
           "tag": "SCHRITT",
           "box": [
             1312,
-            40,
+            76,
             272,
             120
           ],
-          "bogen_id": "zau2c6uw3h"
+          "bogen_id": "gq923sk5v9"
         },
         {
           "id": "s5",
@@ -19524,11 +19551,11 @@
           "tag": "FEHLER",
           "box": [
             328,
-            264,
+            300,
             272,
             120
           ],
-          "bogen_id": "uk2a07ubke"
+          "bogen_id": "2zae1a9faq"
         },
         {
           "id": "s6",
@@ -19538,11 +19565,11 @@
           "tag": "FEHLER",
           "box": [
             984,
-            264,
+            300,
             272,
             120
           ],
-          "bogen_id": "chbqvzz0s0"
+          "bogen_id": "f6k2x3kny8"
         },
         {
           "id": "s7",
@@ -19552,11 +19579,11 @@
           "tag": "",
           "box": [
             1312,
-            252,
+            288,
             272,
             144
           ],
-          "bogen_id": "733pii1vuw"
+          "bogen_id": "hmp5a9i9zn"
         },
         {
           "id": "s8",
@@ -19566,11 +19593,11 @@
           "tag": "HINWEIS",
           "box": [
             0,
-            262,
+            298,
             272,
             124
           ],
-          "bogen_id": "hamd6a9beb"
+          "bogen_id": "ibjgza764q"
         },
         {
           "id": "s9",
@@ -19580,11 +19607,11 @@
           "tag": "START",
           "box": [
             656,
-            488,
+            524,
             272,
             120
           ],
-          "bogen_id": "e8z54ufjxv"
+          "bogen_id": "8vqcpgdak9"
         },
         {
           "id": "s10",
@@ -19594,11 +19621,11 @@
           "tag": "",
           "box": [
             984,
-            476,
+            512,
             272,
             144
           ],
-          "bogen_id": "61ebm0vypp"
+          "bogen_id": "dg0kda1sy8"
         },
         {
           "id": "s11",
@@ -19608,11 +19635,11 @@
           "tag": "ENDE · OK",
           "box": [
             1312,
-            488,
+            524,
             272,
             120
           ],
-          "bogen_id": "mat7n31ene"
+          "bogen_id": "1gx03p4jyh"
         },
         {
           "id": "s12",
@@ -19622,25 +19649,25 @@
           "tag": "HINWEIS",
           "box": [
             0,
-            488,
+            524,
             600,
             120
           ],
-          "bogen_id": "ubc7vwiadz"
+          "bogen_id": "w1f2en1b9t"
         },
         {
           "id": "e0",
           "kind": "start",
           "title": "Entwurf bearbeiten",
-          "op": "Posen · Kamera · Hintergrund · Ausgabe",
+          "op": "Posen · Kamera · Hintergrund · Ausgabe · Ton",
           "tag": "START",
           "box": [
             0,
-            712,
+            748,
             272,
             120
           ],
-          "bogen_id": "2v50iaaqis"
+          "bogen_id": "qkz9zxy4an"
         },
         {
           "id": "e1",
@@ -19650,11 +19677,11 @@
           "tag": "",
           "box": [
             328,
-            700,
+            736,
             272,
             144
           ],
-          "bogen_id": "aqp3znafdg"
+          "bogen_id": "gbu9skzhbn"
         },
         {
           "id": "e2",
@@ -19664,11 +19691,11 @@
           "tag": "SCHRITT",
           "box": [
             656,
-            712,
+            748,
             272,
             120
           ],
-          "bogen_id": "qbuxdp2sj7"
+          "bogen_id": "2rej5m2z19"
         },
         {
           "id": "e3",
@@ -19678,11 +19705,11 @@
           "tag": "",
           "box": [
             984,
-            700,
+            736,
             272,
             144
           ],
-          "bogen_id": "w06jr4yist"
+          "bogen_id": "yz8qg1e91c"
         },
         {
           "id": "e4",
@@ -19692,11 +19719,11 @@
           "tag": "ENDE · OK",
           "box": [
             1312,
-            712,
+            748,
             272,
             120
           ],
-          "bogen_id": "cfbfbids7k"
+          "bogen_id": "8uv5tv0h29"
         },
         {
           "id": "e5",
@@ -19706,11 +19733,11 @@
           "tag": "HINWEIS",
           "box": [
             0,
-            936,
+            972,
             272,
             120
           ],
-          "bogen_id": "bwejgv0pp0"
+          "bogen_id": "4p51y969t7"
         },
         {
           "id": "e6",
@@ -19720,11 +19747,11 @@
           "tag": "FEHLER",
           "box": [
             328,
-            936,
+            972,
             272,
             120
           ],
-          "bogen_id": "zxuchjx0a4"
+          "bogen_id": "yigpgi0ipb"
         },
         {
           "id": "e7",
@@ -19734,11 +19761,11 @@
           "tag": "FEHLER",
           "box": [
             984,
-            936,
+            972,
             272,
             120
           ],
-          "bogen_id": "bs652bumge"
+          "bogen_id": "gq5eq6kegs"
         },
         {
           "id": "e8",
@@ -19748,11 +19775,11 @@
           "tag": "HINWEIS",
           "box": [
             1312,
-            936,
+            972,
             272,
             120
           ],
-          "bogen_id": "td55i04jvx"
+          "bogen_id": "vbhxzb7pfp"
         },
         {
           "id": "j0",
@@ -19762,11 +19789,11 @@
           "tag": "START",
           "box": [
             0,
-            1160,
+            2495,
             272,
             120
           ],
-          "bogen_id": "6dsnz2kqf5"
+          "bogen_id": "evz0ji3hg9"
         },
         {
           "id": "j1",
@@ -19776,11 +19803,11 @@
           "tag": "",
           "box": [
             328,
-            1148,
+            2483,
             272,
             144
           ],
-          "bogen_id": "iug29jpbnh"
+          "bogen_id": "qt92n2k923"
         },
         {
           "id": "j2",
@@ -19790,11 +19817,11 @@
           "tag": "SCHRITT",
           "box": [
             656,
-            1160,
+            2495,
             272,
             120
           ],
-          "bogen_id": "gey1brnsaj"
+          "bogen_id": "4npee489hp"
         },
         {
           "id": "j3",
@@ -19804,11 +19831,11 @@
           "tag": "",
           "box": [
             984,
-            1148,
+            2483,
             272,
             144
           ],
-          "bogen_id": "ddf0w69bfz"
+          "bogen_id": "srp9mw0xse"
         },
         {
           "id": "j4",
@@ -19818,11 +19845,11 @@
           "tag": "ZUSTAND",
           "box": [
             1312,
-            1160,
+            2495,
             272,
             120
           ],
-          "bogen_id": "ykxgbce22p"
+          "bogen_id": "45d00e4baa"
         },
         {
           "id": "j5",
@@ -19832,11 +19859,11 @@
           "tag": "ABBRUCH",
           "box": [
             328,
-            1384,
+            2719,
             272,
             120
           ],
-          "bogen_id": "dw6z1mt4ji"
+          "bogen_id": "scacfn3tbv"
         },
         {
           "id": "j6",
@@ -19846,11 +19873,11 @@
           "tag": "ABBRUCH",
           "box": [
             656,
-            1384,
+            2719,
             272,
             120
           ],
-          "bogen_id": "6rvqrxrfqb"
+          "bogen_id": "mubdzcq2pe"
         },
         {
           "id": "j7",
@@ -19860,11 +19887,11 @@
           "tag": "FEHLER",
           "box": [
             984,
-            1384,
+            2719,
             272,
             120
           ],
-          "bogen_id": "3chkmtre6z"
+          "bogen_id": "qg4n6vnic9"
         },
         {
           "id": "j8",
@@ -19874,25 +19901,25 @@
           "tag": "ZUSTAND",
           "box": [
             1312,
-            1384,
+            2719,
             272,
             120
           ],
-          "bogen_id": "g56yg44e35"
+          "bogen_id": "f9v18dfrk2"
         },
         {
           "id": "j9",
           "kind": "unsupported",
-          "title": "Geplant, nicht gebaut: Live-Aufnahme, Audio, mehrere Clips, Übergänge, echte Gerätemodelle",
+          "title": "Geplant: Live-Aufnahme, Audio-Mixing, mehrere Clips, Übergänge, echte Gerätemodelle",
           "op": "",
           "tag": "NICHT UNTERSTÜTZT",
           "box": [
             0,
-            1673,
+            3008,
             600,
             124
           ],
-          "bogen_id": "6vt2wx1w9z"
+          "bogen_id": "gxrr41wzse"
         },
         {
           "id": "j10",
@@ -19902,11 +19929,11 @@
           "tag": "FEHLER",
           "box": [
             984,
-            1673,
+            3008,
             272,
             124
           ],
-          "bogen_id": "i43mmq087k"
+          "bogen_id": "uzwute0gwz"
         },
         {
           "id": "j11",
@@ -19916,11 +19943,11 @@
           "tag": "",
           "box": [
             1312,
-            1663,
+            2998,
             272,
             144
           ],
-          "bogen_id": "rhexmd4t41"
+          "bogen_id": "5ayits1m65"
         },
         {
           "id": "j12",
@@ -19930,11 +19957,11 @@
           "tag": "HINWEIS",
           "box": [
             0,
-            1966,
+            3302,
             600,
             120
           ],
-          "bogen_id": "dznkdp1fny"
+          "bogen_id": "mb9bwf1kcp"
         },
         {
           "id": "j13",
@@ -19944,11 +19971,11 @@
           "tag": "SCHRITT",
           "box": [
             984,
-            1966,
+            3302,
             272,
             120
           ],
-          "bogen_id": "aj8ur5v89d"
+          "bogen_id": "t9bq5q2a66"
         },
         {
           "id": "j14",
@@ -19958,11 +19985,389 @@
           "tag": "ENDE · OK",
           "box": [
             1312,
-            1966,
+            3302,
             272,
             120
           ],
-          "bogen_id": "zfy8wpbrh3"
+          "bogen_id": "j85a633zd6"
+        },
+        {
+          "id": "a0",
+          "kind": "start",
+          "title": "Ton für die Szene wählen",
+          "op": "audio.mode · Oberfläche oder Agent",
+          "tag": "START",
+          "box": [
+            0,
+            1263,
+            272,
+            120
+          ],
+          "bogen_id": "1hycfnybnd"
+        },
+        {
+          "id": "a1",
+          "kind": "decision",
+          "title": "Modus?",
+          "op": "",
+          "tag": "",
+          "box": [
+            328,
+            1251,
+            272,
+            144
+          ],
+          "bogen_id": "kugcw3y6a6"
+        },
+        {
+          "id": "a2",
+          "kind": "state",
+          "title": "muted",
+          "op": "Standard · auch alte v1-Szenen",
+          "tag": "ZUSTAND",
+          "box": [
+            656,
+            1263,
+            272,
+            120
+          ],
+          "bogen_id": "xwgjkq0zvf"
+        },
+        {
+          "id": "a3",
+          "kind": "decision",
+          "title": "Quelle hat Ton?",
+          "op": "source.has_audio",
+          "tag": "",
+          "box": [
+            328,
+            1542,
+            272,
+            144
+          ],
+          "bogen_id": "kg04ep2g4e"
+        },
+        {
+          "id": "a4",
+          "kind": "error",
+          "title": "Kein Originalton",
+          "op": "demo_invalid · Szene nicht geändert",
+          "tag": "FEHLER",
+          "box": [
+            0,
+            1554,
+            272,
+            120
+          ],
+          "bogen_id": "dfqu4fb7nz"
+        },
+        {
+          "id": "a5",
+          "kind": "state",
+          "title": "source",
+          "op": "Erste Quell-Audiospur verwenden",
+          "tag": "ZUSTAND",
+          "box": [
+            656,
+            1554,
+            272,
+            120
+          ],
+          "bogen_id": "qyi1ywz6mg"
+        },
+        {
+          "id": "a6",
+          "kind": "step",
+          "title": "Modus speichern",
+          "op": "demo.scene.update {if_revision}",
+          "tag": "SCHRITT",
+          "box": [
+            984,
+            1554,
+            272,
+            120
+          ],
+          "bogen_id": "bsr7vmt3xb"
+        },
+        {
+          "id": "a7",
+          "kind": "ok",
+          "title": "Revision gespeichert",
+          "op": "Tonwahl gehört zur Szene",
+          "tag": "ENDE · OK",
+          "box": [
+            1312,
+            1554,
+            272,
+            120
+          ],
+          "bogen_id": "gw0hgh2ai9"
+        },
+        {
+          "id": "a8",
+          "kind": "start",
+          "title": "Gespeicherte Szene rendern",
+          "op": "Ungespeicherten Entwurf erst speichern",
+          "tag": "START",
+          "box": [
+            0,
+            1858,
+            272,
+            140
+          ],
+          "bogen_id": "0vhd572f9e"
+        },
+        {
+          "id": "a9",
+          "kind": "decision",
+          "title": "PNG oder MP4?",
+          "op": "",
+          "tag": "",
+          "box": [
+            328,
+            1856,
+            272,
+            144
+          ],
+          "bogen_id": "c6zh4q00ep"
+        },
+        {
+          "id": "a10",
+          "kind": "step",
+          "title": "PNG bleibt ein stummer Frame",
+          "op": "demo.preview · AAC nicht nötig",
+          "tag": "SCHRITT",
+          "box": [
+            656,
+            1858,
+            272,
+            140
+          ],
+          "bogen_id": "mq6jymhuea"
+        },
+        {
+          "id": "a11",
+          "kind": "decision",
+          "title": "source, aber AAC fehlt?",
+          "op": "source_available",
+          "tag": "",
+          "box": [
+            328,
+            2135,
+            272,
+            168
+          ],
+          "bogen_id": "g5m7f9qsna"
+        },
+        {
+          "id": "a12",
+          "kind": "error",
+          "title": "MP4 nicht gestartet",
+          "op": "demo_tool_missing · Encoder aac",
+          "tag": "FEHLER",
+          "box": [
+            0,
+            2159,
+            272,
+            120
+          ],
+          "bogen_id": "53rhus8art"
+        },
+        {
+          "id": "a13",
+          "kind": "step",
+          "title": "MP4-Job anfordern",
+          "op": "demo.export · muted oder AAC",
+          "tag": "SCHRITT",
+          "box": [
+            656,
+            2159,
+            272,
+            120
+          ],
+          "bogen_id": "0d9wxwx977"
+        },
+        {
+          "id": "a14",
+          "kind": "note",
+          "title": "Tonwahl und Clip werden mit der Revision eingefroren; spätere Änderungen ändern den Job nicht",
+          "op": "",
+          "tag": "HINWEIS",
+          "box": [
+            984,
+            1868,
+            600,
+            120
+          ],
+          "bogen_id": "j4q3dnpv1a"
+        },
+        {
+          "id": "p0",
+          "kind": "start",
+          "title": "MP4-Job verarbeitet die Szene",
+          "op": "Privat kopierte, verifizierte Quelle",
+          "tag": "START",
+          "box": [
+            0,
+            3605,
+            272,
+            140
+          ],
+          "bogen_id": "nq4kgpiqpy"
+        },
+        {
+          "id": "p1",
+          "kind": "decision",
+          "title": "source?",
+          "op": "",
+          "tag": "",
+          "box": [
+            328,
+            3603,
+            272,
+            144
+          ],
+          "bogen_id": "f65x0npjbs"
+        },
+        {
+          "id": "p2",
+          "kind": "step",
+          "title": "Ersten Video-PTS erfassen",
+          "op": "Derselbe Decoder · copyts/start_at_zero",
+          "tag": "SCHRITT",
+          "box": [
+            656,
+            3605,
+            272,
+            140
+          ],
+          "bogen_id": "3v71bgz08m"
+        },
+        {
+          "id": "p3",
+          "kind": "step",
+          "title": "Originalton trimmen",
+          "op": "Erfasster Ursprung + Clip-Dauer",
+          "tag": "SCHRITT",
+          "box": [
+            984,
+            3605,
+            272,
+            140
+          ],
+          "bogen_id": "7g2smjbnar"
+        },
+        {
+          "id": "p4",
+          "kind": "step",
+          "title": "AAC ausgeben, Lücken füllen",
+          "op": "48 kHz · Stereo · bis Video-Ende",
+          "tag": "SCHRITT",
+          "box": [
+            1312,
+            3605,
+            272,
+            140
+          ],
+          "bogen_id": "ptwzzcy7a6"
+        },
+        {
+          "id": "p5",
+          "kind": "step",
+          "title": "Video ohne Audiospur",
+          "op": "muted · auch alte v1-Szenen",
+          "tag": "SCHRITT",
+          "box": [
+            328,
+            3906,
+            272,
+            120
+          ],
+          "bogen_id": "5cytpnvhhg"
+        },
+        {
+          "id": "p6",
+          "kind": "step",
+          "title": "Medien unabhängig prüfen",
+          "op": "Streams · Start/Dauer · voller Decode",
+          "tag": "SCHRITT",
+          "box": [
+            1312,
+            3906,
+            272,
+            120
+          ],
+          "bogen_id": "ytv19jpmms"
+        },
+        {
+          "id": "p7",
+          "kind": "decision",
+          "title": "Policy und Manifest gleich?",
+          "op": "",
+          "tag": "",
+          "box": [
+            984,
+            3894,
+            272,
+            144
+          ],
+          "bogen_id": "qfsi6qwyiy"
+        },
+        {
+          "id": "p8",
+          "kind": "error",
+          "title": "Keine Ausgabe veröffentlichen",
+          "op": "demo_output_invalid · Cleanup",
+          "tag": "FEHLER",
+          "box": [
+            984,
+            4188,
+            272,
+            140
+          ],
+          "bogen_id": "k47zhg0ex2"
+        },
+        {
+          "id": "p9",
+          "kind": "ok",
+          "title": "Geprüfte MP4 und Belege",
+          "op": "silent · audio.mode · source_audio_origin",
+          "tag": "ENDE · OK",
+          "box": [
+            656,
+            3906,
+            272,
+            120
+          ],
+          "bogen_id": "yaf0ve5mmm"
+        },
+        {
+          "id": "p10",
+          "kind": "note",
+          "title": "Positive Track-Offsets und grobe Zeitbasen bleiben erhalten. Stille füllt Vorlauf oder Ende, ohne das Video zu verkürzen.",
+          "op": "",
+          "tag": "HINWEIS",
+          "box": [
+            0,
+            4198,
+            600,
+            120
+          ],
+          "bogen_id": "16k3m820fb"
+        },
+        {
+          "id": "p11",
+          "kind": "note",
+          "title": "Vorschau-PNGs haben keinen Ton; AAC-Verfügbarkeit sperrt nur MP4 mit source.",
+          "op": "",
+          "tag": "HINWEIS",
+          "box": [
+            1312,
+            4184,
+            272,
+            148
+          ],
+          "bogen_id": "sn0hc135ua"
         }
       ],
       "edges": [
@@ -19974,11 +20379,11 @@
           "points": [
             [
               272,
-              100
+              136
             ],
             [
               328,
-              100
+              136
             ]
           ]
         },
@@ -19990,16 +20395,16 @@
           "points": [
             [
               464,
-              172
+              208
             ],
             [
               464,
-              264
+              300
             ]
           ],
           "label_box": [
             474,
-            180,
+            216,
             46,
             26
           ]
@@ -20012,16 +20417,16 @@
           "points": [
             [
               600,
-              100
+              136
             ],
             [
               656,
-              100
+              136
             ]
           ],
           "label_box": [
             610,
-            66,
+            102,
             27,
             26
           ]
@@ -20034,11 +20439,11 @@
           "points": [
             [
               928,
-              100
+              136
             ],
             [
               984,
-              100
+              136
             ]
           ]
         },
@@ -20050,16 +20455,16 @@
           "points": [
             [
               1120,
-              172
+              208
             ],
             [
               1120,
-              264
+              300
             ]
           ],
           "label_box": [
             1130,
-            180,
+            216,
             46,
             26
           ]
@@ -20072,16 +20477,16 @@
           "points": [
             [
               1256,
-              100
+              136
             ],
             [
               1312,
-              100
+              136
             ]
           ],
           "label_box": [
             1266,
-            66,
+            102,
             27,
             26
           ]
@@ -20094,11 +20499,11 @@
           "points": [
             [
               1448,
-              160
+              196
             ],
             [
               1448,
-              252
+              288
             ]
           ]
         },
@@ -20110,16 +20515,16 @@
           "points": [
             [
               1312,
-              324
+              360
             ],
             [
               1256,
-              324
+              360
             ]
           ],
           "label_box": [
             1261,
-            290,
+            326,
             46,
             26
           ]
@@ -20132,16 +20537,16 @@
           "points": [
             [
               1448,
-              396
+              432
             ],
             [
               1448,
-              488
+              524
             ]
           ],
           "label_box": [
             1458,
-            404,
+            440,
             27,
             26
           ]
@@ -20154,11 +20559,11 @@
           "points": [
             [
               928,
-              548
+              584
             ],
             [
               984,
-              548
+              584
             ]
           ]
         },
@@ -20170,16 +20575,16 @@
           "points": [
             [
               1256,
-              548
+              584
             ],
             [
               1312,
-              548
+              584
             ]
           ],
           "label_box": [
             1266,
-            514,
+            550,
             27,
             26
           ]
@@ -20192,16 +20597,16 @@
           "points": [
             [
               1120,
-              476
+              512
             ],
             [
               1120,
-              384
+              420
             ]
           ],
           "label_box": [
             1130,
-            442,
+            478,
             46,
             26
           ]
@@ -20214,11 +20619,11 @@
           "points": [
             [
               272,
-              772
+              808
             ],
             [
               328,
-              772
+              808
             ]
           ]
         },
@@ -20230,16 +20635,16 @@
           "points": [
             [
               464,
-              844
+              880
             ],
             [
               464,
-              936
+              972
             ]
           ],
           "label_box": [
             474,
-            852,
+            888,
             46,
             26
           ]
@@ -20252,16 +20657,16 @@
           "points": [
             [
               600,
-              772
+              808
             ],
             [
               656,
-              772
+              808
             ]
           ],
           "label_box": [
             610,
-            738,
+            774,
             27,
             26
           ]
@@ -20274,11 +20679,11 @@
           "points": [
             [
               928,
-              772
+              808
             ],
             [
               984,
-              772
+              808
             ]
           ]
         },
@@ -20290,16 +20695,16 @@
           "points": [
             [
               1256,
-              772
+              808
             ],
             [
               1312,
-              772
+              808
             ]
           ],
           "label_box": [
             1266,
-            738,
+            774,
             27,
             26
           ]
@@ -20312,16 +20717,16 @@
           "points": [
             [
               1120,
-              844
+              880
             ],
             [
               1120,
-              936
+              972
             ]
           ],
           "label_box": [
             1130,
-            852,
+            888,
             46,
             26
           ]
@@ -20334,11 +20739,11 @@
           "points": [
             [
               272,
-              1220
+              2555
             ],
             [
               328,
-              1220
+              2555
             ]
           ]
         },
@@ -20350,16 +20755,16 @@
           "points": [
             [
               464,
-              1292
+              2627
             ],
             [
               464,
-              1384
+              2719
             ]
           ],
           "label_box": [
             474,
-            1300,
+            2635,
             27,
             26
           ]
@@ -20372,16 +20777,16 @@
           "points": [
             [
               600,
-              1220
+              2555
             ],
             [
               656,
-              1220
+              2555
             ]
           ],
           "label_box": [
             605,
-            1186,
+            2521,
             46,
             26
           ]
@@ -20394,16 +20799,16 @@
           "points": [
             [
               792,
-              1280
+              2615
             ],
             [
               792,
-              1384
+              2719
             ]
           ],
           "label_box": [
             802,
-            1288,
+            2623,
             42,
             26
           ]
@@ -20416,11 +20821,11 @@
           "points": [
             [
               928,
-              1220
+              2555
             ],
             [
               984,
-              1220
+              2555
             ]
           ]
         },
@@ -20432,16 +20837,16 @@
           "points": [
             [
               1120,
-              1292
+              2627
             ],
             [
               1120,
-              1384
+              2719
             ]
           ],
           "label_box": [
             1130,
-            1300,
+            2635,
             46,
             26
           ]
@@ -20454,16 +20859,16 @@
           "points": [
             [
               1256,
-              1220
+              2555
             ],
             [
               1312,
-              1220
+              2555
             ]
           ],
           "label_box": [
             1266,
-            1186,
+            2521,
             27,
             26
           ]
@@ -20476,11 +20881,11 @@
           "points": [
             [
               1448,
-              1280
+              2615
             ],
             [
               1448,
-              1384
+              2719
             ]
           ]
         },
@@ -20492,11 +20897,11 @@
           "points": [
             [
               1448,
-              1504
+              2839
             ],
             [
               1448,
-              1663
+              2998
             ]
           ]
         },
@@ -20508,16 +20913,16 @@
           "points": [
             [
               1312,
-              1735
+              3070
             ],
             [
               1256,
-              1735
+              3070
             ]
           ],
           "label_box": [
             1261,
-            1701,
+            3036,
             46,
             26
           ]
@@ -20530,16 +20935,16 @@
           "points": [
             [
               1448,
-              1807
+              3142
             ],
             [
               1448,
-              1966
+              3302
             ]
           ],
           "label_box": [
             1458,
-            1815,
+            3150,
             27,
             26
           ]
@@ -20552,12 +20957,464 @@
           "points": [
             [
               1312,
-              2026
+              3362
             ],
             [
               1256,
-              2026
+              3362
             ]
+          ]
+        },
+        {
+          "from": "a0",
+          "to": "a1",
+          "label": "",
+          "kind": "flow",
+          "points": [
+            [
+              272,
+              1323
+            ],
+            [
+              328,
+              1323
+            ]
+          ]
+        },
+        {
+          "from": "a1",
+          "to": "a2",
+          "label": "muted",
+          "kind": "flow",
+          "points": [
+            [
+              600,
+              1323
+            ],
+            [
+              656,
+              1323
+            ]
+          ],
+          "label_box": [
+            583,
+            1283,
+            60,
+            26
+          ]
+        },
+        {
+          "from": "a1",
+          "to": "a3",
+          "label": "source",
+          "kind": "flow",
+          "points": [
+            [
+              464,
+              1395
+            ],
+            [
+              464,
+              1542
+            ]
+          ],
+          "label_box": [
+            474,
+            1403,
+            64,
+            26
+          ]
+        },
+        {
+          "from": "a3",
+          "to": "a4",
+          "label": "nein",
+          "kind": "error",
+          "points": [
+            [
+              328,
+              1614
+            ],
+            [
+              272,
+              1614
+            ]
+          ],
+          "label_box": [
+            277,
+            1580,
+            46,
+            26
+          ]
+        },
+        {
+          "from": "a3",
+          "to": "a5",
+          "label": "ja",
+          "kind": "flow",
+          "points": [
+            [
+              600,
+              1614
+            ],
+            [
+              656,
+              1614
+            ]
+          ],
+          "label_box": [
+            610,
+            1580,
+            27,
+            26
+          ]
+        },
+        {
+          "from": "a2",
+          "to": "a6",
+          "label": "",
+          "kind": "flow",
+          "points": [
+            [
+              928,
+              1323
+            ],
+            [
+              1120,
+              1323
+            ],
+            [
+              1120,
+              1554
+            ]
+          ]
+        },
+        {
+          "from": "a5",
+          "to": "a6",
+          "label": "",
+          "kind": "flow",
+          "points": [
+            [
+              928,
+              1614
+            ],
+            [
+              984,
+              1614
+            ]
+          ]
+        },
+        {
+          "from": "a6",
+          "to": "a7",
+          "label": "",
+          "kind": "success",
+          "points": [
+            [
+              1256,
+              1614
+            ],
+            [
+              1312,
+              1614
+            ]
+          ]
+        },
+        {
+          "from": "a8",
+          "to": "a9",
+          "label": "",
+          "kind": "flow",
+          "points": [
+            [
+              272,
+              1928
+            ],
+            [
+              328,
+              1928
+            ]
+          ]
+        },
+        {
+          "from": "a9",
+          "to": "a10",
+          "label": "PNG",
+          "kind": "flow",
+          "points": [
+            [
+              600,
+              1928
+            ],
+            [
+              656,
+              1928
+            ]
+          ],
+          "label_box": [
+            603,
+            1894,
+            50,
+            26
+          ]
+        },
+        {
+          "from": "a9",
+          "to": "a11",
+          "label": "MP4",
+          "kind": "flow",
+          "points": [
+            [
+              464,
+              2000
+            ],
+            [
+              464,
+              2135
+            ]
+          ],
+          "label_box": [
+            474,
+            2008,
+            48,
+            26
+          ]
+        },
+        {
+          "from": "a11",
+          "to": "a12",
+          "label": "ja",
+          "kind": "error",
+          "points": [
+            [
+              328,
+              2219
+            ],
+            [
+              272,
+              2219
+            ]
+          ],
+          "label_box": [
+            291,
+            2185,
+            27,
+            26
+          ]
+        },
+        {
+          "from": "a11",
+          "to": "a13",
+          "label": "nein",
+          "kind": "flow",
+          "points": [
+            [
+              600,
+              2219
+            ],
+            [
+              656,
+              2219
+            ]
+          ],
+          "label_box": [
+            605,
+            2185,
+            46,
+            26
+          ]
+        },
+        {
+          "from": "p0",
+          "to": "p1",
+          "label": "",
+          "kind": "flow",
+          "points": [
+            [
+              272,
+              3675
+            ],
+            [
+              328,
+              3675
+            ]
+          ]
+        },
+        {
+          "from": "p1",
+          "to": "p2",
+          "label": "ja",
+          "kind": "flow",
+          "points": [
+            [
+              600,
+              3675
+            ],
+            [
+              656,
+              3675
+            ]
+          ],
+          "label_box": [
+            610,
+            3641,
+            27,
+            26
+          ]
+        },
+        {
+          "from": "p1",
+          "to": "p5",
+          "label": "nein",
+          "kind": "flow",
+          "points": [
+            [
+              464,
+              3747
+            ],
+            [
+              464,
+              3906
+            ]
+          ],
+          "label_box": [
+            474,
+            3755,
+            46,
+            26
+          ]
+        },
+        {
+          "from": "p2",
+          "to": "p3",
+          "label": "",
+          "kind": "flow",
+          "points": [
+            [
+              928,
+              3675
+            ],
+            [
+              984,
+              3675
+            ]
+          ]
+        },
+        {
+          "from": "p3",
+          "to": "p4",
+          "label": "",
+          "kind": "flow",
+          "points": [
+            [
+              1256,
+              3675
+            ],
+            [
+              1312,
+              3675
+            ]
+          ]
+        },
+        {
+          "from": "p4",
+          "to": "p6",
+          "label": "",
+          "kind": "flow",
+          "points": [
+            [
+              1448,
+              3745
+            ],
+            [
+              1448,
+              3906
+            ]
+          ]
+        },
+        {
+          "from": "p5",
+          "to": "p6",
+          "label": "",
+          "kind": "flow",
+          "points": [
+            [
+              464,
+              4026
+            ],
+            [
+              464,
+              4106
+            ],
+            [
+              1448,
+              4106
+            ],
+            [
+              1448,
+              4026
+            ]
+          ]
+        },
+        {
+          "from": "p6",
+          "to": "p7",
+          "label": "",
+          "kind": "flow",
+          "points": [
+            [
+              1312,
+              3966
+            ],
+            [
+              1256,
+              3966
+            ]
+          ]
+        },
+        {
+          "from": "p7",
+          "to": "p8",
+          "label": "nein",
+          "kind": "error",
+          "points": [
+            [
+              1120,
+              4038
+            ],
+            [
+              1120,
+              4188
+            ]
+          ],
+          "label_box": [
+            1130,
+            4046,
+            46,
+            26
+          ]
+        },
+        {
+          "from": "p7",
+          "to": "p9",
+          "label": "ja",
+          "kind": "success",
+          "points": [
+            [
+              984,
+              3966
+            ],
+            [
+              928,
+              3966
+            ]
+          ],
+          "label_box": [
+            947,
+            3932,
+            27,
+            26
           ]
         }
       ],
@@ -20572,18 +21429,22 @@
         "demo.export.inspect"
       ],
       "sources": [
-        "native/demo.rs:1, 13-19 Presets/MAX_MEDIA, 120-160 Größengrenzen, 178 demo_tool_missing, 263 32 MP, 409-447 absent/create, 472-510 revision/update, 550-560 capabilities, 600-680 Zulassung/request_id/demo_conflict, 800-815 demo_output_invalid",
-        "src/demorenderer.cpp:40-90 Szenenprüfung (Kamera, Schatten, Rahmen), 119-175 Projektion, Flächen, quadToQuad",
-        "qml/DemoWorkspace.qml:45-155 inspect/create/open/save/reload/render/pollJob/finishJob, 261-266 Chooser und Verwerfen-Dialog",
-        "docs/demo-studio.md Current bounds (nur für den geplanten Umfang)",
-        "assets/operations.json demo.*"
+        "native/demo.rs:33–48 Audio/AudioMode; Scene.validate, create/update, capabilities/render: Default muted, strikte Modi, source.has_audio und AAC-Zulassung",
+        "src/demo_render_main.cpp:Child.collectDiagnostics, decoderArguments, firstVideoOrigin, run: begrenzter Timestamp-Seitenzweig, AAC-Trim/Padding, Publikation",
+        "native/demo.rs:validate_video, finalize, demo.export.inspect: Stream-Policy, Start/Dauer, beider Decode und Manifest-Abgleich",
+        "qml/DemoWorkspace.qml:audioSupported, demoSourceAudio, setField(audio, mode), saveChanges und Render-Steuerung: gespeicherte Tonwahl, AAC-Hinweis, stille PNG-Vorschau",
+        "tests/demo_audio_integration.py: reale Pulse, verzögerter Ton, kurze/fehlende Überlappung, positiver Video-Start und feine/grobe Seek-Zeitbasis; tests/python/test_demo.py: fehlerhafte Renderer-/Manifest-Fälle",
+        "docs/demo-studio.md; assets/operations.json demo.*; tests/demo_renderer_test.cpp; tests/demo_workspace_test.cpp"
       ],
       "notes": [
-        "MVP-Grenzen laut demo.capabilities: Presets portrait-orbit, landscape-orbit, square-float, portrait-still; Modelle phone und tablet; Easing linear, smooth, ease-in, ease-out; Hintergrund solid, gradient oder lokales PNG; 320–3840 px (gerade), 24/25/30/60 fps, 0,1–60 s, bis 120 Keyframes, Kamera distance 2–12 und fov 15–75. Ausgabe immer stumm.",
-        "Deterministisch: Ausgabebild i nimmt die Quelle bei clip.start + i/fps; Posen werden zu exakten Zeitpunkten interpoliert, unabhängig von Fenster und Bildrate des Desktops. Höhere fps wiederholen Quellbilder, eine größere Fläche erzeugt keine Details.",
-        "Zulassung: Ausgabe, .poster.png und .manifest.json dürfen nicht existieren (auch nach Ja in der Ersetzen-Frage des Choosers, D19); ein aktiver Render auf dasselbe Ziel und eine wiederverwendete request_id mit anderer Absicht werden mit demo_conflict abgelehnt; dieselbe request_id liefert den bekannten Job.",
-        "Der Desktop zeigt Dateien erst nach succeeded an; ein fehlgeschlagener Prüfschritt heißt demo_output_invalid. Agenten nutzen dieselben demo.*-Operationen über MCP; mit Schreibwurzeln prüft die Policy path und output (D15).",
-        "Die Startseite nennt das Ergebnis ein Video mit 3D-Gerät: gemeint ist der perspektivisch gezeichnete, extrudierte Rahmen mit Schatten. Importierte Gerätemodelle, Licht und eine GPU-Szene gibt es nicht."
+        "Tonwahl ist gespeichert: audio.mode ist muted oder source. Fehlendes audio in alten v1-Szenen bleibt muted; neue Szenen beginnen ebenfalls stumm. Quelle, Revision, request_id und No-clobber-Verträge bleiben erhalten. source ohne source.has_audio wird mit demo_invalid abgelehnt; kein stiller Fallback.",
+        "demo.capabilities meldet Ton-Modi und source_available. Fehlt der lokale AAC-Encoder, bleiben stumme MP4s und PNG-Vorschauen möglich; nur source-MP4 wird vor dem Job abgelehnt. Vorschau-PNGs bleiben stumme Einzelbilder, auch wenn die Szene source speichert.",
+        "Video-Zeit: ffmpeg sucht mit clip.start, rebasiert den ersten dekodierten Videoframe und rastert auf Ausgabe-fps. Der Schnitt kann an die Quell-Zeitbasis und Framedauer gebunden sein; Posen werden auf den exakten Ausgabezeitpunkten i/fps interpoliert. Höhere Ausgabe-fps schaffen keine neuen Bewegungsdetails.",
+        "Originalton wird auf denselben tatsächlich beobachteten Video-Ursprung gelegt: copyts/start_at_zero und der erste Frame-PTS desselben Decoderlaufs, nicht pauschal clip.start oder der erste Audio-PTS. Der begrenzte showinfo-Seitenzweig protokolliert nur diesen Frame. Das Manifest hält source_audio_origin fest.",
+        "Nur die erste Quell-Audiospur wird als AAC, 48 kHz und Stereo ausgegeben. Führende Lücken, kurze Audiospuren oder ein Ausschnitt nach deren Ende werden mit Stille bis zur gerasterten Videodauer gefüllt. Das Video wird weder verkürzt noch durch -shortest beendet. Externe Musik, Pegelregler und Audio-Mixing sind nicht enthalten.",
+        "Unabhängige Abnahme prüft Stream-Anzahl, H.264/yuv420p, AAC-Format, Start/Dauer und den vollständigen Decode beider Streams. silent, audio.mode, Szenen-Revision und Renderer-Manifest müssen zusammenpassen. Ausgabe, Poster und Manifest werden erst nach erfolgreicher Prüfung veröffentlicht; demo.export.inspect prüft Medien und Belege erneut.",
+        "Bestehende Grenzen: eine lokale Aufnahme je Szene; Modelle phone/tablet, QPainter-Perspektive ohne importierte Modelle oder GPU-Szene. 320–3840 px (gerade), 24/25/30/60 fps, 0,1–60 s, maximal 120 Posen. Quelle bleibt unverändert. Live-Aufnahme, Mehrfach-Clips, Übergänge, Audio-Mixing und frei steuerbare 3D-Szenen bleiben Folgeschritte.",
+        "Ausgabe, Poster und Manifest müssen neue Pfade sein, auch nach Ja im Ersetzen-Dialog (D19). dieselbe request_id gibt den bekannten Job zurück; eine andere Absicht unter derselben ID oder ein belegtes Ziel wird mit demo_conflict abgelehnt. Agenten verwenden dieselben Operationen; path/output bleiben unter der Agent-Policy (D15)."
       ],
       "links": [
         [
@@ -20604,22 +21465,23 @@
         ]
       ],
       "screens": [],
-      "status": "MVP implementiert (stumm, eine Aufnahme je Szene); Live-Aufnahme, Audio, Mehrfach-Clips, Übergänge und echte 3D-Modelle geplant",
+      "status": "Lokale Demo-Exporte mit optionalem Originalton implementiert; stumm bleibt Standard. Keine neue Geräte- oder AirPlay-Qualifikation.",
       "routes": [
         "demo",
         "jobs",
         "tools"
       ],
-      "height": 2110,
+      "height": 4356,
       "spec_file": "docs/flows/specs/74_d23_demo.py",
+      "source_baseline_label": "Audio 578819b · Produkt 1713806",
       "bogen": {
         "artboard": "373rq1dd4q",
         "name": "D23 · Demo Studio: Szene, Render-Job, geprüfte Datei",
-        "header": "w6xcgapf6d",
-        "canvas": "5gtyi5qtc0",
-        "footer": "z16s0zm7h1"
+        "header": "wn8s1zb6gd",
+        "canvas": "s9etdpy2dh",
+        "footer": "fwh1pmvxi8"
       },
-      "spec_sha256": "ed04bf7713a052b06f3a7ee72912e26cdf591fd87f719e56a7ae0fe3b80c6898"
+      "spec_sha256": "f3b842305c7ae459a78beeddedf51dccd4741e26ba7d88897963cc04a72a4e36"
     },
     {
       "id": "D24",
@@ -22095,6 +22957,7 @@
       ],
       "height": 2648,
       "spec_file": "docs/flows/specs/75_d24_release.py",
+      "source_baseline_label": "Kern 4584d6b",
       "bogen": {
         "artboard": "1xcj6hthsd",
         "name": "D24 · App-Release: signieren, prüfen, veröffentlichen",
@@ -23412,6 +24275,7 @@
       ],
       "height": 2657,
       "spec_file": "docs/flows/specs/80_update_mobile_recovery_preview_agents.py",
+      "source_baseline_label": "Kern 4584d6b",
       "bogen": {
         "artboard": "1gv2wzmw23",
         "name": "D25 · Tomacco aktualisiert sich selbst: prüfen, installieren, zurückrollen",
@@ -24364,6 +25228,7 @@
       ],
       "height": 2296,
       "spec_file": "docs/flows/specs/80_update_mobile_recovery_preview_agents.py",
+      "source_baseline_label": "Kern 4584d6b",
       "bogen": {
         "artboard": "erif4cg36n",
         "name": "D26 · Telefon, lokal oder Mac-Host: wo eine Operation läuft",
@@ -25471,6 +26336,7 @@
       "routes": [],
       "height": 2560,
       "spec_file": "docs/flows/specs/80_update_mobile_recovery_preview_agents.py",
+      "source_baseline_label": "Kern 4584d6b",
       "bogen": {
         "artboard": "kq7w9dvmcd",
         "name": "D27 · Fehler und Recovery: was über die Wirkung bekannt ist",
@@ -26737,6 +27603,7 @@
       ],
       "height": 2896,
       "spec_file": "docs/flows/specs/80_update_mobile_recovery_preview_agents.py",
+      "source_baseline_label": "Kern 4584d6b",
       "bogen": {
         "artboard": "vb6x62k34s",
         "name": "D28 · Web-Vorschau und Browser-Automation",
@@ -27675,6 +28542,7 @@
       ],
       "height": 1964,
       "spec_file": "docs/flows/specs/80_update_mobile_recovery_preview_agents.py",
+      "source_baseline_label": "Kern 4584d6b",
       "bogen": {
         "artboard": "fcdicmpmx1",
         "name": "D29 · Coding-Agent verbinden",
@@ -28616,6 +29484,7 @@
       ],
       "height": 2248,
       "spec_file": "docs/flows/specs/80_update_mobile_recovery_preview_agents.py",
+      "source_baseline_label": "Kern 4584d6b",
       "bogen": {
         "artboard": "3a34qh44im",
         "name": "D30 · Tools-Formular: jede Operation von Hand aufrufen",
@@ -29888,6 +30757,7 @@
       ],
       "height": 3102,
       "spec_file": "docs/flows/specs/81_d31_android_tools.py",
+      "source_baseline_label": "Kern 4584d6b",
       "bogen": {
         "artboard": "5rxig5s6fy",
         "name": "D31 · Android-Werkzeuge: AVDs, Gerätezustand und QA-Jobs",
@@ -31045,6 +31915,7 @@
       ],
       "height": 3430,
       "spec_file": "docs/flows/specs/82_d32_ios_research_states.py",
+      "source_baseline_label": "Kern 4584d6b",
       "bogen": {
         "artboard": "evc3b4t282",
         "name": "D32 · iOS-Labor: vorbereiten, beobachten und verifizierte Zustände behalten",
@@ -32364,6 +33235,7 @@
       ],
       "height": 3780,
       "spec_file": "docs/flows/specs/83_d33_artifact_support_tools.py",
+      "source_baseline_label": "Kern 4584d6b",
       "bogen": {
         "artboard": "sr8gnd34e1",
         "name": "D33 · Artefakte, native Toolchains und Support-Belege",
@@ -39633,19 +40505,20 @@
       "related_flows": [
         "D23"
       ],
-      "description": "Discover local renderer, ffmpeg and ffprobe availability, supported presets, device models, output limits and silent export policy. Does not execute or probe a device.",
+      "description": "Discover local renderer, ffmpeg and ffprobe availability, supported presets, device models, output limits and audio modes. Exports are muted by default; source audio is an explicit saved-scene option. Does not execute or probe a device.",
       "source_contract": "assets/operations.json#/288",
       "source_anchors": [
-        "native/demo.rs:1, 13-19 Presets/MAX_MEDIA, 120-160 Größengrenzen, 178 demo_tool_missing, 263 32 MP, 409-447 absent/create, 472-510 revision/update, 550-560 capabilities, 600-680 Zulassung/request_id/demo_conflict, 800-815 demo_output_invalid",
-        "src/demorenderer.cpp:40-90 Szenenprüfung (Kamera, Schatten, Rahmen), 119-175 Projektion, Flächen, quadToQuad",
-        "qml/DemoWorkspace.qml:45-155 inspect/create/open/save/reload/render/pollJob/finishJob, 261-266 Chooser und Verwerfen-Dialog",
-        "docs/demo-studio.md Current bounds (nur für den geplanten Umfang)",
-        "assets/operations.json demo.*"
+        "native/demo.rs:33–48 Audio/AudioMode; Scene.validate, create/update, capabilities/render: Default muted, strikte Modi, source.has_audio und AAC-Zulassung",
+        "src/demo_render_main.cpp:Child.collectDiagnostics, decoderArguments, firstVideoOrigin, run: begrenzter Timestamp-Seitenzweig, AAC-Trim/Padding, Publikation",
+        "native/demo.rs:validate_video, finalize, demo.export.inspect: Stream-Policy, Start/Dauer, beider Decode und Manifest-Abgleich",
+        "qml/DemoWorkspace.qml:audioSupported, demoSourceAudio, setField(audio, mode), saveChanges und Render-Steuerung: gespeicherte Tonwahl, AAC-Hinweis, stille PNG-Vorschau",
+        "tests/demo_audio_integration.py: reale Pulse, verzögerter Ton, kurze/fehlende Überlappung, positiver Video-Start und feine/grobe Seek-Zeitbasis; tests/python/test_demo.py: fehlerhafte Renderer-/Manifest-Fälle",
+        "docs/demo-studio.md; assets/operations.json demo.*; tests/demo_renderer_test.cpp; tests/demo_workspace_test.cpp"
       ],
       "status": "implemented_source_contract; hardware qualifications see S1",
       "destructive": false,
       "bogen_artboard": "373rq1dd4q",
-      "bogen_node": "a3phie86nk"
+      "bogen_node": "bxvqbmb9mw"
     },
     {
       "operation": "demo.media.inspect",
@@ -39660,16 +40533,17 @@
       "description": "Inspect a local recording with ffprobe and streaming SHA-256. Returns DISPLAY dimensions after rotation, duration, frame rate, rotation and audio presence. No hardware or network access.",
       "source_contract": "assets/operations.json#/289",
       "source_anchors": [
-        "native/demo.rs:1, 13-19 Presets/MAX_MEDIA, 120-160 Größengrenzen, 178 demo_tool_missing, 263 32 MP, 409-447 absent/create, 472-510 revision/update, 550-560 capabilities, 600-680 Zulassung/request_id/demo_conflict, 800-815 demo_output_invalid",
-        "src/demorenderer.cpp:40-90 Szenenprüfung (Kamera, Schatten, Rahmen), 119-175 Projektion, Flächen, quadToQuad",
-        "qml/DemoWorkspace.qml:45-155 inspect/create/open/save/reload/render/pollJob/finishJob, 261-266 Chooser und Verwerfen-Dialog",
-        "docs/demo-studio.md Current bounds (nur für den geplanten Umfang)",
-        "assets/operations.json demo.*"
+        "native/demo.rs:33–48 Audio/AudioMode; Scene.validate, create/update, capabilities/render: Default muted, strikte Modi, source.has_audio und AAC-Zulassung",
+        "src/demo_render_main.cpp:Child.collectDiagnostics, decoderArguments, firstVideoOrigin, run: begrenzter Timestamp-Seitenzweig, AAC-Trim/Padding, Publikation",
+        "native/demo.rs:validate_video, finalize, demo.export.inspect: Stream-Policy, Start/Dauer, beider Decode und Manifest-Abgleich",
+        "qml/DemoWorkspace.qml:audioSupported, demoSourceAudio, setField(audio, mode), saveChanges und Render-Steuerung: gespeicherte Tonwahl, AAC-Hinweis, stille PNG-Vorschau",
+        "tests/demo_audio_integration.py: reale Pulse, verzögerter Ton, kurze/fehlende Überlappung, positiver Video-Start und feine/grobe Seek-Zeitbasis; tests/python/test_demo.py: fehlerhafte Renderer-/Manifest-Fälle",
+        "docs/demo-studio.md; assets/operations.json demo.*; tests/demo_renderer_test.cpp; tests/demo_workspace_test.cpp"
       ],
       "status": "implemented_source_contract; hardware qualifications see S1",
       "destructive": false,
       "bogen_artboard": "373rq1dd4q",
-      "bogen_node": "87u9dnx01z"
+      "bogen_node": "36qdjwr5a6"
     },
     {
       "operation": "demo.scene.create",
@@ -39681,19 +40555,20 @@
       "related_flows": [
         "D23"
       ],
-      "description": "Create a versioned local scene from a verified recording and preset. Refuses existing destinations. Returns path, revision and scene. MVP exports are silent.",
+      "description": "Create a versioned local scene from a verified recording and preset. Refuses existing destinations. Returns path, revision and scene. New and legacy scenes default to muted audio; change audio.mode to source to include the recording's first audio track.",
       "source_contract": "assets/operations.json#/290",
       "source_anchors": [
-        "native/demo.rs:1, 13-19 Presets/MAX_MEDIA, 120-160 Größengrenzen, 178 demo_tool_missing, 263 32 MP, 409-447 absent/create, 472-510 revision/update, 550-560 capabilities, 600-680 Zulassung/request_id/demo_conflict, 800-815 demo_output_invalid",
-        "src/demorenderer.cpp:40-90 Szenenprüfung (Kamera, Schatten, Rahmen), 119-175 Projektion, Flächen, quadToQuad",
-        "qml/DemoWorkspace.qml:45-155 inspect/create/open/save/reload/render/pollJob/finishJob, 261-266 Chooser und Verwerfen-Dialog",
-        "docs/demo-studio.md Current bounds (nur für den geplanten Umfang)",
-        "assets/operations.json demo.*"
+        "native/demo.rs:33–48 Audio/AudioMode; Scene.validate, create/update, capabilities/render: Default muted, strikte Modi, source.has_audio und AAC-Zulassung",
+        "src/demo_render_main.cpp:Child.collectDiagnostics, decoderArguments, firstVideoOrigin, run: begrenzter Timestamp-Seitenzweig, AAC-Trim/Padding, Publikation",
+        "native/demo.rs:validate_video, finalize, demo.export.inspect: Stream-Policy, Start/Dauer, beider Decode und Manifest-Abgleich",
+        "qml/DemoWorkspace.qml:audioSupported, demoSourceAudio, setField(audio, mode), saveChanges und Render-Steuerung: gespeicherte Tonwahl, AAC-Hinweis, stille PNG-Vorschau",
+        "tests/demo_audio_integration.py: reale Pulse, verzögerter Ton, kurze/fehlende Überlappung, positiver Video-Start und feine/grobe Seek-Zeitbasis; tests/python/test_demo.py: fehlerhafte Renderer-/Manifest-Fälle",
+        "docs/demo-studio.md; assets/operations.json demo.*; tests/demo_renderer_test.cpp; tests/demo_workspace_test.cpp"
       ],
       "status": "implemented_source_contract; hardware qualifications see S1",
       "destructive": false,
       "bogen_artboard": "373rq1dd4q",
-      "bogen_node": "zau2c6uw3h"
+      "bogen_node": "gq923sk5v9"
     },
     {
       "operation": "demo.scene.get",
@@ -39708,47 +40583,49 @@
       "description": "Read and validate the scene and current source digest. Returns path, revision and scene without connecting or discovering devices.",
       "source_contract": "assets/operations.json#/291",
       "source_anchors": [
-        "native/demo.rs:1, 13-19 Presets/MAX_MEDIA, 120-160 Größengrenzen, 178 demo_tool_missing, 263 32 MP, 409-447 absent/create, 472-510 revision/update, 550-560 capabilities, 600-680 Zulassung/request_id/demo_conflict, 800-815 demo_output_invalid",
-        "src/demorenderer.cpp:40-90 Szenenprüfung (Kamera, Schatten, Rahmen), 119-175 Projektion, Flächen, quadToQuad",
-        "qml/DemoWorkspace.qml:45-155 inspect/create/open/save/reload/render/pollJob/finishJob, 261-266 Chooser und Verwerfen-Dialog",
-        "docs/demo-studio.md Current bounds (nur für den geplanten Umfang)",
-        "assets/operations.json demo.*"
+        "native/demo.rs:33–48 Audio/AudioMode; Scene.validate, create/update, capabilities/render: Default muted, strikte Modi, source.has_audio und AAC-Zulassung",
+        "src/demo_render_main.cpp:Child.collectDiagnostics, decoderArguments, firstVideoOrigin, run: begrenzter Timestamp-Seitenzweig, AAC-Trim/Padding, Publikation",
+        "native/demo.rs:validate_video, finalize, demo.export.inspect: Stream-Policy, Start/Dauer, beider Decode und Manifest-Abgleich",
+        "qml/DemoWorkspace.qml:audioSupported, demoSourceAudio, setField(audio, mode), saveChanges und Render-Steuerung: gespeicherte Tonwahl, AAC-Hinweis, stille PNG-Vorschau",
+        "tests/demo_audio_integration.py: reale Pulse, verzögerter Ton, kurze/fehlende Überlappung, positiver Video-Start und feine/grobe Seek-Zeitbasis; tests/python/test_demo.py: fehlerhafte Renderer-/Manifest-Fälle",
+        "docs/demo-studio.md; assets/operations.json demo.*; tests/demo_renderer_test.cpp; tests/demo_workspace_test.cpp"
       ],
       "status": "implemented_source_contract; hardware qualifications see S1",
       "destructive": false,
       "bogen_artboard": "373rq1dd4q",
-      "bogen_node": "e8z54ufjxv"
+      "bogen_node": "8vqcpgdak9"
     },
     {
       "operation": "demo.scene.update",
       "title": "Update demo scene",
       "domain": "demo",
       "primary_flow": "D23",
-      "logical_node": "e2",
+      "logical_node": "a6",
       "mapping_kind": "named_operation",
       "related_flows": [
         "D23"
       ],
-      "description": "Apply a partial scene change using optimistic revision control and atomic persistence. Source and scene identity are immutable. Keyframes are strictly ordered; easing belongs to the segment start. Image backgrounds must be local PNGs. Returns the new revision and complete scene.",
+      "description": "Apply a partial scene change using optimistic revision control and atomic persistence. Source and scene identity are immutable. Keyframes are strictly ordered; easing belongs to the segment start. Image backgrounds must be local PNGs. Returns the new revision and complete scene. Audio mode muted (default) or source is saved with the revision; source requires a recording with an audio track. PNG previews remain silent.",
       "source_contract": "assets/operations.json#/292",
       "source_anchors": [
-        "native/demo.rs:1, 13-19 Presets/MAX_MEDIA, 120-160 Größengrenzen, 178 demo_tool_missing, 263 32 MP, 409-447 absent/create, 472-510 revision/update, 550-560 capabilities, 600-680 Zulassung/request_id/demo_conflict, 800-815 demo_output_invalid",
-        "src/demorenderer.cpp:40-90 Szenenprüfung (Kamera, Schatten, Rahmen), 119-175 Projektion, Flächen, quadToQuad",
-        "qml/DemoWorkspace.qml:45-155 inspect/create/open/save/reload/render/pollJob/finishJob, 261-266 Chooser und Verwerfen-Dialog",
-        "docs/demo-studio.md Current bounds (nur für den geplanten Umfang)",
-        "assets/operations.json demo.*"
+        "native/demo.rs:33–48 Audio/AudioMode; Scene.validate, create/update, capabilities/render: Default muted, strikte Modi, source.has_audio und AAC-Zulassung",
+        "src/demo_render_main.cpp:Child.collectDiagnostics, decoderArguments, firstVideoOrigin, run: begrenzter Timestamp-Seitenzweig, AAC-Trim/Padding, Publikation",
+        "native/demo.rs:validate_video, finalize, demo.export.inspect: Stream-Policy, Start/Dauer, beider Decode und Manifest-Abgleich",
+        "qml/DemoWorkspace.qml:audioSupported, demoSourceAudio, setField(audio, mode), saveChanges und Render-Steuerung: gespeicherte Tonwahl, AAC-Hinweis, stille PNG-Vorschau",
+        "tests/demo_audio_integration.py: reale Pulse, verzögerter Ton, kurze/fehlende Überlappung, positiver Video-Start und feine/grobe Seek-Zeitbasis; tests/python/test_demo.py: fehlerhafte Renderer-/Manifest-Fälle",
+        "docs/demo-studio.md; assets/operations.json demo.*; tests/demo_renderer_test.cpp; tests/demo_workspace_test.cpp"
       ],
       "status": "implemented_source_contract; hardware qualifications see S1",
       "destructive": false,
       "bogen_artboard": "373rq1dd4q",
-      "bogen_node": "qbuxdp2sj7"
+      "bogen_node": "bsr7vmt3xb"
     },
     {
       "operation": "demo.preview",
       "title": "Render demo preview",
       "domain": "demo",
       "primary_flow": "D23",
-      "logical_node": "j4",
+      "logical_node": "a10",
       "mapping_kind": "named_operation",
       "related_flows": [
         "D23"
@@ -39756,40 +40633,42 @@
       "description": "Submit a durable job for a complete scene PNG at an exact scene time. Copies verified inputs privately, renders an immutable revision, then independently decodes and validates the PNG. Never overwrites existing output. Use job.wait/get/cancel.",
       "source_contract": "assets/operations.json#/293",
       "source_anchors": [
-        "native/demo.rs:1, 13-19 Presets/MAX_MEDIA, 120-160 Größengrenzen, 178 demo_tool_missing, 263 32 MP, 409-447 absent/create, 472-510 revision/update, 550-560 capabilities, 600-680 Zulassung/request_id/demo_conflict, 800-815 demo_output_invalid",
-        "src/demorenderer.cpp:40-90 Szenenprüfung (Kamera, Schatten, Rahmen), 119-175 Projektion, Flächen, quadToQuad",
-        "qml/DemoWorkspace.qml:45-155 inspect/create/open/save/reload/render/pollJob/finishJob, 261-266 Chooser und Verwerfen-Dialog",
-        "docs/demo-studio.md Current bounds (nur für den geplanten Umfang)",
-        "assets/operations.json demo.*"
+        "native/demo.rs:33–48 Audio/AudioMode; Scene.validate, create/update, capabilities/render: Default muted, strikte Modi, source.has_audio und AAC-Zulassung",
+        "src/demo_render_main.cpp:Child.collectDiagnostics, decoderArguments, firstVideoOrigin, run: begrenzter Timestamp-Seitenzweig, AAC-Trim/Padding, Publikation",
+        "native/demo.rs:validate_video, finalize, demo.export.inspect: Stream-Policy, Start/Dauer, beider Decode und Manifest-Abgleich",
+        "qml/DemoWorkspace.qml:audioSupported, demoSourceAudio, setField(audio, mode), saveChanges und Render-Steuerung: gespeicherte Tonwahl, AAC-Hinweis, stille PNG-Vorschau",
+        "tests/demo_audio_integration.py: reale Pulse, verzögerter Ton, kurze/fehlende Überlappung, positiver Video-Start und feine/grobe Seek-Zeitbasis; tests/python/test_demo.py: fehlerhafte Renderer-/Manifest-Fälle",
+        "docs/demo-studio.md; assets/operations.json demo.*; tests/demo_renderer_test.cpp; tests/demo_workspace_test.cpp"
       ],
       "status": "implemented_source_contract; hardware qualifications see S1",
       "destructive": false,
       "bogen_artboard": "373rq1dd4q",
-      "bogen_node": "ykxgbce22p"
+      "bogen_node": "mq6jymhuea"
     },
     {
       "operation": "demo.export",
       "title": "Export demo video",
       "domain": "demo",
       "primary_flow": "D23",
-      "logical_node": "j4",
+      "logical_node": "a13",
       "mapping_kind": "named_operation",
       "related_flows": [
         "D23"
       ],
-      "description": "Submit a durable job for silent H.264/yuv420p MP4, OUTPUT.mp4.poster.png and OUTPUT.mp4.manifest.json. Source inputs are copied and hashed privately. Success requires independent full decode and exact dimensions/FPS/frame-count validation. Output times are i/fps, count ceil(duration*fps). Existing files are never overwritten. Reuse an identical request_id to retrieve its job; use a new output for an explicit retry after failure. Use job.wait/get/cancel.",
+      "description": "Submit a durable job for H.264/yuv420p MP4 (muted by default; saved audio.mode source includes AAC audio), OUTPUT.mp4.poster.png and OUTPUT.mp4.manifest.json. Source inputs are copied and hashed privately. Success requires independent full video and audio decode, exact dimensions/FPS/frame-count validation, and the requested audio policy. Output times are i/fps, count ceil(duration*fps). Existing files are never overwritten. Reuse an identical request_id to retrieve its job; use a new output for an explicit retry after failure. Use job.wait/get/cancel.",
       "source_contract": "assets/operations.json#/294",
       "source_anchors": [
-        "native/demo.rs:1, 13-19 Presets/MAX_MEDIA, 120-160 Größengrenzen, 178 demo_tool_missing, 263 32 MP, 409-447 absent/create, 472-510 revision/update, 550-560 capabilities, 600-680 Zulassung/request_id/demo_conflict, 800-815 demo_output_invalid",
-        "src/demorenderer.cpp:40-90 Szenenprüfung (Kamera, Schatten, Rahmen), 119-175 Projektion, Flächen, quadToQuad",
-        "qml/DemoWorkspace.qml:45-155 inspect/create/open/save/reload/render/pollJob/finishJob, 261-266 Chooser und Verwerfen-Dialog",
-        "docs/demo-studio.md Current bounds (nur für den geplanten Umfang)",
-        "assets/operations.json demo.*"
+        "native/demo.rs:33–48 Audio/AudioMode; Scene.validate, create/update, capabilities/render: Default muted, strikte Modi, source.has_audio und AAC-Zulassung",
+        "src/demo_render_main.cpp:Child.collectDiagnostics, decoderArguments, firstVideoOrigin, run: begrenzter Timestamp-Seitenzweig, AAC-Trim/Padding, Publikation",
+        "native/demo.rs:validate_video, finalize, demo.export.inspect: Stream-Policy, Start/Dauer, beider Decode und Manifest-Abgleich",
+        "qml/DemoWorkspace.qml:audioSupported, demoSourceAudio, setField(audio, mode), saveChanges und Render-Steuerung: gespeicherte Tonwahl, AAC-Hinweis, stille PNG-Vorschau",
+        "tests/demo_audio_integration.py: reale Pulse, verzögerter Ton, kurze/fehlende Überlappung, positiver Video-Start und feine/grobe Seek-Zeitbasis; tests/python/test_demo.py: fehlerhafte Renderer-/Manifest-Fälle",
+        "docs/demo-studio.md; assets/operations.json demo.*; tests/demo_renderer_test.cpp; tests/demo_workspace_test.cpp"
       ],
       "status": "implemented_source_contract; hardware qualifications see S1",
       "destructive": false,
       "bogen_artboard": "373rq1dd4q",
-      "bogen_node": "ykxgbce22p"
+      "bogen_node": "0d9wxwx977"
     },
     {
       "operation": "demo.export.inspect",
@@ -39801,19 +40680,20 @@
       "related_flows": [
         "D23"
       ],
-      "description": "Fully decode and inspect a completed local export. Return actual dimensions, FPS, duration, audio, frame count, codec and SHA-256. If a sidecar exists, its media digest must match.",
+      "description": "Fully decode and inspect a completed local export. Return actual dimensions, FPS, duration, audio, frame count, codec and SHA-256. If a sidecar exists, its media digest must match. Reports the actual audio stream and checks the saved export audio policy when a scene sidecar is present.",
       "source_contract": "assets/operations.json#/295",
       "source_anchors": [
-        "native/demo.rs:1, 13-19 Presets/MAX_MEDIA, 120-160 Größengrenzen, 178 demo_tool_missing, 263 32 MP, 409-447 absent/create, 472-510 revision/update, 550-560 capabilities, 600-680 Zulassung/request_id/demo_conflict, 800-815 demo_output_invalid",
-        "src/demorenderer.cpp:40-90 Szenenprüfung (Kamera, Schatten, Rahmen), 119-175 Projektion, Flächen, quadToQuad",
-        "qml/DemoWorkspace.qml:45-155 inspect/create/open/save/reload/render/pollJob/finishJob, 261-266 Chooser und Verwerfen-Dialog",
-        "docs/demo-studio.md Current bounds (nur für den geplanten Umfang)",
-        "assets/operations.json demo.*"
+        "native/demo.rs:33–48 Audio/AudioMode; Scene.validate, create/update, capabilities/render: Default muted, strikte Modi, source.has_audio und AAC-Zulassung",
+        "src/demo_render_main.cpp:Child.collectDiagnostics, decoderArguments, firstVideoOrigin, run: begrenzter Timestamp-Seitenzweig, AAC-Trim/Padding, Publikation",
+        "native/demo.rs:validate_video, finalize, demo.export.inspect: Stream-Policy, Start/Dauer, beider Decode und Manifest-Abgleich",
+        "qml/DemoWorkspace.qml:audioSupported, demoSourceAudio, setField(audio, mode), saveChanges und Render-Steuerung: gespeicherte Tonwahl, AAC-Hinweis, stille PNG-Vorschau",
+        "tests/demo_audio_integration.py: reale Pulse, verzögerter Ton, kurze/fehlende Überlappung, positiver Video-Start und feine/grobe Seek-Zeitbasis; tests/python/test_demo.py: fehlerhafte Renderer-/Manifest-Fälle",
+        "docs/demo-studio.md; assets/operations.json demo.*; tests/demo_renderer_test.cpp; tests/demo_workspace_test.cpp"
       ],
       "status": "implemented_source_contract; hardware qualifications see S1",
       "destructive": false,
       "bogen_artboard": "373rq1dd4q",
-      "bogen_node": "aj8ur5v89d"
+      "bogen_node": "t9bq5q2a66"
     }
   ],
   "cli_routes": {
@@ -39904,9 +40784,6 @@
     "layout_evidence": "layout-final.json",
     "review_resolutions": "review-resolutions.json",
     "root_final_acceptance_pending": true,
-    "final_ready": true,
-    "final_acceptance": "final-acceptance.json",
-    "prototype_problems": 0,
-    "render_critical_issues": 0
+    "final_ready": false
   }
 }

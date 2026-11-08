@@ -57,8 +57,9 @@ def generate():
         rec['bogen']=ids['boards'].get(rec['id'],{})
         rec['spec_sha256']=hashlib.sha256((REPO/rec['spec_file']).read_bytes()).hexdigest()
         for node in rec['nodes']: node['bogen_id']=actual_nodes.get(rec['id'],{}).get(node['id'])
-    d={'schema':'tomacco-flow-atlas/1','product_source':'4584d6bca3a07840e81683d99cd0adb386aeff35',
-       'date':'2026-11-08','registry_sha256':hashlib.sha256((REPO/'assets/operations.json').read_bytes()).hexdigest(),
+    d={'schema':'tomacco-flow-atlas/1','product_source':atlas.provenance()['product_source'], 'core_source_baseline':atlas.provenance()['core_source_baseline'],
+       'date':'2026-11-08','runtime_code_commit':atlas.provenance().get('runtime_code_commit',atlas.provenance()['product_source']),
+       'source_keys':atlas.provenance().get('source_keys'), 'i18n_digest':atlas.provenance().get('i18n_digest'), 'registry_sha256':hashlib.sha256((REPO/'assets/operations.json').read_bytes()).hexdigest(),
        'bogen':{'file_id':ids['file_id'],'page_id':ids['page_id']},
        'counts':{'diagrams':len(bs),'operations':len(ops),'domains':len({r['domain'] for r in rows}),'cli_routes':len(ROUTES)},
        'diagrams':records,'operations':rows,'cli_routes':ROUTES,

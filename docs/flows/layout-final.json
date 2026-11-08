@@ -1,7 +1,7 @@
 {
   "file_id": "u8uvnj33hx",
   "page_id": "f5zgae58fy",
-  "algorithm": "Four columns; intro three columns; each next row after actual max computed CSS height +160px, rounded to80px",
+  "algorithm": "Four columns; intro three columns; actual computed CSS max row height +160px rounded to80px",
   "artboards": [
     {
       "diagram": "00",
@@ -25,7 +25,7 @@
       "x": 3680,
       "y": 0,
       "width": 1680,
-      "height": 1379.25
+      "height": 1515.25
     },
     {
       "diagram": "D01",
@@ -185,13 +185,13 @@
       "x": 5520,
       "y": 16240,
       "width": 1680,
-      "height": 3765.48
+      "height": 3855.77
     },
     {
       "diagram": "D21",
       "id": "22keknuk0j",
       "x": 0,
-      "y": 20240,
+      "y": 20320,
       "width": 1680,
       "height": 3757.17
     },
@@ -199,7 +199,7 @@
       "diagram": "D22",
       "id": "4ar1tc46sh",
       "x": 1840,
-      "y": 20240,
+      "y": 20320,
       "width": 1680,
       "height": 3441.58
     },
@@ -207,15 +207,15 @@
       "diagram": "D23",
       "id": "373rq1dd4q",
       "x": 3680,
-      "y": 20240,
+      "y": 20320,
       "width": 1680,
-      "height": 3113.52
+      "height": 5789.83
     },
     {
       "diagram": "D24",
       "id": "1xcj6hthsd",
       "x": 5520,
-      "y": 20240,
+      "y": 20320,
       "width": 1680,
       "height": 3905.08
     },
@@ -223,7 +223,7 @@
       "diagram": "D25",
       "id": "1gv2wzmw23",
       "x": 0,
-      "y": 24320,
+      "y": 26320,
       "width": 1680,
       "height": 3771.05
     },
@@ -231,7 +231,7 @@
       "diagram": "D26",
       "id": "erif4cg36n",
       "x": 1840,
-      "y": 24320,
+      "y": 26320,
       "width": 1680,
       "height": 3294.23
     },
@@ -239,7 +239,7 @@
       "diagram": "D27",
       "id": "kq7w9dvmcd",
       "x": 3680,
-      "y": 24320,
+      "y": 26320,
       "width": 1680,
       "height": 3506.05
     },
@@ -247,7 +247,7 @@
       "diagram": "D28",
       "id": "vb6x62k34s",
       "x": 5520,
-      "y": 24320,
+      "y": 26320,
       "width": 1680,
       "height": 3746.06
     },
@@ -255,7 +255,7 @@
       "diagram": "D29",
       "id": "fcdicmpmx1",
       "x": 0,
-      "y": 28320,
+      "y": 30320,
       "width": 1680,
       "height": 2852.92
     },
@@ -263,7 +263,7 @@
       "diagram": "D30",
       "id": "3a34qh44im",
       "x": 1840,
-      "y": 28320,
+      "y": 30320,
       "width": 1680,
       "height": 3106.78
     },
@@ -271,7 +271,7 @@
       "diagram": "D31",
       "id": "5rxig5s6fy",
       "x": 3680,
-      "y": 28320,
+      "y": 30320,
       "width": 1680,
       "height": 3872.77
     },
@@ -279,7 +279,7 @@
       "diagram": "D32",
       "id": "evc3b4t282",
       "x": 5520,
-      "y": 28320,
+      "y": 30320,
       "width": 1680,
       "height": 4308.05
     },
@@ -287,11 +287,10 @@
       "diagram": "D33",
       "id": "sr8gnd34e1",
       "x": 0,
-      "y": 32800,
+      "y": 34800,
       "width": 1680,
       "height": 4719.33
     }
   ],
-  "overlaps": [],
-  "checked_at": "2026-11-08T03:44:54.251Z"
+  "overlaps": []
 }

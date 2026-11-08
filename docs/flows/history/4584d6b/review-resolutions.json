@@ -1,0 +1,247 @@
+{
+  "date": "2026-11-08",
+  "historical_reports": [
+    "reviews/claude-first-review.json",
+    "reviews/claude-second-review.json",
+    "reviews/codex-final-source-review.json"
+  ],
+  "resolutions": [
+    {
+      "id": "R01",
+      "status": "resolved",
+      "evidence": "01_architecture.py: desk/phone -> schema edge 'TOMACCO_CALLER=desktop: ohne Guard', guard tag 'NUR AGENTEN-KANÄLE', first note; D15 lead/call node 'nicht TOMACCO_CALLER=desktop'. Matches src/control.cpp:31-38 and native/guard.rs:117-124. Tools-form confirmation still missing, see R26.",
+      "actual_bogen": "Core corrected by Claude, root visual/geometry checks; R09 additionally corrected by metadata lane in D07 canvas/footer."
+    },
+    {
+      "id": "R02",
+      "status": "resolved",
+      "evidence": "D01 guard sub 'Standard: Policy full, Freigabe aus' + note '29 von 296 ... 30 s ... without_desktop: allow'; D15 lead and need node 'Standard: aus'. Matches native/guard/policy.rs:159-174, guard.rs:282-299; 29 destructive confirmed.",
+      "actual_bogen": "Core corrected by Claude, root visual/geometry checks; R09 additionally corrected by metadata lane in D07 canvas/footer."
+    },
+    {
+      "id": "R03",
+      "status": "resolved",
+      "evidence": "D15 first note: Policy/Wurzeln je Schritt, Freigabe einmal, workflow.run confirm (guard.rs:254-280 per step, 282 once).",
+      "actual_bogen": "Core corrected by Claude, root visual/geometry checks; R09 additionally corrected by metadata lane in D07 canvas/footer."
+    },
+    {
+      "id": "R04",
+      "status": "resolved",
+      "evidence": "D15 big 'MCP-Antwort zu groß?', file is an error 'result_too_large: lief bereits', e0 policy_invalid with the terminal agent_policy exception (guard.rs:147-153, 178-183).",
+      "actual_bogen": "Core corrected by Claude, root visual/geometry checks; R09 additionally corrected by metadata lane in D07 canvas/footer."
+    },
+    {
+      "id": "R05",
+      "status": "resolved",
+      "evidence": "D05 who decision splits person (Häkchen/setup) and agent ('ask_first · nicht technisch erzwungen'), pol note 'destructiveHint: false ... nur eine Policy blockiert'. Nit (not a finding): the 'Desktop' branch label also covers tomaccoctl setup, which is a terminal; 'Desktop / setup' would be exact.",
+      "actual_bogen": "Core corrected by Claude, root visual/geometry checks; R09 additionally corrected by metadata lane in D07 canvas/footer."
+    },
+    {
+      "id": "R06",
+      "status": "resolved",
+      "evidence": "D05 call -> licq -> lic 'Synchron abgelehnt, kein Job' before job (avd_manage.rs:465-481).",
+      "actual_bogen": "Core corrected by Claude, root visual/geometry checks; R09 additionally corrected by metadata lane in D07 canvas/footer."
+    },
+    {
+      "id": "R07",
+      "status": "resolved",
+      "evidence": "D06 found 'Projektart oder Tasks erkannt?', unknown 'project_unrecognized · invalid_project · path_not_found', empty note (projects.rs:102-116).",
+      "actual_bogen": "Core corrected by Claude, root visual/geometry checks; R09 additionally corrected by metadata lane in D07 canvas/footer."
+    },
+    {
+      "id": "R08",
+      "status": "resolved",
+      "evidence": "D06 kindq 'flutter oder xtool?' -> cjob vs csync; note on build:true only for xtool (projects.rs:850-905).",
+      "actual_bogen": "Core corrected by Claude, root visual/geometry checks; R09 additionally corrected by metadata lane in D07 canvas/footer."
+    },
+    {
+      "id": "R09",
+      "status": "resolved",
+      "evidence": "D07 nohost is terminal with remedy, remote is a separate start, note 'wählen nie einen Host' - correct. But the remote node says 'Eigener Aufruf durch Agent/CLI' and the note says 'die Desktop-QML hat keine Remote-Route'; the person can run remote.* from the generic Tools form. See R27.",
+      "actual_bogen": "Core corrected by Claude, root visual/geometry checks; R09 additionally corrected by metadata lane in D07 canvas/footer."
+    },
+    {
+      "id": "R10",
+      "status": "resolved",
+      "evidence": "D07 occ 'nur Build/Run-Jobs', limit 'MCP-Sitzung über Job-Limit?' -> session_job_limit (guard.rs:368-371 MCP only), sess 'Flutter-Sitzung läuft?' -> rerun.",
+      "actual_bogen": "Core corrected by Claude, root visual/geometry checks; R09 additionally corrected by metadata lane in D07 canvas/footer."
+    },
+    {
+      "id": "R11",
+      "status": "resolved",
+      "evidence": "D04 pclose (closeSolo) and lost (soloGrace 4 s -> quitApp) split; bye 'ohne runtime.stop'; solo -> docked edge; quit 'höchstens 2,5 s' (NativeWorkspace.qml:124-125, 136, 196-212).",
+      "actual_bogen": "Core corrected by Claude, root visual/geometry checks; R09 additionally corrected by metadata lane in D07 canvas/footer."
+    },
+    {
+      "id": "R12",
+      "status": "resolved",
+      "evidence": "D02 none exit 'Erfassung · Smoke-Test · device_only · gleiche Version', l1359 'Icon-Rail, Aktivität sichtbar', 13 routes incl. preview and ios-research (NativeWorkspace.qml:182-193, 789; main.cpp:100). The CLI box path is a separate new item, R28.",
+      "actual_bogen": "Core corrected by Claude, root visual/geometry checks; R09 additionally corrected by metadata lane in D07 canvas/footer."
+    },
+    {
+      "id": "R13",
+      "status": "resolved",
+      "evidence": "D08 lead 'headless; nur ein Emulator mit eigenem Fenster braucht X11', nodisp edge 'mit Fenster', swiftshader note (devices.rs:1125-1155).",
+      "actual_bogen": "Core corrected by Claude, root visual/geometry checks; R09 additionally corrected by metadata lane in D07 canvas/footer."
+    },
+    {
+      "id": "R14",
+      "status": "resolved",
+      "evidence": "D10 kinds 'Live-Touch (1 Kontakt), tap, swipe, Tasten, text, fill', noin 'Ohne BLE-HID keine Eingabe', skip note skipped_characters (airplay.rs:513-625).",
+      "actual_bogen": "Core corrected by Claude, root visual/geometry checks; R09 additionally corrected by metadata lane in D07 canvas/footer."
+    },
+    {
+      "id": "R15",
+      "status": "resolved",
+      "evidence": "D10 oerr and D12 noframe 'Fehler airplay_runtime'; D12 lead 'Ein Transport ohne Bild antwortet mit einem Fehler' (airplay.rs:637-642).",
+      "actual_bogen": "Core corrected by Claude, root visual/geometry checks; R09 additionally corrected by metadata lane in D07 canvas/footer."
+    },
+    {
+      "id": "R16",
+      "status": "resolved",
+      "evidence": "D12 geo 'Plan mit frame oder Marke noch gültig?' + geonote; D13 frame 'frame angegeben und geändert?' (actions.rs:296-310).",
+      "actual_bogen": "Core corrected by Claude, root visual/geometry checks; R09 additionally corrected by metadata lane in D07 canvas/footer."
+    },
+    {
+      "id": "R17",
+      "status": "resolved",
+      "evidence": "D12 unknown 'runtime_timeout · runtime_protocol · runtime_stopped · delivery: unknown', rid note request_outcome_unknown, refused list complete for reservation codes (ledger.rs:44-87, 573-581).",
+      "actual_bogen": "Core corrected by Claude, root visual/geometry checks; R09 additionally corrected by metadata lane in D07 canvas/footer."
+    },
+    {
+      "id": "R18",
+      "status": "resolved",
+      "evidence": "D13 fobs/mode/fok three-way; waittype '300 ms ... ungeprüft'; funobs focus_unobservable; note limited to Android, USB-WDA, Fixture (actions.rs:100-125, 187-215).",
+      "actual_bogen": "Core corrected by Claude, root visual/geometry checks; R09 additionally corrected by metadata lane in D07 canvas/footer."
+    },
+    {
+      "id": "R19",
+      "status": "resolved",
+      "evidence": "D13 wrong adds field_unsupported, field_unobservable; secret note; uncertain value_matches_placeholder; verified 'field_submit_not_sent möglich' (field.rs).",
+      "actual_bogen": "Core corrected by Claude, root visual/geometry checks; R09 additionally corrected by metadata lane in D07 canvas/footer."
+    },
+    {
+      "id": "R20",
+      "status": "resolved",
+      "evidence": "D11 bad 'nicht x86_64, keine VT-x/AVX2, GPU < 8 GiB ...' 'ARM-MacBook: nie'; boot 'ohne Passcode entsperren', lock node; fail codes (host_check.rs:146-152, setup_chain.rs).",
+      "actual_bogen": "Core corrected by Claude, root visual/geometry checks; R09 additionally corrected by metadata lane in D07 canvas/footer."
+    },
+    {
+      "id": "R21",
+      "status": "resolved",
+      "evidence": "D11 simok 'Baum: idb-JSON, nicht für screen.*' (runtime/ios.rs:484-489).",
+      "actual_bogen": "Core corrected by Claude, root visual/geometry checks; R09 additionally corrected by metadata lane in D07 canvas/footer."
+    },
+    {
+      "id": "R22",
+      "status": "resolved",
+      "evidence": "D14 ai 'Agent: android.input' is its own start; ios 'Anteil × (Punktbreite − 1) = WDA-Punkt' (iphone.rs:365-367).",
+      "actual_bogen": "Core corrected by Claude, root visual/geometry checks; R09 additionally corrected by metadata lane in D07 canvas/footer."
+    },
+    {
+      "id": "R23",
+      "status": "resolved",
+      "evidence": "D16 other -> reserved 'device_reserved (Halter, Ablauf)', take 'für die Person gedacht, nicht erzwungen', a1 request_in_progress, once note on reconciliation (coordination.rs:609-616, ledger.rs:633). One note sentence is inaccurate, see R29.",
+      "actual_bogen": "Core corrected by Claude, root visual/geometry checks; R09 additionally corrected by metadata lane in D07 canvas/footer."
+    },
+    {
+      "id": "R24",
+      "status": "resolved",
+      "evidence": "D18 cs -> cq -> cqd 'cancelled vor dem Start · Cancelled while queued'; skip workflow_needs_confirmation, rest workflow_step_failed (jobs.rs:1024-1027).",
+      "actual_bogen": "Core corrected by Claude, root visual/geometry checks; R09 additionally corrected by metadata lane in D07 canvas/footer."
+    },
+    {
+      "id": "R25",
+      "status": "resolved",
+      "evidence": "D17 end -> poll 'waiting' loop, wait node 'Ablauf 15 min', r1 handoff_person_only / handoff_not_waiting (handoff.rs:25-28, 221-231).",
+      "actual_bogen": "Core corrected by Claude, root visual/geometry checks; R09 additionally corrected by metadata lane in D07 canvas/footer."
+    },
+    {
+      "id": "R26",
+      "diagram": "D01/D15",
+      "status": "resolved",
+      "evidence": "Tools own confirmation documented in actual notes; D30 draws UI confirmation branch."
+    },
+    {
+      "id": "R27",
+      "diagram": "D07",
+      "status": "resolved",
+      "evidence": "Explicit Agent, CLI OR Tools remote invocation; no automatic project host selection."
+    },
+    {
+      "id": "R28",
+      "diagram": "D02",
+      "status": "resolved",
+      "evidence": "Main.showWorkspace runtime/preview/other split drawn; CLI13 targets remain."
+    },
+    {
+      "id": "R29",
+      "diagram": "D16",
+      "status": "resolved",
+      "evidence": "Refused requests stored and readable, same-intent ID can retry/takeover record."
+    },
+    {
+      "id": "R30",
+      "diagram": "D22",
+      "status": "resolved",
+      "evidence": "Root owns corrected selected-baseline branch; no automatic first-report baseline.",
+      "source_verification": "reviews/codex-final-source-review.json",
+      "actual_bogen": "ROOT-APPLICATION-STATE.json board render_reviewed; final global acceptance remains root gate"
+    },
+    {
+      "id": "R31",
+      "diagram": "D24",
+      "status": "resolved",
+      "evidence": "Root owns advisory checklist correction; no checklist enforcement gate.",
+      "source_verification": "reviews/codex-final-source-review.json",
+      "actual_bogen": "ROOT-APPLICATION-STATE.json board render_reviewed; final global acceptance remains root gate"
+    },
+    {
+      "id": "R32",
+      "diagram": "D24",
+      "status": "resolved",
+      "evidence": "Root owns channel-specific publish confirmation; human review recommended not universally enforced.",
+      "source_verification": "reviews/codex-final-source-review.json",
+      "actual_bogen": "ROOT-APPLICATION-STATE.json board render_reviewed; final global acceptance remains root gate"
+    },
+    {
+      "id": "R33",
+      "diagram": "D01",
+      "status": "resolved",
+      "evidence": "Ten adapters stated; D29 documents actual client bootstrap."
+    },
+    {
+      "id": "R34",
+      "diagram": "D24",
+      "status": "resolved",
+      "evidence": "Root source QA: denying commit does not auto-abort edit; abort is explicit separate operation.",
+      "source_verification": "reviews/codex-final-source-review.json",
+      "actual_bogen": "ROOT-APPLICATION-STATE.json board render_reviewed; final global acceptance remains root gate"
+    },
+    {
+      "id": "R35",
+      "diagram": "D24",
+      "status": "resolved",
+      "evidence": "Root source QA: prepare failure cleanup DELETE is best effort; no guaranteed deletion claim.",
+      "source_verification": "reviews/codex-final-source-review.json",
+      "actual_bogen": "ROOT-APPLICATION-STATE.json board render_reviewed; final global acceptance remains root gate"
+    },
+    {
+      "id": "R36",
+      "diagram": "D32",
+      "status": "resolved",
+      "evidence": "Receipt complete and worker idle are separate conditions, both tested in gr gate.",
+      "source_verification": "reviews/codex-final-source-review.json"
+    },
+    {
+      "id": "R37",
+      "diagram": "D33",
+      "status": "resolved",
+      "evidence": "Prune may select finished entries by age or optional retained-log budget, including younger finished jobs.",
+      "source_verification": "reviews/codex-final-source-review.json"
+    }
+  ],
+  "final_ready": true,
+  "open_source_findings": 0,
+  "final_acceptance": "final-acceptance.json"
+}

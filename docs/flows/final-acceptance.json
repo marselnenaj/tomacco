@@ -1,15 +1,15 @@
 {
   "schema": "tomacco-flow-atlas-acceptance/1",
-  "checked_at": "2026-11-08T03:48:04.284390+00:00",
-  "final_ready": true,
+  "checked_at": "2026-11-08T08:58:11.894770+00:00",
+  "final_ready": false,
   "file_id": "u8uvnj33hx",
   "page_id": "f5zgae58fy",
   "entry_artboard": "bxx82h1gcm",
   "checkpoint": {
-    "id": "mw7akb4f-36ccc2cd",
-    "name": "Tomacco · Flows & Logik FINAL · 33 Diagramme / 296 Operationen"
+    "id": "mw7lmw6j-13a28bdc",
+    "name": "Tomacco · Demo Originalton · Produkt1713806 · 33 Flows / 296 Operationen"
   },
-  "product_source": "4584d6bca3a07840e81683d99cd0adb386aeff35",
+  "product_source": "1713806db7ef00eda9754bb5bea23cd803179aa0",
   "public_release": "1.4.1",
   "counts": {
     "diagrams": 33,
@@ -17,11 +17,13 @@
     "domains": 33,
     "cli_routes": 13,
     "artboards": 36,
-    "logical_nodes": 954,
+    "logical_nodes": 981,
     "coding_agent_clients": 10,
     "prototype_links": 382,
     "unique_targets": 56,
-    "png_exports": 36
+    "png_exports": 36,
+    "source_keys": 1898,
+    "translations": 50
   },
   "gates": {
     "source_review_open_findings": 0,
@@ -47,7 +49,12 @@
     "render-manifest.json",
     "reviews/claude-first-review.json",
     "reviews/claude-second-review.json",
-    "reviews/codex-final-source-review.json"
+    "reviews/codex-final-source-review.json",
+    "provenance-current.json",
+    "label-qa-current.json",
+    "reviews/demo-audio-independent-review.json",
+    "reviews/demo-audio-install-gate.json",
+    "reviews/demo-audio-bogen-observations.json"
   ],
   "qualification_limits": [
     "No Pixel installation or physical qualification",
@@ -57,5 +64,13 @@
   ],
   "no_hardware_access_for_atlas": true,
   "no_publication": true,
-  "advisories": "Diagram geometry intentionally uses measured node/connector pixels; grid/token/copy-arrow/repeated/header hierarchy suggestions remain advisory, not waived critical findings."
+  "advisories": "Diagram geometry intentionally uses measured node/connector pixels; grid/token/copy-arrow/repeated/header hierarchy suggestions remain advisory, not waived critical findings.",
+  "implementation_ready": true,
+  "ready_for_root_final_qa": true,
+  "runtime_code_commit": "578819be350cc430196fef59a8d07ea91b3c34e4",
+  "core_source_baseline": "4584d6bca3a07840e81683d99cd0adb386aeff35",
+  "historical_acceptance": "history/4584d6b/final-acceptance.json",
+  "pending": [
+    "Root final visual/source review of current audio delta"
+  ]
 }
