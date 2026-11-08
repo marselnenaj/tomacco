@@ -71,7 +71,7 @@ pub fn parse_tsv(tsv: &str) -> Vec<Word> {
             }
             let confidence: f64 = f[10].trim().parse().ok()?;
             let text = f[11].trim();
-            if confidence < 0.0 || text.is_empty() {
+            if !confidence.is_finite() || !(0.0..=100.0).contains(&confidence) || text.is_empty() {
                 return None;
             }
             let number = |i: usize| f[i].trim().parse::<i64>().ok();
@@ -457,14 +457,21 @@ pub fn inverted(image: &Image) -> Image {
     }
 }
 
-#[derive(Clone)]
+#[derive(Debug, Clone)]
 pub struct Reading {
+    // Keep below-threshold words until polarity merging so legacy auto overlap
+    // resolution remains identical. Public words/lines are confidence-filtered.
+    raw_words: Vec<Word>,
     pub words: Vec<Word>,
     pub lines: Vec<Line>,
     pub width: u32,
     pub height: u32,
     /// How many readings were made: 1, or 2 with the colours inverted.
     pub passes: usize,
+    /// Actual recognizer invocations for this request (zero on a complete cache hit).
+    pub engine_runs: usize,
+    /// Why adaptive mode also read the inverted image; None when it did not.
+    pub fallback_reason: Option<&'static str>,
     /// Whether this reading was answered from the cache of this process
     /// (the same picture, language, inversion and region read before).
     pub cached: bool,
@@ -497,12 +504,69 @@ pub fn cropped(image: &Image, region: (u32, u32, u32, u32)) -> Image {
     }
 }
 
-/// Reads the words of a PNG, or of `region` (x, y, width, height) of it, in
-/// pixels of the whole picture. With `invert` `auto` or `always` the picture
-/// is read a second time with its colours inverted, because Tesseract reads
-/// dark text on a light ground far better than the reverse (a dark theme);
-/// the readings are merged. A picture with both light and dark areas is read
-/// as one: the minority area may be missed, and `region` reads it alone.
+fn cached_read(key: &str, enabled: bool) -> Option<Reading> {
+    if !enabled {
+        return None;
+    }
+    cache()
+        .lock()
+        .unwrap()
+        .iter()
+        .find(|(k, _)| k == key)
+        .map(|(_, hit)| {
+            let mut reading = hit.clone();
+            reading.cached = true;
+            reading.engine_runs = 0;
+            reading
+        })
+}
+
+fn keep_read(key: String, reading: &Reading, enabled: bool) {
+    if !enabled {
+        return;
+    }
+    let mut kept = cache().lock().unwrap();
+    kept.retain(|(k, _)| k != &key);
+    if kept.len() >= CACHE_ENTRIES {
+        kept.remove(0);
+    }
+    kept.push((key, reading.clone()));
+}
+
+/// An adaptive read is a best-effort observation, never proof that no other
+/// text exists. A confident first pass can still miss text in a minority
+/// colour area. Keep auto for exhaustive polarity reads and ambiguity checks.
+fn adaptive_fallback(
+    reading: &Reading,
+    selector: Option<&Value>,
+    fuzzy: bool,
+) -> Option<&'static str> {
+    if reading.words.is_empty() {
+        return Some("empty");
+    }
+    if let Some(selector) = selector {
+        let matches = select(&reading.lines, selector, fuzzy);
+        if matches.is_empty() {
+            return Some("target_not_found");
+        }
+        // A query asks about its target, not unrelated text. Check every word
+        // inside a matched box, rather than trusting the phrase's average.
+        if matches.iter().any(|m| reading.words.iter().any(|w| {
+            w.left < m.right && w.right() > m.left && w.top < m.bottom && w.bottom() > m.top
+                && w.confidence < 80.0
+        })) {
+            return Some("low_confidence");
+        }
+    } else if reading.words.iter().any(|w| w.confidence < 80.0) {
+        return Some("low_confidence");
+    }
+    None
+}
+
+/// Reads words in whole-picture pixels. auto merges normal and inverted
+/// readings; never and always read only their named polarity. adaptive starts
+/// normally and adds inversion for empty/low-confidence reads. read_selected
+/// also falls back when its requested text is missing. auto remains the default.
 pub fn read(
     recognizer: &mut dyn Recognizer,
     image: &Path,
@@ -511,20 +575,52 @@ pub fn read(
     min_confidence: f64,
     region: Option<(u32, u32, u32, u32)>,
 ) -> Result<Reading> {
+    read_selected(
+        recognizer,
+        image,
+        language,
+        invert,
+        min_confidence,
+        region,
+        None,
+        false,
+    )
+}
+
+#[allow(clippy::too_many_arguments)]
+pub fn read_selected(
+    recognizer: &mut dyn Recognizer,
+    image: &Path,
+    language: &str,
+    invert: &str,
+    min_confidence: f64,
+    region: Option<(u32, u32, u32, u32)>,
+    selector: Option<&Value>,
+    fuzzy: bool,
+) -> Result<Reading> {
+    if !matches!(invert, "auto" | "never" | "always" | "adaptive") {
+        return Err(Error::new(
+            "invalid_argument",
+            "invert must be auto, never, always or adaptive",
+        ));
+    }
     let bytes = std::fs::read(image)?;
-    let key = format!("{}|{language}|{invert}|{min_confidence}|{region:?}", digest(&bytes));
+    let base = format!("{}|{language}|{min_confidence}|{region:?}", digest(&bytes));
+    // A target that was found on the first pass must not cache away another
+    // query's fallback (including index and fuzzy matching).
+    let key = if invert == "adaptive" {
+        format!("{base}|adaptive|{selector:?}|{fuzzy}")
+    } else {
+        format!("{base}|{invert}")
+    };
     let cacheable = recognizer.cacheable();
-    if cacheable {
-        if let Some((_, hit)) = cache().lock().unwrap().iter().find(|(k, _)| *k == key) {
-            let mut reading = hit.clone();
-            reading.cached = true;
-            return Ok(reading);
-        }
+    if let Some(hit) = cached_read(&key, cacheable) {
+        return Ok(hit);
     }
     let picture = visual::decode(&bytes)?;
     let (width, height) = (picture.width, picture.height);
     let directory = tempfile::tempdir()?;
-    let (picture, source, offset) = match region {
+    let (picture, offset) = match region {
         Some(region) => {
             let part = cropped(&picture, region);
             if part.width == 0 || part.height == 0 {
@@ -533,50 +629,71 @@ pub fn read(
                     "The region lies outside the picture",
                 ));
             }
-            let file = directory.path().join("region.png");
-            std::fs::write(&file, visual::encode(&part)?)?;
             (
                 part,
-                file,
                 (region.0.min(width) as i64, region.1.min(height) as i64),
             )
         }
-        None => (picture, image.to_path_buf(), (0, 0)),
+        None => (picture, (0, 0)),
     };
-    let mut words = Vec::new();
-    let mut passes = 0;
-    if invert != "always" {
-        words = parse_tsv(&recognizer.tsv(&source, language)?);
-        passes += 1;
-    }
-    if invert != "never" {
-        let flipped = directory.path().join("inverted.png");
-        std::fs::write(&flipped, visual::encode(&inverted(&picture))?)?;
-        words = merge(words, parse_tsv(&recognizer.tsv(&flipped, language)?));
-        passes += 1;
-    }
-    for word in &mut words {
-        word.left += offset.0;
-        word.top += offset.1;
-    }
-    words.retain(|w| w.confidence >= min_confidence);
-    words.sort_by_key(|w| (w.top, w.left));
-    let lines = lines(&words);
-    let reading = Reading {
-        words,
-        lines,
-        width,
-        height,
-        passes,
-        cached: false,
-    };
-    if cacheable {
-        let mut kept = cache().lock().unwrap();
-        if kept.len() >= CACHE_ENTRIES {
-            kept.remove(0);
+    let mut pass = |flip: bool| -> Result<Reading> {
+        let pass_key = format!("{base}|{}", if flip { "always" } else { "never" });
+        if let Some(hit) = cached_read(&pass_key, cacheable) {
+            return Ok(hit);
         }
-        kept.push((key, reading.clone()));
+        let source = directory
+            .path()
+            .join(if flip { "inverted.png" } else { "normal.png" });
+        // Both recognizer calls see the same frozen pixels, even if the caller
+        // replaces its PNG while recognition is running.
+        let encoded = if flip {
+            visual::encode(&inverted(&picture))?
+        } else if region.is_none() {
+            bytes.clone()
+        } else {
+            visual::encode(&picture)?
+        };
+        std::fs::write(&source, encoded)?;
+        let mut words = parse_tsv(&recognizer.tsv(&source, language)?);
+        for word in &mut words {
+            word.left += offset.0;
+            word.top += offset.1;
+        }
+        let raw_words = words.clone();
+        words.retain(|w| w.confidence >= min_confidence);
+        words.sort_by_key(|w| (w.top, w.left));
+        let reading = Reading {
+            raw_words,
+            lines: lines(&words),
+            words,
+            width,
+            height,
+            passes: 1,
+            engine_runs: 1,
+            fallback_reason: None,
+            cached: false,
+        };
+        keep_read(pass_key, &reading, cacheable);
+        Ok(reading)
+    };
+    let mut reading = pass(invert == "always")?;
+    let reason = if invert == "adaptive" {
+        adaptive_fallback(&reading, selector, fuzzy)
+    } else {
+        None
+    };
+    if invert == "auto" || reason.is_some() {
+        let second = pass(true)?;
+        reading.raw_words = merge(reading.raw_words, second.raw_words);
+        reading.words = reading.raw_words.iter().filter(|w| w.confidence >= min_confidence).cloned().collect();
+        reading.words.sort_by_key(|w| (w.top, w.left));
+        reading.lines = lines(&reading.words);
+        reading.passes = 2;
+        reading.engine_runs += second.engine_runs;
+        reading.cached = reading.engine_runs == 0;
+        reading.fallback_reason = reason;
     }
+    keep_read(key, &reading, cacheable);
     Ok(reading)
 }
 
@@ -795,6 +912,226 @@ mod tests {
                 .passes,
             1
         );
+    }
+
+    #[test]
+    fn adaptive_reads_once_on_confident_text_and_keeps_auto_exhaustive() {
+        let dir = tempfile::tempdir().unwrap();
+        let image = png(dir.path(), 21);
+        let good = tsv(&[(1, 1, 5, 3, 95.0, "Save")]);
+        let mut fast = Fake(vec![good.clone()]);
+        let reading = read(&mut fast, &image, "eng", "adaptive", 40.0, None).unwrap();
+        assert_eq!(
+            (reading.passes, reading.engine_runs, reading.fallback_reason),
+            (1, 1, None)
+        );
+        assert!(fast.0.is_empty());
+        let mut full = Fake(vec![good, tsv(&[(1, 5, 5, 3, 94.0, "Cancel")])]);
+        let reading = read(&mut full, &image, "eng", "auto", 40.0, None).unwrap();
+        assert_eq!((reading.passes, reading.engine_runs), (2, 2));
+        assert_eq!(reading.words.len(), 2);
+    }
+
+    #[test]
+    fn adaptive_falls_back_for_empty_low_confidence_and_requested_index() {
+        let dir = tempfile::tempdir().unwrap();
+        let image = png(dir.path(), 22);
+        for (first, selector, reason) in [
+            (tsv(&[]), None, "empty"),
+            (tsv(&[(1, 1, 5, 3, 79.9, "Save")]), None, "low_confidence"),
+            (
+                tsv(&[(1, 1, 5, 3, 95.0, "Menu")]),
+                Some(json!({"text":"Save"})),
+                "target_not_found",
+            ),
+            (
+                tsv(&[(1, 1, 5, 3, 95.0, "Save")]),
+                Some(json!({"text":"Save","index":1})),
+                "target_not_found",
+            ),
+        ] {
+            let mut fake = Fake(vec![first, tsv(&[(1, 5, 5, 3, 98.0, "Save")])]);
+            let reading = read_selected(
+                &mut fake,
+                &image,
+                "eng",
+                "adaptive",
+                40.0,
+                None,
+                selector.as_ref(),
+                false,
+            )
+            .unwrap();
+            assert_eq!((reading.passes, reading.engine_runs), (2, 2));
+            assert_eq!(reading.fallback_reason, Some(reason));
+            assert!(fake.0.is_empty());
+        }
+    }
+
+    #[test]
+    fn a_target_query_checks_its_own_word_confidences_instead_of_unrelated_noise() {
+        let dir=tempfile::tempdir().unwrap();let image=png(dir.path(),27);
+        let selector=json!({"text":"Save changes"});
+        let mut fast=Fake(vec![tsv(&[(0,0,5,2,95.0,"Save"),(6,0,5,2,95.0,"changes"),(0,5,5,2,41.0,"noise")])]);
+        assert_eq!(read_selected(&mut fast,&image,"eng","adaptive",40.0,None,Some(&selector),false).unwrap().passes,1);
+        let mut unsure=Fake(vec![tsv(&[(0,0,5,2,99.0,"Save"),(6,0,5,2,70.0,"changes")]),tsv(&[])]);
+        let reading=read_selected(&mut unsure,&image,"eng","adaptive",40.0,None,Some(&selector),false).unwrap();
+        assert_eq!(reading.passes,2);
+        assert_eq!(reading.fallback_reason,Some("low_confidence"));
+    }
+
+    #[test]
+    fn adaptive_target_and_fuzzy_cache_keys_do_not_suppress_required_fallbacks() {
+        let dir = tempfile::tempdir().unwrap();
+        let image = png(dir.path(), 23);
+        struct Engine(usize);
+        impl Recognizer for Engine {
+            fn tsv(&mut self, image: &Path, _: &str) -> Result<String> {
+                self.0 += 1;
+                Ok(if image.file_name().unwrap() == "inverted.png" {
+                    tsv(&[(1, 5, 5, 3, 95.0, "Cancel")])
+                } else {
+                    tsv(&[(1, 1, 5, 3, 95.0, "Saves")])
+                })
+            }
+        }
+        let mut engine = Engine(0);
+        let one = json!({"text":"Saves"});
+        let first = read_selected(
+            &mut engine,
+            &image,
+            "eng",
+            "adaptive",
+            40.0,
+            None,
+            Some(&one),
+            false,
+        )
+        .unwrap();
+        assert_eq!((first.passes, first.engine_runs), (1, 1));
+        let missing = json!({"text":"Cancel"});
+        let second = read_selected(
+            &mut engine,
+            &image,
+            "eng",
+            "adaptive",
+            40.0,
+            None,
+            Some(&missing),
+            false,
+        )
+        .unwrap();
+        assert_eq!((second.passes, second.engine_runs), (2, 1)); // normal pass reused
+        assert_eq!(select(&second.lines, &missing, false).len(), 1);
+        let again = read_selected(
+            &mut engine,
+            &image,
+            "eng",
+            "adaptive",
+            40.0,
+            None,
+            Some(&missing),
+            false,
+        )
+        .unwrap();
+        assert!(again.cached);
+        assert_eq!(again.engine_runs, 0);
+        let fuzzy_target = json!({"text":"Saved"});
+        let loose = read_selected(
+            &mut engine,
+            &image,
+            "eng",
+            "adaptive",
+            40.0,
+            None,
+            Some(&fuzzy_target),
+            true,
+        )
+        .unwrap();
+        assert_eq!(loose.passes, 1);
+        let exact = read_selected(
+            &mut engine,
+            &image,
+            "eng",
+            "adaptive",
+            40.0,
+            None,
+            Some(&fuzzy_target),
+            false,
+        )
+        .unwrap();
+        assert_eq!(exact.passes, 2);
+        assert_eq!(exact.fallback_reason, Some("target_not_found"));
+        assert_eq!(engine.0, 2);
+    }
+
+    #[test]
+    fn frozen_pixels_survive_a_replaced_input_and_region_offsets_are_applied_once() {
+        let dir = tempfile::tempdir().unwrap();
+        let image = png(dir.path(), 24);
+        struct Replacing {
+            original: std::path::PathBuf,
+            shades: Vec<u8>,
+        }
+        impl Recognizer for Replacing {
+            fn cacheable(&self) -> bool {
+                false
+            }
+            fn tsv(&mut self, image: &Path, _: &str) -> Result<String> {
+                assert_ne!(image, self.original);
+                self.shades
+                    .push(visual::decode(&std::fs::read(image)?)?.pixels[0]);
+                std::fs::write(&self.original, b"replaced by another capture")?;
+                Ok(tsv(&[(0, 0, 2, 2, 95.0, "Save")]))
+            }
+        }
+        let mut fake = Replacing {
+            original: image.clone(),
+            shades: Vec::new(),
+        };
+        let reading = read(&mut fake, &image, "eng", "auto", 40.0, Some((3, 2, 4, 4))).unwrap();
+        assert_eq!(fake.shades, [24, 231]);
+        assert_eq!((reading.words[0].left, reading.words[0].top), (3, 2));
+        assert_eq!(
+            (reading.width, reading.height, reading.words.len()),
+            (8, 8, 1)
+        );
+    }
+
+    #[test]
+    fn auto_merges_before_filtering_as_before_even_with_overlapping_low_confidence_words() {
+        let dir = tempfile::tempdir().unwrap();
+        let image = png(dir.path(), 25);
+        let first = tsv(&[(0,0,10,10,10.0,"noise"),(8,0,10,10,95.0,"High")]);
+        let second = tsv(&[(4,0,10,10,90.0,"Other")]);
+        let mut expected = merge(parse_tsv(&first),parse_tsv(&second));
+        expected.retain(|w|w.confidence>=40.0);
+        expected.sort_by_key(|w|(w.top,w.left));
+        let mut fake = Fake(vec![first,second]);
+        assert_eq!(read(&mut fake,&image,"eng","auto",40.0,None).unwrap().words,expected);
+    }
+
+    #[test]
+    fn a_failed_fallback_is_reported_instead_of_returning_an_incomplete_success() {
+        let dir=tempfile::tempdir().unwrap();let image=png(dir.path(),26);
+        struct Failing;
+        impl Recognizer for Failing {
+            fn cacheable(&self)->bool{false}
+            fn tsv(&mut self,image:&Path,_:&str)->Result<String>{
+                if image.file_name().unwrap()=="inverted.png" {Err(Error::new("ocr_failed","inversion failed"))} else {Ok(tsv(&[]))}
+            }
+        }
+        assert_eq!(read(&mut Failing,&image,"eng","adaptive",40.0,None).unwrap_err().code,"ocr_failed");
+    }
+
+    #[test]
+    fn invalid_confidence_cannot_pass_the_adaptive_quality_gate() {
+        let data = tsv(&[
+            (0, 0, 1, 1, f64::NAN, "NaN"),
+            (0, 0, 1, 1, f64::INFINITY, "Inf"),
+            (0, 0, 1, 1, 101.0, "Bad"),
+        ]);
+        assert!(parse_tsv(&data).is_empty());
     }
 
     #[test]

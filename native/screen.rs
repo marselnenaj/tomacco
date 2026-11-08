@@ -820,6 +820,25 @@ pub fn read_text(
     screen: Option<&mut dyn Screen>,
     recognizer: &mut dyn Recognizer,
 ) -> Result {
+    let mut selector = json!({});
+    for key in ["text", "text_contains"] {
+        if a.get(key).is_some() {
+            selector[key] = a[key].clone();
+        }
+    }
+    if a.get("index").is_some() {
+        selector["index"] = a["index"].clone();
+    }
+    let has_selector = ocr::supports(&selector);
+    let detail = a["detail"].as_str().unwrap_or("full");
+    if !matches!(detail, "full" | "matches") || (detail == "matches" && !has_selector) {
+        return Err(Error::new(
+            "invalid_argument",
+            "detail matches requires text or text_contains; detail must be full or matches",
+        ));
+    }
+    let total_started = Instant::now();
+    let capture_started = Instant::now();
     let work = scratch()?;
     let image = match (a["image"].as_str(), screen) {
         (Some(file), _) => path(file, false, true)?,
@@ -835,58 +854,74 @@ pub fn read_text(
             ));
         }
     };
+    let capture_ms = if a.get("image").is_none() {
+        Some(capture_started.elapsed().as_secs_f64() * 1000.0)
+    } else {
+        None
+    };
     let started = Instant::now();
     let min = a["min_confidence"].as_f64().unwrap_or(40.0);
     let fuzzy = b(a, "fuzzy");
-    let reading = ocr::read(
+    let reading = ocr::read_selected(
         recognizer,
         &image,
         language(a)?,
         a["invert"].as_str().unwrap_or("auto"),
         min,
         region(a)?,
+        has_selector.then_some(&selector),
+        fuzzy,
     )?;
-    let mut selector = json!({});
-    for key in ["text", "text_contains"] {
-        if a.get(key).is_some() {
-            selector[key] = a[key].clone();
-        }
-    }
-    if a.get("index").is_some() {
-        selector["index"] = a["index"].clone();
-    }
+    let read_ms = started.elapsed().as_secs_f64() * 1000.0;
     let matches = if ocr::supports(&selector) {
         Some(ocr::select(&reading.lines, &selector, fuzzy))
     } else {
         None
     };
     let limit = limit_argument(a, "max_words", 400, 1, 5000)?;
-    let words: Vec<Value> = reading
-        .words
-        .iter()
-        .take(limit)
-        .map(|w| {
-            json!({"text":w.text,"confidence":(w.confidence * 10.0).round() / 10.0,
+    let words: Vec<Value> = if detail == "matches" {
+        Vec::new()
+    } else {
+        reading
+            .words
+            .iter()
+            .take(limit)
+            .map(|w| {
+                json!({"text":w.text,"confidence":(w.confidence * 10.0).round() / 10.0,
             "rect":{"left":w.left,"top":w.top,"right":w.left + w.width,"bottom":w.top + w.height,
                 "x":w.left + w.width / 2,"y":w.top + w.height / 2}})
-        })
-        .collect();
-    let lines: Vec<Value> = reading
-        .lines
-        .iter()
-        .take(limit)
-        .map(|l| {
-            let m = &line_mark(l, 0);
-            json!({"text":m["text"],"confidence":m["confidence"],"rect":m["bounds"]})
-        })
-        .collect();
+            })
+            .collect()
+    };
+    let lines: Vec<Value> = if detail == "matches" {
+        Vec::new()
+    } else {
+        reading
+            .lines
+            .iter()
+            .take(limit)
+            .map(|l| {
+                let m = &line_mark(l, 0);
+                json!({"text":m["text"],"confidence":m["confidence"],"rect":m["bounds"]})
+            })
+            .collect()
+    };
     let mut result = json!({"source":"ocr","engine":"tesseract","language":language(a)?,"width":reading.width,"height":reading.height,
-        "passes":reading.passes,"cached":reading.cached,"min_confidence":min,"word_count":reading.words.len(),"words":words,"lines":lines,
+        "passes":reading.passes,"cached":reading.cached,"engine_runs":reading.engine_runs,
+        "invert":a["invert"].as_str().unwrap_or("auto"),"fallback_reason":reading.fallback_reason,"detail":detail,
+        "capture_ms":capture_ms,"read_ms":read_ms,"total_ms":total_started.elapsed().as_secs_f64()*1000.0,"min_confidence":min,"word_count":reading.words.len(),"words":words,"lines":lines,
         "truncated":reading.words.len() > limit,"seconds":(started.elapsed().as_secs_f64() * 100.0).round() / 100.0,
         "note":"Text recognised from pixels. Words can be misread or missed, especially small, low-contrast or decorative text and a screen with both light and dark areas (read part of it with region); judge by confidence."});
+    if detail == "matches" {
+        let object = result.as_object_mut().unwrap();
+        for field in ["words", "lines", "truncated"] {
+            object.remove(field);
+        }
+    }
     if let Some(found) = matches {
         result["matches"] = json!(found.iter().map(ocr::Found::value).collect::<Vec<_>>());
     }
+    result["total_ms"] = json!(total_started.elapsed().as_secs_f64() * 1000.0);
     Ok(result)
 }
 
@@ -2149,6 +2184,70 @@ mod tests {
         assert_eq!(result["matches"][0]["rect"]["x"], 77);
         assert_eq!(result["engine"], "tesseract");
         assert!(read_text(&json!({"image":image,"language":"../x"}), None, &mut ocr).is_err());
+    }
+
+    #[test]
+    fn compact_adaptive_ocr_returns_a_target_without_truncating_its_search() {
+        let dir = tempfile::tempdir().unwrap();
+        let image = dir.path().join("s.png");
+        fs::write(&image, visual::encode(&solid(400, 400, 255)).unwrap()).unwrap();
+        let mut ocr = Script(VecDeque::from([tsv(&[
+            (10, 10, 50, 30, 95.0, "Menu"),
+            (10, 100, 50, 30, 95.0, "Save"),
+        ])]));
+        let result = read_text(&json!({"image":image,"invert":"adaptive","text":"Save","detail":"matches","max_words":1}), None, &mut ocr).unwrap();
+        assert_eq!(result["passes"], 1);
+        assert_eq!(result["engine_runs"], 1);
+        assert_eq!(result["word_count"], 2);
+        assert_eq!(result["matches"][0]["text"], "Save");
+        assert!(
+            result.get("words").is_none()
+                && result.get("lines").is_none()
+                && result.get("truncated").is_none()
+        );
+        assert!(result["capture_ms"].is_null());
+        assert!(result["read_ms"].as_f64().unwrap() >= 0.0);
+        assert!(result["total_ms"].as_f64().unwrap() >= result["read_ms"].as_f64().unwrap());
+    }
+
+    #[test]
+    fn adaptive_missing_target_uses_inversion_and_reports_why() {
+        let dir = tempfile::tempdir().unwrap();
+        let image = dir.path().join("s.png");
+        fs::write(&image, visual::encode(&solid(400, 400, 255)).unwrap()).unwrap();
+        let mut ocr = Script(VecDeque::from([
+            tsv(&[(10, 10, 50, 30, 95.0, "Menu")]),
+            tsv(&[(10, 100, 50, 30, 95.0, "Save")]),
+        ]));
+        let result = read_text(
+            &json!({"image":image,"invert":"adaptive","text":"Save"}),
+            None,
+            &mut ocr,
+        )
+        .unwrap();
+        assert_eq!(result["passes"], 2);
+        assert_eq!(result["fallback_reason"], "target_not_found");
+        assert_eq!(result["matches"][0]["text"], "Save");
+        assert_eq!(result["word_count"], 2);
+    }
+
+    #[test]
+    fn adaptive_fallback_uses_one_capture_and_reports_device_capture_time() {
+        let mut screen=Fake::new(vec![solid(200,200,255),solid(200,200,20)],vec![None]);
+        let mut ocr=Script(VecDeque::from([EMPTY.to_string(),tsv(&[(10,10,50,20,95.0,"Save")])]));
+        let result=read_text(&json!({"invert":"adaptive","text":"Save","detail":"matches"}),Some(&mut screen),&mut ocr).unwrap();
+        assert_eq!(screen.pictures.len(),1);
+        assert_eq!(result["passes"],2);
+        assert!(result["capture_ms"].as_f64().unwrap()>=0.0);
+        assert!(result["total_ms"].as_f64().unwrap()>=result["capture_ms"].as_f64().unwrap()+result["read_ms"].as_f64().unwrap());
+    }
+
+    #[test]
+    fn compact_ocr_requires_a_text_selector_before_capturing_or_recognizing() {
+        let mut screen = Fake::new(vec![], vec![]);
+        let error =
+            read_text(&json!({"detail":"matches"}), Some(&mut screen), &mut NoOcr).unwrap_err();
+        assert_eq!(error.code, "invalid_argument");
     }
 
     #[test]

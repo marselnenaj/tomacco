@@ -1288,7 +1288,15 @@ handled by also reading the colour-inverted picture (`invert`, on `auto`).
   fits, compact can be longer; on equal fixtures it kept the bottom controls the default lost (see
   `docs/input-observation-progress.json`; fixture data, not a token or success measurement).
 - **`screen.ocr`** gives every word and line with its box and confidence, and with `text` (whole words) or
-  `text_contains` the matches with their centre. It reads a device or an `image`.
+  `text_contains` the matches with their centre. It reads a device or an `image`. `invert:"auto"` stays the default,
+  merging normal and inverted readings. Opt-in `invert:"adaptive"` starts with normal pixels and also reads the
+  inverted picture if no words remain, the requested text/index is missing, or a matched word has confidence below80.
+  Without a text query, any retained word below80 triggers fallback. It may miss other words or duplicates even when the first result is confident: use `auto` for full
+  polarity reads and ambiguity checks. `detail:"matches"` requires a text selector and omits word/line arrays;
+  matching still considers all recognized words, regardless of `max_words`. The result reports `passes`, actual
+  `engine_runs` (zero when cached), `fallback_reason`, `capture_ms` (null for an image), `read_ms` and `total_ms`.
+  The bounded in-process cache reuses normal/inverted readings between modes and queries; capture and OCR use
+  one frozen picture per request. Existing action, wait and absence/uniqueness checks keep exhaustive reads.
 - **`screen.diff`** says what changed between two screens: two hierarchies (`.xml`: elements added, removed, changed in
   text, state or position) or two screenshots (`.png`: regions with box, size, share of changed pixels and position, and
   a note when only the status bar changed); `text:true` also lists lines of text added and removed. Give `device`

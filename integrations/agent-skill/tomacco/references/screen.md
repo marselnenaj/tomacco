@@ -63,7 +63,7 @@ tomaccoctl call screen.tree '{"device":"<device>"}'
 
 Read text on screen. read-only, idempotent.
 
-Read the text on a device's screen or in a PNG with Tesseract, for screens that have no UI hierarchy: the virtual iPhone, games, WebViews. Answers every word and line with its box and Tesseract's confidence (0 to 100), and with text (whole words, any letter case) or text_contains (part of a word or line), the matches with their centre, ready to tap. The recognition is of pixels, not of controls: small, low-contrast or decorative text can be misread or missed, a space can be lost ("Signin"), and a picture with light and dark areas may need region. A dark theme is handled by also reading the inverted picture. Needs tesseract (capabilities.ocr says whether it is installed).
+Read the text on a device's screen or in a PNG with Tesseract, for screens that have no UI hierarchy: the virtual iPhone, games, WebViews. Answers every word and line with its box and Tesseract's confidence (0 to 100), and with text (whole words, any letter case) or text_contains (part of a word or line), the matches with their centre, ready to tap. The recognition is of pixels, not of controls: small, low-contrast or decorative text can be misread or missed, a space can be lost ("Signin"), and a picture with light and dark areas may need region. By default both normal and inverted pictures are read for dark themes. Opt-in invert:adaptive can skip the second reading on a confident first pass, falling back for missing targets, empty or low-confidence results; this can miss additional text, so it does not prove absence or uniqueness. detail:matches gives a compact target result. Reports actual engine_runs, cache use, fallback_reason and capture/read/total milliseconds. Needs tesseract (capabilities.ocr says whether it is installed).
 
 - `device` string (non-empty): Android serial from device.list, virtual-iphone for the running virtual iPhone, or a runtime session ID from runtime.start (any connected session, including a…
 - `image` string (non-empty): Absolute path of a PNG to read, instead of a device
@@ -74,8 +74,9 @@ Read the text on a device's screen or in a PNG with Tesseract, for screens that 
 - `min_confidence` number (0 to 100; default 40): Leave out words Tesseract reads with less confidence than this (0 to 100)
 - `language` string (matching `^[A-Za-z0-9_+]+$`; default "eng"): Tesseract language code, such as eng or eng+deu; its data must be installed
 - `region` object {x, y, width, height}: Read only this part of the screen, in pixels. Tesseract reads a screen with both light and dark areas as one and can miss the minority area; a region reads it…
-- `invert` string (one of auto, never, always; default "auto"): auto reads the picture as it is and with its colours inverted, and merges the words (twice the time, finds light text on dark ground); never reads it once…
+- `invert` string (one of auto, never, always, adaptive; default "auto"): auto (default) merges normal and inverted readings; never reads only normal pixels; always reads only inverted pixels. adaptive starts normally and adds…
 - `max_words` integer (1 to 5000; default 400): Most words and lines to list
+- `detail` string (one of full, matches; default "full"): full returns words and lines as well as matches; matches requires text or text_contains and omits word/line arrays for a compact target-only result. max_words…
 
 ```sh
 tomaccoctl call screen.ocr

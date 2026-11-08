@@ -79,7 +79,7 @@ tomaccoctl call screen.tree '{"device":"<device>"}'
 
 **Read text on screen**
 
-Read the text on a device's screen or in a PNG with Tesseract, for screens that have no UI hierarchy: the virtual iPhone, games, WebViews. Answers every word and line with its box and Tesseract's confidence (0 to 100), and with text (whole words, any letter case) or text_contains (part of a word or line), the matches with their centre, ready to tap. The recognition is of pixels, not of controls: small, low-contrast or decorative text can be misread or missed, a space can be lost ("Signin"), and a picture with light and dark areas may need region. A dark theme is handled by also reading the inverted picture. Needs tesseract (capabilities.ocr says whether it is installed).
+Read the text on a device's screen or in a PNG with Tesseract, for screens that have no UI hierarchy: the virtual iPhone, games, WebViews. Answers every word and line with its box and Tesseract's confidence (0 to 100), and with text (whole words, any letter case) or text_contains (part of a word or line), the matches with their centre, ready to tap. The recognition is of pixels, not of controls: small, low-contrast or decorative text can be misread or missed, a space can be lost ("Signin"), and a picture with light and dark areas may need region. By default both normal and inverted pictures are read for dark themes. Opt-in invert:adaptive can skip the second reading on a confident first pass, falling back for missing targets, empty or low-confidence results; this can miss additional text, so it does not prove absence or uniqueness. detail:matches gives a compact target result. Reports actual engine_runs, cache use, fallback_reason and capture/read/total milliseconds. Needs tesseract (capabilities.ocr says whether it is installed).
 
 Annotations: read-only, idempotent, open world.
 
@@ -98,8 +98,9 @@ Annotations: read-only, idempotent, open world.
 | `region.y` | integer | yes |  | at least 0 |
 | `region.width` | integer | yes |  | at least 1 |
 | `region.height` | integer | yes |  | at least 1 |
-| `invert` | string |  | `"auto"` | one of `auto`, `never`, `always`; auto reads the picture as it is and with its colours inverted, and merges the words (twice the time, finds light text on dark ground); never reads it once; always reads only the inverted picture |
+| `invert` | string |  | `"auto"` | one of `auto`, `never`, `always`, `adaptive`; auto (default) merges normal and inverted readings; never reads only normal pixels; always reads only inverted pixels. adaptive starts normally and adds inversion if no words remain, the requested text/index is missing or any matched word has confidence below80 (without a text query, any retained word below80 triggers fallback). It can miss other text or duplicates even at high confidence; use auto for complete polarity/ambiguity checks. Cached polarity reads are reused. |
 | `max_words` | integer |  | `400` | 1 to 5000; Most words and lines to list |
+| `detail` | string |  | `"full"` | one of `full`, `matches`; full returns words and lines as well as matches; matches requires text or text_contains and omits word/line arrays for a compact target-only result. max_words applies to full details. Matching always considers all recognized words. |
 
 ```sh
 tomaccoctl call screen.ocr
