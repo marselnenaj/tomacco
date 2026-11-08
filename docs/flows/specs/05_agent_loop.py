@@ -222,7 +222,7 @@ _ocr['sources'].append('docs/ocr-adaptive-qualification.json: optimierter CLI-Ko
 
 # Performance backend: independent of the auto/adaptive polarity policy above.
 # The installer receipt pins the final qualified source before live application.
-_ocr['source_label'] = 'Kern 4584d6b · Performance e0b79fe'
+_ocr['source_label'] = 'Kern 4584d6b · Runtime 07d5586'
 _ocr['lanes'].extend([
     {'label': 'Je nicht gecachter Polarität · Worker oder CLI', 'y': 2740, 'h': 24},
     {'label': 'Begrenzte Lebensdauer · Freigabe und Wiederanlauf', 'y': 3940, 'h': 24},
@@ -275,7 +275,7 @@ _ocr['notes'] = [
     'Die Tesseract-CAPI läuft ausschließlich im isolierten Kindprozess. Ein dauerhafter Owner startet den begrenzten Kindprozess; gleiche Host-Datei über /proc/self/exe erhält das private Protokoll auch nach einem App-Update. Nach Start-/Modell-Unverfügbarkeit darf CLI übernehmen. Cancel, Timeout und unbekannte Fehler nach dem Senden führen zu keinem stillen zweiten Lauf.',
     'Das warme Sprachmodell hält zusätzlichen residenten Speicher. Der Owner räumt nach 55 s Leerlauf oder beim Ende auf. Nach 128 Lesungen wird das Modell vor weiterem Einsatz erneuert; der Kindprozess hat zusätzlich 60 s Leerlaufgrenze. Die öffentliche Bildgrenze bleibt 64 MP; größere Worker-Bilder gehen zum CLI. Eine allgemeine Speicherersparnis wird nicht behauptet.',
     'USB-WDA-Kontext: App, Tastatur und Fokus werden auf derselben Sitzung parallel frisch gelesen. Alle drei Ergebnisse einschließlich Fehler werden abgewartet; Eingaben bleiben seriell. Es wird kein alter Kontext zwischengespeichert.',
-    'Installierte CLI cfad72c / Quellstand c2e2326: offline gegen den privaten Vorgänger 1caa172 qualifiziert, 417 Matrixfälle und 540 Korpusaufrufe. 360 Vergleiche vollständiger Nicht-Zeit-Daten stimmen überein; bekannte OCR-Fehltreffer bleiben. Warme Frischbilder, kalter/eigener CLI, Cache und GUI-Frame-Verfügbarkeit bleiben getrennte Messgrößen; keine Hardware- oder Konkurrenz-Rangliste.',
+    'Historischer Messstand cfad72c / privater Quellstand c2e2326: offline gegen den privaten Vorgänger 1caa172 qualifiziert, 417 Matrixfälle und 540 Korpusaufrufe. 360 Vergleiche vollständiger Nicht-Zeit-Daten stimmen überein; bekannte OCR-Fehltreffer bleiben. Warme Frischbilder, kalter/eigener CLI, Cache und GUI-Frame-Verfügbarkeit bleiben getrennte Messgrößen; keine Hardware- oder Konkurrenz-Rangliste.',
 ]
 _ocr['sources'].extend([
     'native/screen_ocr_engine.rs recognize, standard_binary, thread_overrides, spawn_owner, Worker: Auswahl, Grenzen, Fehler und Leerlauf',
@@ -284,6 +284,6 @@ _ocr['sources'].extend([
     'native/toolchain.rs run_with_env, CompletionWait: Kind-Umgebung und Exit-Bereitschaft; vorhandener Polling-Fallback',
     'native/runtime/iphone.rs context: tokio::join! für App/Tastatur/Fokus, alle Ergebnisse frisch, keine parallelen Eingaben',
     'tests/ocr_engine_integration.py: wechselnde Bilder, Recycling, Grenzen, Cancel/Idle/Unlink, Wrapper, Prozessende',
-    'docs/performance-final-qualification.json: exakte installierte cfad72c-Binary, privater 1caa172-Vergleich, gleiche Nicht-Zeit-Ausgaben und Speichertradeoff',
+    'docs/performance-final-qualification.json: historisch gemessene cfad72c-Binary, privater 1caa172-Vergleich, gleiche Nicht-Zeit-Ausgaben und Speichertradeoff',
     'docs/performance-ocr-worker-review.json und docs/agent-observe-performance.json: unabhängiger Quell-/Fixture-Nachweis, keine Hardwarequalifikation',
 ])

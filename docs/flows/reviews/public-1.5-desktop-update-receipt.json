@@ -1,0 +1,60 @@
+{
+  "state": "installed",
+  "source_commit": "a2f3ad8bdf731fd7337f6fcfd6bfd4b40f3d2c59",
+  "runtime_code_commit": "07d5586310f3f10f0fd1a6382e795f6b1ba19d8a",
+  "version": "1.5.0",
+  "installed_at": "2026-11-08T13:57:51.967645+00:00",
+  "command": [
+    "python3",
+    "/home/maslos/Work/tomacco-release-1.5.0-qualification-20261108/public-native-package/tomacco-1.5.0-Linux-x86_64/install.py",
+    "--user-home",
+    "/home/maslos",
+    "--update",
+    "--no-window-rule"
+  ],
+  "exit_code": 0,
+  "installer": {
+    "installed": "/home/maslos/.local/bin/tomacco",
+    "cli": "/home/maslos/.local/bin/tomaccoctl",
+    "changed": 1,
+    "backups": "/home/maslos/.local/share/tomacco/install-backups/20261108-145751-534877",
+    "omarchy": false,
+    "agent_skill": {
+      "linked": [
+        "/home/maslos/.claude/skills/tomacco",
+        "/home/maslos/.codex/skills/tomacco",
+        "/home/maslos/.agents/skills/tomacco"
+      ],
+      "skipped": []
+    }
+  },
+  "physical_device_access": false,
+  "existing_device_sessions_stopped": false,
+  "restarted_desktop": false,
+  "restarted_mcp": false,
+  "binaries": {
+    "tomacco": {
+      "expected": "4be956ea1c848b209e0852d023314cfa7273257ec30272e35f985c1b9342e5ca",
+      "installed": "4be956ea1c848b209e0852d023314cfa7273257ec30272e35f985c1b9342e5ca"
+    },
+    "tomaccoctl": {
+      "expected": "e2ee6fabe7ace6802e19f8f2305534becf061e8d3047abe94945319ebd8df198",
+      "installed": "e2ee6fabe7ace6802e19f8f2305534becf061e8d3047abe94945319ebd8df198"
+    },
+    "tomacco-demo-render": {
+      "expected": "5a010938113254868b626002369c1a01e472584279b6b9e00e310e69ab6042e0",
+      "installed": "5a010938113254868b626002369c1a01e472584279b6b9e00e310e69ab6042e0"
+    }
+  },
+  "protected_files_byte_identical": {
+    "/home/maslos/.config/marselnenaj/Tomacco.conf": true,
+    "/home/maslos/.config/omarchy/shell.json": true,
+    "/home/maslos/.config/omarchy/extensions/omarchy-menu.jsonc": true,
+    "/home/maslos/.config/hypr/tomacco.lua": true
+  },
+  "skill_links_preserved": {
+    "/home/maslos/.claude/skills/tomacco": true,
+    "/home/maslos/.codex/skills/tomacco": true,
+    "/home/maslos/.agents/skills/tomacco": true
+  }
+}

@@ -1,0 +1,56 @@
+{
+  "checked_at": "2026-11-08T12:43:07.388679+00:00",
+  "file_id": "u8uvnj33hx",
+  "page_id": "f5zgae58fy",
+  "product_source": "c2e2326f66879a595d27f476bf7964b49faf8c33",
+  "artboards": 36,
+  "details": 33,
+  "lint": {
+    "counts": {
+      "contrast": 0,
+      "overflow": 0,
+      "token": 2999,
+      "grid": 688,
+      "alt": 0,
+      "small-text": 0,
+      "target": 0,
+      "repeated": 36,
+      "spacing": 0,
+      "hierarchy": 31,
+      "copy": 169
+    },
+    "total": 3923,
+    "evidence": "reviews/perf-lint.json"
+  },
+  "brand": {
+    "score": 96,
+    "counts": {
+      "hard": 0,
+      "soft": 0,
+      "waived": 0,
+      "layers": 6084
+    },
+    "evidence": "reviews/perf-brand-check.json"
+  },
+  "visual_review": {
+    "reviewed": [
+      "D12 full and canvas/footer detail",
+      "D09 full",
+      "00 full",
+      "S1 full"
+    ],
+    "findings": [],
+    "status": "Agent screenshots checked; root independent review pending",
+    "criteria": "Visible branch labels, typography, source/candidate/public distinction, lifecycle and hardware limits; fixed1680px canvas, not responsive app screens"
+  },
+  "label_placement": {
+    "boards": 33,
+    "labels": 491,
+    "issues": [],
+    "overlaps": 0,
+    "method": "Independent Archivo500@16 measurement and separating-axis polygon checks"
+  },
+  "top_level_overlap": 0,
+  "unchanged_board_content": "Previously accepted1caa172 content retained exceptD09 title/footer,D12 canvas/footer,00 product span andS1 body; all36 actual bounds and1023 nodes rechecked.",
+  "advisories": "Measured diagram pixel geometry, token/grid/repetition/hierarchy/arrow-copy suggestions remain advisory. No critical issue was waived."
+}

@@ -1,0 +1,324 @@
+{
+  "state": "published",
+  "tag": "v1.5.0",
+  "version": "1.5.0",
+  "source_commit": "a2f3ad8bdf731fd7337f6fcfd6bfd4b40f3d2c59",
+  "runtime_code_commit": "07d5586310f3f10f0fd1a6382e795f6b1ba19d8a",
+  "release_id": 438282974,
+  "url": "https://github.com/marselnenaj/tomacco/releases/tag/v1.5.0",
+  "published_at": "2026-11-08T14:06:47Z",
+  "checked_at": "2026-11-08T14:06:49.283995+00:00",
+  "latest": true,
+  "assets": [
+    {
+      "id": 724104384,
+      "name": "6.12.0-0-202607081027qtwebengine-everywhere-src-6.12.0-beta2.tar.xz",
+      "bytes": 583251152,
+      "sha256": "7ea604d7b19927c7815f8fa97e55d2465626f2382290c0fdc8a2bf835a6e043d",
+      "url": "https://github.com/marselnenaj/tomacco/releases/download/v1.5.0/6.12.0-0-202607081027qtwebengine-everywhere-src-6.12.0-beta2.tar.xz"
+    },
+    {
+      "id": 724104386,
+      "name": "6.12.0-0-202607081027qtwebengine-everywhere-src-6.12.0-beta2.tar.xz.sha256",
+      "bytes": 134,
+      "sha256": "720dba58cf0cfe2a15b0cd6fcedeb084defcc18d3b2aad9dea179b024f22ec1d",
+      "url": "https://github.com/marselnenaj/tomacco/releases/download/v1.5.0/6.12.0-0-202607081027qtwebengine-everywhere-src-6.12.0-beta2.tar.xz.sha256"
+    },
+    {
+      "id": 724104378,
+      "name": "qtbase-everywhere-src-6.12.0.tar.xz",
+      "bytes": 51220268,
+      "sha256": "a951bd163c7b80fc6b8c88d7668fb56abf91c152373e13c10666763238131307",
+      "url": "https://github.com/marselnenaj/tomacco/releases/download/v1.5.0/qtbase-everywhere-src-6.12.0.tar.xz"
+    },
+    {
+      "id": 724104376,
+      "name": "qtbase-everywhere-src-6.12.0.tar.xz.sha256",
+      "bytes": 102,
+      "sha256": "080a05eaf629b5929e65f32cb17b919d53ec5e300569526912c81e3affb42553",
+      "url": "https://github.com/marselnenaj/tomacco/releases/download/v1.5.0/qtbase-everywhere-src-6.12.0.tar.xz.sha256"
+    },
+    {
+      "id": 724104379,
+      "name": "qtdeclarative-everywhere-src-6.12.0.tar.xz",
+      "bytes": 39221652,
+      "sha256": "311f3a2603e1973bb59baef9dfa740a376de713157d4782ee043681e889c9260",
+      "url": "https://github.com/marselnenaj/tomacco/releases/download/v1.5.0/qtdeclarative-everywhere-src-6.12.0.tar.xz"
+    },
+    {
+      "id": 724104405,
+      "name": "qtdeclarative-everywhere-src-6.12.0.tar.xz.sha256",
+      "bytes": 109,
+      "sha256": "e3e872b91c8ca837cc440ce5514728bdcd3ce69411028519f11c5205593c11c7",
+      "url": "https://github.com/marselnenaj/tomacco/releases/download/v1.5.0/qtdeclarative-everywhere-src-6.12.0.tar.xz.sha256"
+    },
+    {
+      "id": 724104413,
+      "name": "qtpositioning-everywhere-src-6.12.0.tar.xz",
+      "bytes": 662600,
+      "sha256": "b060d410fac7413b05a0e7938bbf3325f7ad08d7df14af3956270f0696e76763",
+      "url": "https://github.com/marselnenaj/tomacco/releases/download/v1.5.0/qtpositioning-everywhere-src-6.12.0.tar.xz"
+    },
+    {
+      "id": 724104431,
+      "name": "qtpositioning-everywhere-src-6.12.0.tar.xz.sha256",
+      "bytes": 109,
+      "sha256": "e63ffd4f0ba7f46f0e4b82d466603a18ce18081a6950a622097c21b74014e6ca",
+      "url": "https://github.com/marselnenaj/tomacco/releases/download/v1.5.0/qtpositioning-everywhere-src-6.12.0.tar.xz.sha256"
+    },
+    {
+      "id": 724104444,
+      "name": "qtsvg-everywhere-src-6.12.0.tar.xz",
+      "bytes": 2341876,
+      "sha256": "e4ab39534ec97987b1b9b60ef7f4d3253d5912a69f8c713a01753174a4029331",
+      "url": "https://github.com/marselnenaj/tomacco/releases/download/v1.5.0/qtsvg-everywhere-src-6.12.0.tar.xz"
+    },
+    {
+      "id": 724104451,
+      "name": "qtsvg-everywhere-src-6.12.0.tar.xz.sha256",
+      "bytes": 101,
+      "sha256": "00d3e680a41397a3276994b073296b13b2edc0e6f13ca94f6cb9c73be229fe07",
+      "url": "https://github.com/marselnenaj/tomacco/releases/download/v1.5.0/qtsvg-everywhere-src-6.12.0.tar.xz.sha256"
+    },
+    {
+      "id": 724104470,
+      "name": "qttranslations-everywhere-src-6.12.0.tar.xz",
+      "bytes": 1745884,
+      "sha256": "85929c0c30d6f273f23bd879bb69803ea17b010ab73cab2f8abf95357f6f6bbb",
+      "url": "https://github.com/marselnenaj/tomacco/releases/download/v1.5.0/qttranslations-everywhere-src-6.12.0.tar.xz"
+    },
+    {
+      "id": 724104473,
+      "name": "qttranslations-everywhere-src-6.12.0.tar.xz.sha256",
+      "bytes": 110,
+      "sha256": "5e41ea97e56501e96f3dd8c6c091a9bcacf45fc37a94fc368ef670e6dfb35f89",
+      "url": "https://github.com/marselnenaj/tomacco/releases/download/v1.5.0/qttranslations-everywhere-src-6.12.0.tar.xz.sha256"
+    },
+    {
+      "id": 724104483,
+      "name": "qtwayland-everywhere-src-6.12.0.tar.xz",
+      "bytes": 908828,
+      "sha256": "ae14d9bcf1bb3c300a3ab2e6a53f50284e5c6c966a4ac4cc5aedcb1bc74e4d02",
+      "url": "https://github.com/marselnenaj/tomacco/releases/download/v1.5.0/qtwayland-everywhere-src-6.12.0.tar.xz"
+    },
+    {
+      "id": 724104485,
+      "name": "qtwayland-everywhere-src-6.12.0.tar.xz.sha256",
+      "bytes": 105,
+      "sha256": "3b2bdfb3662ff0846832e82b1a5eb0c403fc311a482ae5f2f758155f317d7d78",
+      "url": "https://github.com/marselnenaj/tomacco/releases/download/v1.5.0/qtwayland-everywhere-src-6.12.0.tar.xz.sha256"
+    },
+    {
+      "id": 724104496,
+      "name": "qtwebchannel-everywhere-src-6.12.0.tar.xz",
+      "bytes": 194940,
+      "sha256": "9afdfb64855b33c1cc16a4fdce69a556876f0d5b9df79d88de7306ffa2dca327",
+      "url": "https://github.com/marselnenaj/tomacco/releases/download/v1.5.0/qtwebchannel-everywhere-src-6.12.0.tar.xz"
+    },
+    {
+      "id": 724104505,
+      "name": "qtwebchannel-everywhere-src-6.12.0.tar.xz.sha256",
+      "bytes": 108,
+      "sha256": "89118ff0350b149a36eca5eb26fc6be9e22d1cc3ce59a6afe02d8431b7d88f56",
+      "url": "https://github.com/marselnenaj/tomacco/releases/download/v1.5.0/qtwebchannel-everywhere-src-6.12.0.tar.xz.sha256"
+    },
+    {
+      "id": 724112624,
+      "name": "tomacco-1.5.0-Linux-aarch64-portable.tar.gz",
+      "bytes": 181182592,
+      "sha256": "f77554365b627885b34437b8632a3667324f885594ae00be9356ea4c100bf5ed",
+      "url": "https://github.com/marselnenaj/tomacco/releases/download/v1.5.0/tomacco-1.5.0-Linux-aarch64-portable.tar.gz"
+    },
+    {
+      "id": 724112629,
+      "name": "tomacco-1.5.0-Linux-aarch64-portable.tar.gz.cdx.json",
+      "bytes": 93267,
+      "sha256": "bec40a08d8d2ed47b664d428e79257f2bb9d1217296c28542aefbfdef1f56442",
+      "url": "https://github.com/marselnenaj/tomacco/releases/download/v1.5.0/tomacco-1.5.0-Linux-aarch64-portable.tar.gz.cdx.json"
+    },
+    {
+      "id": 724112626,
+      "name": "tomacco-1.5.0-Linux-aarch64-portable.tar.gz.cdx.json.sig",
+      "bytes": 88,
+      "sha256": "bd8b9a313ec314cbbdb066f0220339b5d1e6369e743e6d6f77add86b83c07164",
+      "url": "https://github.com/marselnenaj/tomacco/releases/download/v1.5.0/tomacco-1.5.0-Linux-aarch64-portable.tar.gz.cdx.json.sig"
+    },
+    {
+      "id": 724112632,
+      "name": "tomacco-1.5.0-Linux-aarch64-portable.tar.gz.sha256",
+      "bytes": 110,
+      "sha256": "42e63a97993336267af673c39edea4c1ccabdaa1525c9ffd1a6ab7d3b0488781",
+      "url": "https://github.com/marselnenaj/tomacco/releases/download/v1.5.0/tomacco-1.5.0-Linux-aarch64-portable.tar.gz.sha256"
+    },
+    {
+      "id": 724112633,
+      "name": "tomacco-1.5.0-Linux-aarch64-portable.tar.gz.sig",
+      "bytes": 88,
+      "sha256": "0095d7d016d65581e311cf3113738a7f2a3a5f43249106fe4ecbfeddf0494f28",
+      "url": "https://github.com/marselnenaj/tomacco/releases/download/v1.5.0/tomacco-1.5.0-Linux-aarch64-portable.tar.gz.sig"
+    },
+    {
+      "id": 724112656,
+      "name": "tomacco-1.5.0-Linux-x86_64-portable.tar.gz",
+      "bytes": 184490338,
+      "sha256": "6c9374f9d9e9a7dcbfc219e14bd2cd394bf19199f46e3bcdc752a01f06367a44",
+      "url": "https://github.com/marselnenaj/tomacco/releases/download/v1.5.0/tomacco-1.5.0-Linux-x86_64-portable.tar.gz"
+    },
+    {
+      "id": 724112654,
+      "name": "tomacco-1.5.0-Linux-x86_64-portable.tar.gz.cdx.json",
+      "bytes": 90253,
+      "sha256": "50f4dc1a30a74f530ac614b3c4aa82c8d8c1d4cd7d507efb2c78a88f6ff44211",
+      "url": "https://github.com/marselnenaj/tomacco/releases/download/v1.5.0/tomacco-1.5.0-Linux-x86_64-portable.tar.gz.cdx.json"
+    },
+    {
+      "id": 724112652,
+      "name": "tomacco-1.5.0-Linux-x86_64-portable.tar.gz.cdx.json.sig",
+      "bytes": 88,
+      "sha256": "1595b224e5d7ddecc729d71f84d290fa08e11f88960b80def4826196787d4d70",
+      "url": "https://github.com/marselnenaj/tomacco/releases/download/v1.5.0/tomacco-1.5.0-Linux-x86_64-portable.tar.gz.cdx.json.sig"
+    },
+    {
+      "id": 724112661,
+      "name": "tomacco-1.5.0-Linux-x86_64-portable.tar.gz.sha256",
+      "bytes": 109,
+      "sha256": "4f5baf002ea9902a75b850077558d001d9baca0b56637dd86d0b0f156a85e105",
+      "url": "https://github.com/marselnenaj/tomacco/releases/download/v1.5.0/tomacco-1.5.0-Linux-x86_64-portable.tar.gz.sha256"
+    },
+    {
+      "id": 724112679,
+      "name": "tomacco-1.5.0-Linux-x86_64-portable.tar.gz.sig",
+      "bytes": 88,
+      "sha256": "6b8a37b9084399e36b4012128270eeff533711a6f6509473718d2f64744309bb",
+      "url": "https://github.com/marselnenaj/tomacco/releases/download/v1.5.0/tomacco-1.5.0-Linux-x86_64-portable.tar.gz.sig"
+    },
+    {
+      "id": 724104513,
+      "name": "tomacco-1.5.0-Linux-x86_64.tar.gz",
+      "bytes": 15070328,
+      "sha256": "627711b1eefcceb95528bed97beb9678b0f20562c3e43fa0e16b964a90e4728e",
+      "url": "https://github.com/marselnenaj/tomacco/releases/download/v1.5.0/tomacco-1.5.0-Linux-x86_64.tar.gz"
+    },
+    {
+      "id": 724104514,
+      "name": "tomacco-1.5.0-Linux-x86_64.tar.gz.cdx.json",
+      "bytes": 79491,
+      "sha256": "7c6c003894b15382b02a4ff04b33e3af5c9baf5bb82c3c8426f4f0a1815afd7d",
+      "url": "https://github.com/marselnenaj/tomacco/releases/download/v1.5.0/tomacco-1.5.0-Linux-x86_64.tar.gz.cdx.json"
+    },
+    {
+      "id": 724104527,
+      "name": "tomacco-1.5.0-Linux-x86_64.tar.gz.cdx.json.sig",
+      "bytes": 88,
+      "sha256": "be0cda8f787d3617584910fec712ca50cebb9257784f78fd97b4a262922de29f",
+      "url": "https://github.com/marselnenaj/tomacco/releases/download/v1.5.0/tomacco-1.5.0-Linux-x86_64.tar.gz.cdx.json.sig"
+    },
+    {
+      "id": 724104538,
+      "name": "tomacco-1.5.0-Linux-x86_64.tar.gz.sha256",
+      "bytes": 100,
+      "sha256": "641220d03b262ed5bb4847461be8639f3528e36333819074d7d16cc11d8f959b",
+      "url": "https://github.com/marselnenaj/tomacco/releases/download/v1.5.0/tomacco-1.5.0-Linux-x86_64.tar.gz.sha256"
+    },
+    {
+      "id": 724104539,
+      "name": "tomacco-1.5.0-Linux-x86_64.tar.gz.sig",
+      "bytes": 88,
+      "sha256": "65cc3af83ceb30ef89d37c37689816fd27c1467a15aeb081be654a3f08f6c2ac",
+      "url": "https://github.com/marselnenaj/tomacco/releases/download/v1.5.0/tomacco-1.5.0-Linux-x86_64.tar.gz.sig"
+    },
+    {
+      "id": 724104563,
+      "name": "tomacco-1.5.0-performance-evidence.tar.gz",
+      "bytes": 807008,
+      "sha256": "315316b6083cd0605c52d8dba3eac086126c24b1e4af6c779a135a7c49d7379c",
+      "url": "https://github.com/marselnenaj/tomacco/releases/download/v1.5.0/tomacco-1.5.0-performance-evidence.tar.gz"
+    },
+    {
+      "id": 724104566,
+      "name": "tomacco-1.5.0-performance-evidence.tar.gz.sha256",
+      "bytes": 108,
+      "sha256": "b09850e700cc78fdd6cfeba8c55c7e11150aeb141fc0ad147f86bb1f720b92bc",
+      "url": "https://github.com/marselnenaj/tomacco/releases/download/v1.5.0/tomacco-1.5.0-performance-evidence.tar.gz.sha256"
+    },
+    {
+      "id": 724104571,
+      "name": "tomacco-1.5.0-performance-evidence.tar.gz.sig",
+      "bytes": 88,
+      "sha256": "8f3645115e962df837da1253c37856502f1a77809f4d7e1cb4b705c4cc8dac9c",
+      "url": "https://github.com/marselnenaj/tomacco/releases/download/v1.5.0/tomacco-1.5.0-performance-evidence.tar.gz.sig"
+    },
+    {
+      "id": 724119501,
+      "name": "tomacco-1.5.0-provenance.intoto.json",
+      "bytes": 13889,
+      "sha256": "ffba235d0c32b45f0d527b9112e33c2f50a1f6c0daec105c300fcf9b344ae161",
+      "url": "https://github.com/marselnenaj/tomacco/releases/download/v1.5.0/tomacco-1.5.0-provenance.intoto.json"
+    },
+    {
+      "id": 724119498,
+      "name": "tomacco-1.5.0-provenance.intoto.json.sha256",
+      "bytes": 103,
+      "sha256": "7ede9780823f4600cdae4bd94aed603f4847b0dd6953345e9c81088dfffc4cc2",
+      "url": "https://github.com/marselnenaj/tomacco/releases/download/v1.5.0/tomacco-1.5.0-provenance.intoto.json.sha256"
+    },
+    {
+      "id": 724119502,
+      "name": "tomacco-1.5.0-provenance.intoto.json.sig",
+      "bytes": 88,
+      "sha256": "de56a5ad78553b369e460c6534015be9aa2fd0f20c1413c3ec49c20f4d923037",
+      "url": "https://github.com/marselnenaj/tomacco/releases/download/v1.5.0/tomacco-1.5.0-provenance.intoto.json.sig"
+    },
+    {
+      "id": 724119499,
+      "name": "tomacco-1.5.0-release-qualification.json",
+      "bytes": 51787,
+      "sha256": "ecaf14521ad8ad4453d7af6fc6d55c2811506bea446b24c061641f621eccf1e4",
+      "url": "https://github.com/marselnenaj/tomacco/releases/download/v1.5.0/tomacco-1.5.0-release-qualification.json"
+    },
+    {
+      "id": 724119500,
+      "name": "tomacco-1.5.0-release-qualification.json.sha256",
+      "bytes": 107,
+      "sha256": "5d6bbace633c231df757dd0bd2d54b8e8850b2d7e06dd9c1144f62f4bde4f5ae",
+      "url": "https://github.com/marselnenaj/tomacco/releases/download/v1.5.0/tomacco-1.5.0-release-qualification.json.sha256"
+    },
+    {
+      "id": 724119507,
+      "name": "tomacco-1.5.0-release-qualification.json.sig",
+      "bytes": 88,
+      "sha256": "918dee69934fd479b438ab95134befffed1cf50a1ff3d3958181f7e8f2d7abe4",
+      "url": "https://github.com/marselnenaj/tomacco/releases/download/v1.5.0/tomacco-1.5.0-release-qualification.json.sig"
+    },
+    {
+      "id": 724104570,
+      "name": "tomacco-1.5.0-source.tar.gz",
+      "bytes": 79149262,
+      "sha256": "199ede4139dc56662370ad192e1cef202981c62594ba7b8b5bbe639c8e9472fa",
+      "url": "https://github.com/marselnenaj/tomacco/releases/download/v1.5.0/tomacco-1.5.0-source.tar.gz"
+    },
+    {
+      "id": 724104605,
+      "name": "tomacco-1.5.0-source.tar.gz.sha256",
+      "bytes": 94,
+      "sha256": "96780e62f81957a2576d15e0b2c101d2d2394b3f646b9de9a4dced771771330f",
+      "url": "https://github.com/marselnenaj/tomacco/releases/download/v1.5.0/tomacco-1.5.0-source.tar.gz.sha256"
+    },
+    {
+      "id": 724104604,
+      "name": "tomacco-1.5.0-source.tar.gz.sig",
+      "bytes": 88,
+      "sha256": "c73e41a2af62d3720265b650c0114ae251b4c148b2048189174e93b0525bee19",
+      "url": "https://github.com/marselnenaj/tomacco/releases/download/v1.5.0/tomacco-1.5.0-source.tar.gz.sig"
+    }
+  ],
+  "all_remote_asset_digests_verified": true,
+  "local_assets_manifest_sha256": "82982cae09a1330718f9f3f99fa216d6d08b0dc6d4a45cd85062bc714a7b6b40",
+  "physical_device_access": false,
+  "pixel_installed": false,
+  "desktop_installed": true,
+  "existing_app_or_mcp_sessions_restarted": false,
+  "arm64_experimental": true,
+  "arm_native_gui_qualified": true,
+  "arm_native_three_distro_qualified": false
+}

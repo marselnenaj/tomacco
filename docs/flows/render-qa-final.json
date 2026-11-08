@@ -1,8 +1,9 @@
 {
-  "checked_at": "2026-11-08T12:43:07.388679+00:00",
+  "checked_at": "2026-11-08T14:17:53.875Z",
   "file_id": "u8uvnj33hx",
   "page_id": "f5zgae58fy",
-  "product_source": "c2e2326f66879a595d27f476bf7964b49faf8c33",
+  "product_source": "a2f3ad8bdf731fd7337f6fcfd6bfd4b40f3d2c59",
+  "runtime_code_commit": "07d5586310f3f10f0fd1a6382e795f6b1ba19d8a",
   "artboards": 36,
   "details": 33,
   "lint": {
@@ -18,9 +19,7 @@
       "spacing": 0,
       "hierarchy": 31,
       "copy": 169
-    },
-    "total": 3923,
-    "evidence": "reviews/perf-lint.json"
+    }
   },
   "brand": {
     "score": 96,
@@ -29,20 +28,9 @@
       "soft": 0,
       "waived": 0,
       "layers": 6084
-    },
-    "evidence": "reviews/perf-brand-check.json"
+    }
   },
-  "visual_review": {
-    "reviewed": [
-      "D12 full and canvas/footer detail",
-      "D09 full",
-      "00 full",
-      "S1 full"
-    ],
-    "findings": [],
-    "status": "Agent screenshots checked; root independent review pending",
-    "criteria": "Visible branch labels, typography, source/candidate/public distinction, lifecycle and hardware limits; fixed1680px canvas, not responsive app screens"
-  },
+  "top_level_overlap": 0,
   "label_placement": {
     "boards": 33,
     "labels": 491,
@@ -50,7 +38,15 @@
     "overlaps": 0,
     "method": "Independent Archivo500@16 measurement and separating-axis polygon checks"
   },
-  "top_level_overlap": 0,
-  "unchanged_board_content": "Previously accepted1caa172 content retained exceptD09 title/footer,D12 canvas/footer,00 product span andS1 body; all36 actual bounds and1023 nodes rechecked.",
-  "advisories": "Measured diagram pixel geometry, token/grid/repetition/hierarchy/arrow-copy suggestions remain advisory. No critical issue was waived."
+  "visual_review": {
+    "state": "agent-self-assessed",
+    "boards": [
+      "00",
+      "S1",
+      "D09",
+      "D12"
+    ],
+    "root_final_review_pending": true
+  },
+  "changed_content": "Nine text layers in00/S1/D09/D12 updated in place; all36 PNGs regenerated. All artboard, logical-node and prototype IDs preserved. Fixed-canvas token/grid/copy and narrow responsive suggestions remain advisory. No critical finding waived."
 }

@@ -1,0 +1,6 @@
+{
+  "historical": true,
+  "epoch": "accepted private1.5 CODEcandidatec2e2326, public1.4.1",
+  "retained_from_public_tree": "a2f3ad8bdf731fd7337f6fcfd6bfd4b40f3d2c59",
+  "reason": "Publication/identity/installed-binary/ARM evidence update only; runtime behavior unchanged"
+}

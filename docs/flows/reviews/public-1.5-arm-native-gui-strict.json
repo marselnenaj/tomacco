@@ -1,0 +1,182 @@
+{
+  "state": "passed",
+  "qualification": "Native Linux aarch64 GUI and real QtWebEngine interactive smoke; controlled local control-plane fixture",
+  "source_commit": "e0b40c5d1f11e90a114f9f445c8d7903a96d1d84",
+  "public_source_commit": "a2f3ad8bdf731fd7337f6fcfd6bfd4b40f3d2c59",
+  "source_identity_bridge": "/home/maslos/Work/tomacco-release-1.5.0-qualification-20261108/public-source-identity-bridge.json",
+  "expected_check_names": [
+    "17e-attached-notch-and-proportions",
+    "android-category-filter",
+    "apple-category-search-preserved",
+    "demo-interaction",
+    "device-screenshot",
+    "duo-edge-to-edge",
+    "duo-folded-landscape",
+    "duo-folded-portrait",
+    "duo-open-landscape",
+    "duo-open-portrait",
+    "fullscreen",
+    "initial-viewport",
+    "landscape-viewport"
+  ],
+  "actual_check_names": [
+    "17e-attached-notch-and-proportions",
+    "android-category-filter",
+    "apple-category-search-preserved",
+    "demo-interaction",
+    "device-screenshot",
+    "duo-edge-to-edge",
+    "duo-folded-landscape",
+    "duo-folded-portrait",
+    "duo-open-landscape",
+    "duo-open-portrait",
+    "fullscreen",
+    "initial-viewport",
+    "landscape-viewport"
+  ],
+  "checks_all_true": true,
+  "no_fatal": true,
+  "gui_sha256": "59ac7d3688e6568e4d4fba40b10569ee463eea21b103482459f7300fe1b18c5d",
+  "qualified_archive_sha256": "766f78509cdc99b5f7a20e54b45f7453a64014b9361714ea4067ab3301407c6d",
+  "all_gui_qt_other_package_bytes_unchanged": true,
+  "physical_device_access": false,
+  "phone_contacted": false,
+  "device_discovery_performed": false,
+  "control_plane_mocked": true,
+  "control_fixture_calls": [
+    {
+      "argv": [
+        "schema"
+      ],
+      "allowed": true
+    },
+    {
+      "argv": [
+        "call",
+        "device.list",
+        "@-"
+      ],
+      "allowed": true,
+      "arguments": {
+        "platform": "all"
+      }
+    },
+    {
+      "argv": [
+        "call",
+        "remote.list",
+        "@-"
+      ],
+      "allowed": true,
+      "arguments": {}
+    },
+    {
+      "argv": [
+        "call",
+        "runtime.list",
+        "@-"
+      ],
+      "allowed": true,
+      "arguments": {}
+    },
+    {
+      "argv": [
+        "setup",
+        "agents",
+        "status",
+        "--json"
+      ],
+      "allowed": true
+    },
+    {
+      "argv": [
+        "call",
+        "workspace.list",
+        "@-"
+      ],
+      "allowed": true,
+      "arguments": {}
+    },
+    {
+      "argv": [
+        "call",
+        "update.status",
+        "@-"
+      ],
+      "allowed": true,
+      "arguments": {}
+    },
+    {
+      "argv": [
+        "call",
+        "update.check",
+        "@-"
+      ],
+      "allowed": true,
+      "arguments": {}
+    },
+    {
+      "argv": [
+        "call",
+        "update.status",
+        "@-"
+      ],
+      "allowed": true,
+      "arguments": {}
+    }
+  ],
+  "unexpected_mock_calls": [],
+  "transport_trap_calls": [],
+  "expected_toolchain_probe_traps": [
+    {
+      "tool": "xtool",
+      "argv": [
+        "sdk",
+        "status"
+      ],
+      "expected_toolchain_probe": true
+    },
+    {
+      "tool": "swift",
+      "argv": [
+        "--version"
+      ],
+      "expected_toolchain_probe": true
+    },
+    {
+      "tool": "xtool",
+      "argv": [
+        "--version"
+      ],
+      "expected_toolchain_probe": true
+    }
+  ],
+  "transport_trap_definition": "Physical/device transport attempts; separately listed xtool/swift version or SDK status requests were blocked by local fixtures and did not reach actual tools",
+  "limits": {
+    "CPUQuota": "200%",
+    "MemoryMax": 1073741824,
+    "MemorySwapMax": 0,
+    "RuntimeMaxSec": 300
+  },
+  "memory_peak_reported": "403.1M",
+  "swap_peak_reported": "0B",
+  "runtime_seconds": 22.12,
+  "private_tmp": true,
+  "private_home_xdg": true,
+  "app_host_dbus_access": false,
+  "sandbox_disabled": false,
+  "host_install_changed": false,
+  "raw_log": "/home/maslos/Work/tomacco-release-1.5.0-qualification-20261108/arm-native/native-gui-strict-smoke.log",
+  "raw_log_sha256": "06ef83970dd88c9a2e3c41690a094470fa9ca0d4aa251497c15c32f4fdb2166c",
+  "full_receipt": "/home/maslos/Work/tomacco-release-1.5.0-qualification-20261108/arm-native/native-browser-verification.json",
+  "first_fixture_refusal_receipt": "/home/maslos/Work/tomacco-release-1.5.0-qualification-20261108/arm-native/native-browser-verification-initial.json",
+  "actual_native_three_distro_verification": false,
+  "native_three_distro_failure_receipt": "/home/maslos/Work/tomacco-release-1.5.0-qualification-20261108/arm-native/native-verification.json",
+  "limitations": [
+    "No physical Pixel/device workflow qualification",
+    "Control plane mocked; actual CLI offline MCP separately qualified",
+    "No native three-distro claim: default Docker egress prevented installing dependency packages; direct host GUI uses existing host dependencies",
+    "Host has no existing Xvfb; offscreen software-rendered real browser test only"
+  ],
+  "checked_at": "2026-11-08T14:03:09.752471+00:00"
+}

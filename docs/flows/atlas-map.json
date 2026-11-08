@@ -1,9 +1,9 @@
 {
   "schema": "tomacco-flow-atlas/1",
-  "product_source": "c2e2326f66879a595d27f476bf7964b49faf8c33",
+  "product_source": "a2f3ad8bdf731fd7337f6fcfd6bfd4b40f3d2c59",
   "core_source_baseline": "4584d6bca3a07840e81683d99cd0adb386aeff35",
   "date": "2026-11-08",
-  "runtime_code_commit": "e0b79fe4207a50c7f7416af8392ee4a0a5648906",
+  "runtime_code_commit": "07d5586310f3f10f0fd1a6382e795f6b1ba19d8a",
   "source_keys": 1898,
   "i18n_digest": "47ea5c3a1e0f",
   "registry_sha256": "76b7ec2a6510c6c97f7399afffac7cf5a1a026cb8c3e97d34779fad20cf6d71b",
@@ -6553,7 +6553,7 @@
         "canvas": "5ifjz84xb1",
         "footer": "crygqeg566"
       },
-      "spec_sha256": "96f1e64975581c491dcbcdbaaf640d4e98b6b76609b166799dfff699d8e60803"
+      "spec_sha256": "25f556cd3e1f65ebab80531cf684646f0190f92a4dd41e9ddf922ef73ed7bdc6"
     },
     {
       "id": "D09",
@@ -7068,14 +7068,14 @@
       ],
       "height": 850,
       "spec_file": "docs/flows/specs/04_devices.py",
-      "source_baseline_label": "Kern 4584d6b · Performance e0b79fe",
+      "source_baseline_label": "Kern 4584d6b · Runtime 07d5586",
       "bogen": {
         "artboard": "9yeeati9yf",
         "header": "3di10uhg0v",
         "canvas": "4030a103fc",
         "footer": "qpqq4nk2mm"
       },
-      "spec_sha256": "96f1e64975581c491dcbcdbaaf640d4e98b6b76609b166799dfff699d8e60803"
+      "spec_sha256": "25f556cd3e1f65ebab80531cf684646f0190f92a4dd41e9ddf922ef73ed7bdc6"
     },
     {
       "id": "D10",
@@ -7912,7 +7912,7 @@
         "canvas": "2ek7fh33nn",
         "footer": "23x4ch0dzp"
       },
-      "spec_sha256": "96f1e64975581c491dcbcdbaaf640d4e98b6b76609b166799dfff699d8e60803"
+      "spec_sha256": "25f556cd3e1f65ebab80531cf684646f0190f92a4dd41e9ddf922ef73ed7bdc6"
     },
     {
       "id": "D11",
@@ -8573,7 +8573,7 @@
         "canvas": "rm1xyg13kv",
         "footer": "e5jrdpf69h"
       },
-      "spec_sha256": "96f1e64975581c491dcbcdbaaf640d4e98b6b76609b166799dfff699d8e60803"
+      "spec_sha256": "25f556cd3e1f65ebab80531cf684646f0190f92a4dd41e9ddf922ef73ed7bdc6"
     },
     {
       "id": "D12",
@@ -10711,7 +10711,7 @@
         "native/toolchain.rs run_with_env, CompletionWait: Kind-Umgebung und Exit-Bereitschaft; vorhandener Polling-Fallback",
         "native/runtime/iphone.rs context: tokio::join! für App/Tastatur/Fokus, alle Ergebnisse frisch, keine parallelen Eingaben",
         "tests/ocr_engine_integration.py: wechselnde Bilder, Recycling, Grenzen, Cancel/Idle/Unlink, Wrapper, Prozessende",
-        "docs/performance-final-qualification.json: exakte installierte cfad72c-Binary, privater 1caa172-Vergleich, gleiche Nicht-Zeit-Ausgaben und Speichertradeoff",
+        "docs/performance-final-qualification.json: historisch gemessene cfad72c-Binary, privater 1caa172-Vergleich, gleiche Nicht-Zeit-Ausgaben und Speichertradeoff",
         "docs/performance-ocr-worker-review.json und docs/agent-observe-performance.json: unabhängiger Quell-/Fixture-Nachweis, keine Hardwarequalifikation"
       ],
       "notes": [
@@ -10723,7 +10723,7 @@
         "Die Tesseract-CAPI läuft ausschließlich im isolierten Kindprozess. Ein dauerhafter Owner startet den begrenzten Kindprozess; gleiche Host-Datei über /proc/self/exe erhält das private Protokoll auch nach einem App-Update. Nach Start-/Modell-Unverfügbarkeit darf CLI übernehmen. Cancel, Timeout und unbekannte Fehler nach dem Senden führen zu keinem stillen zweiten Lauf.",
         "Das warme Sprachmodell hält zusätzlichen residenten Speicher. Der Owner räumt nach 55 s Leerlauf oder beim Ende auf. Nach 128 Lesungen wird das Modell vor weiterem Einsatz erneuert; der Kindprozess hat zusätzlich 60 s Leerlaufgrenze. Die öffentliche Bildgrenze bleibt 64 MP; größere Worker-Bilder gehen zum CLI. Eine allgemeine Speicherersparnis wird nicht behauptet.",
         "USB-WDA-Kontext: App, Tastatur und Fokus werden auf derselben Sitzung parallel frisch gelesen. Alle drei Ergebnisse einschließlich Fehler werden abgewartet; Eingaben bleiben seriell. Es wird kein alter Kontext zwischengespeichert.",
-        "Installierte CLI cfad72c / Quellstand c2e2326: offline gegen den privaten Vorgänger 1caa172 qualifiziert, 417 Matrixfälle und 540 Korpusaufrufe. 360 Vergleiche vollständiger Nicht-Zeit-Daten stimmen überein; bekannte OCR-Fehltreffer bleiben. Warme Frischbilder, kalter/eigener CLI, Cache und GUI-Frame-Verfügbarkeit bleiben getrennte Messgrößen; keine Hardware- oder Konkurrenz-Rangliste."
+        "Historischer Messstand cfad72c / privater Quellstand c2e2326: offline gegen den privaten Vorgänger 1caa172 qualifiziert, 417 Matrixfälle und 540 Korpusaufrufe. 360 Vergleiche vollständiger Nicht-Zeit-Daten stimmen überein; bekannte OCR-Fehltreffer bleiben. Warme Frischbilder, kalter/eigener CLI, Cache und GUI-Frame-Verfügbarkeit bleiben getrennte Messgrößen; keine Hardware- oder Konkurrenz-Rangliste."
       ],
       "links": [
         [
@@ -10756,14 +10756,14 @@
       ],
       "height": 4552,
       "spec_file": "docs/flows/specs/05_agent_loop.py",
-      "source_baseline_label": "Kern 4584d6b · Performance e0b79fe",
+      "source_baseline_label": "Kern 4584d6b · Runtime 07d5586",
       "bogen": {
         "artboard": "qsrfwt20hy",
         "header": "i6hesxye35",
         "canvas": "nmf7tagsi6",
         "footer": "yjffieci1g"
       },
-      "spec_sha256": "f122e73b5f3332b2c9b6c61773318fde9da5d50719c7a13fffab3df08689dcec"
+      "spec_sha256": "4b08c1e39872501bf0f075d0f3571b0086f43ba229a384bb04ba3aed8b366764"
     },
     {
       "id": "D13",
@@ -11738,7 +11738,7 @@
         "canvas": "g005ec4xz5",
         "footer": "g2hu2czvg7"
       },
-      "spec_sha256": "f122e73b5f3332b2c9b6c61773318fde9da5d50719c7a13fffab3df08689dcec"
+      "spec_sha256": "4b08c1e39872501bf0f075d0f3571b0086f43ba229a384bb04ba3aed8b366764"
     },
     {
       "id": "D14",
@@ -12261,7 +12261,7 @@
         "canvas": "hgx0yzctyd",
         "footer": "a48mx5dte1"
       },
-      "spec_sha256": "f122e73b5f3332b2c9b6c61773318fde9da5d50719c7a13fffab3df08689dcec"
+      "spec_sha256": "4b08c1e39872501bf0f075d0f3571b0086f43ba229a384bb04ba3aed8b366764"
     },
     {
       "id": "D15",
@@ -36084,7 +36084,7 @@
         "native/toolchain.rs run_with_env, CompletionWait: Kind-Umgebung und Exit-Bereitschaft; vorhandener Polling-Fallback",
         "native/runtime/iphone.rs context: tokio::join! für App/Tastatur/Fokus, alle Ergebnisse frisch, keine parallelen Eingaben",
         "tests/ocr_engine_integration.py: wechselnde Bilder, Recycling, Grenzen, Cancel/Idle/Unlink, Wrapper, Prozessende",
-        "docs/performance-final-qualification.json: exakte installierte cfad72c-Binary, privater 1caa172-Vergleich, gleiche Nicht-Zeit-Ausgaben und Speichertradeoff",
+        "docs/performance-final-qualification.json: historisch gemessene cfad72c-Binary, privater 1caa172-Vergleich, gleiche Nicht-Zeit-Ausgaben und Speichertradeoff",
         "docs/performance-ocr-worker-review.json und docs/agent-observe-performance.json: unabhängiger Quell-/Fixture-Nachweis, keine Hardwarequalifikation"
       ],
       "status": "implemented_source_contract; hardware qualifications see S1",
@@ -36121,7 +36121,7 @@
         "native/toolchain.rs run_with_env, CompletionWait: Kind-Umgebung und Exit-Bereitschaft; vorhandener Polling-Fallback",
         "native/runtime/iphone.rs context: tokio::join! für App/Tastatur/Fokus, alle Ergebnisse frisch, keine parallelen Eingaben",
         "tests/ocr_engine_integration.py: wechselnde Bilder, Recycling, Grenzen, Cancel/Idle/Unlink, Wrapper, Prozessende",
-        "docs/performance-final-qualification.json: exakte installierte cfad72c-Binary, privater 1caa172-Vergleich, gleiche Nicht-Zeit-Ausgaben und Speichertradeoff",
+        "docs/performance-final-qualification.json: historisch gemessene cfad72c-Binary, privater 1caa172-Vergleich, gleiche Nicht-Zeit-Ausgaben und Speichertradeoff",
         "docs/performance-ocr-worker-review.json und docs/agent-observe-performance.json: unabhängiger Quell-/Fixture-Nachweis, keine Hardwarequalifikation"
       ],
       "status": "implemented_source_contract; hardware qualifications see S1",
@@ -36158,7 +36158,7 @@
         "native/toolchain.rs run_with_env, CompletionWait: Kind-Umgebung und Exit-Bereitschaft; vorhandener Polling-Fallback",
         "native/runtime/iphone.rs context: tokio::join! für App/Tastatur/Fokus, alle Ergebnisse frisch, keine parallelen Eingaben",
         "tests/ocr_engine_integration.py: wechselnde Bilder, Recycling, Grenzen, Cancel/Idle/Unlink, Wrapper, Prozessende",
-        "docs/performance-final-qualification.json: exakte installierte cfad72c-Binary, privater 1caa172-Vergleich, gleiche Nicht-Zeit-Ausgaben und Speichertradeoff",
+        "docs/performance-final-qualification.json: historisch gemessene cfad72c-Binary, privater 1caa172-Vergleich, gleiche Nicht-Zeit-Ausgaben und Speichertradeoff",
         "docs/performance-ocr-worker-review.json und docs/agent-observe-performance.json: unabhängiger Quell-/Fixture-Nachweis, keine Hardwarequalifikation"
       ],
       "status": "implemented_source_contract; hardware qualifications see S1",
@@ -36195,7 +36195,7 @@
         "native/toolchain.rs run_with_env, CompletionWait: Kind-Umgebung und Exit-Bereitschaft; vorhandener Polling-Fallback",
         "native/runtime/iphone.rs context: tokio::join! für App/Tastatur/Fokus, alle Ergebnisse frisch, keine parallelen Eingaben",
         "tests/ocr_engine_integration.py: wechselnde Bilder, Recycling, Grenzen, Cancel/Idle/Unlink, Wrapper, Prozessende",
-        "docs/performance-final-qualification.json: exakte installierte cfad72c-Binary, privater 1caa172-Vergleich, gleiche Nicht-Zeit-Ausgaben und Speichertradeoff",
+        "docs/performance-final-qualification.json: historisch gemessene cfad72c-Binary, privater 1caa172-Vergleich, gleiche Nicht-Zeit-Ausgaben und Speichertradeoff",
         "docs/performance-ocr-worker-review.json und docs/agent-observe-performance.json: unabhängiger Quell-/Fixture-Nachweis, keine Hardwarequalifikation"
       ],
       "status": "implemented_source_contract; hardware qualifications see S1",
@@ -36256,7 +36256,7 @@
         "native/toolchain.rs run_with_env, CompletionWait: Kind-Umgebung und Exit-Bereitschaft; vorhandener Polling-Fallback",
         "native/runtime/iphone.rs context: tokio::join! für App/Tastatur/Fokus, alle Ergebnisse frisch, keine parallelen Eingaben",
         "tests/ocr_engine_integration.py: wechselnde Bilder, Recycling, Grenzen, Cancel/Idle/Unlink, Wrapper, Prozessende",
-        "docs/performance-final-qualification.json: exakte installierte cfad72c-Binary, privater 1caa172-Vergleich, gleiche Nicht-Zeit-Ausgaben und Speichertradeoff",
+        "docs/performance-final-qualification.json: historisch gemessene cfad72c-Binary, privater 1caa172-Vergleich, gleiche Nicht-Zeit-Ausgaben und Speichertradeoff",
         "docs/performance-ocr-worker-review.json und docs/agent-observe-performance.json: unabhängiger Quell-/Fixture-Nachweis, keine Hardwarequalifikation"
       ],
       "status": "implemented_source_contract; hardware qualifications see S1",
@@ -40294,7 +40294,7 @@
         "native/toolchain.rs run_with_env, CompletionWait: Kind-Umgebung und Exit-Bereitschaft; vorhandener Polling-Fallback",
         "native/runtime/iphone.rs context: tokio::join! für App/Tastatur/Fokus, alle Ergebnisse frisch, keine parallelen Eingaben",
         "tests/ocr_engine_integration.py: wechselnde Bilder, Recycling, Grenzen, Cancel/Idle/Unlink, Wrapper, Prozessende",
-        "docs/performance-final-qualification.json: exakte installierte cfad72c-Binary, privater 1caa172-Vergleich, gleiche Nicht-Zeit-Ausgaben und Speichertradeoff",
+        "docs/performance-final-qualification.json: historisch gemessene cfad72c-Binary, privater 1caa172-Vergleich, gleiche Nicht-Zeit-Ausgaben und Speichertradeoff",
         "docs/performance-ocr-worker-review.json und docs/agent-observe-performance.json: unabhängiger Quell-/Fixture-Nachweis, keine Hardwarequalifikation"
       ],
       "status": "implemented_source_contract; hardware qualifications see S1",
@@ -40461,7 +40461,7 @@
         "native/toolchain.rs run_with_env, CompletionWait: Kind-Umgebung und Exit-Bereitschaft; vorhandener Polling-Fallback",
         "native/runtime/iphone.rs context: tokio::join! für App/Tastatur/Fokus, alle Ergebnisse frisch, keine parallelen Eingaben",
         "tests/ocr_engine_integration.py: wechselnde Bilder, Recycling, Grenzen, Cancel/Idle/Unlink, Wrapper, Prozessende",
-        "docs/performance-final-qualification.json: exakte installierte cfad72c-Binary, privater 1caa172-Vergleich, gleiche Nicht-Zeit-Ausgaben und Speichertradeoff",
+        "docs/performance-final-qualification.json: historisch gemessene cfad72c-Binary, privater 1caa172-Vergleich, gleiche Nicht-Zeit-Ausgaben und Speichertradeoff",
         "docs/performance-ocr-worker-review.json und docs/agent-observe-performance.json: unabhängiger Quell-/Fixture-Nachweis, keine Hardwarequalifikation"
       ],
       "status": "implemented_source_contract; hardware qualifications see S1",
@@ -40551,7 +40551,7 @@
         "native/toolchain.rs run_with_env, CompletionWait: Kind-Umgebung und Exit-Bereitschaft; vorhandener Polling-Fallback",
         "native/runtime/iphone.rs context: tokio::join! für App/Tastatur/Fokus, alle Ergebnisse frisch, keine parallelen Eingaben",
         "tests/ocr_engine_integration.py: wechselnde Bilder, Recycling, Grenzen, Cancel/Idle/Unlink, Wrapper, Prozessende",
-        "docs/performance-final-qualification.json: exakte installierte cfad72c-Binary, privater 1caa172-Vergleich, gleiche Nicht-Zeit-Ausgaben und Speichertradeoff",
+        "docs/performance-final-qualification.json: historisch gemessene cfad72c-Binary, privater 1caa172-Vergleich, gleiche Nicht-Zeit-Ausgaben und Speichertradeoff",
         "docs/performance-ocr-worker-review.json und docs/agent-observe-performance.json: unabhängiger Quell-/Fixture-Nachweis, keine Hardwarequalifikation"
       ],
       "status": "implemented_source_contract; hardware qualifications see S1",
@@ -42268,9 +42268,8 @@
     "prototype_evidence": "prototype-validation.json",
     "layout_evidence": "layout-final.json",
     "review_resolutions": "review-resolutions.json",
-    "root_final_acceptance_pending": false,
-    "final_ready": true,
-    "perf_observations": "reviews/perf-bogen-observations.json",
-    "root_final_review": "root-final-review.json"
+    "root_final_acceptance_pending": true,
+    "final_ready": false,
+    "publication_observations": "reviews/public-1.5-bogen-observations.json"
   }
 }

@@ -1,22 +1,54 @@
 {
-  "created_at": "2026-11-08T12:43:07.388679+00:00",
-  "product_source": "c2e2326f66879a595d27f476bf7964b49faf8c33",
+  "created_at": "2026-11-08T14:17:53.875Z",
+  "product_source": "a2f3ad8bdf731fd7337f6fcfd6bfd4b40f3d2c59",
+  "runtime_code_commit": "07d5586310f3f10f0fd1a6382e795f6b1ba19d8a",
   "count": 36,
   "regenerated": [
     "00",
+    "C1",
+    "S1",
+    "D01",
+    "D02",
+    "D03",
+    "D04",
+    "D05",
+    "D06",
+    "D07",
+    "D08",
     "D09",
+    "D10",
+    "D11",
     "D12",
-    "S1"
+    "D13",
+    "D14",
+    "D15",
+    "D16",
+    "D17",
+    "D18",
+    "D19",
+    "D20",
+    "D21",
+    "D22",
+    "D23",
+    "D24",
+    "D25",
+    "D26",
+    "D27",
+    "D28",
+    "D29",
+    "D30",
+    "D31",
+    "D32",
+    "D33"
   ],
-  "unchanged_exports_from": "history/1caa172/render-manifest.json",
   "files": [
     {
       "diagram": "00",
       "path": "renders/00.png",
       "width": 1680,
       "height": 2704,
-      "bytes": 405407,
-      "sha256": "68b2ec9db28d3181d383a12e8f3d9fcfbec3e399f7ba3d2b29cff3c2fdaf4af9"
+      "bytes": 404709,
+      "sha256": "18c0bd90fc04dcab60443c582a81725ec2324ee778a8c96c3f07a5fde00e8585"
     },
     {
       "diagram": "C1",
@@ -31,8 +63,8 @@
       "path": "renders/S1.png",
       "width": 1680,
       "height": 2050,
-      "bytes": 516284,
-      "sha256": "e2d76b6654a43f10768dce4a057ba0677d2ad558b19152c38e29db84c3051078"
+      "bytes": 527594,
+      "sha256": "150c5a5f29fc459fa56b3a956aa13979c1b3d0752872de0292c2b6ab5befbf6a"
     },
     {
       "diagram": "D01",
@@ -103,8 +135,8 @@
       "path": "renders/D09.png",
       "width": 1680,
       "height": 1659,
-      "bytes": 328992,
-      "sha256": "bd44864aac261f7927b481f5f531669284ed0e61d9a83bb5616e9b92875e63c5"
+      "bytes": 328450,
+      "sha256": "114358764a71e19aeece5dc8e9f269098210722118cb656a84742f2f36b2fb3e"
     },
     {
       "diagram": "D10",
@@ -127,8 +159,8 @@
       "path": "renders/D12.png",
       "width": 1680,
       "height": 6073,
-      "bytes": 1161181,
-      "sha256": "6287379ae666b09535186bb1a6d6e4093875740191488340663ddc0bec4c473b"
+      "bytes": 1162498,
+      "sha256": "efc30075363b1a907372790b2d97070f3919cebcbec731f324e5e891c513eeb5"
     },
     {
       "diagram": "D13",
@@ -255,8 +287,8 @@
       "path": "renders/D28.png",
       "width": 1680,
       "height": 3746,
-      "bytes": 641893,
-      "sha256": "7cfe7387b0dcf5dafc7322f5fe83cba1238a260be69afec064b8df7cb34fa8fd"
+      "bytes": 641335,
+      "sha256": "1cec538019d1ecbffb6994284ed96c3627a669e21d5c945537f992dad0561df2"
     },
     {
       "diagram": "D29",

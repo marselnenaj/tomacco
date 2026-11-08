@@ -1,0 +1,28 @@
+{
+  "schema": "tomacco-publication-atlas-delta/1",
+  "state": "ready_for_root_final_qa",
+  "product_source": "a2f3ad8bdf731fd7337f6fcfd6bfd4b40f3d2c59",
+  "runtime_code_commit": "07d5586310f3f10f0fd1a6382e795f6b1ba19d8a",
+  "public_release": "1.5.0",
+  "publication_receipt": "reviews/public-1.5-publication-receipt.json",
+  "installed_receipt": "reviews/public-1.5-desktop-update-receipt.json",
+  "source_identity_bridge": "reviews/public-1.5-source-identity-bridge.json",
+  "previous_accepted_epoch": "history/private-1.5-c2e2326/",
+  "scope": "Metadata publication, installed final binary and scoped experimental ARM proof only",
+  "mutated_layer_ids": [
+    "2sz0tgxg66",
+    "yms797iik9",
+    "dcjbh8e5wa",
+    "ch2f0py4xg",
+    "3q0pwz2b1x",
+    "ibyh8cgp9w",
+    "h4k8e4qn63",
+    "eziuc3tjtk",
+    "88ik752k1t"
+  ],
+  "artboard_ids_preserved": true,
+  "logical_node_ids_preserved": true,
+  "prototype_ids_preserved": true,
+  "all_pngs_regenerated": true,
+  "root_final_review_pending": true
+}

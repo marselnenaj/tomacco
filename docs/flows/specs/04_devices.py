@@ -85,7 +85,7 @@ BOARDS = [
             "Kontextbeobachtung liest App, Tastatur und Fokus auf derselben WDA-Sitzung parallel frisch und wartet alle drei Ergebnisse einschließlich Fehler ab. Einzelne Fehler behalten available:false; Eingaben bleiben seriell. Die Beschleunigung wurde im verzögerten Loopback gemessen, nicht am echten iPhone.",
         ],
         "sources": ["native/iphone_setup.rs:317 go-ios image auto", "native/iphone_setup.rs ios.prepare, ios.wda_prepare, ios.doctor", "native/iphone_device.rs ios.signing, ios.device_status", "native/runtime/iphone.rs:1-2, 102 USB-Forwards (nur Loopback) + WDA MJPEG", "native/runtime/iphone.rs:854 verifiziertes Füllen: Kern4584-Loopback-Double, nicht auf Hardware", "native/runtime/iphone.rs context: tokio::join! aller drei frischen Reads, Fehler je Kontextteil", "docs/agent-observe-performance.json: frischer Kontext und serialisierte Eingabe, verzögerter und unverzögerter Loopback"],
-        "source_label": "Kern 4584d6b · Performance e0b79fe",
+        "source_label": "Kern 4584d6b · Runtime 07d5586",
         "ops": ["ios.device_status", "ios.doctor", "ios.prepare", "ios.wda_prepare", "ios.signing", "ios.apps", "ios.app_files", "ios.record", "ios.crash_reports", "ios.crash_symbolicate", "device.screenshot"],
         "links": [["D12", "Beobachten & Handeln"], ["D13", "Verifiziertes Füllen"], ["D24", "Release"]],
         "screens": [["pvcps58bsa", "j2bx5drx46", "11 Pairing & Reconnect"]],

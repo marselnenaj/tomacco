@@ -2,7 +2,7 @@
 
 The editable atlas lives in **Bogen → Tomacco · App → 04 · Flows & Logik** (file `u8uvnj33hx`, page `f5zgae58fy`). Start at **00**. **C1** links operation domains and all CLI routes. **S1** separates implemented source behavior, prerequisites, pending physical qualification and future work.
 
-Current product provenance and installation evidence are recorded in `provenance-current.json`. The source-audio, optional OCR and performance follow-ups extend the `4584d6b` core; exact installed source is kept separate from unchanged core source anchors. The installed private candidate is **1.5.0**, product **c2e2326** / runtime **e0b79fe**. The public release remains **1.4.1** until a separate publication receipt. Installed product, runtime, documentation verification tree and eventual public tag/source are distinct fields; this atlas commit never recursively claims to be installed. Atlas documentation commits are separate from the installed product commit. No physical device was changed to build this atlas.
+Current product provenance and installation evidence are recorded in `provenance-current.json`. Public release **1.5.0** and the installed desktop use source **a2f3ad8** / runtime **07d5586**. The source-audio, OCR and performance flows retain explicit historical core anchors; the identity bridge binds their private measurement history to the identical published source trees. Atlas documentation commits are separate from the installed product and immutable release tag. No physical device was changed to build this atlas.
 
 ## Contents
 
@@ -41,7 +41,7 @@ The current source-audio ARM package from `578819b` is container verified and st
 
 Physical iPhone AirPlay audio synchrony, mouse swipes and verified fill remain unqualified here. The virtual iPhone is an experimental research runtime; command acceptance, a process observation and a visible scene are different evidence. Demo Studio's implemented QPainter perspective renderer is distinct from future arbitrary 3D scene work.
 
-Existing Bogen screen pages 01–03 are referenced, not changed by this atlas. There was no public publish, repository push, tag or release.
+Existing Bogen screen pages 01–03 are referenced, not changed by this atlas. Historical statements below describe their original measurement epochs; the publication record in the following section is current.
 
 ## Source-audio follow-up
 
@@ -49,7 +49,7 @@ D23 models saved `audio.mode` (`muted` by default, optional `source`), source-tr
 
 Historical audio-era checks (product `1713806`): 981 actual logical nodes, 382 verified links to 56 existing targets and 36 complete PNG exports. `demo-audio-delta-acceptance.json` separates completed checks from the final root review. Historical acceptance and PNGs remain in `history/4584d6b/`. Reconcile new live-tool observations with `tools/audio_acceptance.py`; the helper deliberately leaves final approval to the root reviewer.
 
-The previous adaptive-OCR root acceptance is preserved under `history/1caa172/`; older4584 evidence remains under `history/4584d6b/`. Current performance-atlas acceptance is deliberately pending the root reviewer.
+The previous adaptive-OCR root acceptance is preserved under `history/1caa172/`; older4584 evidence remains under `history/4584d6b/`. Its acceptance belongs to that historical epoch; the current publication follow-up has a separate root-review gate.
 
 ## Optional OCR follow-up
 
@@ -57,7 +57,7 @@ The original adaptive-OCR product `1caa172` / runtime `e552e6f` was accepted bef
 
 Historical adaptive-OCR atlas checks were 33 diagrams, 36 artboards and1,000 logical nodes. Its accepted map, IDs, labels, render hashes, changed PNGs and final root review are preserved in `history/1caa172/`. The earlier audio-era acceptance stays in `history/1713806/`.
 
-## Private1.5.0 performance follow-up
+## Historical private1.5.0 performance follow-up
 
 `perf-delta-plan.json` pins the installed CODEcandidate `c2e2326f66879a595d27f476bf7964b49faf8c33` / runtime `e0b79fe4207a50c7f7416af8392ee4a0a5648906`. Only the new release qualification receipt can open the live-write gate. `reviews/perf-install-gate.json`, `perf-desktop-update-receipt.json` and `perf-installed-smoke.json` bind the three verified binaries, protected desktop settings and the warm-worker/reap smoke check. Public release remains1.4.1; no tag, public publish, device session restart or Pixel access was performed by this atlas work.
 
@@ -67,8 +67,16 @@ D12 separates the OCR polarity policy from worker/CLI selection and bounded work
 
 A separate verified **publicv1.4.1** comparison is preserved at `reviews/public-v1.4.1-performance.json`:36 paired warm fresh-image reads in default `auto`, median matched new/old ratio0.31207 (about3.20× old/new). It uses three prerecorded app crops and the common API; the known query misses remain. This is separate from the private1caa corpus and from first recognition, custom CLI, hardware, GPU or competitor performance. The signed public baseline's source/tag is recorded separately from installedc2e and eventual1.5 publication.
 
-The last qualified/staged ARM package remains578819b. New private1.5.0 candidate packages are built but not finally qualified, and Pixel installation remains pending. Public artifact/source/tag fields may only advance after a root publication receipt.
+At that private-candidate epoch the last qualified/staged ARM package remained578819b. The newly published1.5.0 ARM qualification is recorded separately below; Pixel installation remains pending.
 
-Current atlas checks: **33 diagrams,36 artboards,1,023 actual logical nodes,296 operations,382 links and56 exact existing targets**. All33 spec hashes and the unchanged registry hash were checked. All36 computed artboard bounds were read back after reflow with no overlap;491 independent branch-label measurements have no collision. Only00/D09/D12/S1 PNGs were regenerated; all36 dimensions and hashes were verified. Four documentation design-verification reports are agent screenshot self-assessments, not human approval. Critical render lint and hard/soft brand violations are zero; fixed-canvas token/grid/copy and320px resizing suggestions remain advisory, with no critical finding waived.
+Private-candidate atlas checks: **33 diagrams,36 artboards,1,023 actual logical nodes,296 operations,382 links and56 exact existing targets**. All33 spec hashes and the unchanged registry hash were checked. All36 computed artboard bounds were read back after reflow with no overlap;491 independent branch-label measurements have no collision. Only00/D09/D12/S1 PNGs were regenerated; all36 dimensions and hashes were verified. Four documentation design-verification reports are agent screenshot self-assessments, not human approval. Critical render lint and hard/soft brand violations are zero; fixed-canvas token/grid/copy and320px resizing suggestions remain advisory, with no critical finding waived.
 
-`perf-delta-acceptance.json` and `final-acceptance.json` record implementation readiness and leave **root final review pending**. `tools/perf_acceptance.py` reconciles live observations, actual identities, source/spec hashes, links and all36 exports without granting that approval. The Bogen checkpoint is recorded in `reviews/perf-bogen-observations.json`.
+The archived private acceptance records its original review state. `public-1.5-delta-acceptance.json` and the current `final-acceptance.json` leave **root final review pending** for the publication metadata. `tools/perf_acceptance.py` reconciles live observations, actual identities, source/spec hashes, links and all36 exports without granting that approval. The Bogen checkpoint is recorded in `reviews/perf-bogen-observations.json`.
+
+## Published1.5.0 provenance follow-up
+
+Release **v1.5.0 is published** at [GitHub](https://github.com/marselnenaj/tomacco/releases/tag/v1.5.0), public source `a2f3ad8bdf731fd7337f6fcfd6bfd4b40f3d2c59`, runtime `07d5586310f3f10f0fd1a6382e795f6b1ba19d8a`. The publication receipt verifies43 assets and latest status. The source identity bridge preserves every source tree from the private qualification history; unpublished author-email headers changed. Historical c2e/cfad reports retain their measured identities. The installed final CLI is e2ee6fa; root verified its instruction section identical to cfad, re-ran final benchmarks and installed-worker smoke. No recognition behavior changed.
+
+The published experimental aarch64 package is qualified for a native Linux GUI with13 exact interactive checks and a mock control plane, plus the actual CLI in offline tests. The public archive retains all171 qualified ELF files byte for byte. This does not qualify three native distributions, the incomplete QEMU-browser run, or physical Pixel/AirPlay use. The earlier578819b staging receipt remains historical.
+
+`history/private-1.5-c2e2326/` preserves the previously accepted private-candidate map, acceptance, provenance and render hashes. `reviews/public-1.5-*` and `public-1.5-delta-acceptance.json` describe only this publication/metadata epoch. All36 PNG exports,33 specs,1,023 actual nodes and382 prototype links are checked again; final root approval is separate. No additional page, brand, device session or live website deployment was changed by this atlas follow-up.

@@ -118,5 +118,7 @@
   "brand_hard": 0,
   "final_ready": true,
   "root_final_acceptance_pending": false,
-  "root_final_review": "root-final-review.json"
+  "root_final_review": "root-final-review.json",
+  "historical": true,
+  "superseded_by": "public-1.5-delta-acceptance.json"
 }

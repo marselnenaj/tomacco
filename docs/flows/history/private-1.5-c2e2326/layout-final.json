@@ -1,0 +1,298 @@
+{
+  "date": "2026-11-08",
+  "file_id": "u8uvnj33hx",
+  "page_id": "f5zgae58fy",
+  "product_source": "c2e2326f66879a595d27f476bf7964b49faf8c33",
+  "overlaps": [],
+  "artboards": [
+    {
+      "diagram": "00",
+      "id": "bxx82h1gcm",
+      "x": 0,
+      "y": 0,
+      "width": 1680,
+      "height": 2703.78125
+    },
+    {
+      "diagram": "C1",
+      "id": "ue039cnxf6",
+      "x": 1840,
+      "y": 0,
+      "width": 1680,
+      "height": 5259.0625
+    },
+    {
+      "diagram": "S1",
+      "id": "e96psisvff",
+      "x": 3680,
+      "y": 0,
+      "width": 1680,
+      "height": 2050.25
+    },
+    {
+      "diagram": "D01",
+      "id": "zsjsa63us8",
+      "x": 0,
+      "y": 5440,
+      "width": 1680,
+      "height": 1883.640625
+    },
+    {
+      "diagram": "D02",
+      "id": "vksmw1dgne",
+      "x": 1840,
+      "y": 5440,
+      "width": 1680,
+      "height": 2671.765625
+    },
+    {
+      "diagram": "D03",
+      "id": "j4k0gtc0mn",
+      "x": 3680,
+      "y": 5440,
+      "width": 1680,
+      "height": 2025.359375
+    },
+    {
+      "diagram": "D04",
+      "id": "tvt65zsrkf",
+      "x": 5520,
+      "y": 5440,
+      "width": 1680,
+      "height": 2363.484375
+    },
+    {
+      "diagram": "D05",
+      "id": "7m8xquxd9i",
+      "x": 0,
+      "y": 8320,
+      "width": 1680,
+      "height": 1873.671875
+    },
+    {
+      "diagram": "D06",
+      "id": "8fjj1ks7vs",
+      "x": 1840,
+      "y": 8320,
+      "width": 1680,
+      "height": 2347.171875
+    },
+    {
+      "diagram": "D07",
+      "id": "a4b866ybye",
+      "x": 3680,
+      "y": 8320,
+      "width": 1680,
+      "height": 2412.765625
+    },
+    {
+      "diagram": "D08",
+      "id": "hgc0gfj00u",
+      "x": 5520,
+      "y": 8320,
+      "width": 1680,
+      "height": 1885.578125
+    },
+    {
+      "diagram": "D09",
+      "id": "9yeeati9yf",
+      "x": 0,
+      "y": 10960,
+      "width": 1680,
+      "height": 1658.859375
+    },
+    {
+      "diagram": "D10",
+      "id": "13qr4k97tn",
+      "x": 1840,
+      "y": 10960,
+      "width": 1680,
+      "height": 2299.578125
+    },
+    {
+      "diagram": "D11",
+      "id": "1hxc9y8dg1",
+      "x": 3680,
+      "y": 10960,
+      "width": 1680,
+      "height": 2047.484375
+    },
+    {
+      "diagram": "D12",
+      "id": "qsrfwt20hy",
+      "x": 5520,
+      "y": 10960,
+      "width": 1680,
+      "height": 6073.203125
+    },
+    {
+      "diagram": "D13",
+      "id": "8cndx5g5m2",
+      "x": 0,
+      "y": 17200,
+      "width": 1680,
+      "height": 2474.265625
+    },
+    {
+      "diagram": "D14",
+      "id": "rr3tz2x3cn",
+      "x": 1840,
+      "y": 17200,
+      "width": 1680,
+      "height": 1879.703125
+    },
+    {
+      "diagram": "D15",
+      "id": "m7hdtj54wj",
+      "x": 3680,
+      "y": 17200,
+      "width": 1680,
+      "height": 2574.640625
+    },
+    {
+      "diagram": "D16",
+      "id": "9bgqanfm9m",
+      "x": 5520,
+      "y": 17200,
+      "width": 1680,
+      "height": 2263.265625
+    },
+    {
+      "diagram": "D17",
+      "id": "cw5en7179g",
+      "x": 0,
+      "y": 20000,
+      "width": 1680,
+      "height": 1444.984375
+    },
+    {
+      "diagram": "D18",
+      "id": "0dmy7fe25p",
+      "x": 1840,
+      "y": 20000,
+      "width": 1680,
+      "height": 2043.265625
+    },
+    {
+      "diagram": "D19",
+      "id": "ymv2hhuqvh",
+      "x": 3680,
+      "y": 20000,
+      "width": 1680,
+      "height": 3744.484375
+    },
+    {
+      "diagram": "D20",
+      "id": "wcz36hxwbw",
+      "x": 5520,
+      "y": 20000,
+      "width": 1680,
+      "height": 3855.765625
+    },
+    {
+      "diagram": "D21",
+      "id": "22keknuk0j",
+      "x": 0,
+      "y": 24080,
+      "width": 1680,
+      "height": 3757.171875
+    },
+    {
+      "diagram": "D22",
+      "id": "4ar1tc46sh",
+      "x": 1840,
+      "y": 24080,
+      "width": 1680,
+      "height": 3441.578125
+    },
+    {
+      "diagram": "D23",
+      "id": "373rq1dd4q",
+      "x": 3680,
+      "y": 24080,
+      "width": 1680,
+      "height": 5789.828125
+    },
+    {
+      "diagram": "D24",
+      "id": "1xcj6hthsd",
+      "x": 5520,
+      "y": 24080,
+      "width": 1680,
+      "height": 3905.078125
+    },
+    {
+      "diagram": "D25",
+      "id": "1gv2wzmw23",
+      "x": 0,
+      "y": 30080,
+      "width": 1680,
+      "height": 3771.046875
+    },
+    {
+      "diagram": "D26",
+      "id": "erif4cg36n",
+      "x": 1840,
+      "y": 30080,
+      "width": 1680,
+      "height": 3294.234375
+    },
+    {
+      "diagram": "D27",
+      "id": "kq7w9dvmcd",
+      "x": 3680,
+      "y": 30080,
+      "width": 1680,
+      "height": 3506.046875
+    },
+    {
+      "diagram": "D28",
+      "id": "vb6x62k34s",
+      "x": 5520,
+      "y": 30080,
+      "width": 1680,
+      "height": 3746.0625
+    },
+    {
+      "diagram": "D29",
+      "id": "fcdicmpmx1",
+      "x": 0,
+      "y": 34080,
+      "width": 1680,
+      "height": 2852.921875
+    },
+    {
+      "diagram": "D30",
+      "id": "3a34qh44im",
+      "x": 1840,
+      "y": 34080,
+      "width": 1680,
+      "height": 3106.78125
+    },
+    {
+      "diagram": "D31",
+      "id": "5rxig5s6fy",
+      "x": 3680,
+      "y": 34080,
+      "width": 1680,
+      "height": 3872.765625
+    },
+    {
+      "diagram": "D32",
+      "id": "evc3b4t282",
+      "x": 5520,
+      "y": 34080,
+      "width": 1680,
+      "height": 4308.046875
+    },
+    {
+      "diagram": "D33",
+      "id": "sr8gnd34e1",
+      "x": 0,
+      "y": 38560,
+      "width": 1680,
+      "height": 4719.328125
+    }
+  ],
+  "method": "All36 actual browser-computed content heights; CSS left/top read back after row reflow; gap at least160px"
+}

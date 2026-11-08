@@ -1,0 +1,40 @@
+{
+  "checked_at": "2026-11-08T12:48:39.814625+00:00",
+  "reviewer": "root Codex independent final review",
+  "product_source": "c2e2326f66879a595d27f476bf7964b49faf8c33",
+  "runtime_code_commit": "e0b79fe4207a50c7f7416af8392ee4a0a5648906",
+  "actual_screenshots_reviewed": [
+    "00",
+    "D09",
+    "D12",
+    "S1",
+    "D12-worker-budget-note"
+  ],
+  "source_spec_hashes_verified": 33,
+  "registry_operations_verified": 296,
+  "actual_node_mappings_verified": 1023,
+  "prototype_links_verified": 382,
+  "prototype_targets_verified": 56,
+  "prototype_links_compared_to_live_readback": true,
+  "png_sha256_and_decode_verified": 36,
+  "regenerated_exports": [
+    "00",
+    "D09",
+    "D12",
+    "S1"
+  ],
+  "artboard_overlap": 0,
+  "label_overlap": 0,
+  "live_design": {
+    "critical_lint": 0,
+    "brand_score": 96,
+    "brand_hard": 0,
+    "brand_soft": 0,
+    "waived": 0,
+    "manual_svg_contrast_review": "changed boards viewed; existing unchanged renders retained from accepted history"
+  },
+  "hardware_access": false,
+  "final_ready": true,
+  "public_release_at_review": "1.4.1;1.5.0 candidate installed privately",
+  "live_readback_sha256": "a35457f4c83ae31a2d8a18b0be1aa0bf12c4d492943d552148b30e430fa9b76f"
+}

@@ -1,0 +1,262 @@
+{
+  "phase": "complete",
+  "root_owner": true,
+  "all_new_boards_complete": true,
+  "final_ready": true,
+  "product_source": "c2e2326f66879a595d27f476bf7964b49faf8c33",
+  "runtime_code_commit": "e0b79fe4207a50c7f7416af8392ee4a0a5648906",
+  "file_id": "u8uvnj33hx",
+  "page_id": "f5zgae58fy",
+  "historical_state": "history/1caa172/ROOT-APPLICATION-STATE.json",
+  "current_acceptance": "perf-delta-acceptance.json",
+  "boards": {
+    "D01": {
+      "artboard": "zsjsa63us8",
+      "header": "81ga3h1aep",
+      "canvas": "a2hdp7sn0j",
+      "footer": "kw79ifkfxv",
+      "spec_sha256": "301f66903dc3570ff52b1289601ccf51213909b4ae8f91e02e2b4f9e864cd1a9"
+    },
+    "D02": {
+      "artboard": "vksmw1dgne",
+      "header": "p566apccds",
+      "canvas": "tc36fmc2m9",
+      "footer": "apefkif9g3",
+      "spec_sha256": "299d118931a8e7588dc9ce51ea33f233eccfb6603583ce5fab43f9074391b14c"
+    },
+    "D03": {
+      "artboard": "j4k0gtc0mn",
+      "header": "5ghhb9gg2i",
+      "canvas": "k8x5u18hj5",
+      "footer": "0r973gqis6",
+      "spec_sha256": "299d118931a8e7588dc9ce51ea33f233eccfb6603583ce5fab43f9074391b14c"
+    },
+    "D04": {
+      "artboard": "tvt65zsrkf",
+      "header": "dzk6f04pb4",
+      "canvas": "t5r1fea89e",
+      "footer": "mcm3v4d7i2",
+      "spec_sha256": "299d118931a8e7588dc9ce51ea33f233eccfb6603583ce5fab43f9074391b14c"
+    },
+    "D05": {
+      "artboard": "7m8xquxd9i",
+      "header": "csc7eeie2g",
+      "canvas": "3ank2abvqw",
+      "footer": "zhdn1ag97d",
+      "spec_sha256": "5cc95b29446bd1b1a7266dcb3ff17b8dc58407e2fb7ab8ca9156df553725c784"
+    },
+    "D06": {
+      "artboard": "8fjj1ks7vs",
+      "header": "na36mnys7d",
+      "canvas": "i8szai2mf1",
+      "footer": "yg09k766iw",
+      "spec_sha256": "5cc95b29446bd1b1a7266dcb3ff17b8dc58407e2fb7ab8ca9156df553725c784"
+    },
+    "D07": {
+      "artboard": "a4b866ybye",
+      "header": "2imhancze3",
+      "canvas": "bjk308ianz",
+      "footer": "evtx1njtte",
+      "spec_sha256": "5cc95b29446bd1b1a7266dcb3ff17b8dc58407e2fb7ab8ca9156df553725c784"
+    },
+    "D08": {
+      "artboard": "hgc0gfj00u",
+      "header": "mu3892zeq7",
+      "canvas": "5ifjz84xb1",
+      "footer": "crygqeg566",
+      "spec_sha256": "96f1e64975581c491dcbcdbaaf640d4e98b6b76609b166799dfff699d8e60803"
+    },
+    "D09": {
+      "artboard": "9yeeati9yf",
+      "header": "3di10uhg0v",
+      "canvas": "4030a103fc",
+      "footer": "qpqq4nk2mm",
+      "spec_sha256": "96f1e64975581c491dcbcdbaaf640d4e98b6b76609b166799dfff699d8e60803"
+    },
+    "D10": {
+      "artboard": "13qr4k97tn",
+      "header": "rm2d6s5xh2",
+      "canvas": "2ek7fh33nn",
+      "footer": "23x4ch0dzp",
+      "spec_sha256": "96f1e64975581c491dcbcdbaaf640d4e98b6b76609b166799dfff699d8e60803"
+    },
+    "D11": {
+      "artboard": "1hxc9y8dg1",
+      "header": "2dqzdr47ux",
+      "canvas": "rm1xyg13kv",
+      "footer": "e5jrdpf69h",
+      "spec_sha256": "96f1e64975581c491dcbcdbaaf640d4e98b6b76609b166799dfff699d8e60803"
+    },
+    "D12": {
+      "artboard": "qsrfwt20hy",
+      "header": "i6hesxye35",
+      "canvas": "nmf7tagsi6",
+      "footer": "yjffieci1g",
+      "spec_sha256": "f122e73b5f3332b2c9b6c61773318fde9da5d50719c7a13fffab3df08689dcec"
+    },
+    "D13": {
+      "artboard": "8cndx5g5m2",
+      "header": "54f0jw1256",
+      "canvas": "g005ec4xz5",
+      "footer": "g2hu2czvg7",
+      "spec_sha256": "f122e73b5f3332b2c9b6c61773318fde9da5d50719c7a13fffab3df08689dcec"
+    },
+    "D14": {
+      "artboard": "rr3tz2x3cn",
+      "header": "4qezi4j7wx",
+      "canvas": "hgx0yzctyd",
+      "footer": "a48mx5dte1",
+      "spec_sha256": "f122e73b5f3332b2c9b6c61773318fde9da5d50719c7a13fffab3df08689dcec"
+    },
+    "D15": {
+      "artboard": "m7hdtj54wj",
+      "header": "dkcvdc6vnh",
+      "canvas": "b0d8umtbp6",
+      "footer": "cxj81508m4",
+      "spec_sha256": "3b039196f16bc42ba363fb090557e733dcf3787ba35d56aad5e4960dcfe212c3"
+    },
+    "D16": {
+      "artboard": "9bgqanfm9m",
+      "header": "zw9dwimwc3",
+      "canvas": "yk259kscuw",
+      "footer": "089fg2tzmz",
+      "spec_sha256": "3b039196f16bc42ba363fb090557e733dcf3787ba35d56aad5e4960dcfe212c3"
+    },
+    "D17": {
+      "artboard": "cw5en7179g",
+      "header": "26yyug5vx7",
+      "canvas": "x63tpire3k",
+      "footer": "kckj1j484d",
+      "spec_sha256": "3b039196f16bc42ba363fb090557e733dcf3787ba35d56aad5e4960dcfe212c3"
+    },
+    "D18": {
+      "artboard": "0dmy7fe25p",
+      "header": "0cet9p0huy",
+      "canvas": "uwqu787iyd",
+      "footer": "pu10833wqf",
+      "spec_sha256": "3b039196f16bc42ba363fb090557e733dcf3787ba35d56aad5e4960dcfe212c3"
+    },
+    "D19": {
+      "artboard": "ymv2hhuqvh",
+      "name": "D19 · Dateien, Editor und Dateiwahl",
+      "header": "eh6tj7fias",
+      "canvas": "2ehw8paci2",
+      "footer": "kn0ki2x5sm",
+      "spec_sha256": "2c772e824c89c393dc6b08b54671e6ff5f80fac49c0c9ac491088127d2fc109f"
+    },
+    "D20": {
+      "artboard": "wcz36hxwbw",
+      "name": "D20 · Einstellungen, Größe und Sprache",
+      "header": "hzbz6h88e3",
+      "canvas": "kab7v9w9hq",
+      "footer": "3893utwnvn",
+      "spec_sha256": "84513fa8d57f458d1011b8db0ed6c8f3cdd048b84e62a620fd2af10ba0d29237"
+    },
+    "D21": {
+      "artboard": "22keknuk0j",
+      "name": "D21 · UI-Tests, QA-Umgebungen, GPX und Aufnahme",
+      "header": "80g8bek6d5",
+      "canvas": "sm2ktyg8qz",
+      "footer": "zkd2mvidbv",
+      "spec_sha256": "b48863d0aca5a773b49db1b69d89a4c1e3770f69e1cda490096367cab4ed6585"
+    },
+    "D22": {
+      "artboard": "4ar1tc46sh",
+      "name": "D22 · Debuggen und Performance messen",
+      "header": "vm7pw3k9d6",
+      "canvas": "zawb3m6299",
+      "footer": "q2qs5tq304",
+      "spec_sha256": "94e5920491869e3bbfafcc41bba096d8cf4d48a35a17f766922a14268b2f8ef9"
+    },
+    "D23": {
+      "artboard": "373rq1dd4q",
+      "name": "D23 · Demo Studio: Szene, Render-Job, geprüfte Datei",
+      "header": "wn8s1zb6gd",
+      "canvas": "s9etdpy2dh",
+      "footer": "fwh1pmvxi8",
+      "spec_sha256": "f3b842305c7ae459a78beeddedf51dccd4741e26ba7d88897963cc04a72a4e36"
+    },
+    "D24": {
+      "artboard": "1xcj6hthsd",
+      "name": "D24 · App-Release: signieren, prüfen, veröffentlichen",
+      "header": "6qjcv2p7zf",
+      "canvas": "3f4787fnvj",
+      "footer": "b87mczd678",
+      "spec_sha256": "f089ad51e5da34736f448785e3a24f820a0124939b9b96a9d1611b2d3d28c658"
+    },
+    "D25": {
+      "artboard": "1gv2wzmw23",
+      "name": "D25 · Tomacco aktualisiert sich selbst: prüfen, installieren, zurückrollen",
+      "header": "ts4x529wbj",
+      "canvas": "5833r1cwjb",
+      "footer": "cipw5kdnam",
+      "spec_sha256": "13c1df886d17047bc70188a0bc0fe9c9d8e733ac613e7564c319cd6365cc33b2"
+    },
+    "D26": {
+      "artboard": "erif4cg36n",
+      "name": "D26 · Telefon, lokal oder Mac-Host: wo eine Operation läuft",
+      "header": "a1qk6navi1",
+      "canvas": "0a4ddb1dxq",
+      "footer": "96gpcze15w",
+      "spec_sha256": "13c1df886d17047bc70188a0bc0fe9c9d8e733ac613e7564c319cd6365cc33b2"
+    },
+    "D27": {
+      "artboard": "kq7w9dvmcd",
+      "name": "D27 · Fehler und Recovery: was über die Wirkung bekannt ist",
+      "header": "15dk8gnkw5",
+      "canvas": "32bxdyr9u5",
+      "footer": "uj8bt301q4",
+      "spec_sha256": "13c1df886d17047bc70188a0bc0fe9c9d8e733ac613e7564c319cd6365cc33b2"
+    },
+    "D28": {
+      "artboard": "vb6x62k34s",
+      "name": "D28 · Web-Vorschau und Browser-Automation",
+      "header": "zay4wng5em",
+      "canvas": "y379v61zd7",
+      "footer": "u4qdeh7vhc",
+      "spec_sha256": "13c1df886d17047bc70188a0bc0fe9c9d8e733ac613e7564c319cd6365cc33b2"
+    },
+    "D29": {
+      "artboard": "fcdicmpmx1",
+      "name": "D29 · Coding-Agent verbinden",
+      "header": "fvy0sx4gq0",
+      "canvas": "sgfeskgact",
+      "footer": "6bdfcavidq",
+      "spec_sha256": "13c1df886d17047bc70188a0bc0fe9c9d8e733ac613e7564c319cd6365cc33b2"
+    },
+    "D30": {
+      "artboard": "3a34qh44im",
+      "name": "D30 · Tools-Formular: jede Operation von Hand aufrufen",
+      "header": "v2b1b9keb8",
+      "canvas": "304y3meazh",
+      "footer": "1t39ns4ybz",
+      "spec_sha256": "13c1df886d17047bc70188a0bc0fe9c9d8e733ac613e7564c319cd6365cc33b2"
+    },
+    "D31": {
+      "artboard": "5rxig5s6fy",
+      "name": "D31 · Android-Werkzeuge: AVDs, Gerätezustand und QA-Jobs",
+      "header": "tyi35p11gj",
+      "canvas": "29zkvgm3nk",
+      "footer": "r2yn4d8kzh",
+      "spec_sha256": "3e9a45a8461def3f9294f25db24ff34ba756003fe1e52401597730df429986c2"
+    },
+    "D32": {
+      "artboard": "evc3b4t282",
+      "name": "D32 · iOS-Labor: vorbereiten, beobachten und verifizierte Zustände behalten",
+      "header": "i8h1d5hzks",
+      "canvas": "krve6d4tad",
+      "footer": "ehnpkcwnd2",
+      "spec_sha256": "a4b352e618ad5cdbc7be19c9c1ac879e2371a23f176b7815dd78f0eb8ffb6437"
+    },
+    "D33": {
+      "artboard": "sr8gnd34e1",
+      "name": "D33 · Artefakte, native Toolchains und Support-Belege",
+      "header": "6494s9in52",
+      "canvas": "xynia7hujf",
+      "footer": "07mp9afi9a",
+      "spec_sha256": "014bbe7e9b9a39f97ff20ba163b4cae1c214991864d54eb8d56895ab4fb13b81"
+    }
+  },
+  "root_final_acceptance_pending": false,
+  "root_final_review": "root-final-review.json"
+}
