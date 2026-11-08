@@ -1,0 +1,527 @@
+{
+  "schema": "tomacco-ocr-corpus/1",
+  "label_method": "Ground truth authored from visually inspected app UI and synthetic source strings before OCR; no OCR output used to set labels. Targets are a declared subset, not exhaustive transcription.",
+  "font": {
+    "path": "assets/fonts/archivo-var.ttf",
+    "sha256": "a86febec19e7a6f8b46fcd7efe42ce9fb0808c7b5f09a9c9d7c98df22266ee94"
+  },
+  "regeneration": {
+    "pillow": "13.0.0",
+    "command": "python3 tools/benchmark_ocr.py build --media-root /path/to/Launch-Thread"
+  },
+  "cases": [
+    {
+      "id": "real-portrait",
+      "image": "real-portrait.png",
+      "width": 311,
+      "height": 698,
+      "sha256": "5ef35130dc70198d199cf7c4952d723f3ddd41d7e92506447c83785053260eb1",
+      "targets": [
+        "tomatoes",
+        "Make room",
+        "for today",
+        "Today",
+        "Progress",
+        "Settings",
+        "Task title",
+        "Save task",
+        "Ship the demo"
+      ],
+      "primary_target": "Save task",
+      "source_type": "real_app_frame_crop",
+      "primary_rect": [
+        18,
+        364,
+        275,
+        41
+      ],
+      "provenance": {
+        "archive_relative": "08-screen-understanding/VIDEO.mp4",
+        "video_sha256": "c48317059c0c6fa9ba299b0e105fe15915fae95c5d16530b1df65f27bd80605b",
+        "timestamp_seconds": 3,
+        "crop": [
+          1016,
+          220,
+          311,
+          698
+        ],
+        "transform": "crop only, no resizing or retouching"
+      }
+    },
+    {
+      "id": "real-landscape",
+      "image": "real-landscape.png",
+      "width": 725,
+      "height": 321,
+      "sha256": "38a0aa8359ba02ebd61d4aa4c2e4a0b462ffc5424e4979e82f95b7f513683680",
+      "targets": [
+        "tomatoes",
+        "Make room",
+        "for today",
+        "Today",
+        "Progress",
+        "Settings"
+      ],
+      "primary_target": "Settings",
+      "source_type": "real_app_frame_crop",
+      "primary_rect": [
+        185,
+        201,
+        80,
+        37
+      ],
+      "provenance": {
+        "archive_relative": "07-emulator-tools/VIDEO.mp4",
+        "video_sha256": "07ef5de0ef2ca5ec7aeb5ed9df4ac25444fb241b177893a179c7b155441a82c0",
+        "timestamp_seconds": 4,
+        "crop": [
+          810,
+          408,
+          725,
+          321
+        ],
+        "transform": "crop only, no resizing or retouching"
+      }
+    },
+    {
+      "id": "real-project-header",
+      "image": "real-project-header.png",
+      "width": 1074,
+      "height": 166,
+      "sha256": "ad9b4ead2487c18757ab4521297487a9f50eb1f0ee8a23d79164f3d9a53b9a74",
+      "targets": [
+        "Project",
+        "Toolchain",
+        "Open your app"
+      ],
+      "primary_target": "Toolchain",
+      "source_type": "real_app_frame_crop",
+      "primary_rect": [
+        954,
+        20,
+        100,
+        33
+      ],
+      "provenance": {
+        "archive_relative": "14-native-workspace/VIDEO.mp4",
+        "video_sha256": "2d834b3405bd83850d33d77925b8a8b780eebac6fee2ffc65e5cccef07862d72",
+        "timestamp_seconds": 2,
+        "crop": [
+          790,
+          158,
+          1074,
+          166
+        ],
+        "transform": "crop only, no resizing or retouching"
+      }
+    },
+    {
+      "id": "real-build-controls",
+      "image": "real-build-controls.png",
+      "width": 1045,
+      "height": 223,
+      "sha256": "96d50a291d31ec3c6b2046ed3ea8cab4a691005f2ede01009c6378d3d92a093e",
+      "targets": [
+        "Build",
+        "Android",
+        "Debug",
+        "APK",
+        "Tests",
+        "Check code",
+        "Show build steps",
+        "Run on device",
+        "Manage devices",
+        "Build & run"
+      ],
+      "primary_target": "Check code",
+      "source_type": "real_app_frame_crop",
+      "primary_rect": [
+        465,
+        65,
+        89,
+        32
+      ],
+      "provenance": {
+        "archive_relative": "14-native-workspace/VIDEO.mp4",
+        "video_sha256": "2d834b3405bd83850d33d77925b8a8b780eebac6fee2ffc65e5cccef07862d72",
+        "timestamp_seconds": 2,
+        "crop": [
+          800,
+          458,
+          1045,
+          223
+        ],
+        "transform": "crop only, no resizing or retouching"
+      }
+    },
+    {
+      "id": "derived-dark-portrait",
+      "image": "derived-dark-portrait.png",
+      "width": 311,
+      "height": 698,
+      "sha256": "06ee7f04a0ddeb20f2a10eb88145c24dbdcd37eaa388ab1ab35fc88136722b2d",
+      "targets": [
+        "tomatoes",
+        "Make room",
+        "for today",
+        "Today",
+        "Progress",
+        "Settings",
+        "Task title",
+        "Save task",
+        "Ship the demo"
+      ],
+      "primary_target": "Save task",
+      "source_type": "derived_stress",
+      "primary_rect": [
+        18,
+        364,
+        275,
+        41
+      ],
+      "provenance": {
+        "derived_from": "real-portrait.png",
+        "transform": "RGB inversion; synthetic dark-stress variant, not a fresh app capture"
+      }
+    },
+    {
+      "id": "light-panel",
+      "image": "light-panel.png",
+      "width": 900,
+      "height": 440,
+      "sha256": "20d3e014b8e83c041b0c05d76242f2f390d833e91682bf26e9ce488d3012a9b3",
+      "targets": [
+        "Account settings",
+        "Email address",
+        "hello@example.test",
+        "Continue"
+      ],
+      "primary_target": "Continue",
+      "source_type": "synthetic",
+      "primary_rect": [
+        35,
+        320,
+        210,
+        60
+      ]
+    },
+    {
+      "id": "dark-panel",
+      "image": "dark-panel.png",
+      "width": 900,
+      "height": 440,
+      "sha256": "ff74a291552998f8447630d3e2ae69a3905581be245dc27e7bc887ae0b85843d",
+      "targets": [
+        "Account settings",
+        "Email address",
+        "hello@example.test",
+        "Continue"
+      ],
+      "primary_target": "Continue",
+      "source_type": "synthetic",
+      "primary_rect": [
+        35,
+        320,
+        210,
+        60
+      ]
+    },
+    {
+      "id": "minority-dark",
+      "image": "minority-dark.png",
+      "width": 1000,
+      "height": 700,
+      "sha256": "49370411b5fadc8d965ffe34ac4587c1a9a96117328df28ac7dbf1a6df3fa97b",
+      "targets": [
+        "Device settings",
+        "Choose a connection",
+        "Nearby devices",
+        "No recent errors",
+        "Reconnect"
+      ],
+      "primary_target": "Reconnect",
+      "source_type": "synthetic",
+      "primary_rect": [
+        730,
+        570,
+        236,
+        76
+      ]
+    },
+    {
+      "id": "minority-light",
+      "image": "minority-light.png",
+      "width": 1000,
+      "height": 700,
+      "sha256": "08b505d3e09a275cbc117e06678aa4c16e646e44875f74ba91024699c373e9c3",
+      "targets": [
+        "Device settings",
+        "Choose a connection",
+        "Nearby devices",
+        "No recent errors",
+        "Reconnect"
+      ],
+      "primary_target": "Reconnect",
+      "source_type": "synthetic",
+      "primary_rect": [
+        730,
+        570,
+        236,
+        76
+      ]
+    },
+    {
+      "id": "small-low-contrast",
+      "image": "small-low-contrast.png",
+      "width": 900,
+      "height": 440,
+      "sha256": "b9c16bd6eed677ffd1f670157c6abc6275bc52f1bb8ca1c51c410bc5d6b47aa1",
+      "targets": [
+        "Account settings",
+        "Email address",
+        "hello@example.test",
+        "Continue"
+      ],
+      "primary_target": "Continue",
+      "source_type": "synthetic",
+      "primary_rect": [
+        35,
+        320,
+        160,
+        45
+      ]
+    },
+    {
+      "id": "small-text",
+      "image": "small-text.png",
+      "width": 900,
+      "height": 440,
+      "sha256": "68aab1a45fd2deb8a0c69c7a50148ef5bee9da995cf4c8218a14a41b880b5975",
+      "targets": [
+        "Account settings",
+        "Email address",
+        "hello@example.test",
+        "Continue"
+      ],
+      "primary_target": "Continue",
+      "source_type": "synthetic",
+      "primary_rect": [
+        35,
+        320,
+        130,
+        40
+      ]
+    },
+    {
+      "id": "blurred-text",
+      "image": "blurred-text.png",
+      "width": 900,
+      "height": 440,
+      "sha256": "c01e5794b7a1f5aaec49444d1548b1211d72194be6fcca9942cca9ce8516a347",
+      "targets": [
+        "Account settings",
+        "Email address",
+        "hello@example.test",
+        "Continue"
+      ],
+      "primary_target": "Continue",
+      "source_type": "synthetic",
+      "primary_rect": [
+        35,
+        320,
+        200,
+        55
+      ]
+    },
+    {
+      "id": "localized-latin-eng-model",
+      "image": "localized-latin-eng-model.png",
+      "width": 1000,
+      "height": 500,
+      "sha256": "e0d76b2ba38d2412c704b6ca9ec844e30c9662838aa7516f1e955493c52d1468",
+      "targets": [
+        "Überblick",
+        "Änderungen speichern",
+        "Fermer la fenêtre",
+        "Español: Configuración",
+        "Português: Ações"
+      ],
+      "primary_target": "Änderungen speichern",
+      "source_type": "synthetic",
+      "primary_rect": [
+        30,
+        105,
+        430,
+        55
+      ],
+      "qualification": "Latin-script labels with eng only, not qualification of German/French/Spanish/Portuguese language models"
+    },
+    {
+      "id": "duplicate-targets",
+      "image": "duplicate-targets.png",
+      "width": 650,
+      "height": 400,
+      "sha256": "bea304ee6eb5135f5331c2bae1e92bb37a8f548d08f37bd41489384ea0aeb825",
+      "targets": [
+        "Continue",
+        "Continue"
+      ],
+      "primary_target": "Continue",
+      "source_type": "synthetic",
+      "expected_primary_matches": 2,
+      "primary_rects": [
+        [
+          40,
+          50,
+          291,
+          61
+        ],
+        [
+          40,
+          250,
+          291,
+          61
+        ]
+      ]
+    },
+    {
+      "id": "empty",
+      "image": "empty.png",
+      "width": 640,
+      "height": 480,
+      "sha256": "e90072b4050a2030b13a7a2b73a3c60124bd697e7d17ed352086a9c693a17b8a",
+      "targets": [],
+      "primary_target": null,
+      "source_type": "synthetic",
+      "negative_target": "Continue"
+    },
+    {
+      "id": "noise-no-text",
+      "image": "noise-no-text.png",
+      "width": 320,
+      "height": 240,
+      "sha256": "19cc817fd1504492af1535f5f54f950e4040f98b0bb3860bf381f1d0bb2606aa",
+      "targets": [],
+      "primary_target": null,
+      "source_type": "synthetic",
+      "negative_target": "Continue",
+      "seed": 72431
+    },
+    {
+      "id": "minority-dark-region",
+      "image": "minority-dark.png",
+      "width": 1000,
+      "height": 700,
+      "sha256": "49370411b5fadc8d965ffe34ac4587c1a9a96117328df28ac7dbf1a6df3fa97b",
+      "targets": [
+        "Reconnect"
+      ],
+      "primary_target": "Reconnect",
+      "source_type": "synthetic",
+      "primary_rect": [
+        730,
+        570,
+        236,
+        76
+      ],
+      "evaluation_role": "region_variant",
+      "region": {
+        "x": 720,
+        "y": 560,
+        "width": 260,
+        "height": 100
+      }
+    },
+    {
+      "id": "minority-light-region",
+      "image": "minority-light.png",
+      "width": 1000,
+      "height": 700,
+      "sha256": "08b505d3e09a275cbc117e06678aa4c16e646e44875f74ba91024699c373e9c3",
+      "targets": [
+        "Reconnect"
+      ],
+      "primary_target": "Reconnect",
+      "source_type": "synthetic",
+      "primary_rect": [
+        730,
+        570,
+        236,
+        76
+      ],
+      "evaluation_role": "region_variant",
+      "region": {
+        "x": 720,
+        "y": 560,
+        "width": 260,
+        "height": 100
+      }
+    },
+    {
+      "id": "real-landscape-inversion-target",
+      "image": "real-landscape.png",
+      "width": 725,
+      "height": 321,
+      "sha256": "38a0aa8359ba02ebd61d4aa4c2e4a0b462ffc5424e4979e82f95b7f513683680",
+      "targets": [
+        "tomatoes",
+        "Make room",
+        "for today",
+        "Today",
+        "Progress",
+        "Settings"
+      ],
+      "primary_target": "Progress",
+      "source_type": "real_app_frame_crop",
+      "primary_rect": [
+        90,
+        201,
+        90,
+        37
+      ],
+      "provenance": {
+        "archive_relative": "07-emulator-tools/VIDEO.mp4",
+        "video_sha256": "07ef5de0ef2ca5ec7aeb5ed9df4ac25444fb241b177893a179c7b155441a82c0",
+        "timestamp_seconds": 4,
+        "crop": [
+          810,
+          408,
+          725,
+          321
+        ],
+        "transform": "crop only, no resizing or retouching"
+      },
+      "evaluation_role": "regression_focus",
+      "selection_note": "Same pre-labelled image; primary target pinned after baseline exposed a normal-pass miss recovered by auto. Not another independent sample."
+    },
+    {
+      "id": "small-text-inversion-target",
+      "image": "small-text.png",
+      "width": 900,
+      "height": 440,
+      "sha256": "68aab1a45fd2deb8a0c69c7a50148ef5bee9da995cf4c8218a14a41b880b5975",
+      "targets": [
+        "Account settings",
+        "Email address",
+        "hello@example.test",
+        "Continue"
+      ],
+      "primary_target": "Account settings",
+      "source_type": "synthetic",
+      "primary_rect": [
+        35,
+        25,
+        200,
+        40
+      ],
+      "evaluation_role": "regression_focus",
+      "selection_note": "Same pre-labelled image; primary target pinned after baseline exposed a normal-pass miss recovered by auto. Not another independent sample."
+    }
+  ],
+  "limits": [
+    "Only installed eng+osd data; benchmark uses eng",
+    "Real frames are crops from existing public demo recordings, not new device captures",
+    "Derived/synthetic variants explicitly labelled",
+    "No physical device, transfer, agent-loop, PhoneUse or FPS comparison"
+  ]
+}
