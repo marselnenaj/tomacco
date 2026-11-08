@@ -1,44 +1,55 @@
 {
-  "checked_at": "2026-11-08T09:02:11.589977+00:00",
+  "checked_at": "2026-11-08T10:13:28.901053+00:00",
   "reviewer": "Codex root",
-  "product_source": "1713806db7ef00eda9754bb5bea23cd803179aa0",
-  "runtime_code_commit": "578819be350cc430196fef59a8d07ea91b3c34e4",
+  "product_source": "1caa17221161c2dc4c5c6eedb92ed9277772c57a",
+  "runtime_code_commit": "e552e6f643632182dfc8531effd8bc5916c206a3",
   "actual_screenshots_reviewed": [
+    "D12",
     "00",
-    "S1",
-    "D19",
-    "D20",
-    "D23"
+    "S1"
   ],
   "source_spec_hashes_verified": 33,
   "registry_operations_verified": 296,
-  "actual_node_mappings_verified": 981,
+  "actual_node_mappings_verified": 1000,
   "prototype_links_verified": 382,
   "prototype_targets_verified": 56,
   "png_sha256_and_decode_verified": 36,
+  "regenerated_exports": [
+    "00",
+    "D12",
+    "S1"
+  ],
   "artboard_overlap": 0,
   "label_overlap": 0,
-  "live_lint_counts": {
-    "contrast": 0,
-    "overflow": 0,
-    "token": 2915,
-    "grid": 667,
-    "alt": 0,
-    "small-text": 0,
-    "target": 0,
-    "repeated": 36,
-    "spacing": 0,
-    "hierarchy": 31,
-    "copy": 166
+  "live_design": {
+    "brand_score": 96,
+    "brand_counts": {
+      "hard": 0,
+      "soft": 0,
+      "waived": 0,
+      "layers": 5968
+    },
+    "lint_counts": {
+      "contrast": 0,
+      "overflow": 0,
+      "token": 2951,
+      "grid": 675,
+      "alt": 0,
+      "small-text": 0,
+      "target": 0,
+      "repeated": 36,
+      "spacing": 0,
+      "hierarchy": 31,
+      "copy": 166
+    },
+    "reviewed_artboards": [
+      "D12",
+      "00",
+      "S1"
+    ],
+    "critical": 0,
+    "actual_nodes_expected": 1000
   },
-  "live_brand_score": 96,
-  "live_brand_counts": {
-    "hard": 0,
-    "soft": 0,
-    "waived": 0,
-    "layers": 5877
-  },
-  "public_docs_tests": "20/20 passed",
   "hardware_access": false,
   "final_ready": true
 }

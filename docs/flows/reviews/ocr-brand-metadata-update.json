@@ -1,0 +1,51 @@
+{
+  "brand_id": "mm6iq5cs67",
+  "version": 6,
+  "changed_fields": [
+    "positioning",
+    "layoutNotes"
+  ],
+  "stale_active_claims_removed": true,
+  "style_sections_unchanged": [
+    "colors",
+    "pairings",
+    "logos",
+    "families",
+    "typeScale",
+    "spacing",
+    "radius",
+    "rules",
+    "words",
+    "voiceExamples",
+    "artboards",
+    "assets"
+  ],
+  "other_fields_unchanged": [
+    "name",
+    "audience",
+    "tone",
+    "license",
+    "grid",
+    "container",
+    "minContrast",
+    "pairingDefault",
+    "offPalette",
+    "shadows",
+    "gradients",
+    "strict",
+    "defaultAt",
+    "language",
+    "address",
+    "sentenceWords",
+    "paragraphSentences",
+    "headingMinWords",
+    "headingMaxWords",
+    "numberFormat"
+  ],
+  "agent_authored_metadata_not_claimed_user_confirmed": true,
+  "source_status_reference": "Tomacco · App / 04 · Flows & Logik; docs/flows/provenance-current.json",
+  "current": {
+    "positioning": "Agent-first mobile development for Linux, made for Omarchy. Your coding agent and you share typed operations to build, run, tap through and debug iOS and Android apps. No Mac needed.",
+    "layoutNotes": "Gutter --gut max(clamp(16px, 3vw, 48px), safe-area insets): 16 px at 390, 23.04 at 768, 43.2 at 1440. Bar --bar 40px (48px below 760 wide, 44px on phones on their side). Section rhythm --sec clamp(88px, 13vw, 220px): 187.2 px at 1440. Content to 1800 wide (.in, .wrap, .foot). The hero is exactly one screen, bar included: the tomato's diameter is min(92vw, 147vh), so it scales by whichever of width and height is tighter, and the headline sits on its face. The story is five full-screen sticky bands. Docs: a 1240 frame, the article in one 58rem column at 17px/1.55, under a sticky red topic bar. Footer: the red wordmark tomacco spans actual containing content width at calc(100cqw /4.36), with container-type:inline-size and no wrapping. Values resolved at1440 are examples, not fixed desktop sizes. Desktop app bases are separate scoped app-* roles from tomacco/qml/Theme.js: body13px, controls32px at100%; user scale75–200% is an accessibility preference, not another brand scale. Optional Omarchy accent is an explicit validated user override. Brand foundations, website and docs share these design roles. Product release numbers, installed commits, operation counts and feature qualification belong in the source-backed Tomacco · App / 04 · Flows & Logik and docs/flows/provenance-current.json, not in these styling notes; read that current evidence before making product claims. Keep implemented procedural perspective rendering distinct from future arbitrary 3D scenes, and require device evidence before claiming physical Omarchy Mobile or AirPlay qualification. Historical release/website snapshots remain in document version history."
+  }
+}

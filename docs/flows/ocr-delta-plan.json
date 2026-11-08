@@ -1,6 +1,6 @@
 {
   "schema": "tomacco-ocr-atlas-delta/1",
-  "state": "ready_for_root_final_qa",
+  "state": "complete",
   "file_id": "u8uvnj33hx",
   "page_id": "f5zgae58fy",
   "entry_artboard": "bxx82h1gcm",
@@ -45,7 +45,7 @@
     "Checkpoint and hand current acceptance to root without resetting previous product gates"
   ],
   "installed_gate_checked_at": "2026-11-08T10:05:06.491264+00:00",
-  "updated_at": "2026-11-08T10:11:41.300849+00:00",
+  "updated_at": "2026-11-08T10:13:28.901053+00:00",
   "mutations": [
     {
       "board": "D12",
@@ -82,5 +82,7 @@
     "S1"
   ],
   "critical_lint": 0,
-  "brand_hard": 0
+  "brand_hard": 0,
+  "final_ready": true,
+  "root_review": "root-final-review.json"
 }

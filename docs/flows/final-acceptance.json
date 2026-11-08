@@ -1,7 +1,7 @@
 {
   "schema": "tomacco-flow-atlas-acceptance/1",
-  "checked_at": "2026-11-08T10:11:41.300849+00:00",
-  "final_ready": false,
+  "checked_at": "2026-11-08T10:13:28.901053+00:00",
+  "final_ready": true,
   "file_id": "u8uvnj33hx",
   "page_id": "f5zgae58fy",
   "entry_artboard": "bxx82h1gcm",
@@ -61,7 +61,9 @@
     "reviews/ocr-install-gate.json",
     "reviews/ocr-desktop-update-receipt.json",
     "reviews/ocr-adaptive-independent-review.json",
-    "../ocr-adaptive-qualification.json"
+    "../ocr-adaptive-qualification.json",
+    "root-final-review.json",
+    "reviews/ocr-brand-metadata-update.json"
   ],
   "qualification_limits": [
     "No Pixel installation or physical qualification",
@@ -75,11 +77,10 @@
   "no_publication": true,
   "advisories": "Diagram geometry intentionally uses measured node/connector pixels; grid/token/copy-arrow/repeated/header hierarchy suggestions remain advisory, not waived critical findings.",
   "implementation_ready": true,
-  "ready_for_root_final_qa": true,
+  "ready_for_root_final_qa": false,
   "runtime_code_commit": "e552e6f643632182dfc8531effd8bc5916c206a3",
   "core_source_baseline": "4584d6bca3a07840e81683d99cd0adb386aeff35",
   "historical_acceptance": "history/1713806/final-acceptance.json",
-  "pending": [
-    "Root final review of current OCR atlas delta"
-  ]
+  "pending": [],
+  "root_review": "root-final-review.json"
 }
