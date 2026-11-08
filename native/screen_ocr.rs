@@ -378,6 +378,9 @@ pub fn supports(selector: &Value) -> bool {
 
 // ---- Running Tesseract -----------------------------------------------------
 
+#[path = "screen_ocr_engine.rs"]
+pub(crate) mod engine;
+
 /// Something that reads a PNG and answers Tesseract's TSV. Tests replace it.
 pub trait Recognizer {
     fn tsv(&mut self, image: &Path, language: &str) -> Result<String>;
@@ -410,6 +413,9 @@ pub fn unavailable() -> Error {
 impl Recognizer for Tesseract {
     fn tsv(&mut self, image: &Path, language: &str) -> Result<String> {
         let binary = binary().ok_or_else(unavailable)?;
+        if let Some(text) = engine::recognize(&binary, image, language)? {
+            return Ok(text);
+        }
         let command = vec![
             binary.to_string_lossy().into_owned(),
             image.to_string_lossy().into_owned(),
@@ -420,7 +426,8 @@ impl Recognizer for Tesseract {
             "11".into(),
             "tsv".into(),
         ];
-        let done = crate::toolchain::run(&command, 90, None, false)?;
+        let overrides = engine::thread_overrides(&binary);
+        let done = crate::toolchain::run_with_env(&command, 90, None, false, &overrides)?;
         if done["exit_code"] != 0 {
             let stderr = s(&done, "stderr");
             let first = stderr.lines().next().unwrap_or("");

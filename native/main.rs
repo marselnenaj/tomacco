@@ -422,8 +422,16 @@ fn run(args: &[String], options: &Options) -> Result<i32> {
         Some("omarchy") => return omarchy::command(&args[1..]),
         Some("mcp") => {
             guard::enter(guard::Channel::Mcp, mcp_policy(&args[1..])?);
-            mcp::serve(std::io::stdin().lock(), std::io::stdout())?;
+            screen_ocr::engine::enable();
+            let result = mcp::serve(std::io::stdin().lock(), std::io::stdout());
+            screen_ocr::engine::shutdown();
+            result?;
             return Ok(0);
+        }
+        Some("_ocr_engine") => {
+            return Ok(screen_ocr::engine::worker_main(
+                args.get(1).map(String::as_str).unwrap_or(""),
+            ));
         }
         Some("_avd_duplicate") => {
             avd_manage::duplicate_step(
