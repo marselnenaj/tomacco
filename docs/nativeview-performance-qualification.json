@@ -1,0 +1,486 @@
+{
+  "schema": "tomacco-nativeview-performance-qualification/1",
+  "date": "2026-11-08",
+  "runtime_source_base": "d97f0ea",
+  "scope": "Local synthetic stream baseline only; no production code or CMake target changes.",
+  "build": {
+    "configure": "cmake -S . -B build-native-bench -G Ninja -DCMAKE_BUILD_TYPE=Release -DBUILD_TESTING=ON",
+    "compile": "cmake --build build-native-bench --target test-nativeview -j 3",
+    "compiler": "GCC 16.2.1",
+    "qt": "6.12.0",
+    "av_libraries": [
+      "63.1.102",
+      "61.1.102",
+      "10.1.102"
+    ],
+    "ffmpeg_version": "ffmpeg version n9.0.2 Copyright (c) 2000-2026 the FFmpeg developers"
+  },
+  "run": {
+    "environment": {
+      "QT_QPA_PLATFORM": "offscreen",
+      "QT_QPA_PLATFORMTHEME": "generic",
+      "QT_QUICK_BACKEND": "software",
+      "TOMACCO_NATIVEVIEW_BENCHMARK": "/absolute/path/report.json",
+      "TOMACCO_NATIVEVIEW_BENCHMARK_TRIALS": "20"
+    },
+    "command": "build-native-bench/test-nativeview local_video_availability_benchmark",
+    "isolation": "tools/benchmark_performance.py Sandbox: private HOME/XDG/TOMACCO_HOME and unreachable D-Bus, hardware/remote/build helpers trapped. DISPLAY/WAYLAND_DISPLAY removed. No window.show(), no browser or device connection."
+  },
+  "metadata": {
+    "binary_sha256": "f941e9dadd70079b48c30ff66c0bd85fa67aa8e939329448cd08df6a40f1fc78",
+    "test_source_sha256": "05c3593012bbe040253bf1c3cd4db0e89ca807cb1025b982a3113c28d5c17e05",
+    "runtime_source_sha256": "857a19a70a63625acf45b2c0feb91435cb690ea15a129518d1efdcb3fb78b979",
+    "build_type": "Release",
+    "load_start": [
+      39.66845703125,
+      44.62548828125,
+      47.57958984375
+    ],
+    "started_utc": "2026-11-08T10:48:22Z",
+    "runs": [
+      {
+        "label": "normal-ci",
+        "returncode": 0
+      },
+      {
+        "label": "nativeview-20",
+        "returncode": 0
+      }
+    ],
+    "trapped_helpers": "",
+    "load_end": [
+      38.08154296875,
+      43.9111328125,
+      47.279296875
+    ]
+  },
+  "proof": {
+    "raw_path": "/home/maslos/Work/tomacco-perf-bench-20261108/qa/performance/nativeview-20.json",
+    "raw_sha256": "ce11f803e196b95fb8f6f237f21ca7d8686bbbeff022bc0b852b3b20971b48c0",
+    "metadata_path": "/home/maslos/Work/tomacco-perf-bench-20261108/qa/performance/nativeview-metadata.json",
+    "normal_ci_log": "qa/performance/normal-ci.log",
+    "benchmark_log": "qa/performance/nativeview-20.log",
+    "benchmark_binary": "qa/performance/build-native-bench/test-nativeview"
+  },
+  "validation": {
+    "normal_ci": "8 QtTest pass, 0 fail, 1 intentional opt-in benchmark skip",
+    "opt_in_benchmark": "3 QtTest pass, 0 fail, 0 skip; 6 resolution/codec cases",
+    "sequential_frames": 120,
+    "burst_packets": 54,
+    "post_burst_recovery_frames": 6,
+    "sampled_pixel_positions_per_check": 17,
+    "pixel_check": "Saved full-size decoded PNG after timing: exact source dimensions and 17 grid/centre colors within 18 RGB values of the synthetic pattern. Alternating colors catch a stale previous frame. JPEG/H264 are lossy; not bit-identical image qualification.",
+    "time_check": "Signal timestamps captured immediately when GUI thread receives image assignment notification; no QTRY polling floor. PNG saves/encoding excluded."
+  },
+  "setup_note": "An initial setup attempt inherited a GTK platform theme and exited before measurements because no display was present. Explicit QT_QPA_PLATFORMTHEME=generic corrected headless setup; sandbox protections stayed enabled. The measured runs above completed without failures.",
+  "conclusion": "This bounded synthetic path shows no evidence requiring a broad video/UI rewrite. At 4K, decode/convert/cross-thread GUI availability is measurable and should remain guarded; actual texture upload and presentation still require separate evidence.",
+  "not_inferred": [
+    "physical Pixel performance",
+    "AirPlay/USB/network frame latency",
+    "GPU upload speed or presentation FPS",
+    "whole-frame perceptual quality",
+    "sustained 30/60fps performance for realistic moving content",
+    "zero backlog for all inputs or over unbounded time"
+  ],
+  "result": {
+    "boundary": "before QLocalSocket::write/flush to NativeView::frameChanged on GUI thread, after its image assignment; monotonic event timestamps, no QTRY polling",
+    "cases": [
+      {
+        "burst": {
+          "coalesced_updates": 6,
+          "gui_frame_events": 3,
+          "last_color_correct": true,
+          "last_frame_gui_available_ms": 14.915976999999998,
+          "no_more_events_for_ms": 100,
+          "packets": 9,
+          "recovery_color_correct": true,
+          "recovery_ms": 2.0185959999998886
+        },
+        "codec": "mjpeg",
+        "correct_frames": 20,
+        "encoded_packet_bytes": [
+          34922,
+          35649,
+          34742
+        ],
+        "encoded_packet_sha256": [
+          "256fea362f0c2886326d7a84ce16b80b045f53a3b96ff4bfd1aba9f0703f7667",
+          "ca1271e959145d8d7b124c03090b125b216f07d600f1d3dc5ca209f7fa88bc3f",
+          "9ee70a544c8996fd00c77ba3e2f30062b5942b7d1b0a995045e8335563521d6d"
+        ],
+        "first_frame_ms": 5.946077,
+        "height": 1920,
+        "samples_ms": [
+          5.946077,
+          3.090969000000001,
+          2.070908000000003,
+          3.078255000000013,
+          2.8763580000000104,
+          2.9684310000000096,
+          2.0712310000000116,
+          2.047368000000006,
+          2.123572000000024,
+          2.0155059999999594,
+          2.2291480000000092,
+          1.9986399999999662,
+          2.1515769999999748,
+          2.0660720000000765,
+          2.7340299999999615,
+          2.1132900000000063,
+          2.0277790000000095,
+          2.573861999999963,
+          2.943746000000033,
+          2.2272080000000187
+        ],
+        "sequential": {
+          "max_ms": 5.946077,
+          "min_ms": 1.9986399999999662,
+          "n": 20,
+          "p50_ms": 2.1893924999999967,
+          "p95_ms": 3.090969000000001
+        },
+        "subsequent_frames": {
+          "max_ms": 3.090969000000001,
+          "min_ms": 1.9986399999999662,
+          "n": 19,
+          "p50_ms": 2.1515769999999748,
+          "p95_ms": 3.090969000000001
+        },
+        "width": 1080
+      },
+      {
+        "burst": {
+          "coalesced_updates": 8,
+          "gui_frame_events": 1,
+          "last_color_correct": true,
+          "last_frame_gui_available_ms": 2.4510030000000143,
+          "no_more_events_for_ms": 100,
+          "packets": 9,
+          "recovery_color_correct": true,
+          "recovery_ms": 0.9065079999998034
+        },
+        "codec": "h264",
+        "correct_frames": 20,
+        "encoded_packet_bytes": [
+          8659,
+          10751,
+          8429
+        ],
+        "encoded_packet_sha256": [
+          "7726b4d725181ecc072bdddb70d20245695a4821765aba77bc256c0af23eea5d",
+          "d86506a7942ec235c74b104e81740e83041e3a6b0417df68e86aeba7861a2781",
+          "935fbdc2654989d4ac9dacf84b7f31547b037ed89ea9fc55c9f3b55f3c4deee3"
+        ],
+        "first_frame_ms": 2.911712,
+        "height": 1920,
+        "samples_ms": [
+          2.911712,
+          2.985332999999997,
+          0.9191469999999953,
+          0.7211149999999975,
+          1.9878719999999817,
+          1.007755000000003,
+          1.1022460000000365,
+          1.015858000000037,
+          1.0408199999999965,
+          0.9725910000000226,
+          1.4551529999999957,
+          0.7592960000000062,
+          1.0758620000000292,
+          1.0426919999999882,
+          1.0169090000000551,
+          1.0220259999999826,
+          1.0628020000000333,
+          1.0728399999999283,
+          0.9910930000000917,
+          0.8475180000000364
+        ],
+        "sequential": {
+          "max_ms": 2.985332999999997,
+          "min_ms": 0.7211149999999975,
+          "n": 20,
+          "p50_ms": 1.0314229999999895,
+          "p95_ms": 2.911712
+        },
+        "subsequent_frames": {
+          "max_ms": 2.985332999999997,
+          "min_ms": 0.7211149999999975,
+          "n": 19,
+          "p50_ms": 1.0220259999999826,
+          "p95_ms": 2.985332999999997
+        },
+        "width": 1080
+      },
+      {
+        "burst": {
+          "coalesced_updates": 5,
+          "gui_frame_events": 4,
+          "last_color_correct": true,
+          "last_frame_gui_available_ms": 39.02543199999991,
+          "no_more_events_for_ms": 100,
+          "packets": 9,
+          "recovery_color_correct": true,
+          "recovery_ms": 4.579877000000124
+        },
+        "codec": "mjpeg",
+        "correct_frames": 20,
+        "encoded_packet_bytes": [
+          74175,
+          75678,
+          73804
+        ],
+        "encoded_packet_sha256": [
+          "3a32ef9eb6a73758e5052c8141217ae7b05b6b06270ad44df2da9149db96919d",
+          "c6821983919cbaaea3df7929ed4ee26f094863b9b69e26c97eaa57d4abc84d43",
+          "5a3958d320f416c6a19ad33b1da6a3f38a808926d6961bfbbb7d1db33b7cf2af"
+        ],
+        "first_frame_ms": 9.731972,
+        "height": 3120,
+        "samples_ms": [
+          9.731972,
+          5.460182000000003,
+          4.0345140000000015,
+          4.3429270000000315,
+          5.7160820000000285,
+          4.454579000000024,
+          4.216100999999981,
+          4.116249000000039,
+          4.294143000000076,
+          4.14024500000005,
+          4.150810999999976,
+          6.410082999999986,
+          4.405383000000029,
+          5.008634000000029,
+          6.80682899999988,
+          4.337330999999949,
+          4.567075999999815,
+          4.273102999999992,
+          5.202866999999969,
+          5.269084000000021
+        ],
+        "sequential": {
+          "max_ms": 9.731972,
+          "min_ms": 4.0345140000000015,
+          "n": 20,
+          "p50_ms": 4.429981000000026,
+          "p95_ms": 6.80682899999988
+        },
+        "subsequent_frames": {
+          "max_ms": 6.80682899999988,
+          "min_ms": 4.0345140000000015,
+          "n": 19,
+          "p50_ms": 4.405383000000029,
+          "p95_ms": 6.80682899999988
+        },
+        "width": 1440
+      },
+      {
+        "burst": {
+          "coalesced_updates": 7,
+          "gui_frame_events": 2,
+          "last_color_correct": true,
+          "last_frame_gui_available_ms": 7.126807000000099,
+          "no_more_events_for_ms": 100,
+          "packets": 9,
+          "recovery_color_correct": true,
+          "recovery_ms": 3.20556600000009
+        },
+        "codec": "h264",
+        "correct_frames": 20,
+        "encoded_packet_bytes": [
+          17615,
+          21953,
+          17156
+        ],
+        "encoded_packet_sha256": [
+          "4afa1b67df16431149d07437a8bb0ddca6ddea32f960940dba92bb6f12025566",
+          "422394851f7eab826861724df8c7b6412f5f3d4a58bff5a1b25989759069b71a",
+          "8f1cec684e81562f8aa8d8cb04bcc487e394bc300e8d335708cd0c9f67ed383c"
+        ],
+        "first_frame_ms": 7.979283,
+        "height": 3120,
+        "samples_ms": [
+          7.979283,
+          9.56373099999999,
+          2.0778760000000034,
+          2.0213719999999853,
+          1.8526880000000006,
+          2.718215999999984,
+          2.159414999999967,
+          2.335611999999969,
+          2.626577999999995,
+          3.036623000000077,
+          3.4102510000000166,
+          1.7498510000000351,
+          1.7597710000000006,
+          1.8668079999999918,
+          2.0651170000001002,
+          2.1984469999999874,
+          2.787550999999894,
+          2.1560779999999795,
+          2.3133399999999256,
+          1.9101570000000265
+        ],
+        "sequential": {
+          "max_ms": 9.56373099999999,
+          "min_ms": 1.7498510000000351,
+          "n": 20,
+          "p50_ms": 2.1789309999999773,
+          "p95_ms": 7.979283
+        },
+        "subsequent_frames": {
+          "max_ms": 9.56373099999999,
+          "min_ms": 1.7498510000000351,
+          "n": 19,
+          "p50_ms": 2.159414999999967,
+          "p95_ms": 9.56373099999999
+        },
+        "width": 1440
+      },
+      {
+        "burst": {
+          "coalesced_updates": 3,
+          "gui_frame_events": 6,
+          "last_color_correct": true,
+          "last_frame_gui_available_ms": 69.66088300000001,
+          "no_more_events_for_ms": 100,
+          "packets": 9,
+          "recovery_color_correct": true,
+          "recovery_ms": 8.127966000000015
+        },
+        "codec": "mjpeg",
+        "correct_frames": 20,
+        "encoded_packet_bytes": [
+          136450,
+          139230,
+          135760
+        ],
+        "encoded_packet_sha256": [
+          "dbf6b29e65283a60a8a84b7e8c615afdc41d6aba4388cb0bff7a6244f39872be",
+          "95255a809cc91f33dfdcf687e406e8adc62eede553b42bc774d2166e75c46f68",
+          "6ce60331a199cb23ea0e32de568d773d6857725a3b0e1f12172ebc071d7bb333"
+        ],
+        "first_frame_ms": 16.254687,
+        "height": 2160,
+        "samples_ms": [
+          16.254687,
+          18.06887900000001,
+          8.856983999999954,
+          7.537837999999965,
+          7.942516000000069,
+          7.8439690000000155,
+          8.036079999999856,
+          8.09267100000011,
+          10.636318999999958,
+          7.578058999999939,
+          7.955290999999988,
+          8.12212199999999,
+          8.241165999999794,
+          12.24395000000004,
+          8.685583999999835,
+          8.563358999999764,
+          7.541095000000041,
+          11.361523000000034,
+          8.069218999999975,
+          8.210622000000058
+        ],
+        "sequential": {
+          "max_ms": 18.06887900000001,
+          "min_ms": 7.537837999999965,
+          "n": 20,
+          "p50_ms": 8.166372000000024,
+          "p95_ms": 16.254687
+        },
+        "subsequent_frames": {
+          "max_ms": 18.06887900000001,
+          "min_ms": 7.537837999999965,
+          "n": 19,
+          "p50_ms": 8.12212199999999,
+          "p95_ms": 18.06887900000001
+        },
+        "width": 3840
+      },
+      {
+        "burst": {
+          "coalesced_updates": 7,
+          "gui_frame_events": 2,
+          "last_color_correct": true,
+          "last_frame_gui_available_ms": 14.69425799999999,
+          "no_more_events_for_ms": 100,
+          "packets": 9,
+          "recovery_color_correct": true,
+          "recovery_ms": 3.648200999999972
+        },
+        "codec": "h264",
+        "correct_frames": 20,
+        "encoded_packet_bytes": [
+          32040,
+          40005,
+          31176
+        ],
+        "encoded_packet_sha256": [
+          "b100421c3399ef30cdcd02cf98b8e36a9327381eb1be28d957f31264aac74198",
+          "155e262a72e309a143d97e6273251d3380b185cb52a10d160d04a0594f106b99",
+          "a2f8be7e8c0f42eb8c17dc8b6e9424236544901faf3e66330158cd6f79d2ce25"
+        ],
+        "first_frame_ms": 9.312694,
+        "height": 2160,
+        "samples_ms": [
+          9.312694,
+          10.225085000000007,
+          3.694268999999963,
+          4.099309999999946,
+          4.966733999999974,
+          4.132048000000054,
+          3.934443999999985,
+          3.8431530000000294,
+          3.818553999999949,
+          3.8100999999999203,
+          4.115707000000157,
+          4.019894999999906,
+          7.102302000000009,
+          3.838926999999785,
+          4.026294999999664,
+          4.146582000000308,
+          3.9348770000001423,
+          3.007502999999815,
+          5.185175000000072,
+          4.409995999999865
+        ],
+        "sequential": {
+          "max_ms": 10.225085000000007,
+          "min_ms": 3.007502999999815,
+          "n": 20,
+          "p50_ms": 4.062802499999805,
+          "p95_ms": 9.312694
+        },
+        "subsequent_frames": {
+          "max_ms": 10.225085000000007,
+          "min_ms": 3.007502999999815,
+          "n": 19,
+          "p50_ms": 4.026294999999664,
+          "p95_ms": 10.225085000000007
+        },
+        "width": 3840
+      }
+    ],
+    "evidence": "synthetic local socket packets; offscreen software; no shown window",
+    "excluded": [
+      "frame encoding and PNG correctness-save time",
+      "texture creation/upload and GPU memory",
+      "frameSwapped/display presentation and monitor latency",
+      "device capture, USB/AirPlay/network and touch",
+      "realistic content complexity or device FPS"
+    ],
+    "limits": [
+      "Synthetic patterned color frames, not representative camera/app motion",
+      "p95 nearest rank; short samples are exploratory",
+      "bursts measure emitted GUI update coalescing, not decoder frame loss",
+      "100ms quiescence is a bounded observation, not proof of no future events"
+    ],
+    "passed": true,
+    "qt": "6.12.0",
+    "schema": "tomacco-local-nativeview/1",
+    "trials": 20
+  }
+}
